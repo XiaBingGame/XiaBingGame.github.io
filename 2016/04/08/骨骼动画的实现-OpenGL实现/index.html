@@ -4,17 +4,22 @@
   <meta charset="utf-8">
   
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
-  <title>我的博客 | 夏冰</title>
+  <title>骨骼动画的实现(OpenGL实现) | 夏冰</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta property="og:type" content="article">
-<meta property="og:title" content="我的博客">
-<meta property="og:url" content="http://www.crazygl.com/2023/03/21/%E6%88%91%E7%9A%84%E5%8D%9A%E5%AE%A2/index.html">
+  <meta name="description" content="人物模型动画一直是游戏中最重要的组成部分, 因此这里我们研究骨骼动画是如何实现的. 原理首先模型通常是由多个三角形形成的网格构成, 每个三角形有三个顶点, 因此动画的根本原理就在于不同时间内为每个顶点分配不同的位置, 这一切都是通过虚拟的骨头(bone)实现的. 其中模型上的每个顶点分配给不同的骨头, 比如说, 手部上的顶点可能分配给前臂, 手部两个不同的骨头, 每个骨头对不同顶点有不同的影响,">
+<meta property="og:type" content="article">
+<meta property="og:title" content="骨骼动画的实现(OpenGL实现)">
+<meta property="og:url" content="http://www.crazygl.com/2016/04/08/%E9%AA%A8%E9%AA%BC%E5%8A%A8%E7%94%BB%E7%9A%84%E5%AE%9E%E7%8E%B0-OpenGL%E5%AE%9E%E7%8E%B0/index.html">
 <meta property="og:site_name" content="夏冰">
+<meta property="og:description" content="人物模型动画一直是游戏中最重要的组成部分, 因此这里我们研究骨骼动画是如何实现的. 原理首先模型通常是由多个三角形形成的网格构成, 每个三角形有三个顶点, 因此动画的根本原理就在于不同时间内为每个顶点分配不同的位置, 这一切都是通过虚拟的骨头(bone)实现的. 其中模型上的每个顶点分配给不同的骨头, 比如说, 手部上的顶点可能分配给前臂, 手部两个不同的骨头, 每个骨头对不同顶点有不同的影响,">
 <meta property="og:locale">
-<meta property="article:published_time" content="2023-03-21T15:01:27.000Z">
-<meta property="article:modified_time" content="2023-03-21T15:01:27.022Z">
+<meta property="og:image" content="http://7xrs2u.com1.z0.glb.clouddn.com/skeleton_001.gif">
+<meta property="article:published_time" content="2016-04-07T22:17:51.000Z">
+<meta property="article:modified_time" content="2020-01-18T15:32:14.077Z">
 <meta property="article:author" content="夏冰">
+<meta property="article:tag" content="OpenGL, 天龙八部, 图形">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://7xrs2u.com1.z0.glb.clouddn.com/skeleton_001.gif">
   
     <link rel="alternative" href="/atom.xml" title="夏冰" type="application/atom+xml">
   
@@ -188,11 +193,11 @@
 	</div>
 </nav>
 
-      <div class="body-wrap"><article id="post-我的博客" class="article article-type-post" itemscope itemprop="blogPost">
+      <div class="body-wrap"><article id="post-骨骼动画的实现-OpenGL实现" class="article article-type-post" itemscope itemprop="blogPost">
   
     <div class="article-meta">
-      <a href="/2023/03/21/%E6%88%91%E7%9A%84%E5%8D%9A%E5%AE%A2/" class="article-date">
-  	<time datetime="2023-03-21T15:01:27.000Z" itemprop="datePublished">2023-03-21</time>
+      <a href="/2016/04/08/%E9%AA%A8%E9%AA%BC%E5%8A%A8%E7%94%BB%E7%9A%84%E5%AE%9E%E7%8E%B0-OpenGL%E5%AE%9E%E7%8E%B0/" class="article-date">
+  	<time datetime="2016-04-07T22:17:51.000Z" itemprop="datePublished">2016-04-08</time>
 </a>
     </div>
   
@@ -205,7 +210,7 @@
         
   
     <h1 class="article-title" itemprop="name">
-      我的博客
+      骨骼动画的实现(OpenGL实现)
     </h1>
   
 
@@ -213,6 +218,10 @@
       
       <div class="article-info article-info-post">
         
+	<div class="article-tag tagcloud">
+		<ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/OpenGL-%E5%A4%A9%E9%BE%99%E5%85%AB%E9%83%A8-%E5%9B%BE%E5%BD%A2/" rel="tag">OpenGL, 天龙八部, 图形</a></li></ul>
+	</div>
+
         
 
         <div class="clearfix"></div>
@@ -221,7 +230,13 @@
     
     <div class="article-entry" itemprop="articleBody">
       
-        
+        <p>人物模型动画一直是游戏中最重要的组成部分, 因此这里我们研究骨骼动画是如何实现的.</p>
+<h1 id="原理"><a href="#原理" class="headerlink" title="原理"></a>原理</h1><p>首先模型通常是由多个三角形形成的网格构成, 每个三角形有三个顶点, 因此动画的根本原理就在于不同时间内为每个顶点分配不同的位置, 这一切都是通过虚拟的骨头(bone)实现的. 其中模型上的每个顶点分配给不同的骨头, 比如说, 手部上的顶点可能分配给前臂, 手部两个不同的骨头, 每个骨头对不同顶点有不同的影响, 这通过权重值来实现的. </p>
+<p>而后动画分为多个帧, 每一帧内, 多个骨头位于不同的位置, 就和人体一样. 最重要的是, 骨骼上的骨头是有层次的, 比如一般情况骨椎为根骨头, 而后派生出头部骨头, 手臂骨头, 腿部骨头.</p>
+<h1 id="实现"><a href="#实现" class="headerlink" title="实现"></a>实现</h1><p>为了实现动画, 我们需要得到骨头在不同帧内变换矩阵, 而后我们模型上的顶点首先要变换至骨头所在的模型空间, 而后再乘以其相应的变换矩阵. 关键实现时需要注意求解每个骨头初始状态其自身模型坐标系的逆矩阵.<br>这里我是用的是 Ogre 的骨骼动画机制, 发现其骨骼加载的过程需要求解每个骨头逆矩阵, 因此遇到复杂的模型时(例如天龙八部的骨骼), 加载时间就比较长, 因为逆矩阵在动画的过程中是不会变化的, 是否可以考虑将每个骨头的逆矩阵事先求解并保存起来, 以便加快加载速度呢.</p>
+<h1 id="效果"><a href="#效果" class="headerlink" title="效果"></a>效果</h1><p>原理很简单, 只是实现比较繁琐, 这里是加载天龙八部模型的效果</p>
+<p><img src="http://7xrs2u.com1.z0.glb.clouddn.com/skeleton_001.gif" alt="骨骼动画演示"></p>
+
       
     </div>
     
@@ -230,9 +245,18 @@
     
 <nav id="article-nav">
   
+    <a href="/2023/03/21/hello-world/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption"><</strong>
+      <div class="article-nav-title">
+        
+          Hello World
+        
+      </div>
+    </a>
   
-    <a href="/2023/03/21/hello-world/" id="article-nav-older" class="article-nav-link-wrap">
-      <div class="article-nav-title">Hello World</div>
+  
+    <a href="/2016/03/31/%E5%9C%BA%E6%99%AF%E5%86%85%E5%AE%B9%E7%9A%84%E5%86%8D%E7%8E%B0-%E5%A4%A9%E9%BE%99%E5%85%AB%E9%83%A8%E7%9A%84%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90-%E4%BA%8C/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">场景内容的再现 - 天龙八部的源码分析(二)</div>
       <strong class="article-nav-caption">></strong>
     </a>
   

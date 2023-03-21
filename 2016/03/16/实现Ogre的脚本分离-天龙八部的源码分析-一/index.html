@@ -4,17 +4,22 @@
   <meta charset="utf-8">
   
   <meta http-equiv="X-UA-Compatible" content="IE=edge" >
-  <title>我的博客 | 夏冰</title>
+  <title>实现Ogre的脚本分离 - 天龙八部的源码分析(一) | 夏冰</title>
   <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-  <meta property="og:type" content="article">
-<meta property="og:title" content="我的博客">
-<meta property="og:url" content="http://www.crazygl.com/2023/03/21/%E6%88%91%E7%9A%84%E5%8D%9A%E5%AE%A2/index.html">
+  <meta name="description" content="目的在研究天龙八部游戏的源码之时, 发现 Ogre 材质的模板部分被单独放在一个 material 文件之内, 继承模板的其他材质则位于另外的文件, 当我使用Ogre 官方源码, 加载脚本时其不会查找位于其他material文件内的基模板, 因此导致继承的材质部分加载失败. 分析材质脚本文件举例, 脚本文件”女主角_脸01.material”其内的脚本代码为 material 女主角_鸡蛋脸_01">
+<meta property="og:type" content="article">
+<meta property="og:title" content="实现Ogre的脚本分离 - 天龙八部的源码分析(一)">
+<meta property="og:url" content="http://www.crazygl.com/2016/03/16/%E5%AE%9E%E7%8E%B0Ogre%E7%9A%84%E8%84%9A%E6%9C%AC%E5%88%86%E7%A6%BB-%E5%A4%A9%E9%BE%99%E5%85%AB%E9%83%A8%E7%9A%84%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90-%E4%B8%80/index.html">
 <meta property="og:site_name" content="夏冰">
+<meta property="og:description" content="目的在研究天龙八部游戏的源码之时, 发现 Ogre 材质的模板部分被单独放在一个 material 文件之内, 继承模板的其他材质则位于另外的文件, 当我使用Ogre 官方源码, 加载脚本时其不会查找位于其他material文件内的基模板, 因此导致继承的材质部分加载失败. 分析材质脚本文件举例, 脚本文件”女主角_脸01.material”其内的脚本代码为 material 女主角_鸡蛋脸_01">
 <meta property="og:locale">
-<meta property="article:published_time" content="2023-03-21T15:01:27.000Z">
-<meta property="article:modified_time" content="2023-03-21T15:01:27.022Z">
+<meta property="og:image" content="http://7xrs2u.com1.z0.glb.clouddn.com/material_seperate_001.jpg">
+<meta property="article:published_time" content="2016-03-15T20:48:54.000Z">
+<meta property="article:modified_time" content="2016-03-15T21:38:25.123Z">
 <meta property="article:author" content="夏冰">
+<meta property="article:tag" content="Ogre, 天龙八部, 图形">
 <meta name="twitter:card" content="summary">
+<meta name="twitter:image" content="http://7xrs2u.com1.z0.glb.clouddn.com/material_seperate_001.jpg">
   
     <link rel="alternative" href="/atom.xml" title="夏冰" type="application/atom+xml">
   
@@ -188,11 +193,11 @@
 	</div>
 </nav>
 
-      <div class="body-wrap"><article id="post-我的博客" class="article article-type-post" itemscope itemprop="blogPost">
+      <div class="body-wrap"><article id="post-实现Ogre的脚本分离-天龙八部的源码分析-一" class="article article-type-post" itemscope itemprop="blogPost">
   
     <div class="article-meta">
-      <a href="/2023/03/21/%E6%88%91%E7%9A%84%E5%8D%9A%E5%AE%A2/" class="article-date">
-  	<time datetime="2023-03-21T15:01:27.000Z" itemprop="datePublished">2023-03-21</time>
+      <a href="/2016/03/16/%E5%AE%9E%E7%8E%B0Ogre%E7%9A%84%E8%84%9A%E6%9C%AC%E5%88%86%E7%A6%BB-%E5%A4%A9%E9%BE%99%E5%85%AB%E9%83%A8%E7%9A%84%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90-%E4%B8%80/" class="article-date">
+  	<time datetime="2016-03-15T20:48:54.000Z" itemprop="datePublished">2016-03-16</time>
 </a>
     </div>
   
@@ -205,7 +210,7 @@
         
   
     <h1 class="article-title" itemprop="name">
-      我的博客
+      实现Ogre的脚本分离 - 天龙八部的源码分析(一)
     </h1>
   
 
@@ -213,7 +218,15 @@
       
       <div class="article-info article-info-post">
         
+	<div class="article-tag tagcloud">
+		<ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/Ogre-%E5%A4%A9%E9%BE%99%E5%85%AB%E9%83%A8-%E5%9B%BE%E5%BD%A2/" rel="tag">Ogre, 天龙八部, 图形</a></li></ul>
+	</div>
+
         
+	<div class="article-category tagcloud">
+	<a class="article-category-link" href="/categories/Ogre/">Ogre</a>
+	</div>
+
 
         <div class="clearfix"></div>
       </div>
@@ -221,7 +234,29 @@
     
     <div class="article-entry" itemprop="articleBody">
       
-        
+        <h2 id="目的"><a href="#目的" class="headerlink" title="目的"></a>目的</h2><p>在研究天龙八部游戏的源码之时, 发现 Ogre 材质的模板部分被单独放在一个 material 文件之内, 继承模板的其他材质则位于另外的文件, 当我使用Ogre 官方源码, 加载脚本时其不会查找位于其他material文件内的基模板, 因此导致继承的材质部分加载失败.</p>
+<h2 id="分析"><a href="#分析" class="headerlink" title="分析"></a>分析</h2><h3 id="材质脚本文件"><a href="#材质脚本文件" class="headerlink" title="材质脚本文件"></a>材质脚本文件</h3><p>举例, 脚本文件”女主角_脸01.material”其内的脚本代码为</p>
+<pre><code>material 女主角_鸡蛋脸_01  : premierBaseTemplate
+&#123;
+      set_texture_alias &lt;baseTexture&gt; 女主角_鸡蛋脸_01.TGA 
+&#125;
+</code></pre>
+<p>这里材质”女主角_鸡蛋脸_01” 由基础材质 “premierBaseTemplate” 派生而来, 而材质 “premierBaseTemplate” 则位于 “actorBaseTemplate.material” 文件中, 如果直接使用 Ogre 加载这两个材质, 将无法正确加载派生材质.</p>
+<h3 id="分析源码"><a href="#分析源码" class="headerlink" title="分析源码"></a>分析源码</h3><p>在分析源码和日志的过程中, 我发现天龙八部源码其使用不同的脚本加载器分析 material 脚本, 其中天龙八部使用的是 MaterialSerializer 类的 parseScript() 函数分析”.material”后缀的脚本, 而官方源码则使用 ScriptCompilerManager 类来分析 “.material” 后缀的脚本, 而在 ScriptCompilerManager 的分析过程中, 其不会去查找基材质是否已经加载, 这一点与 MaterialSerializer 的处理方法有所不同. </p>
+<h3 id="解决问题"><a href="#解决问题" class="headerlink" title="解决问题"></a>解决问题</h3><p>因此, 为了让 Ogre 默认使用 MaterialSerializer 类的相关函数来处理 “.material” 材质, 我们需要修改 Ogre 内加载器的注册部分, 首先我们找到 ScriptCompilerManager 类的构造函数, 注释掉 “.material” 的注册</p>
+<pre><code>// mScriptPatterns.push_back(&quot;*.material&quot;); 
+</code></pre>
+<p>现在, 我们在 MaterialManager 的构造函数内增加 “.material” 的注册, 使得该管理器成为处理 “material” 脚本的默认选择</p>
+<pre><code>mScriptPatterns.push_back(&quot;*.material&quot;);
+ResourceGroupManager::getSingleton()._registerScriptLoader(this);
+</code></pre>
+<p>最后一步, 在 MaterialManager 的 parseScript() 方法内, 注释掉默认的脚本处理, 使用 MaterialSerializer 类来处理脚本.</p>
+<pre><code>// ScriptCompilerManager::getSingleton().parseScript(stream, groupName);
+mSerializer-&gt;parseScript(stream, groupName);
+</code></pre>
+<h3 id="结果"><a href="#结果" class="headerlink" title="结果"></a>结果</h3><p>现在在直接加载”女主角_脸01.material”, 就可以看到正确的显示结果了.</p>
+<p><img src="http://7xrs2u.com1.z0.glb.clouddn.com/material_seperate_001.jpg" alt="结果演示"></p>
+
       
     </div>
     
@@ -230,9 +265,18 @@
     
 <nav id="article-nav">
   
+    <a href="/2016/03/31/%E5%9C%BA%E6%99%AF%E5%86%85%E5%AE%B9%E7%9A%84%E5%86%8D%E7%8E%B0-%E5%A4%A9%E9%BE%99%E5%85%AB%E9%83%A8%E7%9A%84%E6%BA%90%E7%A0%81%E5%88%86%E6%9E%90-%E4%BA%8C/" id="article-nav-newer" class="article-nav-link-wrap">
+      <strong class="article-nav-caption"><</strong>
+      <div class="article-nav-title">
+        
+          场景内容的再现 - 天龙八部的源码分析(二)
+        
+      </div>
+    </a>
   
-    <a href="/2023/03/21/hello-world/" id="article-nav-older" class="article-nav-link-wrap">
-      <div class="article-nav-title">Hello World</div>
+  
+    <a href="/2016/03/12/Bullet%E7%89%A9%E7%90%86%E5%BC%95%E6%93%8E%E5%9C%A8OpenGL%E4%B8%AD%E7%9A%84%E5%BA%94%E7%94%A8/" id="article-nav-older" class="article-nav-link-wrap">
+      <div class="article-nav-title">Bullet物理引擎在OpenGL中的应用</div>
       <strong class="article-nav-caption">></strong>
     </a>
   
