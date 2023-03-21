@@ -1,0 +1,131 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../../style.css">
+<title>step</title>
+<meta http-equiv="Content-Type" content="text/html; charset=cp936">
+</head>
+<body>
+
+<ul>
+<li>
+三个目录
+
+<ul>
+<li>
+..\bin\$(ConfigurationName)
+
+<li>
+..\obj\$(ConfigurationName)
+
+<li>
+\((OGRE_HOME)\bin\\)(ConfigurationName)
+
+</ul>
+</ul>
+
+<ul>
+<li>
+非 UNICODE 字符
+
+</ul>
+
+<ul>
+<li>
+库
+
+<ul>
+<li>
+OgreMain_d.lib OIS_d.lib OgreRTShaderSystem_d.lib
+
+<li>
+OgreMain.lib OIS.lib OgreRTShaderSystem.lib
+
+</ul>
+</ul>
+
+<ul>
+<li>
+添加类
+
+<li>
+添加代码
+
+<ul>
+<li>
+using namespace Ogre;
+
+<li>
+using namespace OgreBites;
+
+</ul>
+</ul>
+
+<ul>
+<li>
+添加目录
+
+<ul>
+<li>
+..\..\common\include
+
+</ul>
+<li>
+添加文件 FileSystemLayerImpl_WIN32.cpp
+
+</ul>
+
+<ul>
+<li>
+头文件
+
+<ul>
+<li>
+#include "BaseApplication.h"
+
+</ul>
+<li>
+派生类 BaseApplication
+
+<li>
+重写cpp 文件, 添加 main 函数
+
+</ul>
+
+<pre c++>
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+#if OGRE_PLATFORM == OGRE_PLATFORM_WIN32
+#define WIN32_LEAN_AND_MEAN
+#include "windows.h"
+
+	INT WINAPI WinMain( HINSTANCE hInst, HINSTANCE, LPSTR strCmdLine, INT )
+#else
+	int main(int argc, char **argv)
+#endif
+	{
+		try
+		{
+			BaseApplication app;
+			app.go();
+		}
+		catch (Ogre::Exception&amp; e)
+		{
+#if OGRE_PLATFORM == OGRE_PLATFORM_WIN32
+			MessageBoxA(NULL, e.getFullDescription().c_str(), "An exception has occurred!", MB_ICONERROR | MB_TASKMODAL);
+#else
+			std::cerr &lt;&lt; "An exception has occurred: " &lt;&lt; e.getFullDescription().c_str() &lt;&lt; std::endl;
+#endif
+		}
+		return 0;
+	}
+
+#ifdef __cplusplus
+}
+#endif
+</pre>
+
+</body>
+</html>

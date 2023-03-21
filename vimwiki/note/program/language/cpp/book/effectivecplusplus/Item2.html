@@ -1,0 +1,104 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../../../../style.css">
+<title>Item2</title>
+<meta http-equiv="Content-Type" content="text/html; charset=cp936">
+</head>
+<body>
+
+<ul>
+<li>
+该条目称为"选择编译器而不是预处理器"更合适
+
+<li>
+使用#define产生的宏名不会进入编译器的符号表中. 例如 #define ASPECT_RATIO 1.653, 如果出现错误, 则会指向 1.653, 而不是宏名ASPECT_RATIO, 会给人调试带来很大的困扰.
+
+<li>
+使用const还可以产生更少的代码
+
+<li>
+使用const时应当注意定义常量指针的问题. 指针定义为常量后, 其指向的定义也应当定义为常量. 例如常量字符串指针:
+<pre c++>
+const char* const authorName = "Scott Meyers";
+</pre>
+
+<li>
+对于常量字符串, 最好使用string来实现
+<pre c++>
+const std::string authorName("Scott Meyers");
+</pre>
+
+<li>
+仅用于类的常量, 最好定义为静态常量成员
+<pre c++>
+class GamePlayer{
+private:
+	static const int NumTurns = 5;
+	int scores[NumTurns];
+	...
+};
+</pre>
+
+<li>
+注意上面的NumTurns 是声明, 而不是定义. 通常C++要求对任何使用的内容都需要进行定义, 但是类的静态整数常量则是一个例外. 只要你不需要得到这些常量的地址, 那么这些常量可以仅仅声明, 而不需要去定义. 如果你的编译器坚持需要一个定义, 或者需要得到该常量的地址, 你可以在源文件中写定义, 如下
+<pre c++>
+const int GamePlayer::NumTurns;
+</pre>
+
+<li>
+使用#define 则不能实现如上的包装, 以及私有#define.
+
+<li>
+在类中初始化只能用于整数常量类型. 你可以在源文件中的定义处初始化常量成员.
+<pre c++>
+class CostEstimate{
+private:
+	static const double FudgeFactor;
+	...
+};
+const double CostEstimate::FudgeFactor = 1.35;
+</pre>
+
+<li>
+当程序在编译过程中就需要知道类常量成员的值时, 例如类成员数组需要知道其大小, 如GamePlayer::scores数组. 我们可以使用"the enum hack"技术
+<pre c++>
+class GamePlayer {
+private:
+	enum { NumTurns = 5 };
+	int scores[NumTurns];
+	...
+};
+</pre>
+
+<li>
+枚举的行为类似#define, 不会产生指针, 不能够引用, 且不会产生不必要的内存分配.
+
+<li>
+使用#define实现一个函数功能, 有很多的缺点, 首先每个参数要用括号括起来, 其次会产生预料之外的行为, 例如多次自增操作.
+
+<li>
+为了解决上面的问题, 我们可以使用模板inline函数来替代
+<pre c++>
+template &lt;typename T&gt;
+inline void callWithMax(const T&amp; a, const T&amp; b)
+{
+	tof(a &gt; b ? a : b);
+}
+</pre>
+
+<li>
+结论
+
+<ol>
+<li>
+简单的常量, 使用const和enum来替代#define
+
+<li>
+带函数功能的宏, 可使用inline函数来替代#define
+
+</ol>
+</ul>
+
+</body>
+</html>

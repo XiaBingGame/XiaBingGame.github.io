@@ -1,0 +1,274 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../style.css" />
+    <title>stl</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<h1 id="toc_1">容器</h1>
+<ul>
+<li>
+一个容器拥有其元素, 元素的生命期不能超过容器的生命期.
+
+<li>
+关联的类型
+
+</ul>
+<ul>
+<li>
+定义
+<table>
+<tr>
+<th>
+类型
+</th>
+<th>
+表示
+</th>
+<th>
+详述
+</th>
+</tr>
+<tr>
+<td>
+值的类型
+</td>
+<td>
+X::value_type
+</td>
+<td>
+存储在容器中元素的类型 
+</td>
+</tr>
+<tr>
+<td>
+迭代器类型 
+</td>
+<td>
+X::iterator
+</td>
+<td>
+&nbsp;
+</td>
+</tr>
+<tr>
+<td>
+常量迭代器 
+</td>
+<td>
+X::const_iterator
+</td>
+<td>
+&nbsp;
+</td>
+</tr>
+<tr>
+<td>
+引用类型
+</td>
+<td>
+X::reference
+</td>
+<td>
+使得其行为类似于容器值类型的引用
+</td>
+</tr>
+<tr>
+<td>
+常量引用类型
+</td>
+<td>
+X::const_reference
+</td>
+<td>
+&nbsp;
+</td>
+</tr>
+<tr>
+<td>
+指针类型
+</td>
+<td>
+X::pointer
+</td>
+<td>
+指向容器值类型的指针
+</td>
+</tr>
+<tr>
+<td>
+距离类型
+</td>
+<td>
+X::difference_type
+</td>
+<td>
+&nbsp;
+</td>
+</tr>
+<tr>
+<td>
+大小类型
+</td>
+<td>
+X::size_type
+</td>
+<td>
+&nbsp;
+</td>
+</tr>
+</table>
+
+<ul>
+<li>
+容器的size表示容器所含元素的数量
+
+<li>
+容器的area表示其所占的所有字节量
+
+<li>
+一个 variable sized 容器: 一个提供了插入和移除元素方法的容器. 在容器生命期内可能会改变其大小. 对应的容器为 fixed size 容器.
+
+</ul>
+<li>
+有效的表达式
+
+<ul>
+<li>
+如果容器 Assignable, EqualityComparable, LessThanComparable, 则接下来的表达式必须有效.
+
+</ul>
+</ul>
+<ul>
+<li>
+表达式语义
+<table>
+<tr>
+<th>
+名称
+</th>
+<th>
+表达式 
+</th>
+<th>
+返回类型
+</th>
+</tr>
+<tr>
+<td>
+范围开始 
+</td>
+<td>
+a.begin()
+</td>
+<td>
+iterator if a is mutable, const_iterator otherwise
+</td>
+</tr>
+<tr>
+<td>
+范围结束
+</td>
+<td>
+a.end()
+</td>
+<td>
+iterator if a is mutable, const_iterator otherwise
+</td>
+</tr>
+<tr>
+<td>
+大小
+</td>
+<td>
+a.size()
+</td>
+<td>
+size_type
+</td>
+</tr>
+<tr>
+<td>
+最大大小 
+</td>
+<td>
+a.max_size()
+</td>
+<td>
+size_type
+</td>
+</tr>
+<tr>
+<td>
+空容器 
+</td>
+<td>
+a.empty()
+</td>
+<td>
+可转换的布尔值 
+</td>
+</tr>
+<tr>
+<td>
+交换
+</td>
+<td>
+a.swap()
+</td>
+<td>
+void
+</td>
+</tr>
+</table>
+
+<ul>
+<li>
+拷贝构造函数: X(a)
+
+<li>
+拷贝构造函数: X b(a)
+
+<li>
+赋值操作: b = a
+
+<li>
+析构函数: a.~X()
+
+<li>
+起始结束: a.begin() a.end
+
+<li>
+大小: a.size()
+
+<li>
+最大大小: a.max_size()
+
+<li>
+空容器: a.empty()
+
+<li>
+交换: a.swap(b)
+
+</ul>
+</ul>
+
+<h1 id="toc_2">Forward Container</h1>
+
+    </div>
+</body>
+</html>

@@ -1,0 +1,213 @@
+ï»¿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../style.css" />
+    <title>qttutorial</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/index.html">é¦–é¡µ</a>
+		</li>
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/diary/diary.html">æ—¥è®°</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<h2 id="toc_0.1">Analog Clock Demo</h2>
+<ul>
+<li>
+PaintEvent »æÖÆÊ±ÖÓ
+
+<li>
+QTimer ¶¨Ê±Æ÷
+
+</ul>
+    
+<h2 id="toc_0.2">Calculator Demo</h2>
+<ul>
+<li>
+¼ÆËãÆ÷, GridLayout, QToolButton
+
+</ul>
+
+<h2 id="toc_0.3">Calendar Widget Demo</h2>
+<ul>
+<li>
+ÏÔÊ¾ÁËÈÕÀú, ÒÔ¼°Ò»Ğ©¿Ø¼ş
+
+<li>
+Ã¶¾Ù²Ù×÷ÏµÍ³ÖĞµÄÓïÑÔ
+
+<ol>
+<li>
+µÃµ½¸ÃÓïÑÔËù±íÊ¾µÄÕûÊı
+
+<ul>
+<li>
+QLocale::Language lang = static_cast&lt;QLocale::Language&gt;(_lang);
+
+</ul>
+<li>
+È»ºó·µ»Ø¸ÃÓïÑÔµÄ¹ú¼ÒÁĞ±í
+
+<ul>
+<li>
+QList&lt;QLocale::Country&gt; countries = QLocale::countriesForLanguage(lang);
+
+</ul>
+<li>
+±éÀú
+
+<ol>
+<li>
+µÃµ½¹ú¼Ò
+
+<ul>
+<li>
+QLocale::Country country = countries.at(i);
+
+</ul>
+<li>
+¸ù¾İÓïÑÔĞòºÅµÃµ½±íÊ¾¸ÃÓïÑÔµÄ×Ö·û´®
+
+<ul>
+<li>
+QString label = QLocale::languageToString(lang);
+
+</ul>
+<li>
+¸ù¾İ¹ú¼ÒÃ¶¾ÙÖµµÃµ½±íÊ¾¸Ã¹ú¼ÒµÄ×Ö·û´®
+
+<ul>
+<li>
+label += QLocale::countryToString(country);
+
+</ul>
+<li>
+ÅĞ¶Ï¸ÃLocaleÊÇ·ñµÈÓÚ±¾»úÆ÷µÄ±¾µØlocale
+
+<ul>
+<li>
+if (this-&gt;locale().language() == lang &amp;&amp; this-&gt;locale().country() == country)
+
+</ul>
+</ol>
+</ol>
+</ul>
+                
+
+<h2 id="toc_0.4">Character Map Demo</h2>
+<ul>
+<li>
+×Ô¶¨ÒåÒ»¸öWidget, Í¨¹ıÖØĞ´PaintEvent»æÖÆ, ÖØĞ´º¯ÊısizeHint, mouseMoveEvent, mousePressEvent
+
+<li>
+Ê¹ÓÃÁËScrollArea°üº¬Ò»¸öWidget
+
+<li>
+Êó±êÒÆ¶¯ºÍÊó±ê°´ÏÂĞÅÏ¢
+
+<li>
+¼ôÌù°åµÄÊ¹ÓÃ
+
+</ul>
+    
+<h2 id="toc_0.5">Code Editor Demo</h2>
+<ul>
+<li>
+Ö±½Ó´ÓQPlainTextEditÅÉÉú, ±ÈQTextEdit´¦Àí´¿ÎÄ±¾¸ü¼ÓÓÅ»¯.
+
+<li>
+¸ßÁÁÎÄ±¾Ñ¡Ôñ
+
+<li>
+ÎÄ±¾¿ò×ó±ß±ßÔµ´¦»æÖÆĞĞºÅ
+
+</ul>
+    
+<h2 id="toc_0.6">Group Boxes Demo</h2>
+<ul>
+<li>
+Group Boxes ³£ÓÃÓÚ×éÖ¯ check box ºÍ radio button
+
+<li>
+ÈçGroup BoxesÖĞÖ»º¬ check boxes, ÔòÖ»ÄÜÓĞÒ»¸ö±»Ñ¡ÖĞ
+
+<li>
+²»Í¬µÄ°´Å¥, ¿ÉÌí¼Ó²Ëµ¥, ÉèÖÃ²»Í¬·ç¸ñ
+
+</ul>
+    
+<h2 id="toc_0.7">Icons Demo</h2>
+<ul>
+<li>
+QIconÌá¹©ÁËËÄ¸öÄ£Ê½
+
+<ul>
+<li>
+QIcon::Normal --- ±íÊ¾²»Óë¸ÃIcon»¥¶¯, Í¼±ê¿ÉÓÃ
+
+<li>
+QIcon::Active --- ¿É»¥¶¯, ÈçÊó±êÔÚÆäÉÏ»òµã»÷
+
+<li>
+QIcon::Disable --- ²»¿ÉÓÃ
+
+<li>
+QIcon::Selected --- µ±Ñ¡Ôñ¸ÃÍ¼±êµÄÊ±ºòÏÔÊ¾
+
+<li>
+QIcon::On ºÍ QIcon::Off ¿ØÖÆQIconµÄ×´Ì¬.
+
+</ul>
+</ul>
+        
+<h2 id="toc_0.8">Image Viewer Demo</h2>
+<ul>
+<li>
+QSizePolicy::Ignored ¿ÉÒÔºöÂÔ´°ÌåµÄ±ä»¯¶ø²»ÒÆ¶¯»òÕßËõ·Å
+
+<li>
+²Ëµ¥ÏîµÄ½¨Á¢, aboutQt() ÎªÏµÍ³slot
+
+<li>
+ÎÄ¼ş¶Ô»°¿ò
+
+<li>
+ÏûÏ¢¶Ô»°¿ò
+
+<li>
+tr¿ÉÒÔÓÃ²ÎÊı tr("Cannot load %1.").arg(fileName)
+
+<li>
+´ÓÍ¼ÏñÎÄ¼şÖ±½ÓµÃµ½pixmapµ½labelÖĞ
+	-imageLabel-&gt;setPixmap(QPixmap::fromImage(image));
+
+<li>
+Ëõ·Å´óĞ¡ resize
+
+</ul>
+
+<h2 id="toc_0.9">Line Editor Demo</h2>
+<ul>
+<li>
+ÑİÊ¾ Line EditorµÄ¸÷ÖÖÊôĞÔ
+
+</ul>
+    
+<h2 id="toc_0.10">Movie Demo</h2>
+<ul>
+<li>
+µÃµ½±ê×¼Í¼±ê style()-&gt;standardIcon(QStyle::SP_DialogOpenButton)
+
+</ul>
+
+    </div>
+</body>
+</html>

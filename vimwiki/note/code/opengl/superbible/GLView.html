@@ -1,0 +1,93 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../../style.css">
+<title>GLView</title>
+<meta http-equiv="Content-Type" content="text/html; charset=cp936">
+</head>
+<body>
+
+<p>
+1. 本例使用了MFC代码
+2. 基于对话框编程, 主对话框为 IDC_GLVIEW_DIALOG, 对话框 IDC_GLVIEW_PFORMAT 用于显示细节信息
+3. CGLViewDlg 类
+</p>
+<ul>
+<li>
+OnInitDialog() 函数
+
+<ul>
+<li>
+注册窗口类 OpenGLClass 用于显示 OpenGL 窗口
+
+<li>
+DescribePixelFormat 函数用于遍历所有像素格式
+
+</ul>
+<li>
+OnSelchangeList() 函数
+
+<ul>
+<li>
+设计 CGLWindow 作为绘制OpenGL的类, 派生自 CWnd, 使用其Create函数创建一个窗口
+
+<li>
+glGetString 或许显卡, 渲染器, 版本信息
+
+<li>
+glGetString(GL_EXTENSIONS) 函数进行遍历扩展
+
+<li>
+wglGetExtensionsStringARB 可用来获取 wgl 扩展
+
+</ul>
+</ul>
+<p>
+4. CGLWindow 类
+</p>
+<ul>
+<li>
+OnCreate() 函数
+
+<ul>
+<li>
+设置像素格式, 创建 rendering context
+
+<li>
+设置纹理, 定时器
+
+</ul>
+<li>
+OnDestroy() 函数
+
+<ul>
+<li>
+删除纹理, 删除 rendering context
+
+<li>
+释放 device context
+
+</ul>
+<li>
+OnSize() 函数
+
+<ul>
+<li>
+设置投影矩阵
+
+</ul>
+<li>
+OnPaint() 函数
+
+<ul>
+<li>
+进行OpenGL 渲染 
+
+</ul>
+<li>
+全局 gltResourceBMPBIts 用于进行位图读取
+
+</ul>
+
+</body>
+</html>

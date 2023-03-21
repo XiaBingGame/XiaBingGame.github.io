@@ -1,0 +1,100 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../style.css" />
+    <title>Jekyll</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///D:/Documents/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+
+<h1 id="toc_1">目录结构</h1>
+<ul>
+<li>
+基本结构
+<pre>
+.
+├── _config.yml
+├── _drafts
+|   ├── begin-with-the-crazy-ideas.textile
+|   └── on-simplicity-in-technology.markdown
+├── _includes
+|   ├── footer.html
+|   └── header.html
+├── _layouts
+|   ├── default.html
+|   └── post.html
+├── _posts
+|   ├── 2007-10-29-why-every-programmer-should-play-nethack.textile
+|   └── 2009-04-26-barcamp-boston-4-roundup.textile
+├── _data
+|   └── members.yml
+├── _site
+├── .jekyll-metadata
+└── index.html
+</pre>
+
+</ul>
+<table>
+<tr>
+<th>
+文件和目录 
+</th>
+<th>
+描述
+</th>
+</tr>
+<tr>
+<td>
+_config.yml
+</td>
+<td>
+存储配置数据
+</td>
+</tr>
+<tr>
+<td>
+_draft
+</td>
+<td>
+不发表的 post, 这些文件的格式没有日期: title.MARKUP
+</td>
+</tr>
+<tr>
+<td>
+_includes
+</td>
+<td>
+通过你的 layouts 和 posts 混合匹配该部分, liquid tag {% include file.ext %} 可用于在 _includes/file.ext 内包含该部分
+</td>
+</tr>
+<tr>
+<td>
+_layout
+</td>
+<td>
+包装 post 的模板. 在 YAML Front Matter 中选择 layout. liquid tag <img src=" content " /> 用于插入内容
+</td>
+</tr>
+<tr>
+<td>
+_post
+</td>
+<td>
+必须匹配如下格式
+</td>
+</tr>
+</table>
+
+    </div>
+</body>
+</html>

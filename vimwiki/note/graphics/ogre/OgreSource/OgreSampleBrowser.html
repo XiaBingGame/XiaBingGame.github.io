@@ -1,0 +1,316 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../style.css" />
+    <title>OgreSampleBrowser</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<ul>
+<li>
+Ogre::FrameListener
+
+<ul>
+<li>
+Root::addFrameListener 添加一个 FrameListener 派生类的实例. 可以添加多个监听器.
+
+<li>
+frameStarted
+
+<li>
+frameRenderingQueued --- 在所有渲染的目标发出渲染命令之后, 翻转缓存之前调用. 可以在GPU处理队列时, CPU做些有用的工作, 这些工作只影响下一帧.
+
+<li>
+frameEnded --- 在所有渲染目标更新和缓存翻转之后调用.
+
+</ul>
+<li>
+Ogre::WindowEventListener --- 用于发送窗口事件到客户端app的回调类.
+
+<ul>
+<li>
+windowMoved
+
+<li>
+windowResized
+
+<li>
+windowClosing
+
+<li>
+windowClosed
+
+<li>
+windowFocusChange
+
+</ul>
+<li>
+OIS::KeyListener --- 通过 Keyboard::setEventCallback 将回调设置到Keyboard实例中.
+
+<ul>
+<li>
+keyPressed
+
+<li>
+keyReleased
+
+</ul>
+<li>
+OIS::MouseListener --- Mouse::setEventCallback
+
+<ul>
+<li>
+mouseMoved
+
+<li>
+mousePressed
+
+<li>
+mouseReleased
+
+</ul>
+<li>
+上面四个类派生 SampleContext
+
+<li>
+Ogre::FileSystemLayer --- 用于查找Ogre配置文件在哪里以及logs和设置文件写入哪里.
+
+<ul>
+<li>
+构造函数 --- 将应用程序所在目录压入配置文件路径容器中. 准备Home路径下的子目录.
+
+<li>
+getConfigFilePath --- 查找配置文件地址. 首先看Home路径, 其次是配置文件路径容器.
+
+<li>
+getWritablePath --- Home目录
+
+<li>
+setConfigPaths
+
+<li>
+setHomePath
+
+</ul>
+<li>
+Ogre::OverlaySystem --- 该类简化overlay系统的初始化和结束. 要想使得overlay可见, 你必须注册这个实例作为你场景管理器中的RenderQueueListener.
+
+<li>
+SdkTrayListener
+
+<ul>
+<li>
+buttonHit
+
+<li>
+itemSelected
+
+<li>
+labelHit
+
+<li>
+sliderMoved
+
+<li>
+checkBoxToggled
+
+<li>
+okDialogClosed
+
+<li>
+yesNoDialogClosed
+
+</ul>
+<li>
+程序主流程 main函数
+
+<ul>
+<li>
+创建 OgreBites::SampleBrowser 对象
+
+<ul>
+<li>
+基类 SampleContext 构造函数
+
+<ul>
+<li>
+Ogre::FileSystemLayer 构造函数创建了一个对象
+
+<ul>
+<li>
+获得了配置文件夹路径(程序文件所在路径)
+
+<li>
+在Home路径创建了配置文件夹
+
+</ul>
+</ul>
+<li>
+SampleBrowser 构造函数
+
+</ul>
+<li>
+SampleBrowser::go()函数 ---&gt; 实际调用 SampleContext::go()函数
+
+<ul>
+<li>
+SampleContext::initApp
+
+<ul>
+<li>
+SampleContext::createRoot()
+
+<ul>
+<li>
+创建 Ogre::Root
+
+<li>
+创建 Ogre::OverlaySystem
+
+</ul>
+<li>
+SampleBrowser::oneTimeConfig()
+
+<ul>
+<li>
+Ogre::Root::restoreConfig()
+
+<li>
+Ogre::Root::showConfigDialog()
+
+</ul>
+<li>
+如果非第一次运行, 设置渲染器系统
+
+<li>
+SampleBrowser::setup()
+
+<ul>
+<li>
+SampleBrowser::createWindow()
+
+<ul>
+<li>
+Ogre::Root::initialise 创建一个自动窗口
+
+</ul>
+<li>
+SampleContext::setupInput()
+
+<ul>
+<li>
+OIS::InputManager::createInputSystem 创建一个输入系统
+
+<li>
+SampleContext::createInputDevices()
+
+<ul>
+<li>
+设置鼠标键盘.
+
+</ul>
+<li>
+SampleContext::windowResized()
+
+<ul>
+<li>
+主要设置鼠标状态的宽度和高度和渲染窗口一致.
+
+</ul>
+<li>
+OIS:Keyboard::setEventCallback() 和 OIS::Mouse::setEventCallback() 设置回调.
+
+</ul>
+<li>
+SampleContext::locateResources()
+
+<ul>
+<li>
+Ogre::ResourceGroupManager::addResourceLocation() --- 添加资源位置
+
+<li>
+添加支持的着色器语言
+
+</ul>
+<li>
+Ogre::ResourceGroupManager::initialiseResourceGroup() --- 先初始化 Essential 组的资源
+
+<li>
+创建一个OgreBits::SdkTrayManager对象
+
+<li>
+OgreBits::SdkTrayManager::showBackdrop 显示背景
+
+<li>
+隐藏 TL_NONE 位置的Tray容器
+
+<li>
+加载着色器Cache
+
+<li>
+SampleBrowser::createDummyScene()
+
+<li>
+SampleBrowser::loadResources()
+
+<li>
+SampleBrowser::loadSamples()
+
+<li>
+设置纹理管理器的默认Mipmaps数.
+
+<li>
+Ogre::Root::addFrameListener
+
+<li>
+Ogre::WindowEventUtilities::addWindowEventListener
+
+<li>
+材质管理器创建一个材质 SampleThumbnail, 创建该材质的纹理单元状态, Ogre::Pass::createTextureUnitState
+
+<li>
+SampleBrowser::setupWidget
+
+<li>
+SampleBrowser::windowResized
+
+<li>
+运行启动sample --- OgreBrowser::runSample()
+
+</ul>
+<li>
+如果非第一次运行, 恢复上一个sample, 否则如果有初始sample, 则运行该sample
+
+</ul>
+<li>
+SampleBrowser::loadStartUpSample()
+
+<li>
+Ogre::Root::startRenderting --- 进入渲染循环
+
+<li>
+SampleContext::closeApp()
+
+</ul>
+</ul>
+<li>
+资源监听器
+
+</ul>
+
+    </div>
+</body>
+</html>

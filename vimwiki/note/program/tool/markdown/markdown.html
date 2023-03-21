@@ -1,0 +1,407 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../style.css" />
+    <title>markdown</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+<!--
+	<ul id="top-nav">
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+-->	
+</div>
+</div>
+    <div class="content">
+    
+<ul>
+<li>
+文字两旁加星号 "*", 加粗
+
+<li>
+不在 Markdown 涵盖范围之内的标签，都可以直接在文档里面用 HTML 标签书写。不需要额外标注这是 HTML 或是 Markdown；只要直接加标签就可以了。
+
+<li>
+一些 HTML 区块元素――比如 &lt; div&gt;、< table&gt;、< pre&gt;、< p&gt; 等标签，必须在前后加上空行与其它内容区隔开, 且它们的开始标签与结尾标签不能用制表符或空格来缩进. 例如加上一个表格
+<pre class="brush: html">
+这是一个普通段落。
+
+&lt;table&gt;
+    &lt;tr&gt;
+        &lt;td&gt;Foo&lt;/td&gt;
+    &lt;/tr&gt;
+&lt;/table&gt;
+
+这是另一个普通段落。
+</pre>
+
+<li>
+HTML 的区段（行内）标签如 &lt; span&gt;、< cite&gt;、< del&gt; 可以在 Markdown 的段落、列表或是标题里随意使用
+
+<li>
+甚至可以不用 Markdown 格式，而直接采用 HTML 标签来格式化。举例说明：如果比较喜欢 HTML 的 &lt; a&gt; 或 &lt; img&gt; 标签，可以直接使用这些标签，而不用 Markdown 提供的链接或是图像标签语法。
+
+<li>
+Markdown 语法在 HTML 区段标签间是有效的。
+
+<li>
+在 HTML 文件中，有两个字符需要特殊处理： &lt; 和 &amp; 。 &lt; 符号用于起始标签，& 符号则用于标记 HTML 实体，如果你只是想要显示这些字符的原型，你必须要使用实体的形式，像是 &amp;lt; 和 &amp;amp;。
+
+<li>
+Markdown 让你可以自然地书写字符，需要转换的由它来处理好了。如果你使用的 &amp; 字符是 HTML 字符实体的一部分，它会保留原状，否则它会被转换成 &amp;amp;。
+<pre class="brush: html">
+如果要在文档中插入一个版权符号
+&amp;copy;
+Markdown 会保留它不动。而若你写：
+AT&amp;T
+Markdown 就会将它转为：
+AT&amp;amp;T
+</pre>
+
+<ul>
+<li>
+类似的状况也会发生在 &lt; 符号上
+
+</ul>
+<li>
+一个 Markdown 段落是由一个或多个连续的文本行组成，它的前后要有一个以上的空行
+
+<li>
+如果你确实想要依赖 Markdown 来插入 <br /> 标签的话，在插入处先按入两个以上的空格然后回车。
+
+<li>
+Markdown 支持两种标题的语法，类 Setext 和类 atx 形式。
+
+<li>
+类 Setext 形式是用底线的形式，利用 = （最高阶标题）和 - （第二阶标题），例如：
+<pre class="brush: html">
+This is an H1
+=============
+
+This is an H2
+-------------
+</pre>
+
+<li>
+类 Atx 形式则是在行首插入 1 到 6 个 # ，对应到标题 1 到 6 阶，例如：
+<pre class="brush: html">
+# 这是 H1
+
+## 这是 H2
+
+###### 这是 H6
+</pre>
+
+<li>
+Markdown 标记区块引用是使用类似 email 中用 &gt; 的引用方式
+<pre class="brush: html">
+&gt; This is a blockquote with two paragraphs. Lorem ipsum dolor sit amet,
+&gt; consectetuer adipiscing elit. Aliquam hendrerit mi posuere lectus.
+&gt; Vestibulum enim wisi, viverra nec, fringilla in, laoreet vitae, risus.
+&gt; 
+&gt; Donec sit amet nisl. Aliquam semper ipsum sit amet velit. Suspendisse
+&gt; id sem consectetuer libero luctus adipiscing.
+</pre>
+
+<li>
+Markdown 也允许你偷懒只在整个段落的第一行最前面加上 &gt; ：
+<pre class="brush: html">
+&gt; This is a blockquote with two paragraphs. Lorem ipsum dolor sit amet,
+consectetuer adipiscing elit. Aliquam hendrerit mi posuere lectus.
+Vestibulum enim wisi, viverra nec, fringilla in, laoreet vitae, risus.
+
+&gt; Donec sit amet nisl. Aliquam semper ipsum sit amet velit. Suspendisse
+id sem consectetuer libero luctus adipiscing.
+</pre>
+
+<li>
+区块引用可以嵌套（例如：引用内的引用），只要根据层次加上不同数量的 &gt; ：
+<pre class="brush: html">
+&gt; This is the first level of quoting.
+&gt;
+&gt; &gt; This is nested blockquote.
+&gt;
+&gt; Back to the first level.
+</pre>
+
+<li>
+引用的区块内也可以使用其他的 Markdown 语法，包括标题、列表、代码区块等：
+<pre class="brush: html">
+&gt; ## 这是一个标题。
+&gt; 
+&gt; 1.   这是第一行列表项。
+&gt; 2.   这是第二行列表项。
+&gt; 
+&gt; 给出一些例子代码：
+&gt; 
+&gt;     return shell_exec("echo $input | $markdown_script");
+</pre>
+
+<li>
+无序列表使用星号、加号或是减号作为列表标记：
+<pre class="brush: html">
+*   Red
+*   Green
+*   Blue
+</pre>
+
+<li>
+有序列表则使用数字接着一个英文句点：
+<pre class="brush: html">
+1.  Bird
+2.  McHale
+3.  Parish
+</pre>
+
+<li>
+列表项目标记通常是放在最左边，但是其实也可以缩进，最多 3 个空格，项目标记后面则一定要接着至少一个空格或制表符
+
+<li>
+要让列表看起来更漂亮，你可以把内容用固定的缩进整理好
+<pre class="brush: html">
+*   Lorem ipsum dolor sit amet, consectetuer adipiscing elit.
+    Aliquam hendrerit mi posuere lectus. Vestibulum enim wisi,
+    viverra nec, fringilla in, laoreet vitae, risus.
+*   Donec sit amet nisl. Aliquam semper ipsum sit amet velit.
+    Suspendisse id sem consectetuer libero luctus adipiscing.
+</pre>
+
+<li>
+如果列表项目间用空行分开，在输出 HTML 时 Markdown 就会将项目内容用 &lt;p&gt; 标签包起来
+
+<li>
+列表项目可以包含多个段落，每个项目下的段落都必须缩进 4 个空格或是 1 个制表符
+<pre class="brush: html">
+1.  This is a list item with two paragraphs. Lorem ipsum dolor
+    sit amet, consectetuer adipiscing elit. Aliquam hendrerit
+    mi posuere lectus.
+
+    Vestibulum enim wisi, viverra nec, fringilla in, laoreet
+    vitae, risus. Donec sit amet nisl. Aliquam semper ipsum
+    sit amet velit.
+
+2.  Suspendisse id sem consectetuer libero luctus adipiscing.
+</pre>
+
+<li>
+如果要在列表项目内放进引用，那 &gt; 就需要缩进：
+<pre class="brush: html">
+*   A list item with a blockquote:
+
+    &gt; This is a blockquote
+    &gt; inside a list item.
+</pre>
+
+<li>
+如果要放代码区块的话，该区块就需要缩进两次，也就是 8 个空格或是 2 个制表符：
+<pre class="brush: html">
+*   一列表项包含一个列表区块：
+
+        &lt;代码写在这>
+</pre>
+
+<li>
+在行首出现数字-句点-空白，要避免这样的状况，你可以在句点前面加上反斜杠
+<pre class="brush: html">
+1986\. What a great season.
+</pre>
+
+<li>
+Markdown 会用 &lt;pre&gt; 和 <code> 标签来把代码区块包起来
+
+<li>
+在 Markdown 中建立代码区块很简单，只要简单地缩进 4 个空格或是 1 个制表符就可以，例如，下面的输入：
+<pre class="brush: html">
+这是一个普通段落：
+
+    这是一个代码区块。
+</pre>
+
+<li>
+你可以在一行中用三个以上的星号、减号、底线来建立一个分隔线，行内不能有其他东西。你也可以在星号或是减号中间插入空格。
+
+<li>
+Markdown 支持两种形式的链接语法： 行内式和参考式两种形式。不管是哪一种，链接文字都是用 [方括号] 来标记。
+
+<li>
+要建立一个行内式的链接，只要在方块括号后面紧接着圆括号并插入网址链接即可，如果你还想要加上链接的 title 文字，只要在网址后面，用双引号把 title 文字包起来即可，例如：
+<pre class="brush: html">
+This is [an example](http://example.com/ "Title") inline link.
+
+[This link](http://example.net/) has no title attribute.
+</pre>
+
+<li>
+参考式的链接是在链接文字的括号后面再接上另一个方括号，而在第二个方括号里面要填入用以辨识链接的标记：
+<pre class="brush: html">
+This is [an example][id] reference-style link.
+</pre>
+
+<ul>
+<li>
+你也可以选择性地在两个方括号中间加上一个空格：
+<pre class="brush: html">
+This is [an example][id] reference-style link.
+</pre>
+
+<li>
+接着，在文件的任意处，你可以把这个标记的链接内容定义出来：
+<pre class="brush: html">
+[id]: http://example.com/  "Optional Title Here"
+</pre>
+
+</ul>
+<li>
+链接内容定义的形式为：
+
+<ul>
+<li>
+方括号（前面可以选择性地加上至多三个空格来缩进），里面输入链接文字
+
+<li>
+接着一个冒号
+
+<li>
+接着一个以上的空格或制表符
+
+<li>
+接着链接的网址
+
+<li>
+选择性地接着 title 内容，可以用单引号、双引号或是括弧包着
+
+</ul>
+<li>
+隐式链接标记功能让你可以省略指定链接标记，这种情形下，链接标记会视为等同于链接文字，要用隐式链接标记只要在链接文字后面加上一个空的方括号，如果你要让 "Google" 链接到 google.com，你可以简化成：
+<pre class="brush: html">
+[Google][]
+</pre>
+
+<ul>
+<li>
+然后定义链接内容：
+<pre class="brush: html">
+[Google]: http://google.com/
+</pre>
+
+</ul>
+<li>
+链接的定义可以放在文件中的任何一个地方，我比较偏好直接放在链接出现段落的后面，你也可以把它放在文件最后面，就像是注解一样。
+<pre class="brush: html">
+I get 10 times more traffic from [Google] [1] than from
+[Yahoo] [2] or [MSN] [3].
+
+  [1]: http://google.com/        "Google"
+  [2]: http://search.yahoo.com/  "Yahoo Search"
+  [3]: http://search.msn.com/    "MSN Search"
+</pre>
+
+<li>
+Markdown 使用星号（*）和底线（_）作为标记强调字词的符号，被 * 或 _ 包围的字词会被转成用 &lt;em&gt; 标签包围，用两个 * 或 _ 包起来的话，则会被转成 &lt;strong&gt;，例如
+<pre class="brush: html">
+*single asterisks*
+
+_single underscores_
+
+**double asterisks**
+
+__double underscores__
+</pre>
+
+<li>
+如果要在文字前后直接插入普通的星号或底线，你可以用反斜线
+
+<li>
+如果要标记一小段行内代码，你可以用反引号把它包起来（`），例如：
+<pre class="brush: html">
+Use the `printf()` function.
+</pre>
+
+<ul>
+<li>
+如果要在代码区段内插入反引号，你可以用多个反引号来开启和结束代码区段：
+<pre class="brush: html">
+``There is a literal backtick (`) here.``
+</pre>
+
+</ul>
+<li>
+Markdown 使用一种和链接很相似的语法来标记图片，同样也允许两种样式： 行内式和参考式。
+
+<li>
+行内式的图片语法看起来像是：
+<pre class="brush: html">
+![Alt text](/path/to/img.jpg)
+
+![Alt text](/path/to/img.jpg "Optional title")
+</pre>
+
+<li>
+详细叙述如下：
+
+<ul>
+<li>
+一个惊叹号 !
+
+<li>
+接着一个方括号，里面放上图片的替代文字
+
+<li>
+接着一个普通括号，里面放上图片的网址，最后还可以用引号包住并加上 选择性的 'title' 文字。
+
+</ul>
+<li>
+参考式的图片语法则长得像这样：
+<pre class="brush: html">
+![Alt text][id]
+</pre>
+
+<ul>
+<li>
+「id」是图片参考的名称，图片参考的定义方式则和连结参考一样：
+<pre class="brush: html">
+[id]: url/to/image  "Optional title attribute"
+</pre>
+
+</ul>
+<li>
+Markdown 支持以比较简短的自动链接形式来处理网址和电子邮件信箱，只要是用尖括号包起来， Markdown 就会自动把它转成链接。一般网址的链接文字就和链接地址一样，例如：
+<pre class="brush: html">
+&lt;http://example.com/&gt;
+</pre>
+
+<li>
+Markdown 可以利用反斜杠来插入一些在语法中有其它意义的符号，例如：如果你想要用星号加在文字旁边的方式来做出强调效果（但不用 &lt;em&gt; 标签），你可以在星号的前面加上反斜杠：
+<pre class="brush: html">
+\*literal asterisks\*
+</pre>
+
+<li>
+Markdown 支持以下这些符号前面加上反斜杠来帮助插入普通的符号：
+<pre class="brush: html">
+\   反斜线
+`   反引号
+*   星号
+_   底线
+{}  花括号
+[]  方括号
+()  括弧
+#   井字号
++   加号
+-   减号
+.   英文句点
+!   惊叹号
+</pre>
+
+</ul>
+
+    </div>
+</body>
+</html>

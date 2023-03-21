@@ -1,0 +1,444 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../../style.css" />
+    <title>�鱾Դ��</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<h4 id="toc_0.0.0.1">01_Block</h4>
+<ul>
+<li>
+gltLoadTGA 演示了如何加载一个TGA图像文
+
+<li>
+m3dGetPlaneEquation, m3dMakePlanarShadowMatrix, glMultMatrixf 这三个公式计算出用于阴影的矩阵, 注意其中, 平面和光源方向都位于当前的坐标系下.
+
+</ul>
+<h4 id="toc_0.0.0.2">02_bounce</h4>
+<ul>
+<li>
+使用 glutTimerFunc 实现动画, 而非使用 glutIdleFunc
+
+</ul>
+<h4 id="toc_0.0.0.3">02_glrect</h4>
+<ul>
+<li>
+glRectf 绘制矩形
+
+</ul>
+<h4 id="toc_0.0.0.4">03_lines</h4>
+<ul>
+<li>
+glutSpecialFunc 设置特殊键的事件.
+
+</ul>
+<h4 id="toc_0.0.0.5">03_linesw</h4>
+<ul>
+<li>
+glLineWidth 设置宽度, GL_LINE_WIDTH_RANGE 线宽范围.
+
+</ul>
+<h4 id="toc_0.0.0.6">03_lstipple</h4>
+<ul>
+<li>
+实现线的点画. glLineStipple 与 GL_LINE_STIPPLE
+
+</ul>
+<h4 id="toc_0.0.0.7">03_lstrips</h4>
+<ul>
+<li>
+实现线的连线, GL_LINE_STRIP
+
+</ul>
+<h4 id="toc_0.0.0.8">03_points</h4>
+<ul>
+<li>
+绘制点, GL_POINTS
+
+</ul>
+<h4 id="toc_0.0.0.9">03_pointz</h4>
+<ul>
+<li>
+GL_POINT_SIZE_GRANULARITY --- 点大小的粒度, 可以以这个粒度变化点的大小, 本例的粒度为 0.125
+
+</ul>
+<h4 id="toc_0.0.0.10">03_pstipple</h4>
+<ul>
+<li>
+GL_POLYGON_STIPPLE --- 多边形点画
+
+<li>
+glBegin(GL_POLYGON) --- 多边形绘制
+
+</ul>
+<h4 id="toc_0.0.0.11">03_scissor</h4>
+<ul>
+<li>
+GL_SCISSOR_TEST --- 允许剪裁测试
+
+<li>
+glScissor --- 四个参数表示窗口的大小, 以像素为单位, 左下角坐标和高宽.
+
+</ul>
+<h4 id="toc_0.0.0.12">03_single</h4>
+<ul>
+<li>
+可以绘制的时候不清空颜色缓存, 以旧的缓存为背景进行绘制.
+
+</ul>
+<h4 id="toc_0.0.0.13">03_star</h4>
+<ul>
+<li>
+菜单的使用和设置边.
+
+<li>
+glutCreateMenu 创建一个菜单, 参数为菜单处理函数
+
+<li>
+glutAddMenuEntry 在上面函数创建的菜单下创建子菜单, 参数为整数或为菜单.
+
+<li>
+glutAttachMenu 挂接菜单至右键
+
+<li>
+glEdgeFlag 指示一个顶点其是否一个边的起点. 绘制多边形就不绘制以该顶点为起点的边, 其余的边如旧.
+
+</ul>
+<h4 id="toc_0.0.0.14">03_stencil</h4>
+<ul>
+<li>
+显示了GL_STENCIL_TEST, glStencilOp 和 glStencilFunc 的使用.
+
+</ul>
+<h4 id="toc_0.0.0.15">03_triangle</h4>
+<ul>
+<li>
+GL_TRIANGLE_FAN 的使用.
+
+</ul>
+<h4 id="toc_0.0.0.16">04_atom</h4>
+<ul>
+<li>
+演示多个星球围绕太阳旋转的例子.
+
+<li>
+正交投影
+
+</ul>
+<h4 id="toc_0.0.0.17">04_atom2</h4>
+<ul>
+<li>
+透视投影
+
+</ul>
+<h4 id="toc_0.0.0.18">04_ortho</h4>
+<ul>
+<li>
+正交投影与光照
+
+</ul>
+<h4 id="toc_0.0.0.19">04_perspct</h4>
+<ul>
+<li>
+透视投影
+
+</ul>
+<h4 id="toc_0.0.0.20">04_solar</h4>
+<ul>
+<li>
+演示天体(太阳, 地球, 月亮)
+
+</ul>
+<h4 id="toc_0.0.0.21">04_SphereWorld</h4>
+<ul>
+<li>
+gltools.h 有一些工具函数
+
+<li>
+math3d.h 有许多3D数学操作
+
+<li>
+glFrame.h 可以用于设置相机和绘制物体. 个人认为这个类绘制物体默认会绕Y轴旋转180度.
+
+</ul>
+<h4 id="toc_0.0.0.22">04_transform</h4>
+<ul>
+<li>
+glLoadMatrixf 加载矩阵, 所以使用正确的话, 可以不需要用 glPushMatrix 和 glPopMatrix.
+
+</ul>
+<h4 id="toc_0.0.0.23">05_ambient</h4>
+<ul>
+<li>
+显示了如何使用顶点数组.
+
+<ul>
+<li>
+允许 GL_VERTEX_ARRAY系列
+
+<li>
+使用 glVertexPointer 系列指定数据
+
+<li>
+使用 glDrawArrays 进行绘制.
+
+</ul>
+<li>
+光照 GL_LIGHT_MODEL_AMBIENT, GL_COLOR_MATERIAL, glColorMaterial
+
+</ul>
+<h4 id="toc_0.0.0.24">05_jet</h4>
+<ul>
+<li>
+上面代码不带光照的版本
+
+</ul>
+<h4 id="toc_0.0.0.25">05_litjet</h4>
+<ul>
+<li>
+使用顶点数组和法线数组, 设置了环境光和散射光.
+
+</ul>
+<h4 id="toc_0.0.0.26">05_shadow</h4>
+<ul>
+<li>
+演示了阴影矩阵如何绘制一个阴影
+
+<li>
+根据光源位置和平面求解出阴影矩阵
+
+<li>
+而后将要投影的物体再重新绘制一遍, 在绘制之前加载上面的矩阵, 并设置阴影颜色
+
+<li>
+注光源, 平面, 要投影的模型都位于同一坐标系中.
+
+</ul>
+<h4 id="toc_0.0.0.27">05_shinyJet</h4>
+<ul>
+<li>
+光照镜面的绘制.
+
+</ul>
+<h4 id="toc_0.0.0.28">05_sphereworld</h4>
+<ul>
+<li>
+带阴影的球体世界.
+
+<li>
+将需要投射阴影的模型部分的绘制统一写入一个函数, 在其中颜色部分使用不同的处理.
+
+</ul>
+<h4 id="toc_0.0.0.29">05_spot</h4>
+<ul>
+<li>
+演示了聚焦光
+
+<li>
+这里表明了光照设置其位置时, 该位置为当年模型坐标系中的位置, 包括聚焦的方向也是当前坐标系的方向.
+
+<li>
+演示了flat着色和smooth着色的区别.
+
+</ul>
+<h4 id="toc_0.0.0.30">05_triangle</h4>
+<ul>
+<li>
+一个简单三角形的绘制.
+
+</ul>
+<h4 id="toc_0.0.0.31">06_fogged</h4>
+<ul>
+<li>
+雾的绘制
+
+<li>
+允许 GL_FOG, 设置 GL_FOG_COLOR, GL_FOG_START, GL_FOG_END, GL_FOG_MODE
+
+</ul>
+<h4 id="toc_0.0.0.32">06_motionblur</h4>
+<ul>
+<li>
+累积缓存实现运动模糊
+
+<li>
+GL_LOAD 初步内容. GL_ACCUM 累积内容, GL_RETURN 返回内容.
+
+</ul>
+<h4 id="toc_0.0.0.33">06_multisample</h4>
+<ul>
+<li>
+首先需要先修改显卡驱动: 这里设置平滑处理-模式为置换任何应用程序设置(默认应用程序控制的). 平滑处理-透明度为多重取样(默认关).
+
+<li>
+允许或禁止 GL_MULTISAMPLE_ARB
+
+</ul>
+<h4 id="toc_0.0.0.34">06_reflection</h4>
+<ul>
+<li>
+演示了如何在地面反射物体
+
+<li>
+首先绘制物体
+
+<li>
+而后绘制反射物体, 其中先设置反射的光源位置, 而后倒转Y轴, glScalef(1.0, -1.0, 1.0)实现. 最后照常绘制物体.
+
+<li>
+绘制地面, 其中地面颜色的alpha值设置为0.5, 而后开启缓存.
+
+<li>
+无法先绘制地面, 而后混合绘制倒转物体, 因为在绘制倒转物体的时候, 其自身也参与了混合. 应该使用纹理方法来实现.
+
+</ul>
+<h4 id="toc_0.0.0.35">06_smoother</h4>
+<ul>
+<li>
+演示了点和线的反锯齿
+
+<li>
+反锯齿: 允许混合, 设置混合函数, 允许 POINT_SMOOTH, 允许 LINE_SMOOTH, 允许 POLYGON_SMOOTH, 设置三者的SMOOTH_HINT.
+
+</ul>
+<h4 id="toc_0.0.0.36">06_sphereworld</h4>
+<ul>
+<li>
+使用模板求解阴影
+
+<li>
+首先禁止深度测试, 禁止光照, 打开模板, 照常绘制阴影. 主要原因就是因为绘制阴影的时候禁止深度写入, 所以当一个地方已经绘制了阴影, 重合时会再次进行渲染. 使用模板测试可以避免阴影有些地方被绘制多次.
+
+</ul>
+<h4 id="toc_0.0.0.37">07_bitmaps</h4>
+<ul>
+<li>
+位图的绘制
+
+<li>
+glRasterPos2f 设置光栅化位置, glBitmap 绘制位图.
+
+</ul>
+<h4 id="toc_0.0.0.38">07_imageload</h4>
+<ul>
+<li>
+加载图像
+
+<li>
+glDrawPixels --- 绘制图像数据.
+
+</ul>
+<h4 id="toc_0.0.0.39">07_imaging</h4>
+<ul>
+<li>
+图像的处理
+
+<li>
+GL_VIEWPORT 可以获取视口信息
+
+<li>
+glPixelZoom 像素缩放, 使得图像刚好填充整个窗口
+
+<li>
+glLoadMatrixf 可以加载颜色矩阵, 首先使用 glMatrixMode(GL_COLOR) 设置颜色矩阵. 这里的矩阵将颜色转换为亮度值.
+
+<li>
+glHistogram 收集 histogram 数据.
+
+<li>
+glConvolutionFilter2D 设置卷积
+
+<li>
+glColorTable 设置颜色表用于反转图像.
+
+<li>
+颜色矩阵模式下, 还可以用 glScalef 加亮图像.
+
+<li>
+可以允许 GL_COLOR_TABLE, GL_CONVOLUTION_2D, GL_HISTOGRAM
+
+<li>
+最后使用 glDrawPixels 绘制像素
+
+<li>
+gltWriteTGA 可以用于截屏
+
+</ul>
+<h4 id="toc_0.0.0.40">07_Operations</h4>
+<ul>
+<li>
+glPixelZoom(-1.0f, -1.0f) 反转图像
+
+<li>
+glPixelTransferf(GL_RED_SCALE, 1.0f); 第二个参数可以设置1.0或其他值, 如0.0, 表示该值缩放的比率, 这样可以实现只绘制红色部分或蓝色部分, 绿色部分.
+
+<li>
+可以先使用 glDrawPixels 绘制像素, 而后调用  glPixelTransferf 设置参数, 再使用 glReadPixels 读取, 就可以得到一个图像的亮度图.
+
+<li>
+glPixelTransferi(GL_MAP_COLOR, GL_TRUE); 设置颜色映射. glPixelMapfv(GL_PIXEL_MAP_R_TO_R, 256, invertMap) 之类函数设置映射参数, 这样就可以实现颜色反转.
+
+</ul>
+<h4 id="toc_0.0.0.41">08_pyramid</h4>
+<ul>
+<li>
+主要实现如何加载图像和实现纹理.
+
+</ul>
+<h4 id="toc_0.0.0.42">08_sphereworld</h4>
+<ul>
+<li>
+给球体世界加上纹理
+
+<li>
+绘制阴影时, 阴影部分颜色带有alpha值可用于混合, 因此加上模板测试避免阴影重合的地方更黑.
+
+</ul>
+<h4 id="toc_0.0.0.43">08_toon</h4>
+<ul>
+<li>
+使用一维纹理实现卡通绘制
+
+<li>
+一维纹理大小为4个大小, 分别表示不同亮度的值
+
+<li>
+使用光的方向点乘法线得到纹理坐标.
+
+<li>
+这里使用模型视图矩阵的逆矩阵乘以光的方向得到模型坐标系中的光的方向. 再用这个方向点乘法线得到纹理坐标.
+
+</ul>
+<h4 id="toc_0.0.0.44">08_tunnel</h4>
+<ul>
+<li>
+演示纹理最小化过滤不同模式的效果, 通过修改纹理参数 GL_TEXTURE_MIN_FILTER 实现.
+
+</ul>
+<h4 id="toc_0.0.0.45">09_anisotropic</h4>
+<ul>
+<li>
+纹理的各项异性参数
+
+<li>
+首先得到 GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT 的值, 而后设置纹理参数 GL_TEXTURE_MAX_ANISOTROPY_EXT, 该参数设置为1.0则表示关闭纹理最大各向异性.
+
+</ul>
+
+    </div>
+</body>
+</html>

@@ -1,0 +1,105 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../../style.css" />
+    <title>Chapter004</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="../index.html">首页</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<div id="3D 图形数学速学教程"><h1 id="3D 图形数学速学教程">3D 图形数学速学教程</h1></div>
+<div id="3D 图形数学速学教程-向量"><h2 id="向量">向量</h2></div>
+<pre c++>
+sb6::vmath::vec3 vVector;
+
+vec3 vVertex1(0.0f, 0.0f, 1.0f);
+vec4 vVertex2 = vec4(1.0f, 0.0f, 1.0f, 1.0f);
+vec4 vVertex3(vVertex1, 1.0f);
+vec3 vVerts[] = { vec3(-0.5f, 0.0f, 0.0f),
+					vec3(0.5f, 0.0f, 0.0f),
+					vec3(0.0f, 0.5f, 0.0f) };
+</pre>
+<div id="3D 图形数学速学教程-常用向量操作"><h2 id="常用向量操作">常用向量操作</h2></div>
+<ul>
+<li>
+加法, 减法, 负号.
+
+</ul>
+<div id="3D 图形数学速学教程-点乘"><h2 id="点乘">点乘</h2></div>
+<ul>
+<li>
+vmath::dot
+<pre c++>
+vmath::vec3 a(...);
+vmath::vec3 b(...);
+
+float c = a.dot(b);
+float d = dot(a, b);
+</pre>
+
+<li>
+vmath::angle 可以求解出两个向量间的角度
+
+</ul>
+<div id="3D 图形数学速学教程-叉乘"><h2 id="叉乘">叉乘</h2></div>
+<ul>
+<li>
+vmath::cross
+
+</ul>
+<div id="3D 图形数学速学教程-长度"><h2 id="长度">长度</h2></div>
+<ul>
+<li>
+vmath::length
+
+</ul>
+<div id="3D 图形数学速学教程-反射和折射 "><h2 id="反射和折射 ">反射和折射 </h2></div>
+<ul>
+<li>
+vmath::reflect 和 vmath::refract
+
+</ul>
+
+<div id="矩阵"><h1 id="矩阵">矩阵</h1></div>
+<ul>
+<li>
+vmath::mat2, vmath::mat3, vmath::mat4
+
+</ul>
+<div id="矩阵-矩阵构造和操作符 "><h2 id="矩阵构造和操作符 ">矩阵构造和操作符 </h2></div>
+<ul>
+<li>
+但愿矩阵 vmat::mat3::identity()
+
+<li>
+移动 translate
+
+<li>
+旋转 rotate
+
+<li>
+缩放 scale
+
+<li>
+观看 lookat
+
+<li>
+投影 frustum, perspective, ortho
+
+<li>
+插值 mix
+
+</ul>
+
+    </div>
+</body>
+</html>

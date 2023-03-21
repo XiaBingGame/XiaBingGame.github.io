@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../../style.css">
+<title>OpenSceneGraph��ά��Ⱦ������ָ��11</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</head>
+<body>
+
+<div id="第11章 OSG粒子系统与阴影 "><h1 id="第11章 OSG粒子系统与阴影 ">第11章 OSG粒子系统与阴影 </h1></div>
+<div id="第11章 OSG粒子系统与阴影 -11.1 粒子系统"><h2 id="11.1 粒子系统">11.1 粒子系统</h2></div>
+<ul>
+<li>
+一个粒子系统所需要的模块
+
+<ul>
+<li>
+osgParticle::Emitter(放射器): osgParticle::ModularEmitter, 包括一个计数器, 一个放置器, 一个发射器. 其提供了一个标准机制
+
+<li>
+osgParticle::ParticelSystem(粒子系统): 继承自 Drawable.
+
+<ul>
+<li>
+setDefaultAttributes 可用于指定材质(指定为NULL可以禁用材质), 允许/禁止附加的图像融合及允许/禁止光照
+
+</ul>
+<li>
+osgParticLE:Particle: 同时具有物理属性和图像属性, 形状可以是POINT, QUAD, QUAD_TRIPSTRIP, HEXAGON(六角形), LINE. 每个粒子有自己的生命周期, 生命周期为负数的粒子可以存活无限长时间. 所有粒子都具有大小(Size), alpha, 颜色属性. 每一组粒子都可以指定其最大和最小值.
+
+<li>
+osgParticle::Placer(放置器): 设置粒子的初始位置. 已经定义的放置器包括点放置器 PointPlacer (所有粒子从同一点出生), 扇面放置器 SectorPlacer ( 所有粒子从一个指定中心点, 半径范围和角度范围的扇面出生), 多段放置器 SectorPlacer (用户指定一系列的点, 粒子沿着这些点定义的线段出生)
+
+<li>
+osgParticle::Shooter (发射器): 指定粒子的初始速度, RadialShooter 类允许用户指定一个速度范围(米/秒)以及弧度值表示的方向, 方向由两个角度指定( theta 角是与 Z 轴的夹角, phi 角是与 XY 平面的夹角).
+
+<li>
+osgParticle::Counter (计数器): 控制每一朕产生的粒子数. RandomRateCount 类允许用户指定每帧产生粒子的最大和最小数.
+
+<li>
+osgParticle::ParticleSystemUpdater (粒子系统更新器): 会拣选便利中调用所有"存活"粒子
+
+<li>
+osgParticle::ModularProgram (标准编程器): 在单个粒子的生命周期中, 可以使用 ModularProgram 实例控制粒子的位置. 其需要与 Operator 对象组合使用.
+
+<li>
+osgParticle::Operator(操作器): 提供了控制粒子在其生命周期中的运动特性的方法. 用户可以改变现有 Operator 类实例的参数或定义自己的 Operator 类. OSG 提供的 Operator 类包括 AccelOperator(加速度), AngularAccelOperator(角加速度), FluidFrictionOperator(空气阻力或流体操作)以及 ForceOperator(压力).
+
+</ul>
+<li>
+其他已定义好的模块, 如 osgParticle::ExplosionDebrisEffect(爆炸碎片), osgParticle::ExplosionEffect(爆炸模拟), osgParticle::SmokeEffect(烟雾模拟), osgParticle::FireEffect(火光模拟).
+
+<li>
+osgParticle::PrecipitationEffect: 用来模拟一些在 OSG 中已经定义好的粒子系统. 
+
+<li>
+预定义粒子系统模块模拟过程如下:
+
+<ul>
+<li>
+创建预定义的粒子系统模块对象, 设置相应参数
+
+<li>
+作为子节点加到场景节点中. 
+
+</ul>
+<li>
+自定义粒子系统模块模拟过程如下:
+
+<ul>
+<li>
+创建粒子系统(osgParticle::ParticleSystem), 并将其加入到场景中, 设置相应的属性(材质, 放射, 光照)
+
+<li>
+创建粒子模板(osgParticle::Particle), 控制场景中每一个粒子的特性并关联到粒子系统, 设置粒子模板对应的特性, 如大小, 颜色, 生命周期及重量等.
+
+<li>
+创建粒子放射器(osgParticle::ModularEmitter), 标准的放射器包括计数器, 放置器, 发射器三部分. 设置相应的属性, 如位置, 形状, 速度和方向等.
+
+<li>
+创建粒子系统编程器对象( osgParticle::Program), 控制粒子在声明周期内的运动. 一个标准编程器对象包含各种操作器, 如 osgParticle::AccelOperator 和 osgParticle::FluidFrictionOperator 等.
+
+<li>
+创建粒子系统更新器, 用于管理每一帧粒子的属性, 如位置, 速度和方向等.
+
+</ul>
+<li>
+雾效
+
+<ul>
+<li>
+并非粒子系统, 只是一个状态属性.
+
+<li>
+雾效模式
+<pre c++>
+enum Mode
+{
+	LINEAR = GL_LINEAR,
+	EXP = GL_EXP,
+	EXP2 = GL_EXP2
+}
+</pre>
+
+<li>
+雾的坐标源
+<pre c++>
+enum FogCoordinateSource
+{
+	FOG_COORDINATE = GL_FOG_COORDINATE, // 雾坐标(视觉坐标系中的Y坐标)
+	FRAGMENT_DPETH = GL_FRAGMENT_DEPTH // 眼坐标(经过插值的雾坐标)
+}
+</pre>
+
+<li>
+其他属性: Density, Start, End, Color
+
+</ul>
+<li>
+粒子系统的读取与保存
+
+<ul>
+<li>
+osgDB::writeNodeFile() 来完成
+
+<li>
+会遇到矩阵问题, 保存绝对矩阵解决该问题, 从 osg::MatrixTransform 类派生实现
+
+</ul>
+</ul>
+
+<div id="第11章 OSG粒子系统与阴影 -11.2 OSG阴影"><h2 id="11.2 OSG阴影">11.2 OSG阴影</h2></div>
+<ul>
+<li>
+osgShadow 库
+
+<ul>
+<li>
+osgShadow::ShadowedScene 类: 阴影组节点, 继承自 osg::Group, 可以添加子节点, 指定投影对象和接受投影的对象
+
+<ul>
+<li>
+void setReceiveShadowTraversalMask(unsigned int mask)
+
+<li>
+unsigned int getReceivesShadowTraversalMask() const
+
+<li>
+void setCastsShadowTraversalMask(unsigned int mask)
+
+<li>
+unsigned int getCastsShadowTraversalMask() const
+
+<li>
+void setShadowTechnique(ShadowTechnique *technique)
+
+<li>
+ShadowTechnique* getShadowTechnique()
+
+<li>
+const ShadowTechnique* getShadowTechnique() const
+
+</ul>
+<li>
+osgShadow::ShadowTechnique 实现各种阴影的基类
+
+<ul>
+<li>
+osgShadow::ShadowMap: 实现阴影贴图(实现简单, 但处理动态光源/物体时开销过大, shadow depth map)
+
+<li>
+osgShadow::ShadowTexture: 实现阴影纹理
+
+<li>
+osgShadow::ShadowVolume: 实现基于模板缓存的体积阴影(相反)
+
+</ul>
+<li>
+在一个场景中添加阴影的主要步骤如下:
+
+<ul>
+<li>
+创建一个阴影场景(osgShadow::ShadowedScene)对象, 添加相应的子节点, 并标识阴影接收对象和阴影投影对象
+
+<li>
+创建一个阴影技术对象, 主要有 osgShadow::ShadowMap, osgShadow::ShadowTexture 和 osgShadow::ShadowVolume, 并关联到阴影场景对象
+
+<li>
+把阴影场景对象作为子节点加到场景跟节点下, 实例渲染.
+
+</ul>
+</ul>
+</ul>
+
+</body>
+</html>

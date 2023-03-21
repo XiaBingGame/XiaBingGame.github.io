@@ -1,0 +1,24 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../../style.css">
+<title>LoadBitmapAndShow</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</head>
+<body>
+
+<pre c++>
+	CBitmap bitmap;
+	bitmap.LoadBitmap(bmpID);
+	BITMAP bmpInfo;
+	bitmap.GetBitmap(&amp;bmpInfo);
+	CDC memDC;
+	memDC.CreateCompatibleDC(pDC);
+	CGdiObject* oldObject;
+	oldObject = memDC.SelectObject(&amp;bitmap);
+	pDC-&gt;StretchBlt(0,0,24,rect.bottom,&amp;memDC,0,0,bmpInfo.bmWidth,bmpInfo.bmHeight,SRCCOPY);
+	bitmap.DeleteObject();
+</pre>
+
+</body>
+</html>

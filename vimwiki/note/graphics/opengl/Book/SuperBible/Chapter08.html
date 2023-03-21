@@ -1,0 +1,154 @@
+ï»¿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../../style.css" />
+    <title>Chapter08</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/ç™¾åº¦äº‘/Vimwiki/Vimwiki_html/index.html">é¦–é¡µ</a>
+		</li>
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/ç™¾åº¦äº‘/Vimwiki/Vimwiki_html/diary/diary.html">æ—¥è®°</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<h1 id="toc_1">µÚ°ËÕÂ ÎÆÀíÌùÍ¼»ù´¡ÖªÊ¶</h1>
+<p>
+<br />
+1. Ê¹ÓÃ glTexImage*D µÄÊ±ºòÎÆÀí´óÐ¡±ØÐëÎª2µÄÃÝ´Î·½´óÐ¡, ·ñÔò»á±»ÒþÊ½½ûÓÃÎÆÀí<br />
+2. Ê¹ÓÃÎÆÀíµÄ¹ý³Ì, ÏñËØ²Ù×÷º¯ÊýÈÔ¿É¶ÔÆä½øÐÐÓ°Ïì, ÈçËõ·Å, ÏñËØ°ü×°, ÑÕÉ«±í, »ØÈÆµÈ<br />
+3. ÎÆÀí¾ØÕó, ÎÆÀí×ø±ê¿ÉÒÔÍ¨¹ýÎÆÀí¾ØÕóÀ´½øÐÐ×ª»», ÎÆÀí¾ØÕó¶ÑÕ»µÄÉî¶ÈÖ»ÓÐÁ½¸öÔªËØ:glMatrixMode(GL_TEXTURE);<br />
+4. GL_DECAL ºÍ GL_REPLACE, Èç¹ûÎÆÀí²»¾ßÓÐ Alpha ³É·Ö, ÔòÁ½ÕßÐÐÎªÍêÈ«Ò»Ñù, Èç¹ûÓÐ Alpha ³É·Ö, ÔòGL_DECALEµÄÎÆÀí»áÓëµ×²ã¼¸ºÎÍ¼ÐÎ»ìºÏÔÚÒ»Æð<br />
+5. ¿ÉÒÔÊ¹ÓÃ OpenGL µÄÓ²¼þ¼ÓËÙ¹¦ÄÜ¼Ó¿ìËùÓÐ±ØÒªµÄMip²ãµÄÉú³É<br />
+	glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, GL_TRUE);<br />
+6. glPrioritizeTextures Éè¶¨ÎÆÀíÓÅÏÈ¼¶.<br />
+<br />
+</p>
+<h1 id="toc_2">µÚ9ÕÂ ÎÆÀíÌùÍ¼¸ß¼¶ÖªÊ¶</h1>
+<p>
+	Ê¹ÓÃµÚ¶þ¾µÃæÑÕÉ«À´Ôö¼ÓÁÁµãµÄ¿É¼ûÐÔ, ´ò¿ª¾µÃæ¸¨ÖúÑÕÉ«<br />
+		glLightModeli(GL_LIGHT_MODEL_COLOR_CONTROL, GL_SEPARATE_SPECULAR_COLOR);<br />
+	ÇÐ»»»Ø³£¹æµÄ¹âÕÕÄ£ÐÍ<br />
+		glLightModeli(GL_LIGHT_MODEL_COLOR_CONTROL, GL_COLOR_SINGLE);<br />
+<br />
+	Èç¹û½ûÓÃ¹âÕÕ, ÎÆÀíÌùÍ¼Ê¹ÓÃµÚ¶þÑÕÉ«. ÔòÐèÒªÖ¸¶¨µÚ¶þÑÕÉ«. ²¢ÏÔÊ½µÄÆôÓÃµÚ¶þÑÕÉ«<br />
+		glEnable(GL_COLOR_SUM);<br />
+<br />
+	Òª¼¤»î»òÈ¡Ïû¶¶¶¯£¬¿ÉÒÔÓÃglEnable(GL_DITHER)ºÍglDisable(GL_DITHER)º¯Êý¡£Ä¬ÈÏÇé¿öÏÂ£¬¶¶¶¯ÊÇ¼¤»îµÄ¡£<br />
+<br />
+</p>
+<h2 id="toc_2.1">9.2 ¸÷ÏòÒìÐÔ¹ýÂË</h2>
+<p>
+Èç¹ûÎÒÃÇÔÚ½øÐÐÎÆÀí¹ýÂËÊ±¿¼ÂÇÁË¹Û²ì½Ç¶È, ÕâÖÖ¹ýÂË·½·¨½Ð×ö¸÷ÏòÒìÐÔ¹ýÂË<br />
+<br />
+Ê¹ÓÃ¸÷ÏòÒìÐÔ¹ýÂËµÄ²½Öè<br />
+1. ÅÐ¶ÏÊÇ·ñÖ§³ÖGL_EXT_texture_filter_anisotropic<br />
+2. ²éÑ¯Ö§³ÖµÄ¸÷ÏòÒìÐÔ¹ýÂËµÄ×î´óÊýÁ¿.(Ô½´ó, ÑØ×î´óÐÞ¸Ä·½Ïò(×îÇ¿¹Û²ìµã)Ëù²ÉÑùµÄÎÆÀíµ¥Ôª¾ÍÔ½¶à, 1.0±íÊ¾¸÷ÏòÍ¬ÐÔ¹ýÂË)<br />
+	GL_MAX_TEXTURE_MAX_ANISOTRORY_EXT<br />
+3. Ê¹ÓÃglTexParameterº¯ÊýÒÔ¼°GL_TEXTURE_MAX_ANISOTROPY_EXTÉèÖÃÏ£ÍûÓ¦ÓÃµÄ¸÷ÏòÒìÐÔ¹ýÂËµÄÊýÁ¿<br />
+<br />
+</p>
+<h2 id="toc_2.2">9.3 ÎÆÀíÑ¹Ëõ</h2>
+<p>
+À©Õ¹: GL_ARB_texture_compression×Ö·û´®²âÊÔÕâ¸öÀ©Õ¹ÊÇ·ñµÃµ½Ö§³Ö<br />
+	glTexImageÊ¹ÓÃGL_COMPRESS_*ÄÚ²¿¸ñÊ½<br />
+	ÓÃglGetTexLevelParameteriv(ÒÔGL_TEXTURE_COMPRESSEDÎª²ÎÊý)ÅÐ¶ÏÕâ¸öÎÆÀíÊÇ·ñ³É¹¦Ñ¹Ëõ<br />
+	glGetTexLevelParameterivº¯Êý½ÓÊÜ¼¸¸öÐÂµÄ²ÎÊýÖµ, ÓëÑ¹ËõÎÆÀíÓÐ¹Ø<br />
+	glHintÉèÖÃGL_TEXTURE_COMPRESSION_HINTÌáÊ¾<br />
+	glCompressedTexImageÔØÈëÑ¹ËõÎÆÀí<br />
+GL_REFLECTION_MAPºÍGL_NORMAL_MAPÁ¢·½ÌåÌùÍ¼<br />
+	GL_TEXUTRE_CUBE_MAP_POSITIVE_X<br />
+	GL_TEXUTRE_CUBE_MAP_NEGATIVE_X...<br />
+¶àÖØÎÆÀí<br />
+	´ø¹âÕÕ»òÑÕÉ«µÄ¼¸ºÎÍ¼ÐÎ + ÎÆÀí+»·¾³0 + ÎÆÀí+»·¾³1 ...<br />
+	<br />
+</p>
+<h1 id="toc_3">µÚ10ÕÂ ÇúÏßºÍ±íÃæ</h1>
+<h2 id="toc_3.1">10.1 ÄÚ²¿Ö§³ÖµÄ±íÃæ</h2>
+<h3 id="toc_3.1.1">10.1.1 ÉèÖÃ¶þ´Î·½³Ì×´Ì¬</h3>
+<p>
+1.	GLUquadricObj* pObj;<br />
+	// ...<br />
+	pObj = gluNewQuadric();<br />
+	// ÉèÖÃ¶þ´Î·½³ÌäÖÈ¾²ÎÊý<br />
+	// »æÖÆ¶þ´Î·½³Ì±íÃæ<br />
+	// ...<br />
+	gluDeleteQuadric(pObj);    // ÊÍ·Å¶þ´Î·½³Ì¶ÔÏó<br />
+<br />
+2.gluNewQuadricº¯Êý²»½öÎªËü·ÖÅä¿Õ¼ä, ¶øÇÒ°ÑËüµÄÊý¾Ý³ÉÔ±³õÊ¼»¯ÎªºÏÀíµÄÈ±Ê¡Öµ.<br />
+	ÉèÖÃ¶þ´Î·½³Ì»æÍ¼·ç¸ñµÄµÚÒ»¸öº¯ÊýÊÇ:<br />
+		void gluQuadricDrawStyle(GLUquadricObj *qobj, GLenum drawStyle);<br />
+		GLU_FILL, GLU_LINE, GLU_POINT, GLU_SILHOUETTE<br />
+<br />
+3. ½ÓÏÂÀ´µÄº¯ÊýÖ¸¶¨ÁË¶þ´Î·½³Ì±íÃæ¼¸ºÎÍ¼ÐÎÔÚÉú³ÉÊ±ÊÇ·ñ´øÓÐ±íÃæ·¨Ïß<br />
+	void gluQuadricNormals(GLUquadricObj *qobj, GLenum normals);<br />
+		GLU_NONE--Ã»ÓÐ·¨Ïß.<br />
+		GLU_SMOOTH--Æ½»¬·¨Ïß<br />
+		GLU_FLAT--±âÆ½·¨Ïß<br />
+	·¨ÏßÊÇÖ¸ÏòÆÁÄ»Íâ²¿»¹ÊÇÄÚ²¿<br />
+		void gluQuadricOrientation(GLUquadricObj *quadObject, GLenum orientation);<br />
+			GLU_OUTSIDE, GLU_INSIDE<br />
+	¶ÔÓÚÔ²ÅÌ, ËüµÄÕýÃæ¾ÍÊÇÑØzÖáÕý·½ÏòµÄÄÇ¸öÃæ.<br />
+<br />
+4. Îª¶þ´Î·½³Ì±íÃæÉú³ÉÎÆÀí×ø±ê<br />
+	void gluQuadricTexture(GLUquadricObj *quadObject, GLboolean textureCoords);<br />
+<br />
+</p>
+<h3 id="toc_3.1.2">10.1.2 »æÖÆ¶þ´Î·½³ÌÍ¼ÐÎ</h3>
+<p>
+1. »æÖÆÇòÌå<br />
+	void gluSphere(GLUquadricObj *qobj, GLdouble radius, GLint slices, GLint stacks);<br />
+		ÑØ×ÅzÖáÕý·½Ïò»æÖÆµÄ<br />
+<br />
+2.»æÖÆÔ²ÖùÌå<br />
+	void gluCylinder(GLUquadricObj *qobj, GLdouble baseRadius, GLdouble topRadius,<br />
+</p>
+<blockquote>
+GLdouble height, GLint slices, GLint stacks);<br />
+</blockquote>
+<p>
+<br />
+3. »æÖÆÔ²ÅÌ<br />
+	void gluDisk(GLUquadricObj *qobj, GLdouble innerRadius, GLdouble outerRadius, GLint slices, GLint loops);<br />
+<br />
+</p>
+<h3 id="toc_3.1.3">10.1.3 ÓÃ¶þ´Î·½³Ì½øÐÐ½¨Ä£</h3>
+
+<h2 id="toc_3.2">10.2 BezierÇúÏßºÍ±íÃæ</h2>
+<h3 id="toc_3.2.1">10.2.1 ²ÎÊý·½³Ì±íÊ¾ÐÎÊ½</h3>
+<p>
+	x = f(t)<br />
+	y = g(t)<br />
+	z = h(t)<br />
+<br />
+</p>
+<h3 id="toc_3.2.2">10.2.2 ÇóÖµÆ÷</h3>
+<p>
+	Ê×ÏÈÖ¸¶¨¿ØÖÆµãÒÔ¼°²ÎÊý·½³ÌÖÐuºÍv²ÎÊýµÄ¶¨ÒåÓò<br />
+	È»ºóµ÷ÓÃÊÊµ±µÄÇóÖµº¯Êý<br />
+	OpenGL¿ÉÒÔÉú³É×é³ÉÇúÏß»ò±íÃæµÄµã.<br />
+<br />
+	¶¨Òå¿ØÖÆµãµÄ¸öÊý<br />
+	ÉèÖÃµãÊý×é<br />
+	µ÷ÓÃglMap1fº¯Êý, ´´½¨ÇúÏßµÄÓ³Éä<br />
+	glEnable(GL_MAP1_VERTEX_3); ÆôÓÃÇóÖµÆ÷<br />
+	µ÷ÓÃglEvalCoordº¯Êý²úÉú¶¨µã<br />
+<br />
+	½øÒ»²½¼ò»¯<br />
+		glMapGridº¯ÊýÉèÖÃÒ»¸öÍø¸ñ<br />
+		µ÷ÓÃglEvalMeshº¯ÊýÊ¹ÓÃÖ¸¶¨µÄÍ¼Ôª<br />
+		GL_AUTO_NORMAL ×Ô¶¯·¨Ïß<br />
+<br />
+NURBS±íÃæ<br />
+</p>
+
+    </div>
+</body>
+</html>

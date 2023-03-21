@@ -1,0 +1,72 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../style.css" />
+    <title>ogremessage</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="../index.html">首页</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<p>
+一. 消息的产生
+</p>
+<ul>
+<li>
+InputReader --- 从各输入设备读取数据, 由PlatformManager创建, 平台相关, InputReader &lt;-- (GLXInput, SDLInput, Win32Input)
+
+<li>
+InputEvent --- 消息的载体, 输入消息在它的产生正常处理之前发送给 Listeners, 可用 Listeners 和 GuiElement subclasses 拦截消息 
+
+<li>
+InputEvent --&gt; (KeyEvent, MouseEvent)
+
+</ul>
+<p>
+二. 消息的处理
+</p>
+<ul>
+<li>
+EventListener --- 真正处理消息的地方, EventListener --&gt; (KeyListener, MouseListener, MouseMotionListener)
+
+<li>
+EventTarget --- 处理消息的中介, 所有InputEvent消息处理者的基类, EventTarget处理消息是由各种Listener完成的
+
+</ul>
+<p>
+三. 消息的传递
+</p>
+<ul>
+<li>
+EventDispatcher: 代理分发消息, 负责把 InputEvent 消息分派给 EventTarget
+
+<li>
+EventProcessor: 获取消息, 维护消息队列, 分发消息 
+
+<li>
+EventProcessor 是一个FrameListener, 调用 EventProcessor::startProcessingEvents(true) 把 EventProcessor 添加到 Root 的FrameListener链表中
+
+<li>
+EventProcessor 又是 EventTarget, 维护所有 Listener 列表. 维护一个 EventTarget列表和 EventDispatcher 列表
+
+</ul>
+<p>
+四. 消息处理整个过程
+</p>
+<ul>
+<li>
+InputReader --&gt; EventProcessor --&gt; EventDispatcher --&gt; EventTarget --&gt; EventListener
+
+</ul>
+
+    </div>
+</body>
+</html>

@@ -1,0 +1,755 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../style.css" />
+    <title>qtbook chapter 7</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<h1 id="toc_1">Chapter 7 Event Processing</h1>
+<h2 id="toc_1.1">7.1 Reimplementing Event Handlers</h2>
+<ul>
+<li>
+在Qt中, 任何事件都是QEvent派生类的实例. Qt 处理上百种事件类型, 通过枚举值来标识出事件类型.
+
+<ul>
+<li>
+举个例子: QEvent::type() 返回 QEvent::MouseButtonPress 则表示一个鼠标按下事件.
+
+<li>
+许多的事件类型都需要存储更多的信息, 例如鼠标按下事件需要知道是哪个按键被按下以及指针所在位置. 这些都保存在QEvent的派生类QMouseEvent中.
+
+</ul>
+<li>
+通过event()函数将事件通知给对象. 该函数从QObject继承而来.
+
+<ul>
+<li>
+在QWidget中实现了大多数通用事件处理函数: mousePressEvent, keyPressEvent, paintEvent.
+
+<li>
+可以创建自定义事件类型并分配给我们自己的事件.
+
+</ul>
+<li>
+键盘事件通过重写keyPressEvent()和keyReleaseEvent()实现.
+
+<ul>
+<li>
+Modifier键: Ctrl, Shift, Alt, 可以使用KeyPressEvent() 和 QKeyEvent::modifiers().
+
+<li>
+例如判断 Ctrl + Home
+<pre c++>
+    switch (event-&gt;key()) {
+    case Qt::Key_Home:
+        if (event-&gt;modifiers() &amp; Qt::ControlModifier) {
+            goToBeginningOfDocument();
+        }
+        else
+        {
+            goToBeginningOfLine();
+        }
+        break;
+    ... ...
+    }
+</pre>
+
+</ul>
+<li>
+一般而言, Tab和Shift+Tab用于切换widget. 在QWidget::event()中被处理, 该函数在keyPressEvent()之前被调用,
+
+<ul>
+<li>
+如果想要修改该功能, 则重写QWidget::event()函数
+<pre c++>
+        bool CodeEditor::event(QEvent *event)
+        {
+            if (event-&gt;type() == QEvent::KeyPress) {
+                QKeyEvent *keyEvent = static_cast&lt;QKeyEvent *&gt;(event);
+                if (keyEvent-&gt;key() == Qt::Key_Tab) {
+                    insertAtCurrentPosition('\t');
+                    return true;
+                }
+            }
+            return QWidget::event(event);
+        }
+</pre>
+
+</ul>
+<li>
+实现快捷键与Action, 处理函数的绑定
+<pre c++>
+    goToBeginningOfLineAction =
+            new QAction(tr("Go to Beginning of Line"), this);
+    goToBeginningOfLineAction-&gt;setShortcut(tr("Home"));	// 连接
+    connect(goToBeginningOfLineAction, SIGNAL(activated()),
+            editor, SLOT(goToBeginningOfLine()));
+
+    goToBeginningOfDocumentAction =
+            new QAction(tr("Go to Beginning of Document"), this);
+    goToBeginningOfDocumentAction-&gt;setShortcut(tr("Ctrl+Home"));
+    connect(goToBeginningOfDocumentAction, SIGNAL(activated()),
+            editor, SLOT(goToBeginningOfDocument()));
+</pre>
+
+<ul>
+<li>
+如果在程序用户界面菜单和工具栏都没有这个Action, 则会使用QShortcut来实现该快捷键功能, 以实现键的绑定
+
+<li>
+可以用QAction::setShortcutContext() 或者 QShortcut::setContext() 修改快捷键的绑定
+
+</ul>
+<li>
+三个事件 timerEvent(), showEvent(), hideEvent()
+
+<ul>
+<li>
+updateGeometry() 用于通知widget的layout manager其子widget的size hint可能发生变化, 让其进行修正.
+
+</ul>
+<li>
+startTimer() 函数启动一个计时器, 在showEvent()中设置计时器, 可以使得在widget完全显示之后启动计时器
+<pre c++>
+    void Ticker::timerEvent(QTimerEvent *event)
+    {
+        if (event-&gt;timerId() == myTimerId) {
+            ++offset;
+            if (offset &gt;= fontMetrics().width(text()))
+                offset = 0;
+            scroll(-1, 0);
+        } else {
+            QWidget::timerEvent(event);
+        }
+    }
+</pre>
+
+<li>
+本例使用 QWidget::scroll() 替换update(), 更有效率, 每次只需要绘制多出的1像素位置的内容.
+
+</ul>
+    
+<h2 id="toc_1.2">7.2 Installing Event Filter</h2>
+<ul>
+<li>
+Qt的事件模型一个非常强大的功能就是一个QObject的实例可以监视另一个QObject实例的事件, 在后者QObject的实例看到这个事件之前.
+
+<li>
+通过建立监视器来监控子widget的事件, 来实现特定功能, 使用事件过滤器. 具体有两个步骤:
+
+<ul>
+<li>
+通过在目标上调用installEventFilter()函数来注册目标对象的监视器对象
+
+<li>
+在监视器的eventFilter()函数中处理目标对象的事件
+
+</ul>
+<li>
+一般最好在构造函数中注册监视器对象
+<pre c++>
+        firstNameEdit-&gt;installEventFilter(this);
+        lastNameEdit-&gt;installEventFilter(this);
+        cityEdit-&gt;installEventFilter(this);
+        phoneNumberEdit-&gt;installEventFilter(this);
+</pre>
+
+<ul>
+<li>
+这四个widget首先将发送调用本widget的eventFilter()函数, 而后再到其自身的处理函数
+<pre c++>
+        bool CustomerInfoDialog::eventFilter(QObject *target, QEvent *event)
+        {
+            if (target == firstNameEdit || target == lastNameEdit
+                    || target == cityEdit || target == phoneNumberEdit) {
+                if (event-&gt;type() == QEvent::KeyPress) {
+                    QKeyEvent *keyEvent = static_cast&lt;QKeyEvent *&gt;(event);
+                    if (keyEvent-&gt;key() == Qt::Key_Space) {
+                        focusNextChild();
+                        return true;
+                    }
+                }
+            }
+            return QDialog::eventFilter(target, event);
+        }
+</pre>
+
+<li>
+上面代码实现空格键切换widget, 注意如果实现了需要的功能返回true, 这样就不会事件传递到目标对象.
+
+<li>
+QWidget::focusNextChild() --- 使下一个widget具有焦点
+
+</ul>
+<li>
+五个处理与过滤事件的层次
+
+<ul>
+<li>
+我们可以重新实现特定的事件处理函数
+
+<li>
+我们可以重新实现QObject::event()
+
+<ul>
+<li>
+用于在到达特定的事件处理函数之前处理该事件, 例如Tab键. 另外在重实现该函数的过程中需要调用基类的event()用于处理其他事件
+
+</ul>
+<li>
+我们可以在单个对象上安装event filter
+
+<li>
+我们可以在QApplication 对象上安装一个event filter, 所有对象的所有事件都会发送给eventFilter()函数. 常用语调试,
+
+<li>
+我们可以实现QApplication的派生类, 以及重新实现notify().
+
+<ul>
+<li>
+Qt调用QApplication::notify()发送事件, 重新实现该函数是获得所有事件的唯一方法, 在任何event filter有机会处理事件之前.
+
+</ul>
+</ul>
+<li>
+许多类型的事件, 包括鼠标和按键事件, 都会进行传递. 当目标对象没有处理该事件, 则其父widget会进行处理该事件. 直到顶层对象.
+
+</ul>
+
+<h2 id="toc_1.3">7.3 Staying Responsive during Intensive Processing</h2>
+<ul>
+<li>
+调用QApplication::exec()之后, 开始时间循环, 首先是显示和绘制widget, 而后循环运行检查是否有新的事件, 而后分发这些事件至对象.
+
+<li>
+使用多线程处理一些耗时的任务, 以避免界面不响应
+
+<li>
+QApplication::processEvents()告诉Qt处理任何待处理的事件, 而后返回控制给调用者.
+
+<ul>
+<li>
+事实上 QApplication::exec只是在while循环内部调用processEvents().
+
+</ul>
+<li>
+在耗时的处理函数中使用qApp-&gt;processEvents(); 或者: qApp-&gt;processEvents(QEventLoop::ExcludeUserInputEvents); 以避免其他重要的操作如关闭程序. 用于忽略鼠标和按钮事件.
+
+<li>
+QProgressDialog是一个进程条, 用于告知当前处理的程度
+
+<ul>
+<li>
+QProgressDialog 类: setLabelText, setRange, setModel, setValue, wasCanceled
+
+</ul>
+<li>
+用QApplication::hasPendingEvents和计时器来判断当前是否处于空闲时期
+
+</ul>
+
+<h1 id="toc_2">Chapter 8 2D Graphics</h1>
+<ul>
+<li>
+Qt 4.2 "图形视图"结构的核心部分: QGraphicsView, QGraphicsScene, QGraphicsitem 类
+
+</ul>
+
+<h2 id="toc_2.1">8.1 Painting with QPainter</h2>
+<ul>
+<li>
+在图形设备上绘制, 仅仅需要将设备的指针传递给QPainter构造函数的参数, 如: QPainter painter(this);
+
+<ul>
+<li>
+QPainter的三个重要属性: pen, brush, font
+
+<li>
+重要draw函数: drawPoint, drawLine, drawPolyLine, drawPoints, drawLines, drawPolygon, drawRect, drawRoundRect, drawEllipse, drawArc, drawChord, drawPie, drawText, drawPixmap, drawPath
+
+<li>
+pen 用于绘制线条和图形轮廓, 由颜色, 宽度, 线条形状, 关联方式组成.
+
+<ul>
+<li>
+Cap 和 joint styles: FlatCap, SquareCap, RoundCap, MiterJoint, BevelJoint, RoundJoint
+
+<li>
+Line Style: SolidLine, DashLine, DotLint, DashDotLine, DashDotDotLine, NoPen
+
+</ul>
+<li>
+brush 表示用于填充几何形状的模式, 由颜色和风格组成. 也可以是一个纹理
+
+<ul>
+<li>
+style: SolidPattern, Dense1Pattern, Dense2Pattern, Dense3Pattern, Dense4Pattern, Dense5Pattern, Dense6Pattern, Dense7Pattern, HorPattern, VerPattern, CrossPattern, BDiagPattern, FDiagPattern, DiagCrossPattern, NoBrush
+
+</ul>
+<li>
+font 用于绘制文本, 含有许多属性, 其中包含 family和 点大小
+
+<li>
+可以用setPen, setBrush, setFont 修改这些内容
+
+</ul>
+<li>
+painter.setRenderHint(QPainter::Antialiasing, true); // 可以实现反锯齿
+
+<li>
+QPainterPath 可以指定用于连接基本图形的元素容器: 如直线, 椭圆形, 多边形, 弧, 贝塞尔曲线 和其他绘制路径.
+
+<ul>
+<li>
+一个路径可以表示一条轮廓, 以及该轮廓所标示的面积, 该面积可以用笔刷填充.
+
+</ul>
+<li>
+gradient fill是一个可选的单色填充方式, Gradient依赖于颜色插值以得到两个颜色之间的平滑转换. 常用于生成3D效果.
+
+<ul>
+<li>
+Qt 提供三个gradient类型: 线性, 圆锥体的(conical), 径向的(radial)
+
+<li>
+线性: 有两个控制点用于定义, 通过一系列线上的"颜色点"来连接两个点. 如:
+<pre c++>
+        QLinearGradient gradient(50, 100, 300, 350);
+        gradient.setColorAt(0.0, Qt::white);
+        gradient.setColorAt(0.2, Qt::green);
+        gradient.setColorAt(1.0, Qt::black);
+</pre>
+
+<li>
+Radial: 通过中心点(Xc,Yc), 半径r, 焦点(Xf, Yf)来定义,
+
+<li>
+Conical: 通过中心点(Xc, Yc)和角度a来定义.
+
+</ul>
+<li>
+其他的属性:
+
+<ul>
+<li>
+background brush, brush origin, clip region(可以绘制的区域),
+
+<li>
+viewport, window, world transform --- 可以确定逻辑QPainter坐标映射到物理绘制设备坐标. 缺省情况两者一致
+
+<li>
+composition mode --- 定义新绘制的像素如何与原有像素相互影响. 默认是alpha 混合.
+
+</ul>
+<li>
+我们可以通过 save()保存当前painter的状态, 通过restore()还原.
+
+</ul>
+
+<h2 id="toc_2.2">8.2 Coordinate System Transformations</h2>
+<ul>
+<li>
+缺省的坐标系统, 左上角(0, 0), X轴正向方向向右, Y轴正向方向向下, 每个像素的大小为 1x1
+
+<li>
+一个像素的中心是0.5, 只有当禁用反锯齿的时候+0.5.
+
+<ul>
+<li>
+如果开启了反锯齿, 在点(100, 100)绘制黑色. 则四个点(99.5, 99.5), (99.5, 100.5), (100.5, 99.5), (100.5, 100.5)为灰色.
+
+<li>
+如果不想使用这个效果, 则移动QPainter (+0.5, +0.5), 或者指定半个像素的坐标
+
+<li>
+窗口(逻辑) --- 视图(物理)
+
+<li>
+窗口-视图机制 可以让绘制代码独立于绘制设备的分辨率和大小
+<pre c++>
+        painter.setWindow(-50, -50, 100, 100);    // 从(-50, -50)到(50, 50), 中心点为(0, 0)
+</pre>
+
+<li>
+如果我们想要在45度角绘制文本
+<pre c++>
+        QTransform transform;
+        transform.rotate(+45.0);
+        painter.setWorldTransform(transform);
+        painter.drawText(pos, tr("Sales"));
+</pre>
+
+<li>
+指定转换的简单方法是使用QPainter的translate(), scale(), rotate()和shear()方法
+
+<li>
+如果经常使用同一个转换, 可以保存一个QTransform, 在需要的时候使用
+
+</ul>
+<li>
+QTimer调用setSingleShot(true), 表示在时间结束之后只发送一次time out信息. 否则缺省计时器会重复启发直至他们停止或者销毁.
+
+<li>
+qBound() 函数, 确保第二个参数的值在第一个和第三个参数之间.
+
+<li>
+本节的例子使用QConicalGradient(QRadialGradient, QLinearGradient)实现了非常漂亮的效果, 这几个可以当作笔刷使用
+
+</ul>
+
+<h2 id="toc_2.3">8.3 High-Quality Rendering with QImage</h2>
+<ul>
+<li>
+有时我们需要权衡速度和精确度之间的关系. 当精确度比效率更重要时, 我们将绘制到QImage, 而后将结果拷贝至屏幕. 这将使用Qt的内置绘制引擎.
+
+<ul>
+<li>
+唯一的限制是QImage的创建参数为QImage::Format_RGB32 或 QImage::Format_ARGB32_Premultiplied
+
+</ul>
+<li>
+"premultiplied ARPG32" 格式表示红,绿,蓝频道带有多个alpha频道. 代码:
+<pre c++>
+        void MyWidget::paintEvent(QPaintEvent *event)
+        {
+            QImage image(size(), QImage::Format_ARGB32_Premultiplied);
+            QPainter imagePainter(&amp;image);
+            imagePainter.initFrom(this);
+            imagePainter.setRenderHint(QPainter::Antialiasing, true);
+            imagePainter.eraseRect(rect());
+            draw(&amp;imagePainter);
+            imagePainter.end();
+
+            QPainter widgetPainter(this);
+            widgetPainter.drawImage(0, 0, image);
+        }
+</pre>
+
+<ul>
+<li>
+上面代码先用QPainter绘制QImage, 而后绘制到屏幕
+
+<li>
+一个非常好的功能就是Qt图形引擎支持合成模式, 源和目标像素可以混合. 在所有的绘制操作都可以实现这点, 如笔, 笔刷, 渐进和图像绘制
+
+<li>
+缺省的合成模式为: QImage::CompositionMode_SourceOver, 表示源像素会覆盖在目标像素之上, 根据alpha值设置透明度.
+
+<li>
+可通过  QPainter::setCompositionMode() 来设置合成模式. 如:
+<pre c++>
+        QImage resultImage = checkerPatternImage;
+        QPainter painter(&amp;resultImage);
+        painter.setCompositionMode(QPainter::CompositionMode_Xor);
+        painter.drawImage(0, 0, butterflyImage);
+</pre>
+
+<li>
+XOR 源和目标. 注意XOR模式对Alpha也是有效的.
+
+</ul>
+</ul>
+
+<h2 id="toc_2.4">8.4 Item-Based Rendering with Graphics View</h2>
+<ul>
+<li>
+QPainter对于绘制自定义widget和比较少的条目时是比较理想的方法
+
+<li>
+绘制大量的条目和内容时的解决方案
+
+<ul>
+<li>
+图形视图结构包含场景, 由QGraphicsScene类表示, 场景中的项目, 由QGraphicsItem的子类表示.
+
+<li>
+通过在视图中显示场景. 由QGraphicsView类表示视图. 相同的场景可以在多个视图中显示. 如显示一个巨大场景的不同部分, 不同的转换.
+
+</ul>
+<li>
+预定义好的QGraphicsItem派生类, 如QGraphicsLineItem, QGraphicsPixmapItem, QGraphicsSimpleTextItem, QGraphicsTextItem
+
+<ul>
+<li>
+也可以自己创建自定义派生类
+
+</ul>
+<li>
+QGraphicsScene控制图形元素的结合, 有三个layer, 背景层, 元素层, 前景层. 背景和前景层通常由QBrushes指定
+
+<ul>
+<li>
+我们可以基于pixmap创建一个纹理QBrush作为背景. 前景则可以设置半透明等
+
+<li>
+视图则管理场景. 视图可用内置的2D绘制引擎, 也可以用Opengl. 使用setViewport()来调用opengl
+
+<li>
+视图可以用打印一个场景或者场景的一部分.
+
+<li>
+这个结构使用三个不同的坐标系统 - 视图坐标, 场景坐标和项目(item)坐标 -- 带有一个坐标系统向另一个坐标系统映射的功能.
+
+<ul>
+<li>
+视图坐标系统位于QGraphicsView的视图内部. 场景坐标系统是逻辑坐标系统, 用于防治场景上的顶层项目(item).
+
+<li>
+项目坐标系统用于指定每个项目, 且其中心为(0, 0)本地坐标.
+
+<li>
+事实上我们只关心系统坐标放置顶层项目, 项目坐标放置子项目.
+
+</ul>
+<li>
+为了介绍图形视图, 本例使用了两个例子, 第一个例子为简单的图表编辑器,
+
+<li>
+第二个例子为注解映射程序显示如何处理大量的图形对象, 如何有效的渲染以及缩放
+
+</ul>
+<li>
+QGraphicsItem不是QObject的派生类, 如果想要使用signal和slot, 可以实现多个继承, 其中一个基类为QObject. 其可以调用函数 setLine 绘制直线.
+
+<li>
+Q_DECLARE_TR_FUNCTIONS()宏用于添加一个tr()函数至该类. 即便它不是QOjbect的派生类, 这样可以让我们简单的使用tr(), 而不是QObject::tr() 或者 QApplication::translate()
+
+<li>
+当我们实现了QGraphicsItem的派生类时, 如果想要手工绘制内容, 则需要重新实现boundingRect()和paint()
+
+<ul>
+<li>
+如果我们不重新实现 shape(), 基类则会回去调用boundingRect, 所以我们重新实现shape()用于返回更精确的形状, 该形状可以考虑到节点的圆角角
+
+<li>
+graphic view结构使用围绕矩形(bounding rectangle)确定一个项目绘制的区域. 这能够快速的显示任意大的场景, 虽然在每个时候只能显示该场景的一部分
+
+<li>
+形状(shape)则确定某点是否在一个项目之内, 或者两个项目是否相互碰撞.
+
+</ul>
+<li>
+本例图表应用程序, 我们将提供属性对话框用于编辑节点的位置, 颜色和文本. 通过双击节点则可修改文本.
+
+<li>
+下面的代码删除该节点的所有Link, 而无论该Link是否被销毁了, 如果使用qDeleteAll() 则会产生一些副作用.
+<pre c++>
+        foreach (Link *link, myLinks)
+            delete link;
+</pre>
+
+<li>
+当一个项目的围绕矩形会发生变化之时(由于新的文本也许会大于或小于当前文本),
+
+<ul>
+<li>
+我们必须在之前立即调用 prepareGeometryChange(), 这样便于影响项目的围绕矩形.
+
+<li>
+修改颜色的时候不需要调用 prepareGeometryChange(), 因为这不会影响到项目的围绕矩形大小
+
+</ul>
+<li>
+求一个节点的矩形框
+<pre c++>
+    const int Padding = 8;
+    QFontMetricsF metrics = qApp-&gt;font();
+    QRectF rect = metrics.boundingRect(myText);
+    rect.adjust(-Padding, -Padding, +Padding, +Padding);
+    rect.translate(-rect.center());
+    return rect;    
+</pre>
+
+<ul>
+<li>
+QFontMetrics计算的围绕矩形左上角坐标总为(0, 0)
+
+</ul>
+<li>
+可使用QPainterPath精确的描述圆角矩形, 可以使得当鼠标位于角落且不在圆角矩形之内时, 不能够选择该矩形
+
+<li>
+QStyleOptionGraphicsItem是一个不经常使用的类, 提供了几个公有成员变量,
+
+<ul>
+<li>
+如当前layout方向, 字体metrics, palette, 矩形, 状态, 转换矩阵, 以及细节层次Lod,
+
+<li>
+重新实现 QGraphicsItem::itemChange, 当项目变化时作出一些反应
+
+</ul>
+<li>
+创建一个QGraphicsScene, 而后创建一个QGraphicsView来显示它.
+
+<ul>
+<li>
+选择的项目可以通过按Ctrl键多选. 设置模式QGraphicsView::RubberBandDrag, 表示可以通过鼠标划拉一个矩形多选项目: view-&gt;setDragMode(QGraphicsView::RubberBandDrag);
+
+<li>
+QGraphicsScene 可以发射信号 selectionChanged, 调用addItem 增加项目, clearSelection取消选择, selectedItems返回选中项目的列表
+
+<li>
+QGraphicsItem可调用setPos设置位置, setSelected表示选中与否
+
+<li>
+QGraphicsView 可调用removeAction 移除菜单, 调用addAction添加菜单
+
+</ul>
+<li>
+QMutableListIterator 用于遍历一个列表; qDeleteAll 用于删除一列表所有元素
+
+<li>
+QColorDialog::getColor()  调用颜色对话框
+
+<li>
+QApplication::clipboard()-&gt;setText(str); --- 使用剪贴板
+
+<li>
+QApplication::clipboard()-&gt;text(); --- 得到剪贴板文本
+
+<li>
+QString::split --- 分割字符串为QStringList
+
+<li>
+QStringList 用mid 得到部分的列表, 用join合起来成一个字符串
+
+<li>
+本节第二个例子
+
+<ul>
+<li>
+QGraphicsScene: setBackgroundBrush设置背景笔刷
+
+<li>
+Lod可以表示为缩放因子, QStyleOptionGraphicsItem::levelOfDetail 表示为其缩放因子
+
+<li>
+使用 ItemIgnoresTransformations 标志可以忽略缩放, 不会跟随View的缩放而更改该Item的大小
+
+</ul>
+<li>
+QGraphicsView派生一个类, 实现特定的特色.
+
+<ul>
+<li>
+调用setDragMode, 可设置拖曳模式, 如 setDragMode(ScrollHandDrag);
+
+<li>
+实现wheelEvent函数, 可实现鼠标滚轮事件. 而后调用QGraphicsView::scale函数实现缩放
+
+</ul>
+<li>
+我们的graphic view有许多的功能, 如可以拖曳, 图形项目有tooltip和自定义光标.
+
+<ul>
+<li>
+可通过给项目设置QGraphicsItemAnimations和QTimeLine 来实现动画.
+
+</ul>
+</ul>
+    
+<h2 id="toc_2.5">8.5 Printing</h2>
+<ul>
+<li>
+对于Qt来说, 打印和QWidget, QPixmap, QImage绘制一样, 由以下步骤组成
+
+<ul>
+<li>
+创建一个QPrinter用于绘制设备
+
+<li>
+弹出QPrintDialog, 让用户选择一个打印机并设置一些属性.
+
+<li>
+创建一个QPainter, 让其对QPrinter进行操作
+
+<li>
+使用QPainter绘制一个页面
+
+<li>
+调用QPrinter::newPage() 绘制下一个页面
+
+<li>
+重复第四步和第五步直至所有页面打印完毕
+
+</ul>
+<li>
+在Windows和Mac OS中, QPrinter使用系统的打印驱动. 在Unix中, 它生成PostScript并将其发送给ip或ipr(或者使用QPrinter::setPrintProgram()发送给程序集)
+
+<ul>
+<li>
+QPrinter也可以通过调用setOutputFromat(QPrinter::PdfFormat)生成PDF文件
+
+<li>
+通过QPrintDialog的对象调用exec()来执行打印对话框.
+
+<li>
+可将QPrinter对象作为参数传送给QPainter, 而后QPainter绘制图像实现打印一个图像. drawImage
+
+<li>
+如果要打印一个graphics view scenes也很简单, 将QPrinter作为第一个参数传送给QGraphicsScene::render()或者QGraphicsView::render().
+
+<ul>
+<li>
+如果只想绘制场景的一部分, 则将目标矩形(打印页面的位置)和源矩形作为参数传送给render()的可选参数.
+
+</ul>
+</ul>
+<li>
+两个处理打印多页面的方法
+
+<ul>
+<li>
+我们可以将我们的数据转换成HTML, 而后使用QTextDocument渲染它. 使用Qt的富文本引擎
+
+<li>
+手动执行绘制和页面中断
+
+<li>
+富文本方式:
+<pre c++>
+        QTextDocument textDocument;
+        textDocument.setHtml(html);
+        textDocument.print(&amp;printer);
+</pre>
+
+</ul>
+<li>
+本节还演示了如何给一个QStringList进行分页打印. 写了一个函数, 根据高度进行分页
+<pre c++>
+    void PrintWindow::paginate(QPainter *painter, QList&lt;QStringList&gt; *pages,
+                            const QStringList &amp;entries)
+</pre>
+
+<ul>
+<li>
+在例子中函数 int PrintWindow::entryHeight(QPainter *painter, const QString &amp;entry) 计算每个条目的高度
+		其使用 QPainter::boundingRect() 计算垂直高度.
+
+<li>
+通过QPrintDialog, 用户可以设定拷贝次数, 打印范围, 请求页面顺序(顺序还是反序)
+
+<li>
+可通过调用QPrintDialog::setEnabledOptions() 来确定哪些选项不能由用户设定
+
+</ul>
+</ul>
+
+    </div>
+</body>
+</html>

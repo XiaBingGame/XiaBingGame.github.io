@@ -1,0 +1,100 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../../style.css">
+<title>HelloGL</title>
+<meta http-equiv="Content-Type" content="text/html; charset=cp936">
+</head>
+<body>
+
+<h1 id="toc_1">主框架</h1>
+<ul>
+<li>
+从 QGLWidget 派生一个类用来显示 OpenGL 渲染的图形, 本例该派生类名为 GLWidget
+
+<ul>
+<li>
+class GLWidget
+
+<ul>
+<li>
+initializeGL
+
+<li>
+paintGL
+
+<li>
+resizeGL
+
+</ul>
+</ul>
+<li>
+结构体 Geometry --- 保存了所有顶点和法线数组, 以及索引数据数组
+
+<li>
+类 Patch
+
+<ul>
+<li>
+每一个 Patch 对象对应 Geometry数据的一部分. 每增加一个三角形, 则增加顶点和索引数据
+
+<li>
+每一个 Patch 都有其自身的 旋转, 移动, 绘制函数
+
+<li>
+顶点数据的增加有两种方式: Smooth 和 Faceted. 前者在存在顶点的情况下只增加索引和修正法线向量. 后者则直接增加顶点数据和递增索引
+
+<li>
+成员变量 start 表示创建该Patch时, 其顶点索引在Geometry数据中的起点, 这是由于或许前者有Patch占用了一部分数据
+
+</ul>
+<li>
+类 QLogo
+
+<ul>
+<li>
+draw() 函数
+
+<ul>
+<li>
+绘制方法, 首先调用 glVertexPointer 和 glNormalPointer 上传数据
+
+<li>
+而后调用 glEnableClientState(GL_VERTEX_ARRAY) 和 glEnableClientState(GL_NORMAL_ARRAY)
+
+<li>
+调用各个Patch的draw函数, 主要是 glDrawElements(GL_TRIANGLES, count, GL_UNSIGNED_SHORT, indices + start);
+
+</ul>
+</ul>
+</ul>
+
+<h1 id="toc_2">主要函数</h1>
+<ul>
+<li>
+qglClearColor --- glClearColor 函数的Qt版本
+
+</ul>
+	
+<h1 id="toc_3">主要类与方法</h1>
+<ul>
+<li>
+QGLWidget
+
+<ul>
+<li>
+updateGL --- 调用方法 QGLWidget::glDraw (), 执行虚函数 paintGL()
+
+</ul>
+<li>
+QMatrix4x4
+
+<ul>
+<li>
+缺省构造函数会创建一个单元矩阵
+
+</ul>
+</ul>
+
+</body>
+</html>

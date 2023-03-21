@@ -1,0 +1,86 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../style.css" />
+    <title>thebiggestoneframe_my</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="../index.html">首页</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<ul>
+<li>
+基本主流程, 主框架
+<pre c++>
+int ViewerBase::run()
+{
+    if (!isRealized())
+    {
+        realize();
+    }
+
+    unsigned int runTillFrameNumber = osg::UNINITIALIZED_FRAME_NUMBER;
+    osg::getEnvVar("OSG_RUN_FRAME_COUNT", runTillFrameNumber);
+
+    while(!done() &amp;&amp; (runTillFrameNumber==osg::UNINITIALIZED_FRAME_NUMBER || getViewerFrameStamp()-&gt;getFrameNumber()&lt;runTillFrameNumber))
+    {
+        double minFrameTime = _runMaxFrameRate&gt;0.0 ? 1.0/_runMaxFrameRate : 0.0;
+        osg::Timer_t startFrameTick = osg::Timer::instance()-&gt;tick();
+        if (_runFrameScheme==ON_DEMAND)
+        {
+            if (checkNeedToDoFrame())
+            {
+                frame();
+            }
+            else
+            {
+                // we don't need to render a frame but we don't want to spin the run loop so make sure the minimum
+                // loop time is 1/100th of second, if not otherwise set, so enabling the frame microSleep below to
+                // avoid consume excessive CPU resources.
+                if (minFrameTime==0.0) minFrameTime=0.01;
+            }
+        }
+        else
+        {
+            frame();
+        }
+
+        // work out if we need to force a sleep to hold back the frame rate
+        osg::Timer_t endFrameTick = osg::Timer::instance()-&gt;tick();
+        double frameTime = osg::Timer::instance()-&gt;delta_s(startFrameTick, endFrameTick);
+        if (frameTime &lt; minFrameTime) OpenThreads::Thread::microSleep(static_cast&lt;unsigned int&gt;(1000000.0*(minFrameTime-frameTime)));
+    }
+
+    return 0;
+}
+</pre>
+
+<ul>
+<li>
+环境变量 OSG_RUN_FRAME_COUNT --- 可运行的帧数, getenv() 获取环境变量, getClampedLength() 获取字符串大小
+
+</ul>
+<li>
+osg::GraphicsContext: 通过 Windows API 创建和管理图形上下文
+
+<ul>
+<li>
+ScreenIdentifier 用于标识屏幕。 hostName::displayNum:screenNum, 通过读取 DISPLAY 环境变量获取
+
+<li>
+Traits 基类有 ScreenIdentifier
+
+</ul>
+</ul>
+
+    </div>
+</body>
+</html>

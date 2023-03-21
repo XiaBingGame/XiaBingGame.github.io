@@ -1,0 +1,123 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../style.css" />
+    <title>Ogitor</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<h1 id="toc_1">main 文件</h1>
+<ul>
+<li>
+main 函数
+
+<ul>
+<li>
+程序准备工作
+
+<ol>
+<li>
+QDir::setCurrent() 设置当前目录
+
+<li>
+QCoreApplication::applicationDirPath() 应用程序目录
+
+<li>
+QFileInfo 获取文件信息
+
+<li>
+QCoreApplication::setOrganizationName()
+
+<li>
+QCoreApplication::setApplicationName
+
+<li>
+QSettings 设置
+
+<li>
+QTranslator 翻译
+
+<li>
+QLocale::system().name()
+
+<li>
+QCoreApplication::installTranslator
+
+<li>
+QPixmap 加载一个图像
+
+<li>
+QSplashScreen 设置等待界面
+
+</ol>
+<li>
+设置Ogre
+
+<ol>
+<li>
+setupOgre() 加载 Ogre
+
+</ol>
+<li>
+设置主窗口
+
+<ol>
+<li>
+readRecentFiles() 读取最近的文件
+
+<li>
+MainWindow() 主要窗口显示
+
+<li>
+MainWindow::setApplicationObject 将应用程序传递给这个窗口
+
+</ol>
+<li>
+加载场景
+
+<ol>
+<li>
+Ogitors::OgitorsRoot::LoadScene 加载场景
+
+<li>
+MainWindow::repaint() 重绘
+
+</ol>
+<li>
+程序循环
+
+<ol>
+<li>
+QCoreApplication::exec() 执行.
+
+</ol>
+<li>
+程序善后工作
+
+<ol>
+<li>
+writeRecentFiles() 写入最近的文件
+
+<li>
+调用 OGRE_DELETE 删除Ogre对象
+
+</ol>
+</ul>
+</ul>
+
+    </div>
+</body>
+</html>

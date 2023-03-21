@@ -1,0 +1,126 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../../style.css" />
+    <title>ExampleOSGShaders</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="../index.html">首页</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<ul>
+<li>
+开发技术
+
+<ul>
+<li>
+创建一维纹理
+
+<ul>
+<li>
+new osg::Texture1D, 而后 setWrap, setFilter, setImage
+
+</ul>
+<li>
+创建图像
+
+<ul>
+<li>
+new osg::Image, setImage, data() 设置数据
+
+</ul>
+<li>
+添加预订几何体
+
+<ul>
+<li>
+osg::Geode::addDrawable
+
+<li>
+osg::ShapeDrawable
+
+<li>
+osg::Sphere, osg::Cone, osg::Cylinder
+
+</ul>
+<li>
+添加着色器程序
+
+<ul>
+<li>
+new osg::Program, osg::Program::setName
+
+<li>
+osg::Program::addShader
+
+<li>
+osg::StateSet::setAttributeAndModes
+
+</ul>
+</ul>
+<li>
+学习 API
+
+<ul>
+<li>
+osgUtil::create3DNoiseTexture --- 可以创建噪值三维纹理
+
+<li>
+osg::FrameStamp 类
+
+<ul>
+<li>
+封装了帧数, 参考时间和日期时间
+
+<li>
+getSimulationTime()
+
+</ul>
+<li>
+NodeVisitor::getSimulation
+
+<li>
+osg::Uniform::setUpdateCallback --- 设置回调
+
+<li>
+osg::StateSet::addUniform 添加一致变量
+
+<li>
+顶点着色器内置变量
+
+<ul>
+<li>
+gl_Vertex
+
+<li>
+gl_ModelViewProjectionMatrix
+
+<li>
+gl_Normal
+
+<li>
+gl_NormalMatrix
+
+</ul>
+<li>
+片段着色器
+
+<ul>
+<li>
+gl_FragColor
+
+</ul>
+</ul>
+</ul>
+
+    </div>
+</body>
+</html>

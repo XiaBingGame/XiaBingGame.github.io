@@ -1,0 +1,110 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../../style.css">
+<title>FramebufferObject</title>
+<meta http-equiv="Content-Type" content="text/html; charset=cp936">
+</head>
+<body>
+
+<h1 id="toc_1">宏</h1>
+<ul>
+<li>
+void Q_INIT_RESOURCE(name) --- 在一些平台用于存储在静态库中的资源加载, 可以确保qrc文件内的资源被加载
+
+</ul>
+
+<h1 id="toc_2">重要类与函数</h1>
+<ul>
+<li>
+QFontMetrics --- 提供字体尺度信息
+
+<ul>
+<li>
+lineSpacing --- 一个字的底线到下一行字底线的距离
+
+<li>
+width --- 字符串使用该字体的宽度
+
+</ul>
+<li>
+QGLFormat --- 用于指定 OpenGL 渲染上下文的显示格式
+
+<ul>
+<li>
+缺省设置
+
+<ul>
+<li>
+允许(Double buffer, Depth buffer, RGBA, Stencil buffer, Direct rendering)
+
+<li>
+禁止(Alpha channel, Accumulator buffer, Stereo, Overlay, Multisample buffer)
+
+<li>
+Plane: 0, OpenGL 还可实现 overlay/underlay 渲染平面
+
+</ul>
+<li>
+hasOpenGL --- 是否支持 OpenGL
+
+</ul>
+<li>
+QGLFramebufferObject --- 用于包装一个 OpenGL 真缓存对象的类
+
+<ul>
+<li>
+hasOpenGLFramebufferObjects --- 是否支持 GL_EXT_framebuffer_objects 扩展
+
+<li>
+hasOpenGLFramebufferBlit  --- GL_EXT_framebuffer_blit
+
+</ul>
+<li>
+QGLFramebufferObjectFormat --- 制定 OpenGL 帧缓存对象的格式
+
+<ul>
+<li>
+构造函数 --- 缺省目标为 GL_TEXTURE_2D, F否则自定义格式
+
+<li>
+缺省为无挂接的非多重采样帧缓存对象, 纹理目标为 GL_TEXTURE_2D, 内部格式为 GL_RGBA8
+
+<li>
+setAttachment --- 设置帧缓存对象挂接配置的挂接, 参数为 QGLFramebufferObject::Attachment 类型
+
+<ul>
+<li>
+QGLFramebufferObject::Attachment --- 用于配置当创建一个帧缓存对象时挂接至该帧缓存对象的深度和模版缓存
+
+<ul>
+<li>
+QGLFramebufferObject::NoAttachment --- 当帧缓存对象无深度和模版缓存挂接时, 不会进行深度和模版测试
+
+<li>
+QGLFramebufferObject::CombinedDepthStencil --- 如有 GL_EXT_packed_depth_stencil, 挂接深度和模版缓存的组合. 否则只挂接深度缓存
+
+<li>
+QGLFramebufferObject::Depth --- 挂接深度缓存
+
+</ul>
+</ul>
+</ul>
+<li>
+QGLWidget
+
+<ul>
+<li>
+makeCurrent --- 让本widget作为OpenGL 操作的当前widget
+
+</ul>
+<li>
+QSvgRenderer --- 用于绘制 SVG 文件的内容 
+
+<li>
+QTimeLine --- 用于控制动画的时间线
+
+</ul>
+
+</body>
+</html>

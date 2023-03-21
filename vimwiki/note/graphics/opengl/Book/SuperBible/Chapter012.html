@@ -1,0 +1,1543 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../../style.css" />
+    <title>Chapter012</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="../index.html">首页</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<div id="Chaper 12 Rendering Techniques"><h1 id="Chaper 12 Rendering Techniques">Chaper 12 Rendering Techniques</h1></div>
+<div id="Chaper 12 Rendering Techniques-12.1 Lighting Models"><h2 id="12.1 Lighting Models">12.1 Lighting Models</h2></div>
+<div id="Chaper 12 Rendering Techniques-12.1 Lighting Models-12.1.1 The Phong Lighting Model"><h3 id="12.1.1 The Phong Lighting Model">12.1.1 The Phong Lighting Model</h3></div>
+<ul>
+<li>
+物体有三个材质属性, ambient, diffuse, specular.
+
+</ul>
+
+<div id="Chaper 12 Rendering Techniques-12.1 Lighting Models-12.1.1 The Phong Lighting Model-12.1.1.1 Ambient Light"><h4 id="12.1.1.1 Ambient Light">12.1.1.1 Ambient Light</h4></div>
+<pre class="brush: glsl">
+uniform vec3 ambient = vec3(0.1, 0.1, 0.1);
+</pre>
+
+<div id="Chaper 12 Rendering Techniques-12.1 Lighting Models-12.1.1 The Phong Lighting Model-12.1.1.2 Diffuse Light"><h4 id="12.1.1.2 Diffuse Light">12.1.1.2 Diffuse Light</h4></div>
+<pre class="brush: glsl">
+uniform vec3 vDiffuseMaterial;
+uniform vec3 vDiffuseLight;
+float fDotProduct = max(0.0, dot(vNormal, vLightDir));
+vec3 vDiffuseColor = vDiffuseMaterial * vDiffuseLight * fDotProduct;
+</pre>
+
+<div id="Chaper 12 Rendering Techniques-12.1 Lighting Models-12.1.1 The Phong Lighting Model-12.1.1.3 Specular Highlight"><h4 id="12.1.1.3 Specular Highlight">12.1.1.3 Specular Highlight</h4></div>
+<pre class="brush: glsl">
+uniform vec3 vSpecularMaterial;
+uniform vec3 vSpecularLight;
+float shininess = 128.0;
+vec3 vReflection = reflect(-vLightDir, vEyeNormal);
+float EyeReflectionAngle = max(0.0, dot(vEyeNormal, vReflection);
+fSpec = pow(EyeReflectionAngle, shininess);
+vec3 vSpecularColor = vSpecularLight * vSpecularMaterial * fSpec;
+</pre>
+<ul>
+<li>
+shiness, 传统最高的亮度指数设为 128.
+
+<li>
+例子: phonglighting, 实现了 Gouraud shading.
+
+<li>
+顶点着色器
+<pre class="brush: glsl">
+#version 420 core
+// Per-vertex inputs
+layout (location = 0) in vec4 position;
+layout (location = 1) in vec3 normal;
+// Matrices we’ll need
+layout (std140) uniform constants
+{
+	mat4 mv_matrix;
+	mat4 view_matrix;
+	mat4 proj_matrix;
+};
+// Light and material properties
+uniform vec3 light_pos = vec3(100.0, 100.0, 100.0);
+uniform vec3 diffuse_albedo = vec3(0.5, 0.2, 0.7);
+uniform vec3 specular_albedo = vec3(0.7);
+uniform float specular_power = 128.0;
+uniform vec3 ambient = vec3(0.1, 0.1, 0.1);
+// Outputs to the fragment shader
+out VS_OUT
+{
+	vec3 color;
+} vs_out;
+void main(void)
+{
+	// Calculate view-space coordinate
+	vec4 P = mv_matrix * position;
+	// Calculate normal in view space
+	vec3 N = mat3(mv_matrix) * normal;
+	// Calculate view-space light vector
+	vec3 L = light_pos - P.xyz;
+	// Calculate view vector (simply the negative of the
+	// view-space position)
+	vec3 V = -P.xyz;
+	// Normalize all three vectors
+	N = normalize(N);
+	L = normalize(L);
+	V = normalize(V);
+	// Calculate R by reflecting -L around the plane defined by N
+	vec3 R = reflect(-L, N);
+	// Calculate the diffuse and specular contributions
+	vec3 diffuse = max(dot(N, L), 0.0) * diffuse_albedo;
+	vec3 specular = pow(max(dot(R, V), 0.0), specular_power) *
+	specular_albedo;
+	// Send the color output to the fragment shader
+	vs_out.color = ambient + diffuse + specular;
+	// Calculate the clip-space position of each vertex
+	gl_Position = proj_matrix * P;
+}
+</pre>
+
+<li>
+片段着色器
+<pre class="brush: glsl">
+#version 420 core
+// Output
+layout (location = 0) out vec4 color;
+// Input from vertex shader
+in VS_OUT
+{
+	vec3 color;
+} fs_in;
+void main(void)
+{
+	// Write incoming color to the framebuffer
+	color = vec4(fs_in.color, 1.0);
+}
+</pre>
+
+</ul>
+
+<div id="Chaper 12 Rendering Techniques-12.1 Lighting Models-12.1.1 The Phong Lighting Model-12.1.1.4 Phong Shading"><h4 id="12.1.1.4 Phong Shading">12.1.1.4 Phong Shading</h4></div>
+<ul>
+<li>
+phong shading 和 phong lighting model 是不同的东西. 其不在顶点之间插值颜色值, 而是在顶点之间插值法线值, 得到最终法线以用于片段的光照计算.
+
+<li>
+顶点着色器
+<pre class="brush: glsl">
+#version 420 core
+// Per-vertex inputs
+layout (location = 0) in vec4 position;
+layout (location = 1) in vec3 normal;
+// Matrices we’ll need
+layout (std140) uniform constants
+{
+	mat4 mv_matrix;
+	mat4 view_matrix;
+	mat4 proj_matrix;
+};
+// Inputs from vertex shader
+out VS_OUT
+{
+	vec3 N;
+	vec3 L;
+	vec3 V;
+} vs_out;
+// Position of light
+uniform vec3 light_pos = vec3(100.0, 100.0, 100.0);
+void main(void)
+{
+	// Calculate view-space coordinate
+	vec4 P = mv_matrix * position;
+	// Calculate normal in view-space
+	vs_out.N = mat3(mv_matrix) * normal;
+	// Calculate light vector
+	vs_out.L = light_pos - P.xyz;
+	// Calculate view vector
+	vs_out.V = -P.xyz;
+	// Calculate the clip-space position of each vertex
+	gl_Position = proj_matrix * P;
+}
+</pre>
+
+<li>
+片段着色器
+<pre class="brush: glsl">
+#version 420 core
+// Output
+layout (location = 0) out vec4 color;
+// Input from vertex shader
+in VS_OUT
+{
+	vec3 N;
+	vec3 L;
+	vec3 V;
+} fs_in;
+// Material properties
+uniform vec3 diffuse_albedo = vec3(0.5, 0.2, 0.7);
+uniform vec3 specular_albedo = vec3(0.7);
+uniform float specular_power = 128.0;
+void main(void)
+{
+	// Normalize the incoming N, L, and V vectors
+	vec3 N = normalize(fs_in.N);
+	vec3 L = normalize(fs_in.L);
+	vec3 V = normalize(fs_in.V);
+	// Calculate R locally
+	vec3 R = reflect(-L, N);
+	// Compute the diffuse and specular components for each
+	// fragment
+	vec3 diffuse = max(dot(N, L), 0.0) * diffuse_albedo;
+	vec3 specular = pow(max(dot(R, V), 0.0), specular_power) *
+	specular_albedo;
+	// Write final color to the framebuffer
+	color = vec4(diffuse + specular, 1.0);
+}
+</pre>
+
+<li>
+一个普遍的着色器性能优化规则是尽可能将片段着色器的处理工作移动到顶点着色器.
+
+</ul>
+
+<div id="Chaper 12 Rendering Techniques-12.1 Lighting Models-12.1.2 Blinn-Phong Lighting"><h3 id="12.1.2 Blinn-Phong Lighting">12.1.2 Blinn-Phong Lighting</h3></div>
+<ul>
+<li>
+Blinn-Phong Lighting 是 Phong Lighting model 的扩展或者优化. 反射向量R使用半角向量H代替. H 为光照向量与视觉向量的半角. H = (L+E)/|L+E|.
+
+<li>
+R和H的计算代价区别在现代图形处理器可忽略不计. 如果面的曲率变化相对很小, 且三角形距离光源和眼睛很远, 则H值变化不大. 顶点(或者几何或者tessellation)着色器中计算H值, 而后使用 flat 输入传递给片段着色器. 虽然结果不会精确, 但可通过增加 shininess(或者镜面)因子来矫正.
+
+<li>
+片段着色器
+<pre class="brush: c++">
+#version 420 core
+// Output
+layout (location = 0) out vec4 color;
+// Input from vertex shader
+in VS_OUT
+{
+	vec3 N;
+	vec3 L;
+	vec3 V;
+} fs_in;
+// Material properties
+uniform vec3 diffuse_albedo = vec3(0.5, 0.2, 0.7);
+uniform vec3 specular_albedo = vec3(0.7);
+uniform float specular_power = 128.0;
+void main(void)
+{
+	// Normalize the incoming N, L, and V vectors
+	vec3 N = normalize(fs_in.N);
+	vec3 L = normalize(fs_in.L);
+	vec3 V = normalize(fs_in.V);
+	// Calculate the half vector, H
+	vec3 H = normalize(L + V);
+	// Compute the diffuse and specular components for each fragment
+	vec3 diffuse = max(dot(N, L), 0.0) * diffuse_albedo;
+	// Replace the R.V calculation (as in Phong) with N.H
+	vec3 specular = pow(max(dot(N, H), 0.0), specular_power) * specular_albedo;
+	// Write final color to the framebuffer
+	color = vec4(diffuse + specular, 1.0);
+}
+</pre>
+
+</ul>
+
+<div id="Chaper 12 Rendering Techniques-12.1 Lighting Models-12.1.3 Rim Lighting"><h3 id="12.1.3 Rim Lighting">12.1.3 Rim Lighting</h3></div>
+<ul>
+<li>
+Rim lighting --- 也就是 back-lighting. 需要面法线和view direction.
+
+<li>
+公式: Lrim = Crim(1.0 - N*V)^Prim
+
+<li>
+例子 rimlight
+
+</ul>
+
+<div id="Chaper 12 Rendering Techniques-12.1 Lighting Models-12.1.4 Normal Mapping"><h3 id="12.1.4 Normal Mapping">12.1.4 Normal Mapping</h3></div>
+<ul>
+<li>
+为了查看表面的详细细节(feature), 则需要在原始模型中表现该level of detail. 这就需要大量的几何, 以及每个三角形仅覆盖很少的像素. 
+
+<li>
+normal mapping, 也称之为 bump mapping, 则解决该问题. 在每个纹素中存储面法线. 而后在片段着色器中计算局部的面法线.
+
+<li>
+normal mapping 常用的坐标空间为切线空间. 正z轴与面法线对齐, 另外两个向量则为切线和副切线. 和纹理的 u, v 坐标的方向一起来整队这些向量. 切线向量通常编码为几何数据的一部分并作为顶点着色器的输入来传递. 对于正交坐标系, 给出两个向量后, 就可以叉乘得到第三个向量. 
+
+<li>
+法线, 切线, 副切线向量可以用于构造一个旋转矩阵. N = normal, T = tangent, B = N x T. TBN 矩阵, 三个向量作为矩阵的一行.
+<pre class="brush: c++">
+TBN =
+| Tx Ty Tz |
+| Bx By Bz |
+| Nx Ny Nz |
+</pre>
+
+<ul>
+<li>
+TBN 矩阵变换笛卡尔坐标至局部frame. 我们在每个顶点将 view 和 light 向量变换至 local frame, 而后沿着每个多边形插值, 从而在每个片段中, 我们和 normal map 中的法线位于相同的 frame 中. 而后我们仅需读取每个片段的法线后进行光照计算. 
+<pre class="brush: glsl">
+#version 420 core
+layout (location = 0) in vec4 position;
+layout (location = 1) in vec3 normal;
+layout (location = 2) in vec3 tangent;
+layout (location = 4) in vec2 texcoord;
+out VS_OUT
+{
+	vec2 texcoord;
+	vec3 eyeDir;
+	vec3 lightDir;
+} vs_out;
+uniform mat4 mv_matrix;
+uniform mat4 proj_matrix;
+uniform vec3 light_pos = vec3(0.0, 0.0, 100.0);
+void main(void)
+{
+	// Calculate vertex position in view space.
+	vec4 P = mv_matrix * position;
+	// Calculate normal (N) and tangent (T) vectors in view space from
+	// incoming object space vectors.
+	vec3 N = normalize(mat3(mv_matrix) * normal);
+	vec3 T = normalize(mat3(mv_matrix) * tangent);
+	// Calculate the bitangent vector (B) from the normal and tangent
+	// vectors.
+	vec3 B = cross(N, T);
+	// The light vector (L) is the vector from the point of interest to
+	// the light. Calculate that and multiply it by the TBN matrix.
+	vec3 L = light_pos - P.xyz;
+	vs_out.lightDir = normalize(vec3(dot(V, T), dot(V, B), dot(V, N)));
+	// The view vector is the vector from the point of interest to the
+	// viewer, which in view space is simply the negative of the position.
+	// Calculate that and multiply it by the TBN matrix.
+	vec3 V = -P.xyz;
+	vs_out.eyeDir = normalize(vec3(dot(V, T), dot(V, B), dot(V, N)));
+	// Pass the texture coordinate through unmodified so that the fragment
+	// shader can fetch from the normal and color maps.
+	vs_out.texcoord = texcoord;
+	// Calculate clip coordinates by multiplying our view position by
+	// the projection matrix.
+	gl_Position = proj_matrix * P;
+}
+</pre>
+
+</ul>
+<li>
+片段着色器
+<pre class="brush: glsl">
+#version 420 core
+out vec4 color;
+// Color and normal maps
+layout (binding = 0) uniform sampler2D tex_color;
+layout (binding = 1) uniform sampler2D tex_normal;
+in VS_OUT
+{
+	vec2 texcoord;
+	vec3 eyeDir;
+	vec3 lightDir;
+} fs_in;
+void main(void)
+{
+	// Normalize our incoming view and light direction vectors.
+	vec3 V = normalize(fs_in.eyeDir);
+	vec3 L = normalize(fs_in.lightDir);
+	// Read the normal from the normal map and normalize it.
+	vec3 N = normalize(texture(tex_normal, fs_in.texcoord).rgb * 2.0
+			- vec3(1.0));
+	// Calculate R ready for use in Phong lighting.
+	vec3 R = reflect(-L, N);
+	// Fetch the diffuse albedo from the texture.
+	vec3 diffuse_albedo = texture(tex_color, fs_in.texcoord).rgb;
+	// Calculate diffuse color with simple N dot L.
+	vec3 diffuse = max(dot(N, L), 0.0) * diffuse_albedo;
+	// Uncomment this to turn off diffuse shading
+	// diffuse = vec3(0.0);
+	// Assume that specular albedo is white - it could also come from a
+	texture
+	vec3 specular_albedo = vec3(1.0);
+	// Calculate Phong specular highlight
+	vec3 specular = max(pow(dot(R, V), 5.0), 0.0) * specular_albedo;
+	// Uncomment this to turn off specular highlights
+	// specular = vec3(0.0);
+	// Final color is diffuse + specular
+	color = vec4(diffuse + specular, 1.0);
+}
+</pre>
+
+</ul>
+
+<div id="Chaper 12 Rendering Techniques-12.1 Lighting Models-12.1.5 Environment Mapping"><h3 id="12.1.5 Environment Mapping">12.1.5 Environment Mapping</h3></div>
+<ul>
+<li>
+类型 spherical environment map, equirectangular map, cube map
+
+<li>
+球面环境映射可以使用环境的单个半球体表示. 
+
+<li>
+equirectangular map 则为球面坐标到矩形的映射, 这样允许一个完整 360 度的环境视图. 
+
+<li>
+cube map, 六个面组成的特殊纹理.
+
+</ul>
+
+<div id="Chaper 12 Rendering Techniques-12.1 Lighting Models-12.1.5 Environment Mapping-12.1.5.1 Spherical Environment Maps"><h4 id="12.1.5.1 Spherical Environment Maps">12.1.5.1 Spherical Environment Maps</h4></div>
+<ul>
+<li>
+view 方向和法线计算出纹理坐标.
+
+<li>
+第一步是变换进来的法线至 view-space, 计算 eye-space 的view direction. 这将用于我们的片段着色器以计算用于查找 environment map 的纹理坐标. 顶点着色器如下:
+<pre class="brush: glsl">
+#version 420 core
+uniform mat4 mv_matrix;
+uniform mat4 proj_matrix;
+layout (location = 0) in vec4 position;
+layout (location = 1) in vec3 normal;
+out VS_OUT
+{
+	vec3 normal;
+	vec3 view;
+} vs_out;
+void main(void)
+{
+	vec4 pos_vs = mv_matrix * position;
+	vs_out.normal = mat3(mv_matrix) * normal;
+	vs_out.view = pos_vs.xyz;
+	gl_Position = proj_matrix * pos_vs;
+}
+</pre>
+
+<li>
+片段着色器, 反射进入的 view direction, 缩放和偏移反射向量的x和y成分. 
+<pre class="brush: glsl">
+#version 420 core
+layout (binding = 0) uniform sampler2D tex_envmap;
+in VS_OUT
+{
+	vec3 normal;
+	vec3 view;
+} fs_in;
+out vec4 color;
+void main(void)
+{
+	// u will be our normalized view vector
+	vec3 u = normalize(fs_in.view);
+	// Reflect u about the plane defined by the normal at the fragment
+	vec3 r = reflect(u, normalize(fs_in.normal));
+	// Compute scale factor
+	r.z += 1.0;
+	float m = 0.5 * inversesqrt(dot(r, r));
+	// Sample from scaled and biased texture coordinate
+	color = texture(tex_envmap, r.xy * m + vec2(0.5));
+</pre>
+
+<li>
+例子 envmapsphere
+
+</ul>
+
+<div id="Chaper 12 Rendering Techniques-12.1 Lighting Models-12.1.5 Environment Mapping-12.1.5.2 Equirectangular Environment Maps"><h4 id="12.1.5.2 Equirectangular Environment Maps">12.1.5.2 Equirectangular Environment Maps</h4></div>
+<ul>
+<li>
+使用 view-space 法线和 view direction 向量, 在顶点着色器中计算, 而后插值, 而后片段着色器反射挤奶的view direction. 接下来, 我们取出y成分, 而后设置y为0从而投影该向量至 xz平面, 而后单元化. 而后取出 x成分, 产生我们第二个纹理坐标. 
+
+<li>
+例子 equirectangular
+<pre class="brush: glsl">
+#version 420 core
+layout (binding = 0) uniform sampler2D tex_envmap;
+in VS_OUT
+{
+	vec3 normal;
+	vec3 view;
+} fs_in;
+out vec4 color;
+void main(void)
+{
+	// u will be our normalized view vector
+	vec3 u = normalize(fs_in.view);
+	// Reflect u about the plane defined by the normal at the fragment
+	vec3 r = reflect(u, normalize(fs_in.normal));
+	// Compute texture coordinate from reflection vector
+	vec2 tc;
+	tc.y = r.y; r.y = 0.0;
+	tc.x = normalize(r).x * 0.5;
+	// Scale and bias texture coordinate based on direction
+	// of reflection vector
+	float s = sign(r.z) * 0.5;
+	tc.s = 0.75 - s * (0.5 - tc.s);
+	tc.t = 0.5 + 0.5 * tc.t;
+	// Sample from scaled and biased texture coordinate
+	color = texture(tex_envmap, tc);
+}
+</pre>
+
+</ul>
+
+<div id="Chaper 12 Rendering Techniques-12.1 Lighting Models-12.1.5 Environment Mapping-12.1.5.3 Cube Maps"><h4 id="12.1.5.3 Cube Maps">12.1.5.3 Cube Maps</h4></div>
+<ul>
+<li>
+纹理对象 GL_TEXTURE_CUBE_MAP, glTexStorage2D() 设置纹理的存储尺寸, 使用 glTexSubImage2D() 加载每个面. GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, GL_TEXTURE_CUBE_MAP_NEGATIVE_Z. 
+<pre class="brush: c++">
+GLuint texture;
+glGenTextures(1, &amp;texture);
+glBindTexture(GL_TEXTURE_CUBE_MAP, texture);
+glTexStorage2D(GL_TEXTURE_CUBE_MAP,
+levels, internalFormat,
+width, height);
+for (face = 0; face &lt; 6; face++)
+{
+	glTexSubImage2D(GL_TEXURE_CUBE_MAP_POSITIVE_X + face,
+		0,
+		0, 0,
+		width, height,
+		format, type,
+		data + face * face_size_in_bytes);
+}
+</pre>
+
+<li>
+立体映射还支持 mipmap, 如果你的立体映射还有 mipmap 数据, 则修改代码以加载额外的 mipmap levels.
+
+<li>
+纹理三个坐标, 和六个面相交而后采样其上纹理值.
+
+<li>
+我们需要计算出 viewport 四个角的纹理坐标, 而后使用他们渲染我们的 cube map.
+
+<li>
+顶点着色器
+<pre class="brush: glsl">
+#version 420 core
+out VS_OUT
+{
+	vec3 tc;
+} vs_out;
+uniform mat4 view_matrix;
+void main(void)
+{
+	vec3[4] vertices = vec3[4](vec3(-1.0, -1.0, 1.0),
+		vec3( 1.0, -1.0, 1.0),
+		vec3(-1.0, 1.0, 1.0),
+		vec3( 1.0, 1.0, 1.0));
+	vs_out.tc = mat3(view_matrix) * vertices[gl_VertexID];
+	gl_Position = vec4(vertices[gl_VertexID], 1.0);
+}
+</pre>
+
+<li>
+片段着色器
+<pre class="brush: glsl">
+#version 420 core
+layout (binding = 0) uniform samplerCube tex_cubemap;
+in VS_OUT
+{
+	vec3 tc;
+} fs_in;
+layout (location = 0) out vec4 color;
+void main(void)
+{
+	color = texture(tex_cubemap, fs_in.tc);
+}
+</pre>
+
+<li>
+计算物体的镜面反射
+<pre class="brush: glsl">
+#version 420 core
+uniform mat4 mv_matrix;
+uniform mat4 proj_matrix;
+layout (location = 0) in vec4 position;
+layout (location = 1) in vec3 normal;
+out VS_OUT
+{
+	vec3 normal;
+	vec3 view;
+} vs_out;
+void main(void)
+{
+	vec4 pos_vs = mv_matrix * position;
+	vs_out.normal = mat3(mv_matrix) * normal;
+	vs_out.view = pos_vs.xyz;
+	gl_Position = proj_matrix * pos_vs;
+}
+
+
+#version 420 core
+layout (binding = 0) uniform samplerCube tex_cubemap;
+in VS_OUT
+{
+	vec3 normal;
+	vec3 view;
+} fs_in;
+void main(void)
+{
+	// Reflect view vector about the plane defined by the normal
+	// at the fragment
+	vec3 r = reflect(fs_in.view, normalize(fs_in.normal));
+	// Sample from scaled using reflection vector
+	color = texture(tex_cubemap, r);
+}
+</pre>
+
+<li>
+例子 cubemapenv
+
+</ul>
+
+<div id="Chaper 12 Rendering Techniques-12.1 Lighting Models-12.1.6 Material Properties"><h3 id="12.1.6 Material Properties">12.1.6 Material Properties</h3></div>
+<ul>
+<li>
+物体不同部分应用不同的材质. 通过在纹理中存储面的信息来给每个面, 每个三角形, 或每个像素分配材质属性. 例如镜面指数可以存储在纹理中. 
+
+<li>
+pre-blur 一个 environment map 的技术, 而后使用一个 gloss factor(存储在纹理中)逐渐地fade该map的sharp版本到blurred版本.
+
+<li>
+本例, 使用一个简单的 spherical environment map. 使用了两个 environment maps 和一个 shininess map, 而后混合了它们.  当 gloss map 最亮, 则使用更 sharper 的 environment, 如果最暗, 则使用更 blurrier 的  environment map.
+
+<li>
+混合两个 environment texture 为一个 3D 纹理其仅有两个纹素 deep. 而后我们可从我们的 gloss 纹理采样, 并使用 fetched 得到的纹素值作为纹理坐标的第三个成分, 而后从 environment map 获取. 这样实现了两者的插值.
+
+<li>
+片段着色器
+<pre class="brush: glsl">
+#version 420 core
+layout (binding = 0) uniform sampler3D tex_envmap;
+layout (binding = 1) uniform sampler2D tex_glossmap;
+in VS_OUT
+{
+	vec3 normal;
+	vec3 view;
+	vec2 tc;
+} fs_in;
+out vec4 color;
+void main(void)
+{
+	// u will be our normalized view vector
+	vec3 u = normalize(fs_in.view);
+	// Reflect u about the plane defined by the normal at the fragment
+	vec3 r = reflect(u, normalize(fs_in.normal));
+	// Compute scale factor
+	r.z += 1.0;
+	float m = 0.5 * inversesqrt(dot(r, r));
+	// Sample gloss factor from glossmap texture
+	float gloss = texture(tex_glossmap, fs_in.tc * vec2(3.0, 1.0) * 2.0).r;
+	// Sample from scaled and biased texture coordinate
+	vec3 env_coord = vec3(r.xy * m + vec2(0.5), gloss);
+	// Sample from two-level environment map
+	color = texture(tex_envmap, env_coord);
+}
+</pre>
+
+<li>
+例子 perpixelgloss 
+
+</ul>
+
+<div id="Chaper 12 Rendering Techniques-12.1 Lighting Models-12.1.7 Casting Shadows"><h3 id="12.1.7 Casting Shadows">12.1.7 Casting Shadows</h3></div>
+<div id="Chaper 12 Rendering Techniques-12.1 Lighting Models-12.1.7 Casting Shadows-12.1.7.1 Shadow Mapping"><h4 id="12.1.7.1 Shadow Mapping">12.1.7.1 Shadow Mapping</h4></div>
+<ul>
+<li>
+depth buffer. 渲染以光源为视点的深度信息. 使用一个 framebuffer object 包含 depth attachment. 渲染光源的深度信息. 而后进行我们的场景渲染之时, 比较每个像素的距离. 比较的时候, 将我们渲染的点从view space投影至光源的坐标系. 而后读取之前渲染的深度纹理. 
+
+<li>
+有专门的 sampler 类型用于比较, 为 sampler2DShadow. 还有 sampler1DShadow, samplerCubeShadow, samplerRectShadow, 以及这些类型的数组类型.
+
+<li>
+仅有 depth attachment 的 framebuffer object.
+<pre class="brush: c++">
+GLuint shadow_buffer; GLuint shadow_tex;
+glGenFramebuffers(1, &amp;shadow_buffer);
+glBindFramebuffer(GL_FRAMEBUFFER, shadow_buffer);
+glGenTextures(1, &amp;shadow_tex);
+glBindTexture(GL_TEXTURE_2D, shadow_tex);
+glTexStorage2D(GL_TEXTURE_2D, 1, GL_DEPTH_COMPONENT32,
+	DEPTH_TEX_WIDTH, DEPTH_TEX_HEIGHT);
+glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE,
+	GL_COMPARE_REF_TO_TEXTURE);
+glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_FUNC, GL_LEQUAL);
+glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+	shadow_tex, 0);
+glBindFramebuffer(GL_FRAMEBUFFER, 0);
+</pre>
+
+<ul>
+<li>
+纹理参数设置了 GL_TEXTURE_COMPARE_MODE 和 GL_TEXTURE_COMPARE_FUNC. 第一个打开纹理比较, 第二个设置使用的比较函数. 
+
+</ul>
+<li>
+光源渲染的场景
+<pre class="brush: c++">
+vmath::mat4 model_matrix = vmath::rotate(currentTime, 0.0f, 1.0f, 0.0f);
+vmath::mat4 light_view_matrix =
+	vmath::lookat(light_pos,
+		vmath::vec3(0.0f),
+		vmath::vec3(0.0f, 1.0f, 0.0f);
+vmath::mat4 light_proj_matrix =
+	vmath::frustum(-1.0f, 1.0f, -1.0f, 1.0f,
+		1.0f, 1000.0f);
+vmath::mat4 light_mvp_matrix = light_projection_matrix *
+	light_view_matrix *
+	model_matrix;
+</pre>
+
+<li>
+声明我们的 shadow sampler 而后读取它. 顶点着色器进行光源的矩阵操作. 同时 x, y 坐标的1.0仍为1.0, z坐标的1.0为0.0.
+<pre class="brush: c++">
+const vmath::mat4 scale_bias_matrix =
+	vmath::mat4(vmath::vec4(0.5f, 0.0f, 0.0f, 0.0f),
+		vmath::vec4(0.0f, 0.5f, 0.0f, 0.0f),
+		vmath::vec4(0.0f, 0.0f, 0.5f, 0.0f),
+		vmath::vec4(0.5f, 0.5f, 0.5f, 1.0f));
+vmath::mat4 shadow_matrix = scale_bias_matrix *
+	light_proj_matrix *
+	light_view_matrix *
+	model_matrix;
+</pre>
+
+<li>
+着色器
+<pre class="brush: glsl">
+#version 420 core
+uniform mat4 mv_matrix;
+uniform mat4 proj_matrix;
+uniform mat4 shadow_matrix;
+layout (location = 0) in vec4 position;
+out VS_OUT
+{
+	vec4 shadow_coord;
+} vs_out;
+void main(void)
+{
+	gl_Position = proj_matrix * mv_matrix * position;
+	vs_out.shadow_coord = shadow_matrix * position;
+}
+</pre>
+
+<li>
+要将坐标转换至设备坐标, 即除以 w 成分, 这里可使用 textureProj 函数实现
+<pre class="brush: glsl">
+#version 420 core
+layout (location = 0) out vec4 color;
+layout (binding = 0) uniform sampler2DShadow shadow_tex;
+in VS_OUT
+{
+	vec4 shadow_coord;
+} fs_in;
+void main(void)
+{
+	color = textureProj(shadow_tex, fs_in.shadow_coord) * vec4(1.0);
+}
+</pre>
+
+<li>
+例子 shadowmapping.
+
+<li>
+shadow map 其必须很高的分辨率, 避免单个纹素覆盖了屏幕的几个像素.
+
+<li>
+避免一些 self-occlusion, 可使用 polygon offset. 使得其朝向或远离观察者
+<pre class="brush: c++">
+void glPolygonOffset(GLfloat factor,
+	GLfloat units);
+</pre>
+
+<ul>
+<li>
+factor --- 缩放因子. 乘以相对于其屏幕面积的多边形在深度上的变化量.
+
+<li>
+units --- 实现定义的缩放值, 其内部乘以在深度buffer中确保产生不同值的最小变化值.
+
+<li>
+允许该功能: glEnable() 和 GL_POLYGON_OFFSET_FILL 参数.
+
+</ul>
+</ul>
+
+<div id="Chaper 12 Rendering Techniques-12.1 Lighting Models-12.1.8 Atmospheric Effects"><h3 id="12.1.8 Atmospheric Effects">12.1.8 Atmospheric Effects</h3></div>
+<div id="Chaper 12 Rendering Techniques-12.1 Lighting Models-12.1.8 Atmospheric Effects-12.1.8.1 Fog"><h4 id="12.1.8.1 Fog">12.1.8.1 Fog</h4></div>
+<ul>
+<li>
+第八章的地形例子, 修改 TES
+<pre class="brush: glsl">
+#version 420 core
+layout (quads, fractional_odd_spacing) in;
+uniform sampler2D tex_displacement;
+uniform mat4 mv_matrix;
+uniform mat4 proj_matrix;
+uniform float dmap_depth;
+out vec2 tc;
+in TCS_OUT
+{
+	vec2 tc;
+} tes_in[];
+out TES_OUT
+{
+	vec2 tc;
+	vec3 world_coord;
+	vec3 eye_coord;
+} tes_out;
+void main(void)
+{
+	vec2 tc1 = mix(tes_in[0].tc, tes_in[1].tc, gl_TessCoord.x);
+	vec2 tc2 = mix(tes_in[2].tc, tes_in[3].tc, gl_TessCoord.x);
+	vec2 tc = mix(tc2, tc1, gl_TessCoord.y);
+	vec4 p1 = mix(gl_in[0].gl_Position,
+	gl_in[1].gl_Position, gl_TessCoord.x);
+	vec4 p2 = mix(gl_in[2].gl_Position,
+	gl_in[3].gl_Position, gl_TessCoord.x);
+	vec4 p = mix(p2, p1, gl_TessCoord.y);
+	p.y += texture(tex_displacement, tc).r * dmap_depth;
+	vec4 P_eye = mv_matrix * p;
+	tes_out.tc = tc;
+	tes_out.world_coord = p.xyz;
+	tes_out.eye_coord = P_eye.xyz;
+	gl_Position = proj_matrix * P_eye;
+}
+</pre>
+
+<ul>
+<li>
+fe = e^(-zde), fi = e~(-zdi), fe 为 extinction 因子, fi 为 inscattering 因子. de, di 为相应的系数. z 为到眼睛的距离. 
+
+</ul>
+<li>
+片段着色器
+<pre class="brush: glsl">
+#version 420 core
+out vec4 color;
+layout (binding = 1) uniform sampler2D tex_color;
+uniform bool enable_fog = true;
+uniform vec4 fog_color = vec4(0.7, 0.8, 0.9, 0.0);
+in TES_OUT
+{
+	vec2 tc;
+	vec3 world_coord;
+	vec3 eye_coord;
+} fs_in;
+vec4 fog(vec4 c)
+{
+	float z = length(fs_in.eye_coord);
+	float de = 0.025 * smoothstep(0.0, 6.0,
+	10.0 - fs_in.world_coord.y);
+	float di = 0.045 * smoothstep(0.0, 40.0,
+	20.0 - fs_in.world_coord.y);
+	float extinction = exp(-z * de);
+	float inscattering = exp(-z * di);
+	return c * extinction + fog_color * (1.0 - inscattering);
+}
+void main(void)
+{
+	vec4 landscape = texture(tex_color, fs_in.tc);
+	if (enable_fog)
+	{
+		color = fog(landscape);
+	}
+	else
+	{
+		color = landscape;
+	}
+}	
+</pre>
+
+</ul>
+
+<div id="Chaper 12 Rendering Techniques-12.2 Non-Photo-Realistic Rendering"><h2 id="12.2 Non-Photo-Realistic Rendering">12.2 Non-Photo-Realistic Rendering</h2></div>
+<ul>
+<li>
+产生非真实的图像. 例如 pencil-sketch 效果. 这就是 non-photo-realistic 渲染
+
+</ul>
+
+<div id="Chaper 12 Rendering Techniques-12.2 Non-Photo-Realistic Rendering-12.2.1 Cell Shading — Texels as Light"><h3 id="12.2.1 Cell Shading — Texels as Light">12.2.1 Cell Shading — Texels as Light</h3></div>
+<ul>
+<li>
+一维纹理, 类卡通绘制, toon shading. 也就是 cell shading. 使用一维纹理映射作为查找表. 使用 GL_NEAREST. 使用光的方向和法线的点乘作为纹理坐标进行查找.
+
+<li>
+加载一维纹理
+<pre class="brush: c++">
+static const GLubyte toon_tex_data[] =
+{
+	0x44, 0x00, 0x00, 0x00,
+	0x88, 0x00, 0x00, 0x00,
+	0xCC, 0x00, 0x00, 0x00,
+	0xFF, 0x00, 0x00, 0x00
+};
+glGenTextures(1, &amp;tex_toon);
+glBindTexture(GL_TEXTURE_1D, tex_toon);
+glTexStorage1D(GL_TEXTURE_1D, 1, GL_RGB8, sizeof(toon_tex_data) / 4);
+glTexSubImage1D(GL_TEXTURE_1D, 0,
+	0, sizeof(toon_tex_data) / 4,
+	GL_RGBA, GL_UNSIGNED_BYTE,
+	toon_tex_data);
+glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+glTexParameteri(GL_TEXTURE_1D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+</pre>
+
+<li>
+例子 toonshading
+
+<li>
+顶点着色器
+<pre class="brush: glsl">
+#version 420 core
+uniform mat4 mv_matrix;
+uniform mat4 proj_matrix;
+layout (location = 0) in vec4 position;
+layout (location = 1) in vec3 normal;
+out VS_OUT
+{
+	vec3 normal;
+	vec3 view;
+} vs_out;
+void main(void)
+{
+	vec4 pos_vs = mv_matrix * position;
+	// Calculate eye-space normal and position
+	vs_out.normal = mat3(mv_matrix) * normal;
+	vs_out.view = pos_vs.xyz;
+	// Send clip-space position to primitive assembly
+	gl_Position = proj_matrix * pos_vs;
+}
+</pre>
+
+<li>
+片段着色器
+<pre class="brush: glsl">
+#version 420 core
+layout (binding = 0) uniform sampler1D tex_toon;
+uniform vec3 light_pos = vec3(30.0, 30.0, 100.0);
+in VS_OUT
+{
+	vec3 normal;
+	vec3 view;
+} fs_in;
+out vec4 color;
+void main(void)
+{
+	// Calculate per-pixel normal and light vector
+	vec3 N = normalize(fs_in.normal);
+	vec3 L = normalize(light_pos - fs_in.view);
+	// Simple N dot L diffuse lighting
+	float tc = pow(max(0.0, dot(N, L)), 5.0);
+	// Sample from cell shading texture
+	color = texture(tex_toon, tc) * (tc * 0.8 + 0.2);
+}
+</pre>
+
+<ul>
+<li>
+上面使用指数和缩放偏移, 使得toon 高亮更锐利以及其他效果.
+
+</ul>
+</ul>
+
+<div id="Chaper 12 Rendering Techniques-12.3 Alternative Rendering Methods"><h2 id="12.3 Alternative Rendering Methods">12.3 Alternative Rendering Methods</h2></div>
+<div id="Chaper 12 Rendering Techniques-12.3 Alternative Rendering Methods-12.3.1 Deferred Shading"><h3 id="12.3.1 Deferred Shading">12.3.1 Deferred Shading</h3></div>
+<ul>
+<li>
+一个片段计算之后可能被覆写, 所以使用该技术延迟计算片段.
+
+<li>
+为了做到这点, 首先使用一个非常简单的片段着色器渲染场景. 在 framebuffer attachment 存储每个片段的世界空间的坐标. 存储该中间信息的 framebuffer 常看成 G-buffer. 这里 G 表示 geometry. 生成 G-buffer 之后, 使用单个全屏四边形着色屏幕上的每个点. 使用完整复杂度的最终光照计算.
+
+</ul>
+
+<div id="Chaper 12 Rendering Techniques-12.3 Alternative Rendering Methods-12.3.1 Deferred Shading-12.3.1.1 Generating the G-Buffer"><h4 id="12.3.1.1 Generating the G-Buffer">12.3.1.1 Generating the G-Buffer</h4></div>
+<ul>
+<li>
+使用带有几个 attachments 的 framebuffer object 创建 G-buffer. OpenGL 支持最多 8个 attachment, 每个 attachment 可以有 4 个 32-bit channels(使用 GL_RGBA32F), 
+
+<li>
+一般来说, 16位的浮点值足够存储颜色和法线, 32位浮点值倾向于存储世界空间坐标以保持精确度. 额外的精度可能用于来自于材质的着色目的. 如每个像素的镜面指数, 将数据打包在一起给更宽的不相关成分的framebuffer是个好主意.
+
+<li>
+本例我们在每个片段用16位成分存储法线, 3个16位存储片段的反射, 3个32位存储片段的世界空间坐标, 一个32位整数存储每个片段的物体或材质索引, 一个32位存储每个像素的镜面指数因子. 总共为 6个 16位成分 和 5个32位成分. 对于6个16位成分, 打包成 3个32位成分, 格式为 GL_RGBA32UI 格式 framebuffer, 其第四个成分可以用于存储我们的 32为物体identifier. 而后使用 GL_RGBA32 位格式打包剩下的四个32位成分.
+<pre class="brush: c++">
+GLuint gbuffer;
+GLuint gbuffer_tex[3];
+glGenFramebuffers(1, &amp;gbuffer);
+glBindFramebuffer(GL_FRAMEBUFFER, gbuffer);
+glGenTextures(3, gbuffer_tex);
+glBindTexture(GL_TEXTURE_2D, gbuffer_tex[0]);
+glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32UI,
+	MAX_DISPLAY_WIDTH, MAX_DISPLAY_HEIGHT);
+glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+glBindTexture(GL_TEXTURE_2D, gbuffer_tex[1]);
+glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F,
+	MAX_DISPLAY_WIDTH, MAX_DISPLAY_HEIGHT);
+glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+glBindTexture(GL_TEXTURE_2D, gbuffer_tex[2]);
+glTexStorage2D(GL_TEXTURE_2D, 1, GL_DEPTH_COMPONENT32F,
+	MAX_DISPLAY_WIDTH, MAX_DISPLAY_HEIGHT);
+glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+	gbuffer_tex[0], 0);
+glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT1,
+	gbuffer_tex[1], 0);
+glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+	gbuffer_tex[2], 0);
+glBindFramebuffer(GL_FRAMEBUFFER, 0);
+</pre>
+
+<li>
+着色器使用 packHalf2x16, 打包16位至32位数据内.
+
+<li>
+片段着色器
+<pre class="brush: glsl">
+#version 420 core
+layout (location = 0) out uvec4 color0;
+layout (location = 1) out vec4 color1;
+in VS_OUT
+{
+	vec3 ws_coords;
+	vec3 normal;
+	vec3 tangent;
+	vec2 texcoord0;
+	flat uint material_id;
+} fs_in;
+layout (binding = 0) uniform sampler2D tex_diffuse;
+void main(void)
+{
+	uvec4 outvec0 = uvec4(0);
+	vec4 outvec1 = vec4(0);
+	vec3 color = texture(tex_diffuse, fs_in.texcoord0).rgb;
+	outvec0.x = packHalf2x16(color.xy);	
+	outvec0.y = packHalf2x16(vec2(color.z, fs_in.normal.x));
+	outvec0.z = packHalf2x16(fs_in.normal.yz);
+	outvec0.w = fs_in.material_id;
+	outvec1.xyz = fs_in.ws_coords;
+	outvec1.w = 60.0;
+	color0 = outvec0;
+	color1 = outvec1;
+}
+</pre>
+
+</ul>
+
+<div id="Chaper 12 Rendering Techniques-12.3 Alternative Rendering Methods-12.3.1 Deferred Shading-12.3.1.2 Consuming the G-Buffer"><h4 id="12.3.1.2 Consuming the G-Buffer">12.3.1.2 Consuming the G-Buffer</h4></div>
+<ul>
+<li>
+使用打包代码相反的操作, unpackHalf2x16 和 uintBitsToFloat 函数.
+<pre class="brush: glsl">
+layout (binding = 0) uniform usampler2D gbuf0;
+Layout (binding = 1) uniform sampler2D gbuf1;
+struct fragment_info_t
+{
+	vec3 color;
+	vec3 normal;
+	float specular_power;
+	vec3 ws_coord;
+	uint material_id;
+};
+void unpackGBuffer(ivec2 coord,
+	out fragment_info_t fragment)
+{
+	uvec4 data0 = texelFetch(gbuf_tex0, ivec2(coord), 0);
+	vec4 data1 = texelFetch(gbuf_tex1, ivec2(coord), 0);
+	vec2 temp;
+	temp = unpackHalf2x16(data0.y);
+	fragment.color = vec3(unpackHalf2x16(data0.x), temp.x);
+	fragment.normal = normalize(vec3(temp.y, unpackHalf2x16(data0.z)));
+	fragment.material_id = data0.w;
+	fragment.ws_coord = data1.xyz;
+	fragment.specular_power = data1.w;
+}
+</pre>
+
+<li>
+计算光照
+<pre class="brush: glsl">
+vec4 light_fragment(fragment_info_t fragment)
+{
+	int i;
+	vec4 result = vec4(0.0, 0.0, 0.0, 1.0);
+	if (fragment.material_id != 0)
+	{
+		for (i = 0; i &lt; num_lights; i++)
+		{
+			vec3 L = fragment.ws_coord - light[i].position;
+			float dist = length(L);
+			L = normalize(L);
+			vec3 N = normalize(fragment.normal);
+			vec3 R = reflect(-L, N);
+			float NdotR = max(0.0, dot(N, R));
+			float NdotL = max(0.0, dot(N, L));
+			float attenuation = 50.0 / (pow(dist, 2.0) + 1.0);
+			vec3 diffuse_color = light[i].color * fragment.color *
+				NdotL * attenuation;
+			vec3 specular_color = light[i].color *
+				pow(NdotR, fragment.specular_power)
+				* attenuation;
+			result += vec4(diffuse_color + specular_color, 0.0);
+		}
+	}
+	return result;
+}
+</pre>
+
+<li>
+降低 buffer 的存储需求还可进一步提高效率
+
+</ul>
+
+<div id="Chaper 12 Rendering Techniques-12.3 Alternative Rendering Methods-12.3.1 Deferred Shading-12.3.1.3 Normal Mapping and Deferred Shading"><h4 id="12.3.1.3 Normal Mapping and Deferred Shading">12.3.1.3 Normal Mapping and Deferred Shading</h4></div>
+<ul>
+<li>
+在 deferred 渲染器中, G-buffer 中存储的法线位于世界或者view空间. 为了生成可以存储至 G-buffer 用于 defferred 着色的 view-space 法线, 我们根据来自 normal map 的切线空间的法线, 而后在 G-buffer 生成中变换至 view-space, 这需要对 normal mapping 算法做一点修改.
+
+<li>
+首先不在顶点着色器中计算V和L, 不在那里构造 TBN 矩阵. 反之, 我们计算view-space的法线和切线向量N, T, 并发送给片段着色器. 片段着色器重新单元化这两个向量, 而后根据叉乘得到副切线向量B. 从而构造了 TBN 矩阵. 我们读取切线空间的法线如常读取, 但是使用 TBN 矩阵的逆矩阵变换它. 这样法线从切线空间变换至 view-space. 而后法线存储至 G-buffer.
+
+<li>
+用于生成有 normal mapping 应用的 G-buffer 的顶点着色器几乎和不应用 normal mapping 的着色器版本没有什么不同.
+
+<li>
+片段着色器
+<pre class="brush: glsl">
+#version 420 core
+layout (location = 0) out uvec4 color0;
+layout (location = 1) out vec4 color1;
+in VS_OUT
+{
+	vec3 ws_coords;
+	vec3 normal;
+	vec3 tangent;
+	vec2 texcoord0;
+	flat uint material_id;
+} fs_in;
+layout (binding = 0) uniform sampler2D tex_diffuse;
+layout (binding = 1) uniform sampler2D tex_normal_map;
+void main(void)
+{
+	vec3 N = normalize(fs_in.normal);
+	vec3 T = normalize(fs_in.tangent);
+	vec3 B = cross(N, T);
+	mat3 TBN = mat3(T, B, N);
+	vec3 nm = texture(tex_normal_map, fs_in.texcoord0).xyz * 2.0 - vec3(1.0);
+	nm = TBN * normalize(nm);
+	uvec4 outvec0 = uvec4(0);
+	vec4 outvec1 = vec4(0);
+	vec3 color = texture(tex_diffuse, fs_in.texcoord0).rgb;
+	outvec0.x = packHalf2x16(color.xy);
+	outvec0.y = packHalf2x16(vec2(color.z, nm.x));
+	outvec0.z = packHalf2x16(nm.yz);
+	outvec0.w = fs_in.material_id;
+	outvec1.xyz = floatBitsToUint(fs_in.ws_coords);
+	outvec1.w = 60.0;
+	color0 = outvec0;
+	color1 = outvec1;
+}
+</pre>
+
+<li>
+例子 deferredshading 
+
+</ul>
+
+<div id="Chaper 12 Rendering Techniques-12.3 Alternative Rendering Methods-12.3.1 Deferred Shading-12.3.1.4 Deferred Shading — Downsides"><h4 id="12.3.1.4 Deferred Shading — Downsides">12.3.1.4 Deferred Shading — Downsides</h4></div>
+<ul>
+<li>
+对带宽要求高.
+
+<li>
+要考虑其实现的带宽. 例如, 我们这里使用了世界空间的坐标存储在 G-buffer 内, 我们可使用每个像素的屏幕空间坐标, 我们可以返回 gl_FragCoord 的 x, y 成分, 以及 depth buffer 的内容. 为了得到世界空间的坐标, 我们可以反做 viewport 变换, 而后将结果从clip空间变换至世界空间, 者通过反转投影和视图矩阵得到.
+
+<li>
+法线可以使用两个坐标来表示. 同样我们还要知道 z 的符号, 这里我们假设没有负的z. 最后, 镜面指数和材质ID可以用一个32位数表示. 指数存储为对数.
+
+<li>
+反锯齿则难度很大. 你需要使用用于所有绑定至G-buffer的离屏buffer的多重采样纹理. 因此在 resolve pase, 需要写一个特殊的自定义的 resolve shader, 或者以 sample rate 运行整个内容.
+
+<li>
+大多数 deferred 算法不能处理透明. 可能需要使用 deffered 着色绘制非透明表面, 而后在第二个pass绘制透明材质.
+
+</ul>
+
+<div id="Chaper 12 Rendering Techniques-12.3 Alternative Rendering Methods-12.3.2 Screen-Space Techniques"><h3 id="12.3.2 Screen-Space Techniques">12.3.2 Screen-Space Techniques</h3></div>
+<ul>
+<li>
+deferred shading, 某种在屏幕空间中实现的渲染处理.
+
+</ul>
+
+<div id="Chaper 12 Rendering Techniques-12.3 Alternative Rendering Methods-12.3.2 Screen-Space Techniques-12.3.2.1 Ambient Occlusion"><h4 id="12.3.2.1 Ambient Occlusion">12.3.2.1 Ambient Occlusion</h4></div>
+<ul>
+<li>
+深深的皱褶和缝隙不会有环境光的效果. 使用 ad-hoc 方法和总的近似来实现这个效果.
+
+<li>
+SSAO - screen space ambient occlusion
+
+<li>
+在屏幕空间内计算一个点的 occlusion.
+
+<li>
+首先, 我们渲染我们的场景至深度和颜色buffer, 这些 buffer 附属至一个 FBO. 同样, 我们渲染每个片段的法线和他的linear depth(线性深度)至相同 FBO 的第二个颜色 attachment. 在第二个 pass 中, 我们使用该信息计算每个像素的level of occlusion. 该 pass 中, 渲染一个有ambient occlusion shader 的全屏四边形. 该 shader 读取之前的深度值, 选择一个随机方向, 沿着该方向采取几个步骤, 在该方向上的几个点上, 测试其深度buffer中的值是否比沿着该光线计算的深度值更小. 如果是, 则考虑该点被 occluded.
+
+<li>
+为了选择一个随机的方向, 我们预初始化(pre-initialize)一个 uniform buffer, 其在一个单元半径的球内大量的随机向量. 虽然随机向量可以指向任何方向, 但我们仅考虑远离表面的向量. 我们仅考虑围绕面法线上的半球内的方向. 为了产生一个随机方向, 我们点乘法线和选择的随机方向, 如果为负, 则取反使得其位于上面的半球内.
+
+<li>
+一旦我们有了随即方向, 则沿着该方向行进, 我们开始于面上一点, 而后沿着该方向行进很小的距离, 产生一个新的点, 有x, y, z 坐标. 我们使用 x, y 坐标读取 linear depth buffer, 找到其内的值. 而后我们比较两者的深度值, 看其是否被 occluded.
+
+<li>
+随机方向的数量, 每个方向进行读取的步数, 每步走多远都影响了输出图像的质量. 随机化每个occlusion rays 的距离.
+
+<li>
+将 ambient occlusion 应用到环境光上
+
+<li>
+第一个pass, 我们简单地渲染 diffuse 和镜面部分至一个颜色 attachment, 而后我们渲染面法线和线性 eye-space depth 给第二个 color attachment.
+
+<li>
+下面是第二个 pass 的代码
+<pre class="brush: glsl">
+#version 430 core
+// Samplers for pre-rendered color, normal, and depth
+layout (binding = 0) uniform sampler2D sColor;
+layout (binding = 1) uniform sampler2D sNormalDepth;
+// Final output
+layout (location = 0) out vec4 color;
+// Various uniforms controlling SSAO effect
+uniform float ssao_level = 1.0;
+uniform float object_level = 1.0;
+uniform float ssao_radius = 5.0;
+uniform bool weight_by_angle = true;
+uniform uint point_count = 8;
+uniform bool randomize_points = true;
+// Uniform block containing up to 256 random directions (x,y,z,0)
+// and 256 more completely random vectors
+layout (binding = 0, std140) uniform SAMPLE_POINTS
+{
+	vec4 pos[256];
+	vec4 random_vectors[256];
+} points;
+void main(void)
+{
+	// Get texture position from gl_FragCoord
+	vec2 P = gl_FragCoord.xy / textureSize(sNormalDepth, 0);
+	// ND = normal and depth
+	vec4 ND = textureLod(sNormalDepth, P, 0);
+	// Extract normal and depth
+	vec3 N = ND.xyz;
+	float my_depth = ND.w;
+	// Local temporary variables
+	int i;
+	int j;
+	int n;
+	float occ = 0.0;
+	float total = 0.0;
+	// n is a pseudo-random number generated from fragment coordinate
+	// and depth
+	n = (int(gl_FragCoord.x * 7123.2315 + 125.232) *
+	int(gl_FragCoord.y * 3137.1519 + 234.8)) ^
+	int(my_depth);
+	// Pull one of the random vectors
+	vec4 v = points.random_vectors[n &amp; 255];
+	// r is our "radius randomizer"
+	float r = (v.r + 3.0) * 0.1;
+	if (!randomize_points)
+		r = 0.5;
+	// For each random point (or direction)...
+	for (i = 0; i &lt; point_count; i++)
+	{
+		// Get direction
+		vec3 dir = points.pos[i].xyz;
+		// Put it into the correct hemisphere
+		if (dot(N, dir) &lt; 0.0)
+		dir = -dir;
+		// f is the distance we’ve stepped in this direction
+		// z is the interpolated depth
+		float f = 0.0;
+		float z = my_depth;
+		// We’re going to take 4 steps - we could make this
+		// configurable
+		total += 4.0;
+		for (j = 0; j &lt; 4; j++)
+		{
+			// Step in the right direction
+			f += r;
+			// Step _towards_ viewer reduces z
+			z -= dir.z * f;
+			// Read depth from current fragment
+			float their_depth =
+			textureLod(sNormalDepth,
+			(P + dir.xy * f * ssao_radius), 0).w;
+			// Calculate a weighting (d) for this fragment’s
+			// contribution to occlusion
+			float d = abs(their_depth - my_depth);
+			d *= d;
+			// If we’re obscured, accumulate occlusion
+			if ((z - their_depth) &gt; 0.0)
+			{
+				occ += 4.0 / (1.0 + d);
+			}
+		}
+	}
+	// Calculate occlusion amount
+	float ao_amount = vec4(1.0 - occ / total);
+	// Get object color from color texture
+	vec4 object_color = textureLod(sColor, P, 0);
+	// Mix in ambient color scaled by SSAO level
+	color = object_level * object_color +
+	mix(vec4(0.2), vec4(ao_amount), ssao_level);
+}
+</pre>
+
+</ul>
+
+<div id="Chaper 12 Rendering Techniques-12.3 Alternative Rendering Methods-12.3.3 Rendering without Triangles"><h3 id="12.3.3 Rendering without Triangles">12.3.3 Rendering without Triangles</h3></div>
+<div id="Chaper 12 Rendering Techniques-12.3 Alternative Rendering Methods-12.3.3 Rendering without Triangles-12.3.3.1 Rendering Julia Fractals"><h4 id="12.3.3.1 Rendering Julia Fractals">12.3.3.1 Rendering Julia Fractals</h4></div>
+<ul>
+<li>
+我们创建一个 Julia set, 从纹理坐标中创建图像数据. Julia sets 和 Mandelbrot set(iconic bulblike fractal) 有关. 
+
+<li>
+Mandelbrot image 通过迭代公式生成: Zn = Zn-1^2 + C. 知道 z 量超过一个门槛值, 计算迭代数. 如果 z 在允许的迭代次数内没有超过门槛值, 则该点则位于 Mandelbrot set 内, 且着色为一些默认的颜色. 如果 z 超过门槛值, 则该点位于该set之外. 当该点位于set之外时, 通常 Mandelbrot set 的视觉化其给该点上色, 使用的是iteration count 的函数. Julia set 和 Mandelbrot set 的区别就是 Z 与 C 的初始条件.
+
+<li>
+Mandelbrot set, Z 设为(0+0i), C 设置为执行迭代的点的坐标. Julia set, Z 设为点的坐标, C 设为应用设置的常量.  
+
+<li>
+设置一个片段着色器, 其 input block 仅包含纹理坐标, 使用一个 uniform 保存 C 值. 使用有颜色梯度的一维纹理. 一个 uniform 保存迭代的最大数量.
+<pre class="brush: glsl">
+#version 430 core
+in Fragment
+{
+	vec2 tex_coord;
+} fragment;
+// Here’s our value of c
+uniform vec2 c;
+// This is the color gradient texture
+uniform sampler1D tex_gradient;
+// This is the maximum iterations we’ll perform before we consider
+// the point to be outside the set
+uniform int max_iterations;
+// The output color for this fragment
+out vec4 output_color;
+</pre>
+
+<li>
+迭代循环
+<pre class="brush: glsl">
+int iterations = 0;
+vec2 z = fragment.tex_coords;
+const float threshold_squared = 4.0;
+// While there are iterations left and we haven’t escaped from
+// the set yet...
+while (iterations &lt; max_iterations &amp;&amp;
+	dot(z, z) &lt; threshold_squared)
+{
+	// Iterate the value of Z as Z^2 + C
+	vec2 z_squared;
+	z_squared.x = z.x * z.x - z.y * z.y;
+	z_squared.y = 2.0 * z.x * z.y;
+	z = z_squared + c;
+	iterations++;
+}
+</pre>
+
+<li>
+颜色
+<pre class="brush: glsl">
+if (iterations == max_iterations)
+{
+output_color = vec4(0.0, 0.0, 0.0, 0.0);
+}
+else
+{
+	output_color = texture(tex_gradient,
+		float(iterations) / float(max_iterations));
+}
+</pre>
+
+<li>
+例子 julia
+
+</ul>
+
+<div id="Chaper 12 Rendering Techniques-12.3 Alternative Rendering Methods-12.3.3 Rendering without Triangles-12.3.3.2 Ray Tracing in a Fragment Shader"><h4 id="12.3.3.2 Ray Tracing in a Fragment Shader">12.3.3.2 Ray Tracing in a Fragment Shader</h4></div>
+<ul>
+<li>
+将一些像素发送给管线, 而后发现几何体的哪些部分覆盖了这些像素. OpenGL 不直接支持. 需要在着色器中自己实现. 
+
+<li>
+使用着色器有些好处, 使得其不限于点, 线条, 三角形, 我们可以设置在ray击中物体之后做了什么, 同样的技术, 我们可以设置相机看到什么, 我们可以渲染反射, 阴影, 折射.
+
+<li>
+用于着色的 ray tracing 和之前的着色与光照算法并不是都不相同, 我们仍可计算 diffuse 和镜面部分, 应用 normal maps 和其他纹理.
+
+<li>
+光线与球面相交
+<pre class="brush: glsl">
+struct ray
+{
+	vec3 origin;
+	vec3 direction;
+};
+struct sphere
+{
+	vec3 center;
+	float radius;
+};
+float intersect_ray_sphere(ray R,
+	sphere S,
+	out vec3 hitpos,
+	out vec3 normal)
+{
+	vec3 v = R.origin - S.center;
+	float B = 2.0 * dot(R.direction, v);
+	float C = dot(v, v) - S.radius * S.radius;
+	float B2 = B * B;
+	float f = B2 - 4.0 * C;
+	if (f &lt; 0.0)
+		return 0.0;
+	float t0 = -B + sqrt(f);
+	float t1 = -B - sqrt(f);
+	float t = min(max(t0, 0.0), max(t1, 0.0)) * 0.5;
+	if (t == 0.0)
+		return 0.0;
+	hitpos = R.origin + t * R.direction;
+	normal = normalize(hitpos - S.center);
+	return t;
+}
+</pre>
+
+<ul>
+<li>
+返回 0.0 表示光线没有击中球体, 否则返回 t 值. 如果有相交, 则在 hitpos 内保存击中的位置. normal 保存法线.
+
+</ul>
+<li>
+t 值不能太大, 受限
+<pre class="brush: glsl">
+// Declare a uniform block with our spheres in it.
+layout (std140, binding = 1) uniform SPHERES
+{
+	sphere S[128];
+};
+// Textures with the ray origin and direction in them
+layout (binding = 0) uniform sampler2D tex_origin;
+layout (binding = 1) uniform sampler2D tex_direction;
+// Construct a ray using the two textures
+ray R;
+R.origin = texelFetch(tex_origin, ivec2(gl_FragCoord.xy), 0).xyz;
+R.direction = normalize(texelFetch(tex_direction,
+	ivec2(gl_FragCoord.xy), 0).xyz);
+float min_t = 1000000.0f;
+float t;
+// For each sphere...
+for (i = 0; i &lt; num_spheres; i++)
+{
+	// Find the intersection point
+	t = intersect_ray_sphere(R, S[i], hitpos, normal);
+	// If there is an intersection
+	if (t != 0.0)
+	{
+		// And that intersection is less than our current best
+		if (t &lt; min_t)
+		{
+			// Record it.
+			min_t = t;
+			hit_position = hitpos;
+			hit_normal = normal;
+			sphere_index = i;
+		}
+	}
+}
+</pre>
+
+<ul>
+<li>
+遍历所有球体看是否击中了一个球体.
+
+</ul>
+<li>
+上面的结果有法线, 则如常进行光照计算.
+
+<li>
+给定表面的一个顶点 P 和光源坐标 L, 形成一个新的ray, 则 D 为 (L-P)/|L-P|, 这就是 shadow ray. 原点O为P, 此时我们测试光线是否可以看到点P, 是否有物体遮住P. 从而实现阴影算法
+
+<li>
+还可以构造反射光线. 同样可以得到反射到其他物体的内容.
+
+<li>
+为了在着色器实现递归, 实现多个ray trace, 你跟踪一个光线, 而后着色一个点, 在创建一个光线进行跟踪, 如此反复. 我们使用一个stack在纹理数组中维持来实现递归.
+
+<li>
+为了维持用于我们 ray tracer 的所有数据, 我们创建一个 framebuffer objects 数组, 使用4个纹理作为颜色 attachments. 最终的合成颜色, 光线的起点, 光线的方向, 光线累积的反射颜色. 本例我们允许每个光线有五次跳跃, 我们需要五个 framebuffer objects, 每个有四个纹理附属于它. 第一个是composite color, 其他三个对每个framebuffer 都是一致的. 在每个 pass 中, 我们读取一个纹理集, 而后通过framebuffer objects写入下一个集合.
+
+<li>
+为了初始化我们的 ray tracer, 我们运行一个着色器, 在第一个 origin 和方向纹理中写入起点和光线方向. 同样, 初始化我们的累计纹理为0, 而后我们的反射纹理都为1. 接下来, 我们通过绘制一个全屏四边形来运行我们的实际ray tracing着色器. 在每个 pass 中, 我们绑定之前pass的起点, 方向和反射颜色纹理. 同样绑定一个 framebuffer, 其有输出的起点, 方向, 反射纹理作为它的color attachments, 这些纹理作为下一次pass的输入. 对于每个像素, 着色器使用存储在前两个纹理的起点和方向形成一个ray, 而后再场景中跟踪, 点亮相交点, 结果乘以存储在反射颜色纹理的值, 而后发送给其第一个输出.
+
+<li>
+为了允许组成最终的输出纹理, 我们将其附属至每个framebuffer objcet 的颜色attachment, 而后允许它们的混合, 混合函数其源和目标都设置为GL_ONE. 对于其他输出, 我们写入相交位置, 反射光线方向, 材质的反射系数, 这些用于着色光线的相交点.
+
+<li>
+可以使用一个四成员的向量表示平面.
+
+<li>
+光线和平面相交
+<pre class="brush: glsl">
+float intersect_ray_plane(ray R,
+	vec4 P,
+	out vec3 hitpos,
+	out vec3 normal)
+{
+	vec3 O = R.origin;
+	vec3 D = R.direction;
+	vec3 N = P.xyz;
+	float d = P.w;
+	float denom = dot(N, D);
+	if (denom == 0.0)
+	return 0.0;
+	float t = -(d + dot(O, N)) / denom;
+	if (t &lt; 0.0)
+	return 0.0;
+	hitpos = O + t * D;
+	normal = N;
+	return t;
+}
+</pre>
+
+<li>
+例子 raytracer, 这是一个蛮力法.
+
+<li>
+一种加速的数据结构, acceleration structure 是一个数据结构, 其在内存中构造, 允许你快速确定哪个物体可能被给定起点和方向的光线击中. 光线跟踪很简单, 只需要你知道用于你的图元的相交算法.
+
+<li>
+光线跟踪计算昂贵, 则没有专有硬件支持, 需要你在你的着色器内做很多工作. 当前的研究着重于有效率的acceleration structures, 以及如何生成它们, 存储他们, traverse 它们.
+
+</ul>
+
+    </div>
+</body>
+</html>

@@ -1,0 +1,1288 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../style.css" />
+    <title>doxygen</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="../index.html">首页</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<div id="用法"><h1 id="用法">用法</h1></div>
+<ul>
+<li>
+要生成文档所需的步骤:
+
+<ol>
+<li>
+给源代码设置特定的文档格式
+
+<li>
+生成一个配置文件: doxygen -g &lt;config_file&gt;
+
+<li>
+编辑配置文件, 使得其符合你的项目, 你可以指定输入文件以及其他大量可选信息
+
+<li>
+根据配置文件生成文档: doxygen &lt;config_file&gt;
+
+<li>
+升级旧版本的配置文件: doxygen -u &lt;config_file&gt;
+
+</ol>
+<li>
+修正输出结果:
+
+<ol>
+<li>
+HTML输出: 缺省头部(HTML_HEADER), 缺省尾部(HTML_FOOTER), 缺省style sheet(HTML_STYLESHEET)
+
+<ul>
+<li>
+使用命令: doxygen -w html header.html footer.html stylesheet.css &lt;config_file&gt;
+
+</ul>
+<li>
+LaTeX输出: 生成 refman.tex的第一部分(LATEX_HEADER), style sheet 包含在HEADER(通常为doxygen.sty) 中
+
+<ul>
+<li>
+使用命令: doxygen -w latex header.tex doxygen.sty
+
+</ul>
+<li>
+RTF输出: 缺省 style sheet(见RTF_STYLESHEET_FILE)
+
+<ul>
+<li>
+使用命令: doxygen -w rtf rtfstyle.cfg
+
+</ul>
+</ol>
+</ul>
+
+<div id="入门"><h1 id="入门">入门</h1></div>
+<ul>
+<li>
+第一步: 检查是否支持你的编程语言
+
+<li>
+第二步: 创建一个配置文件, 命令: doxygen -g &lt;config-file&gt;
+
+<ul>
+<li>
+如果你的程序复杂, 有多个文件, 可设置 INPUT 标记为程序根目录, 设置 FILE_PATTERNS 标记为文件格式(*.cpp *h), 设置 RECURSIVE 为真进行递归遍历, 设置 EXCLUDE_PATTERN 可设置忽略的目录和文件, 如 EXCLUDE_PATTERNS = <span id="入门-/test/"></span><strong id="/test/">/test/</strong> 
+
+<li>
+EXTRACT_ALL 标记为YES, 假设你的源代码已经文档化; SOURCE_BROWSER 标记为YES, 用于生成交叉引用. INLINE_SOURCES 标记为 YES, 则文档包含源码 
+
+</ul>
+<li>
+第三步: 生成文档命令: doxygen &lt;config-file&gt;
+
+<ul>
+<li>
+OUTPUT_DIRECTORY--输出目录, 还可设置 HTML_OUTPUT, RTF_OUTPUT, LATEX_OUTPUT, XML_OUTPUT, MAN_OUTPUT 标记
+
+<li>
+LaTex 输出: 为了简化生成文档的编译进程, doxygen 会写一个 Makefile 到 latex 目录中. 
+
+<ul>
+<li>
+Makefile 的内容依赖于 USE_PDFLATEX 标记.
+
+</ul>
+<li>
+RTF 输出
+
+<li>
+XML 输出
+
+<li>
+Man page 输出
+
+</ul>
+<li>
+第四步: 文档化源码 
+
+<ul>
+<li>
+如果 EXTRACT_ALL 设置为 NO, 则 doxygen 仅仅生成文档化的成员, 文件, 类, 名字空间的文档.
+
+<ul>
+<li>
+将特定文档块放在成员, 类, 名字空间的声明和定义之前. 对于文件, 类和名字空间允许存放文档在其后.
+
+<li>
+存放特定的文档快放在其他地方, 然后使用结构命令(structural command)在文档块中. 一个结构命令可以连接文档块至特定实体.
+
+</ul>
+<li>
+文件的归档只能使用第二种结构命令
+
+<li>
+在文档内的特定命令可以被执行, 见 Special Commands
+
+<li>
+如果一行开头有空格以及多个星号, 这些空格和星号会被移除
+
+<li>
+所有空白行会当成段落分隔符
+
+<li>
+自动创建归档的类的单词链接, 除非该单词之前有符号"%"
+
+<li>
+当在文本中发现特定模式时会链接至已创建的成员. 见 Automatic link generation
+
+<li>
+支持 HTML 标记
+
+</ul>
+</ul>
+
+<div id="HTML命令"><h1 id="HTML命令">HTML命令</h1></div>
+<ul>
+<li>
+支持的HTML命令<br />
+
+<ul>
+<li>
+&lt;A HREF="..."&gt; Starts a hyperlink (if supported by the output format).
+
+<li>
+&lt;A NAME="..."&gt; Starts an named anchor (if supported by the output format).
+
+<li>
+&lt;/A&gt; Ends a link or anchor
+
+<li>
+&lt; B&gt; Starts a piece of text displayed in a bold font.
+
+<li>
+&lt; /B&gt; Ends a &lt; B&gt; section.
+
+<li>
+&lt;BODY&gt; Does not generate any output.
+
+<li>
+&lt;/BODY&gt; Does not generate any output.
+
+<li>
+&lt; BR &gt; Forces a line break.
+
+<li>
+&lt;CENTER&gt; starts a section of centered text.
+
+<li>
+&lt;/CENTER&gt; ends a section of centered text.
+
+<li>
+&lt;CAPTION&gt; Starts a caption. Use within a table only.
+
+<li>
+&lt;/CAPTION&gt; Ends a caption. Use within a table only.
+
+<li>
+&lt; CODE&gt; Starts a piece of text displayed in a typewriter font. Note that for C# code, this command is equivalent to \code.
+
+<li>
+&lt; /CODE&gt; Ends a &lt; CODE&gt; section. Note that for C# code, this command is equivalent to \endcode.
+
+<li>
+&lt;DD&gt; Starts an item description.
+
+<li>
+&lt;DFN&gt; Starts a piece of text displayed in a typewriter font.
+
+<li>
+&lt;/DFN&gt; Ends a &lt;DFN&gt; section.
+
+<li>
+&lt; DIV&gt; Starts a section with a specific style (HTML only)
+
+<li>
+&lt; /DIV&gt; Ends a section with a specific style (HTML only)
+
+<li>
+&lt;DL&gt; Starts a description list.
+
+<li>
+&lt;/DL&gt; Ends a description list.
+
+<li>
+&lt;DT&gt; Starts an item title.
+
+<li>
+&lt;/DT&gt; Ends an item title.
+
+<li>
+&lt;EM&gt; Starts a piece of text displayed in an italic font.
+
+<li>
+&lt;/EM&gt; Ends a &lt;EM&gt; section.
+
+<li>
+&lt;FORM&gt; Does not generate any output.
+
+<li>
+&lt;/FORM&gt; Does not generate any output.
+
+<li>
+&lt; HR&gt; Writes a horizontal ruler.
+
+<li>
+&lt; H1&gt; Starts an unnumbered section.
+
+<li>
+&lt; /H1&gt; Ends an unnumbered section.
+
+<li>
+&lt;H2&gt; Starts an unnumbered subsection.
+
+<li>
+&lt;/H2&gt; Ends an unnumbered subsection.
+
+<li>
+&lt;H3&gt; Starts an unnumbered subsubsection.
+
+<li>
+&lt;/H3&gt; Ends an unnumbered subsubsection.
+
+<li>
+&lt; I&gt; Starts a piece of text displayed in an italic font.
+
+<li>
+&lt;INPUT&gt; Does not generate any output.
+
+<li>
+&lt; /I&gt; Ends a &lt; I&gt; section.
+
+<li>
+&lt;IMG&gt; This command is written with attributes to the HTML output only.
+
+<li>
+&lt;LI&gt; Starts a new list item.
+
+<li>
+&lt;/LI&gt; Ends a list item.
+
+<li>
+&lt;META&gt; Does not generate any output.
+
+<li>
+&lt;MULTICOL&gt; ignored by doxygen.
+
+<li>
+&lt;/MUTLICOL&gt; ignored by doxygen.
+
+<li>
+&lt;OL&gt; Starts a numbered item list.
+
+<li>
+&lt;/OL&gt; Ends a numbered item list.
+
+<li>
+&lt;P&gt; Starts a new paragraph.
+
+<li>
+&lt;/P&gt; Ends a paragraph.
+
+<li>
+&lt;PRE&gt; Starts a preformatted fragment.
+
+<li>
+&lt;/PRE&gt; Ends a preformatted fragment.
+
+<li>
+&lt;SMALL&gt; Starts a section of text displayed in a smaller font.
+
+<li>
+&lt;/SMALL&gt; Ends a &lt;SMALL&gt; section.
+
+<li>
+&lt;SPAN&gt; Starts an inline text fragment with a specific style (HTML only)
+
+<li>
+&lt;/SPAN&gt; Ends an inline text fragment with a specific style (HTML only)
+
+<li>
+&lt;STRONG&gt; Starts a section of bold text.
+
+<li>
+&lt;/STRONG&gt; Ends a section of bold text.
+
+<li>
+&lt; SUB&gt; Starts a piece of text displayed in subscript.
+
+<li>
+&lt; /SUB&gt; Ends a &lt; SUB&gt; section.
+
+<li>
+&lt; SUP&gt; Starts a piece of text displayed in superscript.
+
+<li>
+&lt; /SUP&gt; Ends a &lt; /SUP&gt; section.
+
+<li>
+&lt;TABLE&gt; starts a table.
+
+<li>
+&lt;/TABLE&gt; ends a table.
+
+<li>
+&lt;TD&gt; Starts a new table data element.
+
+<li>
+&lt;/TD&gt; Ends a table data element.
+
+<li>
+&lt;TH&gt; Starts a new table header.
+
+<li>
+&lt;/TH&gt; Ends a table header.
+
+<li>
+&lt;TR&gt; Starts a new table row.
+
+<li>
+&lt;/TR&gt; Ends a table row.
+
+<li>
+&lt;TT&gt; Starts a piece of text displayed in a typewriter font.
+
+<li>
+&lt;/TT&gt; Ends a &lt;TT&gt; section.
+
+<li>
+&lt; KBD&gt; Starts a piece of text displayed in a typewriter font.
+
+<li>
+&lt; /KBD&gt; Ends a &lt; KBD&gt; section.
+
+<li>
+&lt;UL&gt; Starts an unnumbered item list.
+
+<li>
+&lt;/UL&gt; Ends an unnumbered item list.
+
+<li>
+&lt;VAR&gt; Starts a piece of text displayed in an italic font.
+
+<li>
+&lt;/VAR&gt; Ends a &lt;VAR&gt; section.
+
+</ul>
+</ul>
+
+<ul>
+<li>
+doxygen 可以认识的 HTML字符
+
+<ul>
+<li>
+&amp;copy; the copyright symbol
+
+<li>
+&amp;tm; the trade mark symbol
+
+<li>
+&amp;reg; the registered trade mark symbol
+
+<li>
+&amp;lt; less-than symbol
+
+<li>
+&amp;gt; greater-than symbol
+
+<li>
+&amp;amp; ampersand
+
+<li>
+&amp;apos; single quotation mark (straight)
+
+<li>
+&amp;quot; double quotation mark (straight)
+
+<li>
+&amp;lsquo; left single quotation mark
+
+<li>
+&amp;rsquo; right single quotation mark
+
+<li>
+&amp;ldquo; left double quotation mark
+
+<li>
+&amp;rdquo; right double quotation mark
+
+<li>
+&amp;ndash; n-dash (for numeric ranges, eg. 2–8)
+
+<li>
+&amp;mdash; m-dash (for parenthetical punctuation — like this)
+
+<li>
+&amp;?uml; where ? is one of {A,E,I,O,U,Y,a,e,i,o,u,y}, writes a character with a diaeresis accent (like ?).
+
+<li>
+&amp;?acute; where ? is one of {A,E,I,O,U,Y,a,e,i,o,u,y}, writes a character with a acute accent (like á).
+
+<li>
+&amp;?grave; where ? is one of {A,E,I,O,U,a,e,i,o,u,y}, writes a character with a grave accent (like à).
+
+<li>
+&amp;?circ; where ? is one of {A,E,I,O,U,a,e,i,o,u,y}, writes a character with a circumflex accent (like a).
+
+<li>
+&amp;?tilde; where ? is one of {A,N,O,a,n,o}, writes a character with a tilde accent (like ?).
+
+<li>
+&amp;szlig; write a sharp s (i.e. ?) to the output.
+
+<li>
+&amp;?cedil; where ? is one of {c,C}, writes a c-cedille (like ?).
+
+<li>
+&amp;?ring; where ? is one of {a,A}, writes an a with a ring (like ?).
+
+<li>
+&amp;nbsp; a non breakable space.
+
+</ul>
+</ul>
+
+<div id="特定文档块 "><h1 id="特定文档块 ">特定文档块 </h1></div>
+<ul>
+<li>
+两种注释: 简略注释, 详细注释, 还有函数体内的注释.
+
+<li>
+支持多个简略注释和详细注释(不推荐).
+
+<li>
+用于标识为详细注释的几个标记
+
+<ul>
+<li>
+JavaDoc Style
+<pre c++>
+/**
+ * ... text ...
+ */
+</pre>
+
+<li>
+Qt Style
+<pre c++>
+/*!
+ * ... text ...
+ */
+</pre>
+
+<li>
+上面两者注释风格中, ... text ... 之前的星号'*' 不是必须的
+
+<li>
+第三种可选择的风格: 最少两行C++注释, 且每行要多一个'/'或者'!', 且以一个空格结束该文档块
+<pre c++>
+///
+/// ... text ...
+///
+
+//!
+//!... text ...
+//!
+</pre>
+
+<li>
+其他格式
+<pre c++>
+/********************************************//**
+ *  ... text
+ ***********************************************/
+
+/////////////////////////////////////////////////
+/// ... text ...
+/////////////////////////////////////////////////
+</pre>
+
+</ul>
+<li>
+简短注释
+
+<ul>
+<li>
+在上面所介绍的注释风格中, 可以使用'\brief'开头, 该命令在段落末段结束, 所以详细描述位于空行之后
+<pre c++>
+/*! \brief Brief description.
+ *         Brief description continued.
+ *
+ *  Detailed description starts here.
+ */
+</pre>
+
+<li>
+如果 JAVADOC_AUTOBRIEF 为真, 则使用 JavaDoc style 的注释会自动开始一个简短描述, 由第一个句号为终点, 该句号后为空白, 另外还有QT_AUTOBRIEF
+
+<li>
+另外 JAVADOC_AUTOBRIFE 对于多行的C++注释也有作用, 每行前多一个'/'或者'!', 这样句号也会终结一个简略注释
+<pre c++>
+/** Brief description which ends at this dot. Details follow
+ *  here.
+ */
+
+/// Brief description which ends at this dot. Details follow
+/// here. 
+</pre>
+
+<li>
+其他方法, 注意第二个例子, JAVADOC_AUTOBRIEF 要设为NO
+<pre c++>
+/// Brief description.
+/** Detailed description. */
+
+
+//! Brief description.
+
+//! Detailed description 
+//! starts here.
+</pre>
+
+</ul>
+<li>
+详细注释
+
+<ul>
+<li>
+允许多个详细注释, 其连接顺序要看 doxygen 分析代码的次序
+
+<li>
+简短描述包含在类, 名字空间, 文件的纵览中, 使用斜体字打印(BRIEF_MEMBER_DESC设为NO, 则隐藏该描述). 缺省情况简短描述为详细描述的第一句.(可以由REPEAT_BRIEF设为NO改变)
+
+<li>
+JavaDoc Style的缺省设置其注释块的第一行不为简短描述, 除非设置 JAVADOC_AUTOBRIEF为YES, 设置之后如果不想一个句子中间的点号'.'为终结该句的标点, 则应当放置反斜号和一个空格在其后. 例如 /** Brief description (e.g.\ using only a few words). Details follow.  */
+
+<li>
+不同于其他文档系统, 可以在定义之前放置文档. 这种方式允许在源文件中放置文档, 而不仅仅是头文件. 这样可以在头文件的声明放置简短描述, 在源文件的定义中放置详细描述
+
+<li>
+在类, 结构体, 文件, 联合, 枚举的成员定义之后进行注释, 则需要注释块中添加记号'&lt;', 该方法对函数参数也有效
+
+<li>
+详细描述
+<pre c++>
+int val: /*!&lt; Qt风格详细描述 */
+int var; /**&lt; Javadoc风格详细描述 */
+int var; //!&lt; C++风格详细描述 
+		//!&lt; 
+int var; ///&lt; C++风格详细描述
+		///&lt;
+</pre>
+
+<li>
+简单描述
+<pre c++>
+int var;	//!&lt; 简单描述
+int var;	///&lt; 简单描述
+</pre>
+
+<li>
+函数参数, @param, 在函数参数列表中用[in] [out] [in, out] 表示方向<br />
+<pre c++>
+void foo(int v /**&lt; [in] 描述输入参数v的文档  */);
+</pre>
+
+<li>
+'&lt;' 仅仅用来表示成员位于注释块之前, 该注释块的结构和含义和之前所介绍的一样.
+
+<li>
+'&lt;' 只能用于成员和参数, 不能用于文件, 类, union, struct, groups, namespaces, enums等, 另外 structural command 不允许出现在这些注释块中.
+
+</ul>
+<li>
+structural command
+
+<ul>
+<li>
+如果不将注释块放在其对象之前或者之后, 而是存放于其他地方. 则需要在注释块中放置 structural command. 平时尽量不要使用 structural command.
+
+<li>
+Structural 命令由'\'开头或'@'开头, 而后跟随一个命令名称以及一个或多个参数. 下面的例子可以将该注释块存放于任何地方, 这是由于其有"\class"命令
+<pre c++>
+/*! \class Test
+    \brief A test class.
+
+    A more detailed class description.
+*/
+</pre>
+
+<li>
+其他 structural command
+
+<ul>
+<li>
+\struct
+
+<li>
+\union
+
+<li>
+\enum
+
+<li>
+\fn --- 函数
+
+<li>
+\var --- 变量或typedef或枚举值
+
+<li>
+\def --- #define
+
+<li>
+\typedef
+
+<li>
+\file
+
+<li>
+\namespace
+
+<li>
+\package
+
+<li>
+\interface --- IDL 接口
+
+</ul>
+<li>
+更多的其他命令见 Special Command
+
+<li>
+要对类成员进行文档, 就需要先文档化该类, 同样, 对于名字空间也一样. 要文档全局C函数, typedef, enum和预处理定义, 就要文档化包含这些内容的文件. 所以文档至少包含一个命令: /*! \file <span id="特定文档块 -/ 或者 /"></span><strong id="/ 或者 /">/ 或者 /</strong>* @file */
+<pre c++>
+/*! \file structcmd.h
+    \brief A Documented file.
+    
+    Details.
+*/
+
+/*! \def MAX(a,b)
+    \brief A macro that returns the maximum of \a a and \a b.
+   
+    Details.
+*/
+
+/*! \var typedef unsigned int UINT32
+    \brief A type definition for a .
+    
+    Details.
+*/
+
+/*! \var int errno
+    \brief Contains the last error code.
+
+    \warning Not thread safe!
+*/
+
+/*! \fn int open(const char *pathname,int flags)
+    \brief Opens a file descriptor.
+
+    \param pathname The name of the descriptor.
+    \param flags Opening flags.
+*/
+
+/*! \fn int close(int fd)
+    \brief Closes the file descriptor \a fd.
+    \param fd The descriptor to close.
+*/
+
+/*! \fn size_t write(int fd,const char *buf, size_t count)
+    \brief Writes \a count bytes from \a buf to the filedescriptor \a fd.
+    \param fd The descriptor to write to.
+    \param buf The data buffer to write.
+    \param count The number of bytes to write.
+*/
+
+/*! \fn int read(int fd,char *buf,size_t count)
+    \brief Read bytes from a file descriptor.
+    \param fd The descriptor to read from.
+    \param buf The buffer to read into.
+    \param count The number of bytes to read.
+*/
+
+#define MAX(a,b) (((a)&gt;(b))?(a):(b))
+typedef unsigned int UINT32;
+int errno;
+int open(const char *,int);
+int close(int);
+size_t write(int,const char *, size_t);
+int read(int,char *,size_t);
+</pre>
+
+<li>
+尽量不要使用结构化命令, 例如在函数之前使用'\fn', 因为structural command会复制对象原型, 造成冗余信息
+
+</ul>
+</ul>
+
+<div id="列表"><h1 id="列表">列表</h1></div>
+<ul>
+<li>
+使用破折号
+
+<ul>
+<li>
+列对齐的减号可创建列表, 减号+井号则创建数目列表
+<pre c++>
+  /*! 
+   *  A list of events:
+   *    - mouse events
+   *         -# mouse move event
+   *         -# mouse click event\n
+   *            More info about the click event.
+   *         -# mouse double click event
+   *    - keyboard events
+   *         -# key down event
+   *         -# key up event
+   *
+   *  More text here.
+   */
+</pre>
+
+<li>
+如果你使用 tabs 作为缩进, 则使用 TAB_SIZE设置当前的tab大小
+
+<li>
+结束一个列表则使用新段落, 或者在空行的列表的缩进位置处放置一个点号'.'
+<pre c++>
+/**
+ * Text before the list
+ * - list item 1
+ *   - sub item 1
+ *     - sub sub item 1
+ *     - sub sub item 2
+ *     . 
+ *     The dot above ends the sub sub item list.
+ *     More text for the first sub item
+ *   .
+ *   The dot above ends the first sub item.
+ *   More text for the first list item
+ *   - sub item 2
+ *   - sub item 3
+ * - list item 2
+ * .
+ * More text in the same paragraph.
+ *
+ * More text in a new paragraph.
+ */
+</pre>
+
+</ul>
+<li>
+使用 HTML 命令
+
+<ul>
+<li>
+这种情况缩进就不重要了
+<pre c++>
+ /*! 
+   *  A list of events:
+   *  &lt;ul&gt;
+   *  &lt;li&gt; mouse events
+   *     &lt;ol&gt;
+   *     &lt;li&gt;mouse move event
+   *     &lt;li&gt;mouse click event\n
+   *         More info about the click event.
+   *     &lt;li&gt;mouse double click event
+   *     &lt;/ol&gt;
+   *  &lt;li&gt; keyboard events
+   *     &lt;ol&gt;     
+   *     &lt;li&gt;key down event
+   *     &lt;li&gt;key up event
+   *     &lt;/ol&gt;
+   *  &lt;/ul&gt;
+   *  More text here.
+   */
+</pre>
+
+</ul>
+<li>
+使用 \arg 或者 \li
+
+<ul>
+<li>
+用于Qt软件的内部文档工具 qdoc 和 KDoc, 使用这两个命令创建 unnested lists.
+
+</ul>
+</ul>
+
+<div id="Grouping"><h1 id="Grouping">Grouping</h1></div>
+<ul>
+<li>
+三种分组方式: modules, member groups, pages
+
+<li>
+Modules
+
+<ul>
+<li>
+将内容组合在一起放在一个单独的页面中
+
+<li>
+其成员可以是文件, 名字空间, 类, 函数, 变量, 枚举, typedefs, define, 以及其他组.
+
+<li>
+\defgroup 命令定义一个组, 第一个参数为组的唯一标识, 第二个参数为组的名称或者标题, 其显示于文档内.
+
+<li>
+\ingroup 将一个成员放置进一个组, 只需将该命令放置于该成员的文档块中即可.
+
+<li>
+符号 "@{" 和 "@}" 用于包括一个组的内容, 避免反复使用 \ingroup 命令. 该符号可放置于组定义文档块中, 也可以是单独的文档块中.
+
+<li>
+分组可以嵌套.
+
+<li>
+如果你不想使用唯一的标签, 你可使用 \addtogroup 代替 \defgroup, 该命令关于组标题的参数可选.
+<pre c++>
+/** \addtogroup &lt;label&gt; 
+ *  @{
+ */
+...
+
+/** @}*/
+</pre>
+
+<li>
+组合的实体(如类, 文件, 名字空间)可以放入多个组, 但是成员(如变量, 函数, tpyedef, 枚举)则只能做为一个组的成员
+
+<li>
+如果一个成员有最高"优先级"的定义, 则将该成员放入该组中. 例如: 显式的 \ingroup 覆盖通过@{ @}实现的隐式分组定义. 相同优先级分组定义的冲突则触发警告, 直到用于一个成员的定义没有显式的文档. 下面的例子将 VarInA 放置组 A 内, 其静默解决了 IntegerVariable 的冲突, 将其放入组 IntVariables, 这是因为第二个 IntegerVariable 实例是未文档化的.
+<pre>
+/**
+ * \ingroup A
+ */
+extern int VarInA;
+
+/**
+ * \defgroup IntVariables Global integer variables
+ * @{
+ */
+
+/** an integer variable */
+extern int IntegerVariable;
+
+/**@}*/
+
+....
+
+/**
+ * \defgroup Variables Global variables
+ */
+/**@{*/
+
+/** a variable in group A */
+int VarInA;
+
+int IntegerVariable;
+
+/**@}*/
+</pre>
+
+<li>
+\ref 命令可用于关联至一个组, 该命令第一个参数为组的label.
+
+<li>
+优先级: \ingroup, \defgroup, \addtogroup, \weakgroup, 最后一个类似 addtogroup. 一般在头文件使用高优先级的目录, 在源文件使用\weakgroup, 这样就不会复制其层次
+
+</ul>
+<li>
+Member Groups
+
+<ul>
+<li>
+定义
+<pre c++>
+///@{ 
+  ...
+///@}
+
+/**@{*/ 
+  ... 
+/**@}*/ 
+</pre>
+
+<li>
+在 @{ 之前可以包含命令 @name 或者 \name 用于定义组的头部内容. 不允许嵌套 member grouping
+
+<li>
+如果一个member gourp 中的所有成员都是同样类型和保护层次(例如static public), 则会显示于 type/protection 层次组(例如"Static Public, Member"), 如果类型不同, 则显示于同样的层次组. 如果不想所有的memer group 为顶层group, 则使用 \nosubgrouping 命令
+
+</ul>
+<li>
+SubPaging
+
+<ul>
+<li>
+命令 \page, \mainpage
+
+<li>
+页A使用 \subpage 命令添加链接至页B, 页B则是页A的子页, 得到两个组GA和GB, GB为GA的一部分, 页A放在GA中, 页B则放在GB中
+
+</ul>
+</ul>
+
+<div id="Including formula"><h1 id="Including formula">Including formula</h1></div>
+<ul>
+<li>
+为了包含数学方程式	, 你需要软件: latex, dvips, gs. 对于HTML则需要 MathJax. 注意配置选项 USE_MATHJAX
+
+<li>
+三种方式包含 formulas 进文档
+
+<ul>
+<li>
+使用 in-text formula, 包含在一对 \f$ 命令之间
+<pre c++>
+  The distance between \f$(x_1,y_1)\f$ and \f$(x_2,y_2)\f$ is 
+  \f$\sqrt{(x_2-x_1)^2+(y_2-y_1)^2}\f$.
+</pre>
+
+</ul>
+<li>
+使用 \f[ 和 \f] 命令
+<pre c++>
+ \f[
+    |I_2|=\left| \int_{0}^T \psi(t) 
+             \left\{ 
+                u(a,t)-
+                \int_{\gamma(t)}^a 
+                \frac{d\theta}{k(\theta,t)}
+                \int_{a}^\theta c(\xi)u_t(\xi,t)\,d\xi
+             \right\} dt
+          \right|
+  \f]
+</pre>
+
+<li>
+使用 \f{environment} 对应于非数学公式, 该 environment 为 latex 的环境名称
+<pre c++>
+   \f{eqnarray*}{
+        g &amp;=&amp; \frac{Gm_2}{r^2} \\ 
+          &amp;=&amp; \frac{(6.673 \times 10^{-11}\,\mbox{m}^3\,\mbox{kg}^{-1}\,
+              \mbox{s}^{-2})(5.9736 \times 10^{24}\,\mbox{kg})}{(6371.01\,\mbox{km})^2} \\ 
+          &amp;=&amp; 9.82066032\,\mbox{m/s}^2
+   \f}
+</pre>
+
+</ul>
+
+<div id="Graph and diagrams"><h1 id="Graph and diagrams">Graph and diagrams</h1></div>
+<ul>
+<li>
+支持生成C++类的继承图标
+
+<li>
+使用 graphviz 软件期内的"dot"工具, 而后设置 HAVE_DOT 为YES.
+
+<li>
+生成的图形
+
+<ul>
+<li>
+类的层次关系, 只支持 HTML
+
+<li>
+类的继承关系
+
+<li>
+依赖关系, 由HTML和RTF支持
+
+<li>
+相反的依赖图
+
+<li>
+类和struct之间的关系
+
+<li>
+CALL_GRAPH: 函数的调用图
+
+<li>
+CALLER_GRAPH: 函数的被调用图
+
+</ul>
+<li>
+使用 layout file 你可以确定以下那些图显示
+
+<li>
+DOT_GRAPH_MAX_NODES 和 MAX_DOT_GRAPH_DEPTH 用于限制各种图的大小
+
+<li>
+类图元素的含义
+
+<ul>
+<li>
+黄色方框表示一个类, 右下角有个小标志表示隐含了基类, 如果方框为虚线, 则表示虚类
+
+<li>
+白色方框表示当前文档所表示的类
+
+<li>
+灰色方框表示未被文档化的类
+
+<li>
+深蓝色实箭头表示公有继承
+
+<li>
+深绿色虚箭头表示保护继承
+
+<li>
+深绿色点箭头表示私有继承
+
+</ul>
+</ul>
+
+<div id="Preprocessing"><h1 id="Preprocessing">Preprocessing</h1></div>
+<ul>
+<li>
+设置 ENABLE_PREPROCESSING 为 NO 可以禁止所有的预处理.
+
+<li>
+MACRO_EXPANSION 标记用于是否扩展宏, 
+
+<li>
+EXPAND_ONLY_PREDEF 表示值扩展预定义的宏, 还设置标志PREDEFINED, EXPAND_AS_DEFINED
+
+<li>
+例如
+<pre c++>
+extern "C" void __declspec(dllexport) ErrorMsg( String aMessage,...);
+</pre>
+
+<ul>
+<li>
+如果你不设置任何选项, 则会把__declspec堪称某种类型的函数, 除非设置如下, 才会将 __declspec(dllexport) 移除
+<pre c++>
+ENABLE_PREPROCESSING   = YES
+MACRO_EXPANSION        = YES
+EXPAND_ONLY_PREDEF     = YES
+PREDEFINED             = __declspec(x)=
+</pre>
+
+</ul>
+<li>
+如果不设置预处理宏, 下面的代码很令人迷惑
+<pre c++>
+/*! A reference to an IID */
+#ifdef __cplusplus
+#define REFIID const IID &amp;
+#else
+#define REFIID const IID *
+#endif
+
+
+/*! The IUnknown interface */
+DECLARE_INTERFACE(IUnknown)
+{
+  STDMETHOD(HRESULT,QueryInterface) (THIS_ REFIID iid, void **ppv) PURE;
+  STDMETHOD(ULONG,AddRef) (THIS) PURE;
+  STDMETHOD(ULONG,Release) (THIS) PURE;
+};
+</pre>
+
+<ul>
+<li>
+设置选项如下
+<pre c++>
+ENABLE_PREPROCESSING = YES
+MACRO_EXPANSION      = YES
+EXPAND_ONLY_PREDEF   = YES
+PREDEFINED           = "DECLARE_INTERFACE(name)=class name" \
+                       "STDMETHOD(result,name)=virtual result name" \
+                       "PURE= = 0" \
+                       THIS_= \
+                       THIS= \
+		       __cplusplus
+</pre>
+
+<li>
+得到结果
+<pre c++>
+/*! A reference to an IID */
+#define REFIID
+
+/*! The IUnknown interface */
+class  IUnknown
+{
+  virtual  HRESULT   QueryInterface ( REFIID iid, void **ppv) = 0;
+  virtual  ULONG   AddRef () = 0;
+  virtual  ULONG   Release () = 0;
+};
+</pre>
+
+</ul>
+<li>
+如果你想替换一个宏名而不想结果被进一步替换, 则使用 := 操作符, 而不是使用 = 操作符. 例如
+<pre c++>
+#define QList QListT
+class QListT
+{
+};
+</pre>
+
+<ul>
+<li>
+使用配置:
+<pre c++>
+PREDEFINED = QListT:=QList
+</pre>
+
+</ul>
+<li>
+用于 ATL 和 MFC 的预处理
+<pre c++>
+PREDEFINED           = "DECLARE_INTERFACE(name)=class name" \
+                       "STDMETHOD(result,name)=virtual result name" \
+                       "PURE= = 0" \
+                       THIS_= \
+                       THIS= \
+                       DECLARE_REGISTRY_RESOURCEID=// \
+                       DECLARE_PROTECT_FINAL_CONSTRUCT=// \
+                       "DECLARE_AGGREGATABLE(Class)= " \
+                       "DECLARE_REGISTRY_RESOURCEID(Id)= " \
+                       DECLARE_MESSAGE_MAP= \
+                       BEGIN_MESSAGE_MAP=/* \
+                       END_MESSAGE_MAP=*/// \
+                       BEGIN_COM_MAP=/* \
+                       END_COM_MAP=*/// \
+                       BEGIN_PROP_MAP=/* \
+                       END_PROP_MAP=*/// \
+                       BEGIN_MSG_MAP=/* \
+                       END_MSG_MAP=*/// \
+                       BEGIN_PROPERTY_MAP=/* \
+                       END_PROPERTY_MAP=*/// \
+                       BEGIN_OBJECT_MAP=/* \
+                       END_OBJECT_MAP()=*/// \
+                       DECLARE_VIEW_STATUS=// \
+                       "STDMETHOD(a)=HRESULT a" \
+                       "ATL_NO_VTABLE= " \
+                       "__declspec(a)= " \
+                       BEGIN_CONNECTION_POINT_MAP=/* \
+                       END_CONNECTION_POINT_MAP=*/// \
+                       "DECLARE_DYNAMIC(class)= " \
+                       "IMPLEMENT_DYNAMIC(class1, class2)= " \
+                       "DECLARE_DYNCREATE(class)= " \
+                       "IMPLEMENT_DYNCREATE(class1, class2)= " \
+                       "IMPLEMENT_SERIAL(class1, class2, class3)= " \
+                       "DECLARE_MESSAGE_MAP()= " \
+                       TRY=try \
+                       "CATCH_ALL(e)= catch(...)" \
+                       END_CATCH_ALL= \
+                       "THROW_LAST()= throw"\
+                       "RUNTIME_CLASS(class)=class" \
+                       "MAKEINTRESOURCE(nId)=nId" \
+                       "IMPLEMENT_REGISTER(v, w, x, y, z)= " \
+                       "ASSERT(x)=assert(x)" \
+                       "ASSERT_VALID(x)=assert(x)" \
+                       "TRACE0(x)=printf(x)" \
+                       "OS_ERR(A,B)={ #A, B }" \
+                       __cplusplus \
+                       "DECLARE_OLECREATE(class)= " \
+                       "BEGIN_DISPATCH_MAP(class1, class2)= " \
+                       "BEGIN_INTERFACE_MAP(class1, class2)= " \
+                       "INTERFACE_PART(class, id, name)= " \
+                       "END_INTERFACE_MAP()=" \
+                       "DISP_FUNCTION(class, name, function, result, id)=" \
+                       "END_DISPATCH_MAP()=" \
+                       "IMPLEMENT_OLECREATE2(class, name, id1, id2, id3, id4,\
+                        id5, id6, id7, id8, id9, id10, id11)="
+</pre>
+
+<li>
+你还可以设置 INPUT_FILTER 标志写输入过滤器.
+
+<li>
+如果你不确定 doxygen 预处理的结果, 你可以使用命令: doxygen -d Preprocessor
+
+<li>
+设置 QUIET = YES 和 WARNINGS = NO 可以禁止其他输出
+
+</ul>
+
+<div id="Linking to external documentation"><h1 id="Linking to external documentation">Linking to external documentation</h1></div>
+<ul>
+<li>
+使用 doxygen 的 tag file 机制, 将 GENERATE_TAGFILE 选项之后放置 tag file 的名称
+
+<li>
+TAGFILES 选项之后设置tag files的名称用于组合一个或多个外部工程的输出
+
+<li>
+一个 tag file 并不包含 external documentation 的位置信息. 你需要指定其位于何处, 两种方式:
+
+<ul>
+<li>
+在配置阶段: 分配输出的位置给 tag files. 而后使用相对路径关联至你工程生成的HTML输出目录
+
+<li>
+编译期后: 如果没有指定输出位置, 则会生成external HTML 的大量无效链接, 而后生成一个 perl 脚本在HTML输出目录中调用 installdox, 该脚本会自动替换这些无效链接至生成的HTML文件
+
+</ul>
+<li>
+例如你的项目类似如下
+<pre c++>
+&lt;root&gt;
+  +- proj
+  |   +- html               HTML output directory for proj
+  |   +- src                sources for proj
+  |   |- proj.cpp
+  +- ext1
+  |   +- html               HTML output directory for ext1
+  |   |- ext1.tag           tag file for ext1
+  +- ext2
+  |   +- html               HTML output directory for ext2
+  |   |- ext2.tag           tag file for ext2
+  |- proj.cfg               doxygen configuration file for proj
+  |- ext1.cfg               doxygen configuration file for ext1
+  |- ext2.cfg               doxygen configuration file for ext2
+</pre>
+
+<li>
+则配置文件如下
+<pre c++>
+// proj.cfg:
+
+OUTPUT_DIRECTORY  = proj
+INPUT             = proj/src
+TAGFILES          = ext1/ext1.tag=../../ext1/html \
+                    ext2/ext2.tag=../../ext2/html 
+
+// ext1.cfg:
+
+OUTPUT_DIRECTORY  = ext1
+GENERATE_TAGFILE  = ext1/ext1.tag 
+
+// ext2.cfg:
+
+OUTPUT_DIRECTORY  = ext2
+GENERATE_TAGFILE  = ext2/ext2.tag
+</pre>
+
+<li>
+可以使用工具 doxytag 从一个生成的 HTML 提取出tag文件. 该 tag 文件还可以用于 Qt 文档
+
+</ul>
+
+    </div>
+</body>
+</html>

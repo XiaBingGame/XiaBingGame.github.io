@@ -1,0 +1,141 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../../style.css" />
+    <title>ExampleOSGBindlesstess</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="../index.html">首页</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<ul>
+<li>
+主要演示将一系列纹理的ID作为uniform buffer object进行管理
+
+<li>
+osg::State
+
+<ul>
+<li>
+setUseModelViewAndProjectionUniforms: 是否使用投影和视图变换矩阵的一致变量
+<pre>
+    if (_useModelViewAndProjectionUniforms)
+    {
+        // replace ftransform as it only works with built-ins
+        State_Utils::replace(source, "ftransform()", "gl_ModelViewProjectionMatrix * gl_Vertex");
+
+        // replace built in uniform
+        State_Utils::replaceAndInsertDeclaration(source, declPos, "gl_ModelViewMatrix", "osg_ModelViewMatrix", "uniform ", "mat4 ");
+        State_Utils::replaceAndInsertDeclaration(source, declPos, "gl_ModelViewProjectionMatrix", "osg_ModelViewProjectionMatrix", "uniform ", "mat4 ");
+        State_Utils::replaceAndInsertDeclaration(source, declPos, "gl_ProjectionMatrix", "osg_ProjectionMatrix", "uniform ", "mat4 ");
+        State_Utils::replaceAndInsertDeclaration(source, declPos, "gl_NormalMatrix", "osg_NormalMatrix", "uniform ", "mat3 ");
+    }
+</pre>
+
+<li>
+相机所关联的上下文其状态设置该属性
+<pre c++>
+    viewer.getCamera()-&gt;getGraphicsContext()-&gt;getState()-&gt;setUseModelViewAndProjectionUniforms(true);
+</pre>
+
+</ul>
+<li>
+类 BindlessBuffer, Uniform Buffer Object 的包装类, 并提供了纹理句柄的存储功能
+
+<ul>
+<li>
+使用了 osg::UniformBufferObject, osg::UniformBufferBinding, osg::UInt64Array
+
+<li>
+创建 UniformBufferObject 和 UInt64Array, 然后 UInt64Array 设置其Buffer Object 为该 UBO, 创建新的 UniformBufferBinding 绑定关联至该 Array.
+
+<li>
+主要创建了 Buffer 的绑定， 然后其关联至一个无符号数组， 该数组关联了一个 Buffer Object.
+
+</ul>
+<li>
+类 BindlessTexture, 从 osg::Texture2D 派生而来, 当第一次应用纹理时, 设置所有的纹理句柄
+
+<ul>
+<li>
+通过 applyOnce 实现绑定, 这里加载我的纹理, 并上传至 UBO 中
+
+<li>
+获取 contextID 和 GL 扩展
+<pre c++>
+    unsigned contextID = state.getContextID();
+    osg::GLExtensions* extensions = osg::GLExtensions::Get( contextID, true );
+</pre>
+
+<li>
+获取 osg::Image 的内部格式
+<pre c+++>
+	osg::Texture::computeInternalFormatWithImage(const osg::Image&amp; image) 
+</pre>
+
+<li>
+获取 osg::Image 的大小
+<pre c++>
+	Texture::computeRequiredTextureDimensions(State&amp; state, const osg::Image&amp; image,GLsizei&amp; inwidth, GLsizei&amp; inheight,GLsizei&amp; numMipmapLevels) 
+</pre>
+
+<li>
+上传纹理, 创建纹理对象
+<pre c++>
+        textureObject = generateAndAssignTextureObject(contextID,GL_TEXTURE_2D,_numMipmapLevels,_internalFormat,_textureWidth,_textureHeight,1,_borderWidth);
+        textureObject-&gt;bind();
+        applyTexParameters(GL_TEXTURE_2D,state);
+
+        applyTexImage2D_load(state,GL_TEXTURE_2D,image.get(),
+            _textureWidth, _textureHeight, _numMipmapLevels);
+        textureObject-&gt;setAllocated(true);
+</pre>
+
+</ul>
+<li>
+osg::Geometry* createCube(float scale, osg::Vec3 origin) 创建一个立方体
+
+<li>
+要实例化的集合体只能使用 VBO, 不能用显示列表, 可在着色器内改变其位置, 通过 gl_InstanceID 改变位置 gl_Vertex, 设置纹理索引
+
+</ul>
+<p>
+{{c++
+</p>
+<blockquote>
+osg::ref_ptr&lt;osg::Geometry&gt; geom = createCube(0.9f);
+osg::PrimitiveSet *prim = geom-&gt;getPrimitiveSet(0);
+//instanced elements must use VBOs
+geom-&gt;setUseDisplayList(false);
+geom-&gt;setUseVertexBufferObjects(true);
+geom-&gt;setCullingActive(false);
+prim-&gt;setNumInstances(1000);
+prim-&gt;dirty();
+sceneRoot-&gt;addChild(geo);
+</blockquote>
+<p>
+}}}
+</p>
+<ul>
+<li>
+存储了 uniform block 用于纹理数组
+<pre>
+"layout (binding = 0, std140) uniform TEXTURE_BLOCK            \n"
+"{                                                             \n"
+"    uint64_t      tex[XXX];                                   \n"
+"};        
+</pre>
+
+</ul>
+
+    </div>
+</body>
+</html>

@@ -1,0 +1,202 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../../style.css" />
+    <title>Chapter11(1)</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<ul>
+<li>
+函数
+
+<ul>
+<li>
+glNewList/glEndList/glCallList
+
+<li>
+glEnableClientState/glDisableClientState
+
+<li>
+glVertexPointer/glNormalPointer/glTexCoordPointer/glColorPointer/glEdgeFlagPointer/glFogCoordPointer/glSecondaryColorPointer
+
+<li>
+glArrayElement/glDrawArrays/glInterleavedArrays/glDrawElements/glDrawRangeElements/glMultiDrawElements/glBufferData/glBindBuffer
+
+</ul>
+</ul>
+ 
+<h1 id="toc_1">显示列表</h1>
+<ul>
+<li>
+立即模式渲染
+
+</ul>
+<h2 id="toc_1.1">Batch Processing</h2>
+<ul>
+<li>
+大多数 OpenGL 渲染命令, 转换成一些硬件具体的命令, 但是这些命令并没有立即发送至硬件, 而是累积在本地缓存中直到达到某些界限后, flush 这些命令至硬件.
+
+<li>
+发送缓存至硬件(被称之为flushing的处理)是一个asynchronous操作.
+
+<li>
+三种事件触发当前渲染命令batch的flush.
+
+<ul>
+<li>
+驱动的命令缓存满了
+
+<li>
+执行缓存交换的时候, 只有所有悬着的命令被执行后, 才进行缓存交换, 此时进行flush.
+
+<li>
+单缓存使用 glFlush(void) 手动触发.
+
+</ul>
+<li>
+有些opengl命令不能被缓存用于之后的执行. 例如 glReadPixels 和 glDrawPixels. 这些函数直接访问帧缓存和直接读写数据. 这些函数产生了管线的停顿, 因为在你对颜色缓存做出改变之前当前队列中的命令必须被flushed和被执行. 
+
+<li>
+你可以强迫 flush 命令缓存, 然后用下面的函数等待图形硬件完成其所有的渲染任务
+<pre c++>
+	void glFinsh(void);
+</pre>
+
+</ul>
+<h2 id="toc_1.2">Preprocessed Batches</h2>
+<ul>
+<li>
+OpenGL 命令被编译, 从OpenGL 高层命令语言转换至硬件可以理解的硬件命令.
+
+<li>
+对于没必要的重复花费而言, 那些执行重复渲染任务的命令缓存中得到预计算数据的块. 例如绘制torus的代码, 我们可以将这块数据拷贝回命令缓存中. 这样就可以节省用于创建这些数据的函数调用和编译工作.
+
+<li>
+使用显示列表完成这个工作. glNewList/glEndList.
+
+<li>
+生成一个显示列表ID: glGenLists.  删除一个显示列表ID: glDeleteLists.  调用一个显示列表: glCallList/glCallLists. 后者常用于绘制文字.
+
+</ul>
+<h2 id="toc_1.3">Display List Caveats</h2>
+<ul>
+<li>
+包含状态改变(开关等)的显示列表可用.
+
+<li>
+如果你不使用 glGenLists 创建显示列表名称, 你可能在某些实现上得到一个工作显示列表, 在某些实现上没有得到.
+
+<li>
+有些命令在显示列表中没有意义, 例如 glReadPixels 读取帧缓存至一个指针. glTexImage2D 则在显示列表中存储图像数据. 接下来的命令加载该图像数据作为一个纹理. 这样做可能会使用两倍的内存.
+
+<li>
+显示列表不能包含创建显示列表的命令.
+
+</ul>
+
+<h1 id="toc_2">Vertex Arrays</h1>
+<ul>
+<li>
+四个步骤:
+
+<ol>
+<li>
+将你的几何数据集合在一个或多个数组中. 
+
+<li>
+告诉OpenGL你的数据在哪里.
+
+<li>
+显式告诉OpenGL使用哪个数组.
+
+<li>
+执行OpenGL命令使用这些顶点数据渲染.
+
+</ol>
+<li>
+OpenGL 被设计为 client/server 模型, 服务器为显示硬件, 客户端为 CPU和内存. 在PC上, 服务器可能为显卡, 客户为PC的CPU和主存. 因为允许和禁止的状态应用于客户端, 所以其使用 glEnableClientState和glDisableClientState.
+
+<li>
+当使用顶点数组时, 修改用于 glTexCoordPointer 的目标纹理单元, 可以用函数: glClientActiveTexture(GLenum texture);
+
+<li>
+glArrayElement, glDrawArrays
+
+</ul>
+
+<h2 id="toc_2.1">Indexed Vertex Arrays</h2>
+<ul>
+<li>
+glDrawElements/glDrawRangeElements/glMultiDrawArrays/glInterleavedArrays
+
+<li>
+所有的数组必须相同大小, 相同索引指向相同顶点. 所以有时需要重新整理数据.
+
+<li>
+在一个程序产品中, 你可能有工具得到这计算后的索引数组, 且将其写入硬盘, 该数据带有头描述了要求的数组尺寸. 读取这个mesh或者mesh集合, 将其写回程序则是一个基本模型的简单实现.
+
+<li>
+给飞机的玻璃部分加上立体映射.
+
+<li>
+一个多边形顺时钟和逆时钟绘制可以同时绘制正面反面. 否则就只能绘制一面.
+
+</ul>
+
+<h1 id="toc_3">Vertex Buffer Objects</h1>
+<ul>
+<li>
+vertex buffer objects, 其使用和管理顶点数组数据的方式类似于加载和管理纹理对象.
+
+</ul>
+<h2 id="toc_3.1">Managing and Using Buffer Objects</h2>
+<ul>
+<li>
+生成一个缓存对象
+<pre c++>
+	void glGenBuffers(GLsizei n, GLuint *buffers);
+</pre>
+
+<li>
+删除缓存对象: glDeleteBuffers.
+
+<li>
+绑定缓存对象: glBindBuffer.
+
+<ul>
+<li>
+类型有: GL_ARRAY_BUFFER, GL_ELEMENT_ARRAY_BUFFER
+
+</ul>
+</ul>
+<h2 id="toc_3.2">Loading the Buffer Objects</h2>
+<ul>
+<li>
+glBufferData
+
+</ul>
+
+<h2 id="toc_3.3">Mixing static and dynamic data</h2>
+<ul>
+<li>
+glMapBuffer/glUnMapBuffer 访问VBO数据
+
+</ul>
+
+    </div>
+</body>
+</html>

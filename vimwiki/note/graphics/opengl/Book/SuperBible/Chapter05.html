@@ -1,0 +1,93 @@
+ï»¿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../../style.css" />
+    <title>Chapter05</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/ç™¾åº¦äº‘/Vimwiki/Vimwiki_html/index.html">é¦–é¡µ</a>
+		</li>
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/ç™¾åº¦äº‘/Vimwiki/Vimwiki_html/diary/diary.html">æ—¥è®°</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<h1 id="toc_1">OpenGL ³¬¼¶±¦µä µÚ5µÚ6ÕÂ</h1>
+<h2 id="toc_1.1">µÚ5ÕÂ ÑÕÉ«, ²ÄÁÏ, ¹âÕÕ»ù´¡ÖªÊ¶</h2>
+<p>
+1. ÑÕÉ«Éî¶È: 4Î»É«²ÊÄ£Ê½, 8Î»É«²ÊÄ£Ê½, 16Î»É«²ÊÄ£Ê½. 32Î»É«²ÊÄ£Ê½, 24Î»É«²ÊÄ£Ê½<br />
+2. ×ÅÉ«Ä£ÐÍGL_FLAT, Í¼ÔªµÄÄÚ²¿ÑÕÉ«¾ÍÊÇ×îºóÒ»¸ö¶¥µãËùÖ¸¶¨µÄÑÕÉ«. Î¨Ò»µÄÀýÍâÊÇGL_POLYGONÍ¼Ôª.<br />
+3. ¹âÕÕÏÂÎïÌåÑÕÉ«µÄ¼ÆËã<br />
+	¼ÙÉèÓÐÒ»ºì,ÂÌ,À¶Ç¿¶È¾ùÎªÒ»°ëµÄ»·¾³¹âÔ´, ÎïÌåµÄ»·¾³¹â·´ÉäÊôÐÔÎª(0.5, 1.0. 0.5).<br />
+		ÄÇÃ´²úÉúµÄÑÕÉ«³É·ÖÎª (0.5*0.5, 0.5*1.0, 0.5*0.5) = (0.25, 0.5, 0.25)<br />
+	·´Éä¹âÔò¾ßÓÐ·½ÏòÐÔ, ÓëÎïÌå±íÃæÓë¹âÔ´µÄ½Ç¶È, ±íÃæÓë¹âÔ´µÄ¾àÀëÒÔ¼°Ë¥¼õÒò×ÓÓÐ¹Ø.<br />
+	»·¾³¹âÒ²ÊÇÈç´Ë.<br />
+	×îºóÈýÖÖÑÕÉ«µÄÖµ¼ÓÔÚÒ»Æð, ²úÉúÎïÌåµÄ×îÖÕÑÕÉ«.<br />
+4. Ò»°ã¶øÑÔ, ¹âÔ´ºÍ²ÄÁÏµÄ»·¾³ºÍÉ¢Éä·´Éä³É·ÖÊÇÏàÍ¬µÄ, ³ý·ÇÐèÒªÌØÊâµÄ¾µÃæ¹âÐ§¹û.<br />
+	¾µÃæ¹âºÍ²ÄÁÏµÄ¾µÃæ·´ÉäÊôÐÔÆ«ÏòÓÚµ­»ÒÉ«»ò°×É«.<br />
+	È«¾Ö»·¾³¹âµÄÈ±Ê¡RGBAÖµÊÇ(0.2, 0.2, 0.2, 1.0)<br />
+5. GL_COLOR_MATERIAL--ÑÕÉ«×·×Ù.<br />
+	GL_NORMALIZE-- OpenGL×Ô¶¯×ª»»µ¥Î»·¨Ïß.    <br />
+6. ÁíglScale×ª»»º¯Êý»á¶Ô·¨Ïß³¤¶È½øÐÐËõ·Å.Ê¹ÓÃGL_RESCALE_NORMALSÀ´Ìæ´úGL_NORMALIZEÀ´¹æ·¶ÄãÖ¸¶¨µÄµ¥Î»·¨Ïß.<br />
+	¿É¸ù¾ÝÏòÁ¿»ýÀ´¼ÆËã·¢ÏÖ. V3 = V1xV2. ´ÓV2×ªµ½V1µÄ´¹Ö±ÏòÁ¿.<br />
+<br />
+</p>
+<h2 id="toc_1.2">µÚ6ÕÂ ÑÕÉ«ºÍ²ÄÁÏµÄ¸ü¶àÏ¸½Ú</h2>
+<h3 id="toc_1.2.1">6.1 »ìºÏ</h3>
+<p>
+	1. »ìºÏ²Ù×÷»áºÍÉî¶È²âÊÔÏà³åÍ»<br />
+</p>
+<h4 id="toc_1.2.1.1">6.1.1 ×éºÏÑÕÉ«</h4>
+<h4 id="toc_1.2.1.2">6.1.2 ¿¹¾â³Ý</h4>
+<p>
+	ÏñËØµÄÄ¿±êÑÕÉ«ÓëÖÜÎ§ÏñËØµÄÑÕÉ«½øÐÐ»ìºÏÊµÏÖ¿¹¾â³Ý<br />
+	´ò¿ª¿¹¾â³Ý¹¦ÄÜ<br />
+		1. Ê×ÏÈ´ò¿ª»ìºÏ<br />
+		glEnable(GL_BLEND);<br />
+		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);<br />
+			»ìºÏ·½³ÌÊ½ÎªGL_ADD<br />
+		2. ´ò¿ªÏÂÃæµÄ¹¦ÄÜ<br />
+		glEnable(GL_POINT_SMOOTH);<br />
+		glEnable(GL_LINE_SMOOTH);<br />
+		glEnable(GL_POLYGON_SMOOTH);<br />
+	¶à±ßÐÎµÄ¿¹¾â³Ý²»¹»ÀíÏë.<br />
+	¶àÖØ²ÉÑù --- Ö¡»º³åÇøÖÐ¶îÍâµÄ»º³åÇøÓÃÓÚ¶àÖØ²ÉÑù<br />
+		´°¿ÚÄ£Ê½ÒªÓÐGLUT_MULTISAMPLE<br />
+		´ò¿ª¶àÖØ²ÉÑù<br />
+		glEnable(GL_MULTISAMPLE);<br />
+		¶àÖØ²ÉÑù²»Ó¦¸ÃÓëµãºÍÖ±ÏßµÄ·´¾â³ÝÍ¬Ê±Ê¹ÓÃ. ½ö½ö»æÖÆµãºÍÖ±Ïß, ¿ÉÒÔ½ö½ö´ò¿ªµãºÍÖ±ÏßµÄÆ½»¬, ÆäËûµÄÊµÌåÔòÊ¹ÓÃ¶àÖØ²ÉÑù<br />
+		¶àÖØ²ÉÑù»º³åÇøÄ¬ÈÏÊ¹ÓÃÆ¬¶ÎRGBÖµ, ²»°üÀ¨ÑÕÉ«µÄAlpha³É·Ö, ¿ÉÊ¹ÓÃº¯ÊýglEnableºÍÏÂÃæµÄ²ÎÊýÀ´¸Ä±ä<br />
+			GL_SAMPLE_ALPHA_TO_COVERAGE<br />
+			GL_SAMPLE_ALPHA_TO_ONE<br />
+			GL_SAMPLE_COVERAGE(ÅäºÏglSmapleCoverage()Ê¹ÓÃ)<br />
+	Èç¹ûÒõÓ°²»ÊÇ´¿ºÚÉ«, Ê¹ÓÃÄ£°æ²âÊÔ¿ÉÒÔÈÃÖØ¸´ÎïÌåµÄÒõÓ°²»ÓÃ¶à´Î»æÖÆ, Ôì³É²¿·ÖÒõÓ°ÑÕÉ«¸üÉîµÄÐ§¹û.<br />
+</p>
+<h3 id="toc_1.2.2">6.2 Îí</h3>
+<p>
+	1. Æ¬¶ÎÓëÑÛ¾¦µÄ¾àÀë¿ÉÒÔÍ¨¹ýÁ½¸ö·½·¨¼ÆËã<br />
+		glFogi(GL_FOG_COORD_SRC, GL_FRAGMENT_DEPTH);<br />
+		glFogi(GL_FOG_COORD_SRC, GL_FOG_COORD);<br />
+</p>
+<h3 id="toc_1.2.3">6.3 ÀÛ¼Æ»º³åÇø</h3>
+<p>
+	1. void glAccum() º¯Êý<br />
+	2. ÉêÇë GLUT_ACCUM »º³åÇø<br />
+</p>
+<h3 id="toc_1.2.4">6.4 ÆäËûÑÕÉ«²Ù×÷</h3>
+<p>
+	1. glColorMask ÉèÖÃÑÚÂë<br />
+	2. glLogicOpº¯Êý, ´ò¿ª GL_COLOR_LOGIC_OP ¹¦ÄÜ<br />
+	3. glAlphaFunc Alpha²âÊÔ<br />
+	4. GL_DITHER ¶¶¶¯¹¦ÄÜ, È±Ê¡ÊÇ´ò¿ªµÄ<br />
+</p>
+
+    </div>
+</body>
+</html>

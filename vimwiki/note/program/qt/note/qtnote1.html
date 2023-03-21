@@ -1,0 +1,101 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../../style.css">
+<title>qtnote1</title>
+<meta http-equiv="Content-Type" content="text/html; charset=cp936">
+</head>
+<body>
+
+<p>
+1. 四个模式:
+	Edit mode
+	Signals and Slots
+	Buddy Editing Mode
+	Tab Order Editing Mode.
+</p>
+
+<p>
+2. 新的布局类: 
+	QFormLayout
+</p>
+
+<p>
+3. 布局快捷键
+	Ctrl+1    水平
+	Ctrl+2    垂直
+	Ctrl+5    Grid
+	Ctrl+6    窗体
+	Ctrl+3    水平分割
+	Ctrl+4    垂直分割
+	Ctrl+J    自动修正
+</p>
+
+<p>
+4. 可用容器
+	Frames --- 常用语form的占位符
+</p>
+<blockquote>
+重要属性: frameShape, frameShadow, lineWidth, midLineWidth
+</blockquote>
+<p>
+	Group Boxes --- checkboxes 和 radio buttons 组框起来
+</p>
+<blockquote>
+重要属性:  title, flat, checkable, checked
+</blockquote>
+<p>
+	Stacked Widgets --- 用于分页保存widget, 右上角可以转换页面
+	Tab Widgets ---
+</p>
+<blockquote>
+通过属性 currentTabText 修改当前Tab标题
+</blockquote>
+<p>
+	ToolBox Widgets --- 分隔的页面组成
+</p>
+<blockquote>
+通过属性 currentItemText 修改当前页面名称
+</blockquote>
+<p>
+	Dock Widgets --- 浮动面板, 常用语main window template创建的form
+</p>
+
+<p>
+5. main window template 可以用于创建带菜单, 工具条和dock widget的窗口应用程序
+</p>
+<blockquote>
+菜单通过Action Editor来编辑Action. 可设置键盘快捷键
+如果菜单条目有操作, 则可以在工具条上设置按钮映射.
+可从菜单栏或者Action Editor拖动按钮至工具条或者拖动至菜单
+dock Widget 设置好docked属性和dockWidgetArea属性
+如在对central widget使用layout之前配置dock widget有时候会更容易. 设置windowTitle可设置dock标题,当浮动出来为独立的工具窗口时有用.
+</blockquote>
+
+<p>
+6. 可以通过右键选择Change styleSheet改变Widget的样式
+</p>
+
+<p>
+7. 在应用程序中使用由Qt制作的UI文件
+</p>
+<blockquote>
+工具: qmake和uic
+运行时期来处理UI的窗体
+三种方法:
+直接方式: 创建一个widget作为组成一部分的位置标志. 并在其中设置用户接口
+单继承方式: 基本类的派生类(QWidget和QDialog), 并包含该form的用户接口对象私有句柄
+多继承方式:
+直接方式
+在project 文件里包含form的声明
+FORMS       = calculatorform.ui
+当工程构建时, uic会创建一个头文件让我们构造form
+#include "ui_calculatorform.h"
+构造函数
+ui.setupUi(this);
+使用this为参数表示使用该widget自身作为用户接口的容器
+通过ui成员变量访问其他的widget.
+</blockquote>
+
+</body>
+</html>

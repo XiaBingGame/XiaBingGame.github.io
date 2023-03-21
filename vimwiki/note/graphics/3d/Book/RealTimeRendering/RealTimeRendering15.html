@@ -1,0 +1,438 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../../../style.css">
+<title>RealTimeRendering15</title>
+<meta http-equiv="Content-Type" content="text/html; charset=cp936">
+</head>
+<body>
+
+<h1 id="toc_1">Chapter 15 Pipeline Optimization</h1>
+<ul>
+<li>
+管线最慢的stage为瓶颈, 其限制了总的渲染性能, 所以该stage为优化首选.
+
+<li>
+优化渲染管线的性能类似于优化管线的处理器(CPU)[541], 其主要有两个步骤组成, 首先, 定位管线的瓶颈所在. 其次, 以某种方式优化该stage. 完成这些之后, 如果性能目标还没有满足, 则重复步骤一. 注意在优化步骤之后, 瓶颈也许或者也许不是位于相同的地方. 仅放足够的工作在瓶颈stage进行优化, 以至于瓶颈移动到其他的stage中, 这个思路不错. 一些其他的stage在其再次变成瓶颈之前必须进行优化. 为了这个原因,  不要浪费在工作在过度优化的一个stage上.
+
+<li>
+在一帧内瓶颈也会变化. 某时geometry stage也许为瓶颈, 这是因为有许多微小的三角形要渲染. 接着在该帧中, 光栅化也许会成为瓶颈, 这和因为要渲染的三角形们覆盖了屏幕的大部分. 当我们说rasterizer stage为瓶颈, 则意味着该瓶颈占用该帧最多的时间.
+
+<li>
+当意识到最慢的stage不能再进一步优化. 其他的stages可以工作和最慢的一样长. 这个不会改变性能, 由于最慢的stage不能够改变, 但是额外的处理可以用于改进图像质量. 例如, 应用stage为瓶颈, 其有50ms易产生一个帧, 其他的stages为25ms. 则意味着geometry和rasterizer stages可以在50ms内完成他们的工作. 我们可以使用更精细的光照模型或者增加阴影或反射的现实程度, 假设这些不会增加应用阶段的工作加载.
+
+<li>
+管线最优化为我们最大化渲染速度首先进行的工序. 
+
+<li>
+阅读本书时, 牢记该格言: KNOW YOUR ARCHITECTURE. 以及另外一个格言 "Measure".
+
+</ul>
+
+<h2 id="toc_1.1">15.1 Profiling Tools</h2>
+<ul>
+<li>
+这里有一些工具可以用于图形加速器和CPU的profiling使用. 类似的工具在定位瓶颈和用于优化方面都很有用. 例如 PIX 用于 Windows(用于 DirectX), gDEBugger(用于 OpenGL), NVIDIA的成套工具, ATI的GPU PerfStudio, 以及苹果的OpenGL Profiler.
+
+<li>
+通过提供用于各种不同数据的计数器来提供实时性能的求解. 例如绘制调用的次数, 状态改变, 纹理和着色器调用, CPU和GPU空闲时间, 不同资源的锁定, 读写I/O, 使用的内存量, 等等. 可以显示这些数据覆盖在应用程序子身上. 图15.1则为使用了该技术渲染.
+
+<li>
+PIX可以不做在一给定帧内所做出的所有DirectX调用用于之后的分析或回调. 检查该流可以显示是否以及哪里做出了不必要的API调用. 还可使用PIX用于像素调试, 可显示单个像素的帧缓存历史.
+
+<li>
+Pelzer[1001]发表了一些有用的技术用于显示调试信息.
+
+</ul>
+
+<h2 id="toc_1.2">15.2 Locating the Bottlenect</h2>
+<ul>
+<li>
+优化一个管线首先要做的事情为定位瓶颈. 一种方法为设立一些测试, 每个测试减少特定stage执行的工作量. 如果其中一个测试导致FPS增加, 则发现瓶颈所在的stage. 另一种相关的测试一个stage的方法为减少在其他stage上的workload, 而不减少本stage的workload. 如果性能没有变化, 则瓶颈为该workload没有改变的stage. 性能工具其可以知道哪些API调用昂贵的详细信息. 但是没必要精确的定位管线中哪个stage让其他的部分迟缓. 
+
+<li>
+[164, 946, 1065, 1400]这些文档讨论了具体结构和feature的测试和优化. 一个完美的例子, 可以理解unified shader出现之后内在硬件的重要性. Xbox 360(见章节18.4.1)使用这个结构, 其形成从2006末开始的high-end card的基础. 思路为顶点, 像素和几何着色器都使用相同的功能单元(functional units). GPU维护load blancing, 改变分配给顶点和像素着色的比例. 举例, 如果要绘制一个很大的四边形. 则只有少数着色器单元可以分配给顶点变换, 主要部分则分配给片段处理(fragment processing). 对于这个结构, 是否要精确定位瓶颈位于顶点还是像素着色器stage是让人争论的[1400]. 我们将依次讨论每个可能性.
+
+</ul>
+
+<h3 id="toc_1.2.1">15.2.1 Testing the Application Stage</h3>
+<ul>
+<li>
+给使用的平台一个工具用于测量处理器的工作加载. 如Windows的Task Manager, Mac的Activity Monitor, Unix 的 top 或 osview. 如果CPU为恒定使用(constant use), 则你的程序为 CPU-limited. 由于你可能等待硬件去完成一个帧,  这个等待操作有时实现为 busy-wait. 使用一个 code profiler确定如何花费这些时间较好. AMD有个工具为CodeAnalyst用于分析和最优化运行在CPU的代码行. Intel则有更简单的工具为VTune用于分析应用程序中或驱动中时间花费在哪里. D3D的运行时间位于应用程序和驱动间. 这个元素转换API调用为独立于设备(device-independent)的命令, 该命令存储与command buffer中. 运行时间则会批次地发送给驱动命令, 这样可以有效率.
+
+<li>
+一个测试CPU极限(limit)更聪明的方法为向下发送的数据在其他stages中只做很少或者不做工作. 对于有些系统可以简单地使用一个空驱动(null driver)代替实际的驱动来完成(一个驱动可以接受但是不做任何事情)[946]. 这里你可以得到在那些不运行于应用程序stage之外的stages中可以有多大的改进空间. 注意, null driver也会隐藏由于驱动自身处理或者stage之间通讯产生的任何瓶颈.
+
+<li>
+另一种更直接的方法为 underlock the CPU [164, 946], 如果性能下降直接与CPU rate成比例, 则该应用程序为 CPU-bound. 最后, 可以使用消除的工序(process). 类似的underclocking方法还可用于许多GPU和程序的不同stage中, 例如Coolbits或 EnTechs PowerStrip. 这些underclocking方法可以帮助鉴定出瓶颈, 但有时会导致一个stage之前不是瓶颈, 而后成为一个瓶颈. 其他的选项则为overclock, 本书不介绍.
+
+</ul>
+
+<h3 id="toc_1.2.2">15.2.2 Testing the Geometry Stage</h3>
+<ul>
+<li>
+geometry stage为最难测试的stage. 这是因为如果该stage的工作加载变化, 则在其他的stage上其工作加载也会变化. 为了避免这个问题, Cebenoyan[164]给出了一系列来至于光栅化stage在管线中倒退的测试工作.
+
+<li>
+geometry stage中有两个瓶颈发生的主要区域: vertex fetching and processing. 如要查看物体数据传输是否为瓶颈, 可以增加顶点格式的大小. 在每个顶点上发送几个额外的纹理坐标则可以实现这个, 如果性能下降, 则该区域为瓶颈.
+
+<li>
+通过顶点着色器或固定功能管线的变换和光照功能完成顶点处理. 对于顶点着色器瓶颈, 通过使着色器程序变得更长来组成测试. 注意确保不最优化编译器过掉了(away)这些额外的指令. 对于固定功能管线, 可以通过打开额外的功能来增加处理(processing)的加载, 这个功能有镜面高亮, 或者改变光源用于更复杂的形式(例如, 点光源 spotlight).
+
+</ul>
+
+<h3 id="toc_1.2.3">15.2.3 Testing the Rasterizer Stage</h3>
+<ul>
+<li>
+该stage由三个单独的子stage组成: triangle setup, pixel shader program, raster operations. triangle setup几乎从不为瓶颈, 其简单地连接顶点为三角形[1400]. 最简单的测试raster operation是否为瓶颈的方法为, 减少颜色输出, 当帧率可观的增加时, 其为瓶颈.
+
+<li>
+一旦 raster operation 排除在外, 则可通过改变屏幕分辨率测试pixel shader program的效果. 如果更低的屏幕分辨率导致相当的帧率增加, 则该pixel shader为瓶颈. 注意是否用了level-of-detail系统. 更小的屏幕同样也可能简化模型的显示, 减少geometry stage上的加载.
+
+<li>
+另一种方法与顶点着色程序采用的一样, 增加额外的指令(instructions)查看执行速度上的效果. 再次, 确定额外的指令没有被编译器最优化掉.
+
+</ul>
+
+<h2 id="toc_1.3">15.3 Performance Measurements</h2>
+<ul>
+<li>
+在最优化图形管线的性能之前, 给出performance measurements的简单报告. 一种方式表示geometry stage的性能为每秒的顶点数. 描述rasterizer stage的填充率为每秒的像素数(或有时为每秒的纹素数).
+
+<li>
+注意图形硬件制造商常发布peak rates, 即可以且很难达到的最好结果. 由于我们处理管线的系统, 真实的性能不像列出数字的类型那么简单, 这是因为瓶颈的位置随时变化, 或因为执行中用不同的方法在不同的管线stage互动而变化. 查找出peak rate所表示的内容, 以及试图复制它们.
+
+<li>
+当开始测量CPU的性能, 其趋势开始避免IPS(instructions per second), FLOPS(floating point operations per second), gigahertz, 以及 simple short benchmarks. 其代替的方法为使用时钟周期计数器(clock cycle counters)[1], 或者测量不同实际程序范围的wall clock times. 以及比较它们的运行时间. 按照这个趋势, 更独立的benchmarks代替在给定数量场景中测量实际的帧率(fps). 或者不同屏幕分辨率, 反锯齿设置的fps, 许多 graphics-heavy游戏包含一个benchmarking mode或者由第三方创建一个. 这些benchmarks常用语比较GPUs.
+
+<li>
+为了能够看到管线最优化的潜在效果, 需要测量禁止双缓存时每帧的渲染时间, 例如, 单缓存(single-buffer)模式. 其他的benchmarking tips和许多最优化法可见NVIDIA和ATI的guide(指南)[1400].
+
+</ul>
+
+<h2 id="toc_1.4">15.4 Optimization</h2>
+<h3 id="toc_1.4.1">15.4.1 Application Stage</h3>
+<ul>
+<li>
+该部分的优化主要为使代码更快, 程序的内存访问更快更少. 详细的代码优化在本书范围之外, 以及随着CPU制造商的不同, 优化技术也不同.
+
+<li>
+第一步为打开用于编译器的优化flag. 这里有一些不同的flags, 你可以检查哪些可以用于你的代码. 做出关于使用什么优化选项的假设. 例如设置编译器"minimize code size"来代替"optimizing for speed", 其结果可能有更快的代码, 这是由于内存caching性能提升了. 如果可能, 试试不同的编译器, 其会以不同的方式优化. 
+
+<li>
+对于代码优化, 关键是找出代码中哪些地方花费最多时间. 一个好的code profiler可以发现代码的热点, 即花费时间最多的地方. 而后在这些地方做出优化努力. 这些地方常为内部循环. 
+
+<li>
+优化的基本原则为尝试不同的策略: reexamine algorithms, assumptions, 以及代码语法. 尝试尽可能多的变形(variants). CPU架构和编译器性能常常限制用户的能力去形成一个关于如何写最快代码的直觉. Booth[126]显示了一个代码段, 看起来无用的数组访问, 但其feed the cache, 并加速了整个routine百分之25.
+
+<li>
+cache为一小块快速内存访问的区域. 内存中的附近位置趋向于一个接一个访问(spatial locality). 内存位置也趋向于重复访问(temporal locality). 许多快速算法其工作尽可能局部地访问数据.
+
+<li>
+寄存器和local caches形成内存层次的一端(one end). 其下一步可扩展为dynamic random access memory(DRAM), 此时存储在硬盘上. 一端为少量的昂贵的快速的内存, 另一端为大量的缓慢的廉价的存储. 内存层次体系中每一层访问速度下降很快. 例如寄存器的访问常为一个时钟周期, LI cache 内存访问更少的周期. 
+
+</ul>
+
+<h4 id="toc_1.4.1.1">Memory Issues</h4>
+<ul>
+<li>
+内存层次体系可以为CPU架构上减速的主要来源, 其胜过计算上的无效率许多. 多年以前, 算术指令的数量为一个算法效率的关键衡量内容. 现在的关键为内存访问模式(memory access patterns). 下面为当编程时应当考虑的指针列表.
+
+<ul>
+<li>
+当到达系统内存程序(routine)时假设没有任何东西. 例如, 如果你知道拷贝的方向, 或者在源和目标之间没有重叠发生, 一个assembly loop(汇编循环)其使用最大的可用寄存器为完成一个拷贝的最快方法. 该系统内存程序(routine)所提供的不是必须的.
+
+<li>
+当数据在代码中连续地访问时, 其应当连续地存储在内存中. 例如, 当渲染一个三角形mesh, 存储纹理坐标 #0, 法线#0, 颜色#0. 纹理坐标#1, 法线#1 等等. 如果它们按照这个顺序访问, 则在内存中连续地.
+
+<li>
+避免间接指针, 指针跳转, 以及函数调用的指针. 它们可能会很大的降低cache的性能. 间接指针为一个指针指向另一个指针, 其常用于链接链表和树结构; 如果可能则使用数组代替. McVoy and Staelin[850]显示了一个使用指针的链接链表的代码例子, 其导致数据的cache misses. CPU的速度下降100倍. Smits[1200]记录了如何flattening一个基于指针的树为列表且略过指针可观的层次遍历改进. 使用一个van Emde Boas layout为另一种方法避免cache misses---见章节14.1.4.
+
+<li>
+缺省的内存分配和删除函数可能在某些系统上很慢. 所以常在启动时(start-up)分配一个大的内存池用于相同大小的对象(objects0, 而后使用你自己的分配和释放程序用于处理那样的内存池[72, 550]. 类似Boost的库提供了池的分配. 带垃圾收集的语言, 如C#和Java, pools实际上则会减少性能.
+
+<li>
+最好在渲染循环中完全避免分配和释放内存. 例如, 分配scratch space(暂存空间)一次, 以及有栈, 数组, 以及其他只能增加的结构.(使用变量或flags来记录那个元素应当要被删除).
+
+<li>
+在PC上, 使用数据结构频繁地对齐为多精确的32位, 其可以通过使用优化地cache lines有效地提高整个性能[1144]. 检查你计算机上cache 行大小, 奔腾四, LI cache行大小为64位. L2(level2)cache 行大小为128位. 所以, 其最好对齐为64或128位. 在AMD athlon, 其cache大小在LI和L2上都为64位. 编译器选项可以帮助设计你的数据结构使其对齐, 其称之为padding. 注意, VTane和CodeAnalyst用于Windows和Linux, 以及开源Valgrind用于linux, 都可以帮助鉴定出caching的瓶颈. 
+
+<li>
+尝试不同的数据结构组织. 例如, Hecher[525]显示了通过测试种种用于一个简单矩阵乘法器的矩阵结构来节省了大量的时间. 一个结构数组.
+		struct Vertex {float x,y,z;}
+		Vertex myvertices [1000];
+
+<li>
+或者一个数组结构
+		struct VertexChunk {float x[1000],y[1000],z[1000];} VertexChunk myvertices;
+
+<li>
+对于一个给定的架构, 其可能工作的更好. 第二个结构对于使用SIMD命令来说更好.但是当顶点数量增加, cache miss的几率则增加, 当数组大小增加, 一个hybrid scheme
+		struct Vertex4 {float x[4] ,y [4] ,z[4] ;}
+		Vertex4 myvertices[250];
+
+<li>
+这个可能对于已有代码其运作更好的选择.
+
+</ul>
+</ul>
+
+<h4 id="toc_1.4.1.2">Code Issues</h4>
+<ul>
+<li>
+接下来的列表给出一些技术用于写快速代码尤其是对于计算机图形. 类似的方法随编译器和发展的CPU变化, 但是接下来大多数技术已有了一些年.
+
+<ul>
+<li>
+单个指令多个数据(single instruction multiple data, SIMD)指令集, 类似的intel的SSE系列, AMD的3DNow!系列, 以及 AIM Alliance的Al-tiVec, 可用于许多情况获取很大的性能. 典型的, 可以平行的计算2-4个元素, 其对于向量操作非常好. 有选择地, 可以平行的完成四个测试. 例如 Ericson[315]提供了SIMD测试用于同时比较四个单独的物体对用于overlap(重叠).
+
+<li>
+使用 float-to-long 转换在奔腾上很慢, 这是由于其服从(compliance)于C ANSI标准. 一个自定义的汇编语言程序可以节省可观的时间(其牺牲了ANSI compliance)[251, 664], Intel增加SSE指令用于integer truncation和其他的操作用于改进性能.
+
+<li>
+尽可能的避免使用除法, 类似的指令其比乘法多2.5倍或者更多的时间[591]. 例如, 单元化一个三维向量, 概念上, 所有元素要除以向量的长度. 代替三次除法计算, 我们可以计算1/d, d为向量的长度, 而后所有的元素乘以该因子.
+
+<li>
+类似 sin, cos, tan, exp, arcsin等等的数学函数, 都要小心, 其非常昂贵. 如果可以接受更小的精度, 开发或使用近似的程序(可能使用SIMD指令), 其只有 MacLaurin或者Taylor系列中的前面几个部分使用. 由于内存访问在现代GPU上昂贵, 所以对于这些函数其优先使用查找表(lookup table). 
+
+<li>
+条件转移(conditional branches)常常很昂贵, 虽然大多数处理其有条件预测, 其意味着只要转移可以一致地预测, 其代价可以很低, 然而, mispredicted转移则在某些架构上非常昂贵, 尤其是其有很深的(deep)管线.
+
+<li>
+unroll(铺开)小的循环以摆脱循环的overhead, 然而, 这个使得代码更大, 且降低cache的性能. 而且, branchi prediction在循环上工作得很好. 有时编译器可以完成循环的铺开.
+
+<li>
+使用inline代码用于频繁调用的小函数.
+
+<li>
+如果合理时, 减少浮点精度. 例如, 对于英特尔奔腾, 浮点除法在80位精度上有39个周期, 但是32位精度上则只有19个周期. (无论什么精度, 除以2的幂则大概为8个周期)[126], 当选择浮点代替双精度, 记住在常量的尾部加上f, 否则, 整个表达式其代价可能为双精度. 所以 float x = 2.42f 可能比 float x=2.42更快.
+
+<li>
+更低的精度也许更好, 这是因为更少的数据发送给图形管线. 图形计算常相当forgiving. 如果一个法线向量存储于三个32位浮点数, 其有足够的精度从地球指向火星的一个岩石, 其精度为厘米级[1207]. 这个等级的精度常常有点大于所需要的精度.
+
+<li>
+virtual methods(虚拟方法), dynamic casting(动态转换), (inherited) constructors(继承构造函数), 以及传值结构都有一些效率惩罚. 在一个case的报告里, 一帧中花费的40%时间在管理模型的虚继承层次上. Blinn[109]发表了避免C++中过度(overhead)赋值向量表达式的技术.
+
+</ul>
+</ul>
+
+<h3 id="toc_1.4.2">15.4.2 API Calls</h3>
+<ul>
+<li>
+本书已提供了基于硬件中通常趋势的建议. 例如, indexed vertex buffers(OpenGL中, 顶点缓存对象)常常为提供几何数据加速器的最快方法. 本章节处理一些关于API如何得到最好效率的方法.
+
+<li>
+在章节12.4.2中遇到的问题 small batch problem, 这里重新探讨. 这是现代API中性能影响最大的因素. DirectX 10在它的设计中有具体特定的变化以应对这个瓶颈, 通过一个 2x 的因子改进性能[1066], 但是它的影响效果仍然很大. 简单的说, 一少数大的meshes其比许多小的meshes更加有效率, 这是因为每个API调用都有一个固定代价的花销, 处理一个图元就得花费一个代价, 而不考虑图元大小. 例如, Wloka[1365]显示了每个batch绘制两个三角形为一个375x的因子, 其远离了用于GPU测试的最大通过量(throughput), 对于2.7 GHZ CPU, 每秒1.5亿个三角形, 其比率为 0.4百万. 对于1.0 GHZ CPU, 1500x 更慢的因子, 其比率下降至 0.1 百万. 对于由许多小且简单的渲染物体组成的场景, 每个仅有少数三角形, 通过API, 性能完全为CPU-bound. GPU没有能力增加它, CPU用于绘制调用的处理时间大于GPU绘制mesh的时间, 所以GPU只能等待.
+
+<li>
+回到2003年, 作为断点(breakpoint)的瓶颈API其为每个物体大概130个三角形. 该断点对于NVIDIA的GeForce 6和7系列以及典型的CPU, 其有每个绘制调用大概为200个三角形[75]. 换句话, 当batches有200个或更少的三角形, 则瓶颈为CPU一边上的API; 一个无限快的GPU不会改变这个性能, 这是由于这些条件下GPU不是瓶颈. 更慢的GPU可能使得这个断点更慢. 见图15.2更多新近的测试.
+
+<li>
+Wloka的经验, "每帧你得到 X batches?", X依赖于CPU的速度. 其为该CPU给定性能的batch最大数量; 带许多多边形或昂贵光栅化(rasterization)的batch,其会使得GPU为瓶颈, 减少这个数量, 这个思路封装在他的公式里:
+
+</ul>
+<p>
+公式15.1
+</p>
+
+<ul>
+<li>
+其中B为对于1 GHz CPU 每秒的 batch 数量, C为当前GPU的GHz rating, U为用于调用对象API的CPU数量, F为目标的帧率(fps), X为计算出来的每帧可调用的batches数. Wloka 给出 B为一个常量, 对于1 GHz CPU在100%使用率下, 每秒25,000 batches. 可以执行API和驱动的改进来降低管线上CPU的作用(该作用可能会增加B). 然而, 随着 GPU 其速度的增加快于CPU(18个月内GPU为3.0-3.7x, CPU 则为2.2x). 这个趋势趋向于每个batch包含更多的三角形, 而不是更少. 即是说, 每个mesh少数数千的多边形足够避免API为瓶颈, 以及保证GPU繁忙.
+
+<li>
+举例: 每帧Batches数, 对于 3.7 GHz CPU, CPU时间中40%的预算完全花费在对象的API调用上, 以及帧率为 60 fps. 公式计算如下 X = (25000 batches/GHz x 3.7 GHz x 0.40 usage) / 60 fps = 616 batches / frame. 对于该配置, 使用预算, 目标, CPU限制该应用程序每帧发送600个batches给GPU.
+
+<li>
+这里有一些改善small batch 问题的方法, 以及它们都有相同的目标: 更少的API调用. batching的基本思想为组合一些物体为单个物体, 所以只需要一个API调用渲染该集.
+
+<li>
+组合可以一次完成, 且如果物体集为静态物体时其缓存可以每帧重用. 对于动态物体, 单个缓存可以填充一些meshes. 这个基本方法的限制为一个mesh中的所有物体使用相同的着色程序集. 例如, 相同的材质. 然而, 其可能使用不同的颜色合并物体, 举例, 通过给每个物体的顶点打上一个标识符(identifier)的标签, 该identifier用于着色器中查找使用什么颜色着色该物体. 相同的思路还可用于扩展到其他的surface属性. 类似的, 纹理添加至surface上也可以使用identifier来作为使用哪个材质. 各个物体的light maps需要组合为纹理地图集(atlases)或者纹理数组[961].
+
+<li>
+然而, 类似的实践还是太远. 添加branches和不同的着色模型给单个像素着色器程序还是太昂贵. 平行处理像素集. 如果所有的像素不采用相同的branch, 则必须给所有的片段赋值所有的branches. 注意像素着色器程序避免使用过度的寄存器数量. 寄存器的数量影响一个像素着色器可以同时处理的片段数量. 见章节18.4.2.
+
+<li>
+最小化API调用的其他方法为使用 instancing 的某些形式. 大多数API支持该思路, 其可以有一个物体且在单个调用中绘制其多次. 所以不再单独的API调用用于森林中的每个树, 使用一个调用渲染该树模型的许多拷贝.其典型做法为指定一个基模型, 且提供一个单独的数据结构用于保存关于每个具体instance所需要的信息. 齐了位置和方位, 可以指定每个instance其他的属性, 例如叶子颜色或者由于风产生的弯曲, 或者其他可以由着色器程序用于影响模型的东西. 茂盛的热带雨林(Lush jungle)场景可以通过充分使用instancing来创建. 见图15.3. crowd场景也可使用instancing, 其中每个角色使用一个选择集合得到的不同身体部分以形成的单独外观. 可以通过随机颜色和贴花来添加进一步的变化[430]. instancing还可以组合level of detail技术[158, 279, 810, 811]. 见图15.4的例子.
+
+<li>
+理论上, 几何着色器也可用于 instancing, 其可以创建一个输入mesh的复制数据. 实际上, 这个方法常常比使用instancing API命令更慢. 该几何着色器的意图为执行local, small scale amplification(放大) of data[1311].
+
+<li>
+用于应用程序改进性能的另一种方法为最小化状态的改变, 将有类似的渲染状态(顶点和像素着色器, 纹理, 材质, 光照, 透明等)的物体分成一组. 然后连续地渲染它们. 当改变状态时, 它们有时需要整个或者部分地flush该管线. 因为这个原因, 改变着色器程序或者材质参数非常昂贵[849, 946, 1400]. 分组共享材质的节点可以有更好的性能. 渲染有共享纹理的多边形可以最小化纹理cache thrashing(失效)[873, 1380]. 最小化纹理绑定改变的一个方法为将若干个纹理放置进一个很大的纹理或者纹理数组(见章节6.2.5).
+
+<li>
+理解渲染时的物体缓存分配和存储同样也很重要. 对于一个有CPU和GPU的系统, 每个都有其自己的内存. 图形驱动常常控制哪个对象驻留在其内, 但是可以给予其提示将它们存储在哪里最好. 常用的分类为静态和动态缓存(buffers). 如果一个物体不变形(deforming), 或者变形完全由着色器执行(例如 skinning), 则此时存储用于对象的数据在GPU内存中是有利可图的(profitable). 不变性质的物体可以标志存储为静态缓存. 通过这种方式, 其不需要每帧渲染中发送通过(across)该bus. 所以避免了关键该stage的任意瓶颈. 例如, GPU上的内存带宽在2006年超过了 50 GB/秒. 而使用PCI Express的CPU不超过 4GB/秒[123]. 如果数据每帧都变化, 使用动态缓存, 其要求GPU上不固定(permanent)的存储空间.
+
+</ul>
+
+<h3 id="toc_1.4.3">15.4.3 Geometry Stage</h3>
+<ul>
+<li>
+该几何阶段负责变形, 光照, 裁剪(clipping), 投影, 和屏幕映射. 变形和光照的处理其优化相对容易些. 其他部分则很困难或者不可能去优化. 当可能时,变形, 光照, 投影, 裁剪, 以及屏幕映射操作也可以从低精度数据获得好处.
+
+<li>
+之前的章节讨论的方法减少通过管线的顶点和绘制图元的数量. 简化模型以使得其有更少的顶点更低的传输以及顶点变化代价. 类似frustum和occlusion culling的技术则避免向下发送完整的图元至管线. 添加类似 large-scale的技术可以完全改变应用程序的性能特性以及在早期开发中值得尝试.
+
+<li>
+这里可以完成这些物体的进一步优化, 但是其要为可见的且需要确定的level of resolution. 见章节12.4.5, 使用索引和顶点缓存常比单个三角形或三角形带(triangle strips)更有空间效率. 这样做可以节省空间和内存, 以及bus传输时间. 章节12.4.4有cache-oblivious layout算法的扩展讨论, 其顶点以某种方式有序, 使得可以最大化cache的重用, 来节省处理时间.
+
+<li>
+为了节省内存和时间用于访问它, 在顶点, 法线, 颜色, 或者其他着色参数上选择尽可能低的精度(不带有渲染的人工痕迹). 它们有时在半, 单, 双精度浮点之间选择. 注意, 有些格式可能比其他格式更快, 这是因为其为内部在硬件使用的一个原生格式(hardware-use a native format). 
+
+<li>
+另一种减少内存使用的方法为以压缩形式存储顶点数据. Deering[243]深入地讨论类似技术. Calver[150]发表了种种方案(scheme)其使用顶点着色器用于解压缩. Zarge[1400]注意到数据压缩还可帮助对其顶点格式到cache lines. Purnomo[1040]组合了简化(simplification)和顶点量化(quantization)技术, 以及优化该mesh用于给定的目标mesh大小, 其使用一个图像空间的metric(量度).
+
+</ul>
+
+<h3 id="toc_1.4.4">15.4.4 Lighting</h3>
+<ul>
+<li>
+可以在每个顶点, 每个像素, 或者两者上计算光的效果. 光的计算可以以一些方式优化. 首先, 应当考虑将要使用的光源类型. 是否所有多边形需要光照? 有时一个模型只要求纹理, 或者在顶点上纹理其颜色, 或者在顶点上只有简单的颜色. 如果光源相对于几何体静止的, 则可以预先计算散射和环境光照, 以及在顶点上存储颜色. 完成这些常被涉及到光照上的"baking(烘)". prelighting一个更详细的形式为使用 radiosity 法去预先计算场景中的diffuse global illumination(见章节9.8.1). 类似的照明可以存储为顶点上的颜色或为light maps(见章节9.9.1).
+
+<li>
+光源的数量影响geometry stage的性能. 更多的光源意味着更慢的速度. 同样, 两面的(twosided)光照比一面的(one-sided)光照更昂贵. 当使用固定功能光源上的距离衰减, 其很有用且不引人注目, 在每个物体的坐标系(per-object basis)上打开或关闭光源, 这依赖于物体到光源的距离. 当距离足够大, 则关闭光源. 常用的优化为基于到光源的距离来剔除, 只渲染局部光源所影响的物体. 另一种减少工作的方法为禁止光照, 替代为使用环境映射(见章节8.5). 随着大量数目的光源, deferred shading技术可以帮助限制计算和避免状态改变(state changes)(见章节7.9.2).
+
+</ul>
+
+<h3 id="toc_1.4.5">15.4.5 Rasterizer Stage</h3>
+<ul>
+<li>
+rasterizer stage可以通过种种方式优化, 对于封闭的(实心的)物体以及永远不会显示背面的物体(例如, 室内墙壁的背面), 应当打开 backface culling(见章节14.2.1). 对于一个封闭的物体, 其会近似地减少需要光栅化的三角形数量的一半. 
+
+<li>
+另一个技术为在确定的时间上关闭Z-buffering, 例如, 帧缓存被清空之后, 可以绘制任何的背景图像而无需深度测试. 如果保护屏幕上的每个像素每个像素被其他物体覆盖(例如, 室内的场景, 或者正在使用的背景天空图像), 则颜色缓存不需要被清空. 类似的, 确保当有用时能够允许blend mode. 如果 Z-buffering正被使用, 在某些系统其不花费额外的时间也能访问stencil buffer. 这是因为 8位的 stencil buffer 值存储在相同的作为24位z-depth值的word中[651].
+
+<li>
+记住使用原生的纹理和像素格式, 例如使用图形加速器内部使用的格式来避免可能的从一个格式到另一个格式的昂贵变换[186]. 另一个常用的技术为纹理压缩. 类似的纹理如果它们在发送给图形硬件之前压缩, 那么它们发送给纹理内存的速度更快. 以及更快地在bus上从内存发送给GPU. 压缩纹理的另一个优点为他们改进了cache使用, 这是由于它们使用了更少的内存. 其给出了更好的性能, 也可参考章节 6.2.5.
+
+<li>
+一个有用的技术为根据物体到viewer的距离使用不同的像素着色器程序. 例如, 场景中三个飞碟模型, 最近的可能使用详细的bump map用于surface细节. 最远的飞碟可能简化镜面高亮或者完全移除它. 两者都简化计算以及减少来自undersampling的speckling artifacts.
+
+<li>
+为了理解一个程序的行为, 尤其是其光栅化程序的加载, 视觉化深度复杂度会很有用, 其为一个像素被接触的次数. 图15.5显示了例子. 一个生成深度复杂度图像的简单方法为使用类似 OpenGL 的 glBlendFunc(GL_ONE, GL_ONE)的调用, 其还禁止了 Z-buffering. 首先, 清空图像为黑色, 场景中所有的物体使用颜色(0, 0, 1)渲染. 该混合函数设置的效果为每个渲染的图元, 其写入的像素值通过(0, 0, 1)增加. 深度复杂度为0的像素为黑色, 深度复杂度为255的像素为全蓝(0, 0, 255).
+
+<li>
+使用一个two-pass的方法可以计数统计出通过或者未通过Z-buffer深度测试的像素数量. 在第一个pass中, 允许 Z-buffering和使用计数通过深度测试的像素之上的方法. 为了统计未通过深度测试的像素数, 在depth buffer failure上增加stencil buffer. 可选地, 渲染时关闭Z-buffer以得到深度复杂度(depth complexity), 而后减去第一个pass的结果
+
+<li>
+这些方法可以帮助确定场景中平均的, 最小的, 和最大的深度复杂度. 每个图元的像素数量(假设放置到场景的图元数量已知), 以及像素通过或者未通过深度测量的数量. 这些数量可以帮助于理解实时图形应用程序的行为, 以及确定进一步的优化, 都是值得的. 
+
+<li>
+深度复杂度告诉我们多少的surface覆盖在每个像素上, 像素重绘的数量和实际上多少的surface被渲染有关. 即说两个多边形在一个像素上, 则其深度复杂度为2. 如果更远的多边形先绘制, 则更近的多边形在其上重绘制. 重绘(overdraw)的数量为1. 如果更近的多边形先绘制, 则更远的多边形不能通过深度测试, 所以未能绘制, 所以不产生重绘. 对于一个像素之上的不透明多边形集合, 绘制的平均次数为 harmonic series[203]:
+
+</ul>
+<p>
+公式15.2
+</p>
+
+<ul>
+<li>
+上面的公式n可以趋向无限
+
+</ul>
+<p>
+公式15.3
+</p>
+
+<ul>
+<li>
+其中 γ=0.57721..., 其为 Euler-Mascheroni 常量. 当 depth complexity很低时, Overdraw增加很快. 例如, 一个为4的深度复杂度, 其平均为2.08次绘制, 11则为3.02次绘制. 当深度复杂度为12.367时, 平均10.0次绘制.
+
+<li>
+可以通过粗略的排序, 并按照front-to-back的顺序绘制场景, 这样做可以得到性能[164]. 这是因为被遮蔽的物体在之后绘制, 因此不会写入颜色和Z缓存(减少了重绘). 同样, 像素片段在到达像素着色程序之前通过occlusion culling hardware被拒绝(见章节18.3.6).
+
+<li>
+另一种使用复杂像素着色器程序用于surface的有用技术. "early z pass"技术首先渲染Z-buffer, 而后正常渲染整个场景. 这个方法可以避免不必要的像素着色器赋值, 只有那些可见的surface有它的像素着色器求值. 然而, 以一个粗糙的front-to-back顺序绘制, 以及通过一个BSP树遍历或者显式的排序提供, 其可以提供许多相同的好处, 而不需要额外的pass. 这个技术的进一步讨论可见章节7.9.2.
+
+</ul>
+
+<h2 id="toc_1.5">15.5 Multiprocessing</h2>
+<ul>
+<li>
+多处理器计算机可大致地分类为信息传送架构和共享内存的多处理器. 在信息传送设计中, 每个处理器有自己的内存区域, 在处理器之间发送信息以传递结果. 共享内存的多处理器则正如他们所言, 所有的处理器共享它们之间的内存的逻辑地址空间. 最流行的多处理器系统使用共享的内存, 它们大多数有一个对称的多处理设计--symmetric multiprocessing(SMP) design. SMP意味着所有的处理器都为identical(相同的, 同一的). 一个多核PC系统为对称多处理器架构的一个例子.
+
+<li>
+这里, 我们将会发布两个方法以利用多处理器用于实时的图形. 第一个方法---multiprocessor piplining. 也称之为 temporal parallelism, 第二个方法为 parallel processing, 也称之为 spatial parallelism. 这两个方法可见图15.6的描述. 还可组合 multiprocessor pipelining 和 parallel processing, 但是很少有研究在该领域. 对于这个讨论, 我们假设一个多处理器计算机可用, 但是还没有开始关于多处理器不同类型的细节.
+
+</ul>
+
+<h3 id="toc_1.5.1">15.5.1 Multiprocessor Pipelining</h3>
+<ul>
+<li>
+正如我们所看到的, pipelining 为加速执行的一种方法, 其分割一个job为确定的管线stage, 且其可以平行运行. 来自一个管线stage的结果发送至下一个. 理想的加速为n个管线stage有n倍, 以及最慢的stage(该瓶颈)确定实际的加速. 到这时, 对于单个GPU系统, 我们可以看到pipelining的使用可平行地运行该应用程序, 几何处理, 以及光栅化. 当多处理器在host上可用时也可使用该技术, 以及在这些情况中, 其称为 multiprocess pipelining 或者 software pipelining.
+
+<li>
+我们假设, 对于该系统, 只有一个图形加速器可用. 以及只有一个处理器线程可以访问它. 其可以让 application stage 被 pipelined. 因此, application stage 可以分割为三个stages[1079]: APP, CULL, 和 DRAW. 其为非常粗糙的分割(coarse-grained) pipelining, 即意味着每个stage都相对地长. APP stage为第一个管线中的第一个stage, 因此可以控制其他的stage. 在该stage中, 应用程序员可以放置额外的代码, 例如, 碰撞检测. 该stage还更新viewpoint. 而后CULL stage 可以执行:
+
+<ul>
+<li>
+在场景图上遍历和分层的view frustum culling. (见章节14.3)
+
+<li>
+level of detail selection(选择)(见章节14.7)
+
+<li>
+State sorting---排序相同状态的几何体进入bins(大箱子)中以便最小化状态改变. 例如, 所有的透明物体排序进一个bin中, 其最小化blend状态的变化需要. 这些物体还可以排序成粗糙的back-to-front顺序以用于正确的渲染(见章节5.7).
+
+<li>
+最后(以及永远执行的), 生成所有需要渲染的物体的一个简单列表.
+
+</ul>
+<li>
+DRAW stage采用来自CULL stage的列表, 以及 issues 所有该列表中的图形调用. 这个意味着其其简单地通过该列表, 且反馈给geometry stage, 而后其依次反馈给 rasterizer stage. 图15.7 显示了如何使用这个管线的一些例子.
+
+<li>
+如果一个处理器可用, 则所有的三个stages在该CPU上运行. 如果两个CPU可用, 则APP和CULL可以在一个CPU上执行, 而另一个执行DRAW. 另外的配置为在一个处理器上执行APP, 在另一个处理器上执行CULL和DRAW. 哪个最好则依赖于不同stages的工作负荷. 最后, 如果host有三个CPU, 则每个阶段可以执行在单独的CPU上. 这个可能性见图15.8.
+
+<li>
+这个技术的优点为其生产量(throughput). 例如, 其渲染速度增加. 该downside和parallel processing比较, 其latency更大. latency或者temporal delay为用户行动的polling(登记)到最终图像的时间[1329]. 这个不应该和帧率混淆, 帧率为每秒显示帧的数量. 举例, 一个用户使用头罩式显示(head-mounted display).这里可能需要50毫秒的时间确定头的位置到达CPU, 而后15秒的时间渲染该帧. 则latency为65毫秒, 即从初始的输入到显示. 虽然帧率为66.7Hz(1/0.015秒), 互动的时候可能会觉得有粘滞的感觉, 这是因为其显示在发送位置变化到CPU的过程中. 忽略任意用户互动导致的延迟(在所有系统下其为一个常量), multiprocessing比parallel processing有更多的延迟则是因为其使用一个管线. 细节内容可见下一个章节, parallel processing打碎帧的工作为一块块, 使得其可以同时运行.
+
+<li>
+和host上单个CPU比较而言, multiprocessor pipelining 给出较高的帧率, 而latency则相同或略大于, 这是由于同步的代价. 该latency随着关键中的stage数量而增加. 对于一个平衡很好的应用程序来说, n个CPU可以加速n倍.
+
+<li>
+用于减少latency的一个技术为更形viewpoint以及其他在APP阶段末尾的letency-critical参数[1079]. 通过(近似)一帧来减少该latency. 另一个减少latency的方法则为重合(overlapped)执行CULL和DRAW. 则意味着CULL的结果尽可能快的发送给DRAW任意准备好渲染的物体. 为了完成这个工作, 则需在这些stages之间有一些buffering, 通常为一个FIFO. 该stage在空或者完全条件下停止; 例如, 当buffer满的时候, 则CULL停止, 当buffer空的时候, 则DRAW停止. 该技术的缺点则为类似的state sorting不能用于相同的范围(extent). 由于图元需要在它们被CULL处理之后立刻被渲染, 可见图15.8 关于该latency reduction技术的视觉化.
+
+<li>
+该图中的管线使用最大3个CPU, stages有确定的任务. 然而, 该技术决不限制于这个配置---相反地, 你可以使用任意数量的CPU以及可以以你想要的任意方式划分工作. 关键为要做出整个工作非常漂亮的划分使得管线趋于平衡. 例如, multiprocessor pipelining曾用于加速章节14.6中的occlusion culling算法, 使用了一个不同的pipeline stage division胜过这里发布的一个[1403]. Multiprocessor pipelining同样还被Funkhouser[372]使用, 以便加速LOD管理(见章节14.7.3)和portal culling(章节14.4).
+
+<li>
+该 multiprocessor pipelining 技术要求一个最低限度的同步, 即只有当switching(转换)帧时需要同步. 在所有的multiprocessing系统类型中, 当面临数据共享, 数据排斥(exclusion), multibuffer等等时有许多因素要去考虑. 该主题的具体细节可以见 Rohlf 和 Helman的论文[1079].
+
+</ul>
+
+<h3 id="toc_1.5.2">15.5.2 Parallel Processing</h3>
+<ul>
+<li>
+使用 multiprocessor 管线技术最显然的缺点为latency趋向于增加. 对于一些应用程序, 例如飞行模拟器, 第一人称射击等等. 这个是不可能接受的. 当移动viewpoint, 你通常想要立即(下一帧)相应, 但是当latency很长时则不会发生. 如果multiprocessing增加了帧率从30fps到60fps, 但是latency也从1帧增长到2帧, 则额外的帧延迟会导致没有增加的latency.
+
+<li>
+如果多处理器可用, 可以平行的运行代码. 为了完成这个, 程序必须处理平行的特性. 这意味着, 对于不带或很少数量平行的程序, 其不会从平行化程序中得到好处, 一个平行的版本可能因为额外同步中的overhead involved变得更慢. 然而, 许多程序和算法有大量的平行内容, 以及可以因此得到好处.
+
+<li>
+这里有一些不同的方法用于平行化一个算法, 假设n个处理器可用, 使用一个静态分配[212], 整个工作包(work package), 类似一个加速结构的遍历, 划分成n个工作包. 每个处理器处理一个工作包, 以及所有的处理器平行地执行它们的工作包. 当所有的处理器完成它们的工作包,  他们可能需要合并来自处理器的结果. 对于这个要做的工作, 必须高度可预期其工作负荷. 当不是这种情况, 动态分配算法适应使用不同的工作负荷[212]. 其使用一个或多个工作池(work pool), 当生成了jobs, 则将该jobs放入工作池中, 当完成它们当前的工作时, CPU则从序列中取出一个或多个jobs.注意一个CPU只能取出一个具体的job, 因此该overhead在维护该queue不会损害性能内. 更大的jobs意味着用于维护queue的overhead变成很少的问题, 但是, 另一方面, 如果该job太大, 则性能可能因为系统中的不平衡而降低. 例如一个或多个CPU可能要等待(starve).
+
+<li>
+至于 multiprocessor pipeline, 对于平行程序运行在n个处理器上理想的加速为n倍. 其称之为线性加速. 即使线性加速很少发生, 实际的结果也可有时很接近于它.
+
+<li>
+在页面717的图15.6中, 其multiprocessor pipeline和parallel processing system都是有三个CPUs, 暂时假设这些每帧有相同的工作量以及所有的配置都达到线性加速. 即意味着其执行运行会三倍快于连续执行(serial excution)(也就单个CPU).  此外, 我们假设每帧工作总量花了30ms, 即意味着最大帧率为 1/0.03 = 33 fps.
+
+<li>
+multiprocessor pipeline 可能划分工作为三个相同大小的工作包, 而后让每个CPU负责一个工作包. 每个工作包应当用了10ms去完成. 如果我们接着该工作流向管线, 我们应当看到管线中的第一个CPU完成工作用了10ms, 而后发送它至下一个CPU. 第一个CPU则开始工作下一帧的第一个部分. 当一帧完全完成之后, 其花费了30ms完成, 但是之后工作开始平行地在管线中执行, 每一帧应当每10ms完成. 因此其加速为3(30/10)的因子, 每秒结果为显示100帧.
+
+<li>
+现在, 相同的程序一个平行版本应当也划分工作为三个工作包, 但是这三个工作包在三个CPU上执行相同的时间. 即意味着latency会为10ms, 用于一帧的工作花费了10ms. 则结论为使用parallel processing时其latency会比使用multiprocessor pipeline更短. parallel processing常常不映射至硬件限制. 例如, DirectX 10 和更早的DX允许只有一个线程在一个时间内访问GPU, 所以 parallel processing用于DRAW stage会更困难[1057].
+
+<li>
+例子: Valve的游戏引擎管线, Valve重写他们的引擎以采用多核系统的优点. 他们发现a mix of coarse and fine-grained threading(粗糙的和良好的颗粒的线程) 工作得很好. coarse-grained threading为整个子系统, 例如人工智能或者声音, 由一个核处理. fine-grained使用平行地处理以在多个核中分割单个任务. 为了这个涉及到渲染的任务, 他们新的管线行为如下[1057]:
+	1. 构造用于平行的多场景的场景渲染列表(世界, 水反射, TV监视器).
+	2. overlap图形模拟(粒子, 绳索).
+	3. 计算角色骨骼变换用于平行的所有场景中的所有角色.
+	4. 计算用于平行地所有角色的阴影.
+	5. 允许平行的多线程绘制(即要求一个low-level 图形库的重写).
+
+</ul>
+
+</body>
+</html>

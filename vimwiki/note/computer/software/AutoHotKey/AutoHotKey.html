@@ -1,0 +1,358 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../style.css" />
+    <title>AutoHotkey</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<h1 id="toc_1">教程</h1>
+<ul>
+<li>
+# 表示 Win 键, space 表示空格, :: 表示接下来的命令需要执行
+
+<li>
+在开始菜单的启动文件夹存放快捷方式可以开机启动脚本
+
+<li>
+Run 命令用于启动一个程序, 文档, URL, 快捷方式
+<pre>
+Run Notepad
+Run C:\My Documents\Address List.doc
+Run C:\My Documents\My Shortcut.lnk
+Run www.yahoo.com
+Run mailto:someone@somedomain.com
+</pre>
+
+<li>
+通过热键标签可以给命令分配一个热键
+<pre>
+#n::Run Notepad
+^!c::Run calc.exe
+</pre>
+
+<ul>
+<li>
+前者为 Win+N
+
+<li>
+后者为 Ctrl+Alt+C
+
+</ul>
+<li>
+一个热键多个命令, 命令位于定义之内, 最后一行用 return 返回
+<pre>
+#n::
+Run http:://www.google.com
+Run Notepad.exe
+return
+</pre>
+
+<li>
+不能默认启动的, 则输入路径全名
+<pre>
+Run %A_ProgramFiles%\Winamp\Winamp.exe
+</pre>
+
+<ul>
+<li>
+命令名和变量名非大小写敏感的, 例如 Run 可以写成 run, A_ProgramFiles 可以写成 a_programfiles
+
+</ul>
+<li>
+确保脚本等到程序或文档关闭后继续, 使用 RunWait 代替 Run
+<pre>
+RunWait Notepad
+MsgBox The user has finished(Notepad has been closed).
+</pre>
+
+<li>
+发送键盘输入和鼠标点击
+<pre>
+^!s::
+Send Sincerely,{Enter}John Smith
+return
+
+Send ^c!{tab}pasted:^v
+</pre>
+
+<li>
+键盘输入还可以缩写, 也就是所谓的 hotstring, 例如, 你想当输入 Btw 之后键入空格或者冒号, 则这三个字母会被替换为 "By the way"
+<pre>
+::btw::by the way
+</pre>
+
+<li>
+鼠标点击需要知道窗口的 x, y 坐标, 可以使用 AutoScriptWriter 或 Window Spy 完成, 步骤如下:
+
+<ol>
+<li>
+脚本的托盘图标右键或开始菜单中启动 Window Spy
+
+<li>
+通过点击感兴趣窗口的标题栏, 或 alt-tab 按键, 或其他方法激活窗口
+
+<li>
+在目标窗口中移动鼠标至所需位置, 并写下显示在 Window Spy 中的鼠标坐标
+
+<li>
+将坐标应用至 Click 命令
+<pre>
+Click 112, 223
+</pre>
+
+</ol>
+<li>
+激活和操作窗口, 使用 WinActivate 激活窗口, 使用 IfWinExit 或 WinWait 检测窗口是否窗口
+<pre>
+IfWinExist Untitled - Notepad
+{
+	WinActivate
+}
+else
+{
+	Run Notpad
+	WinWait Untitled - Notepad
+	WinActivate
+}
+</pre>
+
+<li>
+其他常用的窗口命令:
+
+<ul>
+<li>
+IfWinActive
+
+<li>
+WinWaitActive(常用于在发送一个窗口激活键盘输入后(例如按下 Ctrl-F 用于 "Fins"))
+
+<li>
+WinClose
+
+<li>
+WinMove
+
+<li>
+WinMinimize, WinMaxmize, WinRestore
+
+</ul>
+<li>
+从 MsgBox, InputBox 等得到用户输入
+<pre>
+MsgBox, 4,,Would you like to continue?
+IfMsgBox, No
+	return
+:Otherwise, the user pic yes
+</pre>
+
+<ul>
+<li>
+InputBox 命令, 使用 FileSelectFile 或 FileSelectFolder 让用户选择文件或文件夹
+
+<li>
+提示: 任何命令的第一个逗号都会被忽略(除非第一个参数为空白, 或开始与 := 或 =, 或者在 continuation section 之上单独存在的命令), 例如:
+<pre>
+MsgBox This is ok.
+MsgBox, This is ok too (it has an explicit comma)
+</pre>
+
+</ul>
+<li>
+使用变量和剪贴板
+
+<ul>
+<li>
+变量: 内存的一个区域, 脚本在其内存储文本和数字. 一个变量如果仅包含数字(可以有浮点句点), 当执行数学操作或比较时, 则会解释为一个数字.
+
+<li>
+除了函数内的变量是局部变量之外, 其余所有的变量都为全局变量, 下面为分配一个字符串给一个变量
+<pre>
+MyVar1 = 123
+MyVar2 = my string
+</pre>
+
+<li>
+一个变量的内容和数字或字符串进行比较
+<pre>
+if MyVar2 = my string
+{
+	MsgBox MyVar2 contains the string 'my string'.
+}
+if MyVar1 &gt;= 100
+{
+	MsgBox MyVar1 contain %MyVar1%, which is a number greater than or equal to 100
+}
+</pre>
+
+<li>
+一个变量名嵌入在百分号之间, 则会显示该变量名, 或者拷贝该变量至另一个变量上. 如:
+<pre>
+MyVarConcatenated = %MyVar1%%MyVar2%
+
+if(ItemCount &gt; ItemLimit)
+{
+	MsgBox The value in ItemCount, which is %ItemCount%, is greater than %ItemLimit%
+}
+</pre>
+
+<li>
+上面的表达式有括号, 表示 if 语句包含一个表达式, 如果没有括号, 则会看成"无表达式的if语句", 这样 ItemLimit 需要用百分号括起来. 没括号的if语句只能用单比较符, 他们不能包含数学符号或者类似"AND"和"OR"的连接词.
+
+<li>
+数学: 执行一个数学操作, 下面的例子使用 colon-equal 操作符 (:=) 分配一个表达式的结果给一个变量
+<pre>
+NetPrice := Price * (1 - Discount/100)
+</pre>
+
+<li>
+剪贴板: 变量名为 Clipboard
+<pre>
+MsgBox %clipboard%
+</pre>
+
+<li>
+修改剪贴板
+<pre>
+clipboard = A line of text.'r'nA second line of text.'r'n
+</pre>
+
+<li>
+剪贴板内容扩充
+<pre>
+clipboard = %clipboard% And here is the text to append.
+</pre>
+
+</ul>
+<li>
+不断地重复一个行为
+
+<ul>
+<li>
+使用 Loop 重复
+<pre>
+Loop 3
+{
+	MsgBox This window will be displayed three times.
+}
+</pre>
+
+<li>
+使用变量控制迭代次数
+<pre>
+Loop %RunCount%
+{
+	Run C:\Check Server Status.exe
+	Sleep 60000	; Wait 60 seconds
+}
+</pre>
+
+<li>
+F1 终止, 否则鼠标点击
+<pre>
+$F1::  ; Make the F1 key into a hotkey (the $ symbol facilitates the "P" mode of GetKeyState below).
+Loop  ; Since no number is specified with it, this is an infinite loop unless "break" or "return" is encountered inside.
+{
+    if not GetKeyState("F1", "P")  ; If this statement is true, the user has physically released the F1 key.
+        break  ; Break out of the loop.
+    ; Otherwise (since the above didn't "break"), keep clicking the mouse.
+    Click  ; Click the left mouse button at the cursor's current position.
+}
+return
+
+$F1::
+while GetKeyState("F1", "P")  ; While the F1 key is being held down physically.
+{
+    Click
+}
+return
+</pre>
+
+<li>
+其他特殊的需要:
+
+<ul>
+<li>
+File-reading/writing loop
+
+<li>
+Files and folders loop
+
+<li>
+Parsing loop
+
+<li>
+Registry loop
+
+</ul>
+</ul>
+<li>
+操作文件和文件夹
+
+<ul>
+<li>
+问了添加文本至文件尾(或创建一个新的文件), 使用 FileAppend, 使用 'n 开始文本新行
+<pre>
+FileAppend, A line of text to append.`n, C:\My Documents\My Text File.txt
+</pre>
+
+<li>
+覆盖一个文件, 则在FileAppend之前使用 FileDelete 
+<pre>
+FileDelete, C:\My Documents\My Text File.txt
+</pre>
+
+<li>
+其他使用文件和文件夹命令
+
+<ul>
+<li>
+FileRead
+
+<li>
+File-reading Loop
+
+<li>
+IfExit
+
+<li>
+FileSelectFile 和 FileSelectFolder
+
+<li>
+FileDelete/FileRecycle
+
+<li>
+FileCopy/FileMove
+
+<li>
+Files-and-folders Loop
+
+<li>
+FileSetAttrib 和 FileSetTime
+
+<li>
+IniRead, IniWrite, IniDelete
+
+<li>
+RegRead, RegWrite, RegDelete, Registry Loop
+
+</ul>
+</ul>
+</ul>
+
+    </div>
+</body>
+</html>

@@ -1,0 +1,174 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../../style.css" />
+    <title>Chapter3</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<h1 id="toc_1">传递数据给顶点着色器</h1>
+<h2 id="toc_1.1">顶点属性 </h2>
+<ul>
+<li>
+in 前缀变量为 vertex attribute.
+
+<li>
+使用 glVertexAttrib*() 输入数据. 每次调用该函数可以更新其数据.
+
+<li>
+layout 前缀设置其位置.
+
+</ul>
+
+<h1 id="toc_2">将数据在stage之间传递 </h1>
+<ul>
+<li>
+使用相同的变量名来传递.
+
+</ul>
+
+<h1 id="toc_3">Interface Blocks</h1>
+<ul>
+<li>
+有Block名和instance名, stage之间block名要一致, shader内部只关心 instance 名
+<pre class="brush: glsl">
+// Declare VS_OUT as an output interface block
+out VS_OUT
+{
+vec4 color; // Send color to the next stage
+} vs_out;
+</pre>
+
+<li>
+Interface Block 只能用于 shader stage 之间传递数据.
+
+</ul>
+
+<h1 id="toc_4">Tessellation</h1>
+<ul>
+<li>
+Tessellation 表示一个处理过程, 将一个高阶图元(OpenGL称之为patch)划分成许多更小的, 更简单的图元(如三角形). OpenGL 包含一个固定功能管线上可配置的Tessellation engine, 其可以将四边形, 三角形和线条拆分成大量更小的点, 线条, 三角形. 由三个部分组成:TCS, tessellation 引擎, TES
+
+</ul>
+<h2 id="toc_4.1">Tessellation COntrol Shaders</h2>
+<ul>
+<li>
+负责两件事情: 首先确定 tessellation 的等级(level), 生成发送给TES的数据.
+
+<li>
+每个 patch 有一些控制点组成. 使用 glPatchParameteri()及参数GL_PATCH_VERTICES 配置patch控制点的数量. 默认每个 patch 控制点的数量为3.
+
+<li>
+当激活 tessellation 之后, 每个控制点运行一次VS, 同时在控制点组上的batches中运行TCS. 每个batch的大小和每个patch的顶点数量相同. 即为顶点当作控制点, 顶点着色器的结果以batch的形式传递给TCS作为输入. 每个patch的控制点数量可以改变, 因此TCS输出的控制点数量与其使用的控制点数量可能不同. 由TCS产生的控制点数量在源码中使用一个output layout前缀设置.
+<pre class="brush: glsl">
+layout (vertics = N ) out;
+</pre>
+
+<ul>
+<li>
+N 表示每个 patch 的控制点数量. TCS 负责计算输出控制点的值以及设置发送给Tessellation引擎的 tessellation factor.
+
+<li>
+TCS输出tessellation factor 写入 gl_TessLevelInner 和 gl_TessLevelOuter 内置输出变量中.
+
+</ul>
+<li>
+gl_InvocationID 为控制点索引.
+
+</ul>
+<h2 id="toc_4.2">The Tessellation Engin</h2>
+<ul>
+<li>
+将一个高阶面表示成patch, 而后拆分成简单的图元, 如点, 线, 三角形.
+
+</ul>
+<h2 id="toc_4.3">Tessellation Evaluation Shaders</h2>
+<ul>
+<li>
+每个顶点调用该着色器.
+
+<li>
+layout 前缀表示 tessellation 模式.
+
+</ul>
+
+<h1 id="toc_5">几何着色器</h1>
+<ul>
+<li>
+每个图元运行一次. 可访问图元内所有顶点.
+
+<li>
+有两个函数: EmitVertex() 和 EndPrimitive()
+
+<li>
+可以改变图元模式.
+<pre class="brush: glsl">
+#version 430 core
+layout (triangles) in;
+layout (points, max_vertices = 3) out;
+void main(void)
+{
+	int i;
+	for (i = 0; i &lt; gl_in.length(); i++)
+	{
+		gl_Position = gl_in[i].gl_Position;
+		EmitVertex();
+	}
+}
+</pre>
+
+<ul>
+<li>
+将三角形变成了点.
+
+<li>
+第一行 layout 表示希望输入的图元为三角形, 第二行 layout 表示输出点, 最多三个顶点
+
+</ul>
+<li>
+几何着色器自动在程序末端调用 EndPrimitive()
+
+</ul>
+
+<h1 id="toc_6">Primitive Assembly, Clipping, and Rasterization</h1>
+<h2 id="toc_6.1">Clipping</h2>
+<ul>
+<li>
+裁剪空间中的坐标除以第四个分量得到单元设备空间的坐标. 可见区域范围x,y为-1.0到1.0, z 为 0.0 到 1.0. 
+
+</ul>
+<h2 id="toc_6.2">Viewport Transformation</h2>
+<ul>
+<li>
+设备单元坐标转换至窗口坐标
+
+</ul>
+<h2 id="toc_6.3">Culling</h2>
+<ul>
+<li>
+根据面的朝向剔除
+
+<li>
+通过计算面的有符号面积得知面的朝向. 公式为采用其边的叉乘. 公式见P40
+
+<li>
+glEnable() 和参数 GL_CULL_FACE, glCullFace() 和参数 GL_FRONT, GL_BACK, GL_FRONT_AND_BACK
+
+</ul>
+
+    </div>
+</body>
+</html>

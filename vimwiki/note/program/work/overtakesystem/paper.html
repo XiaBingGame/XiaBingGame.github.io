@@ -1,0 +1,579 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../../style.css">
+<title>paper</title>
+<meta http-equiv="Content-Type" content="text/html; charset=cp936">
+</head>
+<body>
+
+<h1 id="toc_1">绪论</h1>
+<p>
+	本项目主要是建立一个交通模拟环境, 使用模糊有限状态机作为交通车辆的智能系统核心. 该项技术可以用于无人驾驶汽车技术.<br />
+	无人驾驶汽车又称为"全自主自控驾驶", 能够像人驾驶车辆一样"有主见"地点火, 起步, 挂挡, 停车, 并在行进途中避让障碍物, 并根据道路状况自动改变方向, 自动增减油门, 对前面的车辆自动超车. 这一切的操作依赖于车内安装的一套智能系统. 该套智能系统由电脑控制装置, 车顶摄像机, 自动驾驶室以及大量的智能传感器组成. 集自动控制, 体系结构, 人工智能, 视觉计算, 程序设计, 组合导航, 信息融合等高科技于一体, 是当代计算机科学, 模式识别, 控制技术的高度结合和发展的产物<br />
+	在其中, 汽车对道路上其他车辆状况的判断也是该系统的一部分重要内容. 例如前面的车辆突然紧急刹车并停在道路中央, 则无人车则必须做出及时的降速判断, 以免撞向前面的车辆造成事故. 又或者前面的车辆停止移动, 则无人车自动从该车旁边超过去以便完成剩下的路程.<br />
+	我们知道, 汽车是靠人驾驶的, 人的驾驶技能, 性格, 状态等因素对汽车的行驶安全起着决定性的因素. 统计表明, 80%的车祸是人的因素造成的, 例如酒后开车, 疲劳驾驶, 紧急状态下反应不及时等. 因此, "无人驾驶汽车研究"对人类安全是有现实意义的. 另外这个技术可以拓展发展到地质勘探, 外星探索等领域上的无人驾驶技术.<br />
+	本项目研究的仅仅前后车辆的状况判断, 事实上道路上遇到的交通状况不仅仅这些, 比如道路中的障碍物, 车辆如何自动绕过去. 比如双向车道, 如何判断前面行驶过来的车辆等等状况. 无人驾驶技术的成熟还需要很长一段时间.<br />
+<br />
+</p>
+<h1 id="toc_2">模糊有限状态机的基本概念</h1>
+<p>
+	使用模糊有限状态机技术(fuzzy finit state machine)实现超车系统中所有车辆的决策功能. 模糊有限状态机是有限状态机(finit state machin)的一个变种, 模糊有限状态机涉及到的概念包括有限状态机和模糊逻辑.<br />
+	有限状态机是一个数学模型, 其主要用于计算机程序设计和数字逻辑电路设计, 也是游戏编程中最常用的人工智能技术. FSM可以看成一个拥有有限个状态的抽象机器(Abstract Machine). 在任何时候FSM只能拥有一个状态, 如果以权重值表示每个状态的值, 即任何时候只能有一个状态的权重值为1, 其他状态的权重值为0. 如果有限状态机触发了某个条件, 它的状态就会发生改变. 这个过程称之为状态转变(state transition). 例如: NPC车以正常行驶状态在车道的左侧行驶, 当玩家车在前方不远处刹车时, NPC车则从正常行驶状态转换到超车状态中, 进入车道的右侧以便实现超车. 当NPC车成功超车后, 又从超车状态转换到正常行驶状态, 回到车道左侧正常行驶. <br />
+	模糊逻辑(Fuzzy Logic)是布尔逻辑的扩展。布尔逻辑中"是"和"否"是绝对的，而模糊逻辑中则会有"有点是"、"不怎么是"、"非常是"等说法。例如: 玩家在NPC车前方不远处刹车, 这个"不远"就是一个模糊的概念. <br />
+	将模糊逻辑和有限状态机结合在一起, 就产生了模糊有限状态机(Fuzzy finit state machine)。模糊有限状态机和有限状态机最大的不同在于模糊有限状态机任何时候可以同时处于几种状态，只是每种状态的比重不同。 而有限状态机任何时候只能有一个状态, 即任何时候每个状态的权重值要么为0, 要么为1, 而且只能是当前状态的权重值为1. 如果一个系统可以同时处于多个状态, 且每个状态并不是简单的数字值(如开或关, 生存或死亡), 而是使用模糊值来表示时, 比如几乎关闭, 未完全死亡. 则该系统可以使用模糊有限状态机来处理. <br />
+	由于FSM的可预测性越来越不满足现在人们的需要, 因此模糊有限状态机以及其他有限状态机的变种逐渐成为游戏AI中常用的方法, 从而使得游戏内容变得足够丰富, 变得更加不可预测性.<br />
+	<br />
+</p>
+<h1 id="toc_3">超车系统的设计</h1>
+<h2 id="toc_3.1">有限状态机的设计</h2>
+<h3 id="toc_3.1.1">车的状态设计</h3>
+<p>
+	有限状态机的主要作用是将一个物体的动作分解成几个易于管理的部分或者状态. 在超车系统的设计中, 我们可以将每辆车子的行为可以分解为三种状态, 分别是正常行驶状态, 超车状态, 以及降速跟随状态. 
+	正常行驶状态表示车子在车道的左侧正常行驶, 程序不会对该车进行任何额外的操作. 在交通模拟的场景中, 如果对方车距离本车非常远, 或者对方车正在处于超车状态中时, 则本车应当保持原来的行驶状态.
+	超车状态表示车子进入跑道的右边, 从而超越前面位于车道左侧的车辆. 在交通模拟的场景中, 当前面的车辆刹车之后, 只要道路能够允许两辆车并行行驶, 则后面的车辆进入超车状态中, 转移到车道右侧行驶, 以便实现超车过程. 
+	降速跟随状态则是将车的速度降低到和前面车的速度一样, 以免两辆车相撞. 在交通模拟的场景中, 当前面的车辆速度小于后面的车辆,  且道路非常窄不适合两辆车并行驾驶时, 后面的车辆就会进入降速跟随状态, 将速度降低到和前面车辆一样.<br />
+	这三种汽车状态都可以将其封装成一个对象, 其中每个状态都有自己的执行规则. 三个状态的执行规则设计如下:<br />
+</p>
+<ol>
+<li>
+正常行驶状态的执行规则: 车子处于车道的左侧, 速度保持为原来的速度.
+
+<li>
+超车状态的执行规则: 车子处于车道的右侧, 速度保持为原来的速度
+
+<li>
+降速跟随状态的执行规则: 车子处于车道的左侧, 速度不能超过前面车的速度.
+
+</ol>
+<h3 id="toc_3.1.2">状态转变表的设计</h3>
+<p>
+	使用状态转变表(State Transition Tables)来组织和管理状态的转变. 该表的内容包含触发条件以及触发之前的状态和触发之后的状态.<br />
+	根据上面所设计的汽车状态, 每辆车的状态包含三种状态, 由于每种状态之间可以相互转换. 所以状态转变表应当有六个触发条件, 以及六个状态转变. <br />
+	超车系统的状态转变表设计如下:<br />
+</p>
+<table>
+<tr>
+<th>
+当前状态
+</th>
+<th>
+触发条件
+</th>
+<th>
+转变后的状态
+</th>
+</tr>
+<tr>
+<td>
+正常驾驶状态
+</td>
+<td>
+前面不远处的车刹车且道路足够宽
+</td>
+<td>
+超车状态
+</td>
+</tr>
+<tr>
+<td>
+正常驾驶状态
+</td>
+<td>
+前面不远的车刹车且道路很窄
+</td>
+<td>
+降速跟随状态
+</td>
+</tr>
+<tr>
+<td>
+超车状态
+</td>
+<td>
+两车之间的距离足够远
+</td>
+<td>
+正常驾驶状态
+</td>
+</tr>
+<tr>
+<td>
+超车状态
+</td>
+<td>
+前面不远处的车刹车但道路变窄
+</td>
+<td>
+降速跟随状态
+</td>
+</tr>
+<tr>
+<td>
+降速跟随状态
+</td>
+<td>
+两车之间的距离足够远
+</td>
+<td>
+正常状态
+</td>
+</tr>
+<tr>
+<td>
+降速跟随状态
+</td>
+<td>
+前面不远处的车刹车且道路变宽
+</td>
+<td>
+超车状态
+</td>
+</tr>
+</table>
+<h3 id="toc_3.1.3">状态机的设计</h3>
+<p>
+	我们应当使用状态机管理所有状态的执行规则. 首先在状态机中实现汽车三种状态封装对象的实例. 由于游戏的每一帧都会调用更新函数更新车的位置, 方向和速度. 所以状态机自身的更新方法会调用模糊逻辑更新汽车的三种状态, 并调用汽车当前状态的执行规则更新汽车的位置和速度.
+</p>
+
+<h2 id="toc_3.2">模糊逻辑的设计</h2>
+<h3 id="toc_3.2.1">模糊变量的设计</h3>
+<h4 id="toc_3.2.1.1">距离模糊变量的模糊设计</h4>
+<p>
+	在超车系统中, 很多地方不能够使用确定的数值表示. 比如表示距离的概念有"相距很远", "前面不远处", "后面不远处". 因此我们设计三个距离变量, 分别为"相距很远", "相距不远", "两车并行".<br />
+		相距很远 = 两车之间的距离大于35.0米<br />
+		相距不远 = 两车之间的距离小于35.0 米且大于7.5米<br />
+		两车并行 = 两车之间的距离小于7.5米<br />
+	这里使用的距离并不是指两辆车在空间中的距离, 而是指两辆车之间的空间距离在其中一辆车行驶方向上的投影. 使用图形表示如下:<br />
+	[figure06.jpg]<br />
+	使用投影距离可以避免在两辆车并行驾驶的情况下产生错误的判断. 这是因为两辆车的空间距离大于该空间距离在其中一个车子方向上的投影距离.<br />
+	现在使用图形来表示距离的三个概念, 每个概念的取值只能为0或者1. 图形表示如下:<br />
+	[figure01.jpg]<br /> 
+	现在可以根据两车之间的距离将两车之间的距离关系设置为上面定义的任何一个关系. 例如两车之间的距离为25.0米, 则两车之间的关系表示为两车"相距不远". <br />
+	不过这种方法太僵硬, 比如两车之间的距离为34.5米的时候, 两车之间的距离关系设置为"相距不远". 但是当两车之间的距离为35.0米的时候, 仅仅增加了0.5米, 两车之间的距离就转变为"相距很远". 所以我们引入了模糊集合(fuzzy set)的概念, 两车之间距离关系的值不再仅仅使用0和1两个数值表示, 可以使用0.0到1.0之间的任意数值来表示某个距离关系的权重值.<br />
+	模糊集合可以通过一系列函数来表示. 这些函数在图形上可以是任意的形状. 但最主要的形状为三角形和梯形(triangular or trapezoidal). 常见的模糊集成员函数图形表示如下:<br />
+	[figure02.jpg]<br />
+	现在我们可以将距离关系中的"相距很远", "相距不远", "两车并行"使用上面的函数来表示. <br />
+	[figure03.jpg]<br />
+	根据上图所示, 两车之间的距离关系如下:
+</p>
+<ol>
+<li>
+当两车之间的距离小于6.5时, 两车之间的距离关系表示为"两车并行". 此时"两车并行"的权重值为1.0, 而"相距很远"和"相距不远"的权重值则始终为0.0.
+
+<li>
+当两车之间的距离大于6.5且小于8.5时, 两车之间的关系逐步由"两车并行"转变为"相距不远", 当两车之间的距离为6.5时, "两车并行"的权重值为1.0, "相距不远"的权重值为0.0. 当两车之间的距离为8.5时, "两车并行"的权重值为0.0, "相距不远"的权重值为1.0, 在这个范围之间, "相距很远"的权重值始终为0.0.
+
+<li>
+当两车之间的距离大于8.5时, 且小于25.0时, 两车之间的距离表示为"相距不远". 因此"相距不远"的权重值为1.0, "两车并行"和"相距很远"的权重值始终为0.0.
+
+<li>
+当两车之间的距离大于25.0, 小于35.0时, 两车之间的距离关系逐步由"相距不远"转变为"相距很远", 当两车之间的距离为25.0f时, "相距不远"的权重值为1.0, "相距很远"的权重值为0.0, 当两车之间的距离为35.0时, "相距不远"的权重值为0.0, "相距很远"的权重值为1.0. 在这个范围之内, "两车并行"的权重值始终为0.0.
+
+<li>
+当两车之间的距离大于35.0时, 两车之间的距离关系表示为"相距很远". 所以此时"相距很远"的权重值为1.0, "两车并行"和"相距不远"的权重值始终为0.0.<br />
+	所以当两车之间的距离为34.0时, 则它在"相距很远"的权重值为0.9, 在"相距不远"的权重值为0.1.<br />
+	由于两车之间的距离还需要考虑对方车是在前方还是后方. 所以我们还需要将"相距不远"分解为两个变量, 分别为"前面不远处", "后面不远处". 图形表示如下:<br />
+	[figure04.jpg]<br />
+
+</ol>
+<h4 id="toc_3.2.1.2">道路的模糊设计</h4>
+<p>
+	由于道路很窄的时候, 并不适合两辆车并行驾驶. 所以我们还需要定义道路宽窄的模糊变量. 我们设计两个变量, 分别为"道路很宽", "道路很窄".
+	变量范围设计如下:
+</p>
+<ol>
+<li>
+当道路宽度大于15.5时, "道路很宽". 
+
+<li>
+当道路宽度在14.5到15.5时, 逐渐由"道路很宽"转变为"道路很窄". 
+
+<li>
+当道路宽度小于14.5时, 判定"道路很窄".<br />
+	[figure05.jpg]<br />
+
+</ol>
+		
+<h3 id="toc_3.2.2">模糊规则的设计</h3>
+<p>
+	模糊规则(fuzzy rules)的格式包括先决条件和判断结果(antecedent and a consequent ).  其格式如下:<br />
+		IF antecedent THEN consequent <br />
+	先决条件可表示为有限状态机的触发条件, 判断结果为当满足该触发条件时, 车子的当前状态应该会为何种状态. 例如使用Distance表示两车之间的距离, 我们的伪代码如下:<br />
+		IF Distance.isFar THEN Car in NormalState.<br />
+	模糊规则和普通规则不同的地方在于判断结果的值要么完全为真, 要么完全为假. 而在模糊系统中, 判断结果的值可能部分为真, 部分为假, 在这里可以用度(matter of degree)或者权重值来表示. 例如, 当两车之间的距离在25.0f和35.0f之间时, 两车之间的距离只能有一部分表示两车相距很远, 有一部分表示两车相距不远. 所以如果使用上面的规则时, 判断结果有一部分为正常状态.<br />
+	在模糊规则中, 先决条件可以是一个模糊值, 其产生的结果也可以是多个模糊值组合而成. 如果使用模糊有限状态机来表示判断结果, 则判断结果可以解释成有限状态机的多个状态组合, 每个状态有不同的权重值. 这里设定所有状态的权重值范围为0.0到1.0之间. 且确保所有权重值之间的和为1.0. 
+	在程序中我们可以设定多条规则, 每次游戏更新处理过程中, 遍历所有的模糊规则, 每条规则都会产生它的判断结果. 最后我们将所有规则的判断结果组合在一起得到车子的最终状态.<br />
+	在模糊逻辑的设计中, 每个模糊规则有多个先决条件, 除了表示距离和道路宽窄的先决条件之外, 对方是否处于超车状态. 车速是否大于对方的车速这两个个先决条件.<br />
+	距离和道路宽窄这两个先决条件里面包含多个模糊变量, 模糊变量的设计在上一节已有介绍.
+	车速是否大于对方车速这个先决条件的值只有1和0这两个值, 当速度大于对方的车子时, 该值为1.0. 当速度小于对方时, 该值为0.0. <br />
+	表示对方超速状态的先决条件可以通过读取对方超速状态的权重值得到. 因为其值范围在0.0到1.0之间, 所以不需要额外的处理. <br />
+</p>
+<h3 id="toc_3.2.3">模糊逻辑的输出变量</h3>
+<p>
+	在超车系统的设计中, 我们还应当设计输出的判定结果变量. 在超车系统中, 模糊逻辑判断的输出变量有四个, 分别为"正常驾驶状态输出", "超速状态输出". "降速跟随状态输出". 以及"上一帧状态输出". 如果输出变量"上一帧状态输出"的权重值为W, 则我们应将上一帧的正常驾驶状态, 超速状态, 降速跟随状态的权重值乘以W, 得到本帧正常驾驶状态, 超速状态, 降速跟随状态的初始权重值. 而后在加上输出结果中的相应权重值. 就可以得到本帧正常驾驶状态, 超速状态, 降速跟随状态的最终权重值. 
+	假设上一帧的正常驾驶状态, 超速状态, 降速跟随状态的权重值分别为 Ln, Lo, Ld. 模糊逻辑判断的输出结果"正常驾驶状态输出", "超速状态输出", "降速跟随状态输出", 以及"上一帧状态输出"的值分别为 Fn, Fo, Fd, Fl. 设新的正常驾驶状态, 超速状态, 降速跟随状态的权重值为 Nn, No, Nd. 则公式如下:
+	Nn = Fl * Ln + Fn 
+	No = Fl * Lo + Fo
+	Nd = Fl * Ld + Fd
+</p>
+ 
+<h2 id="toc_3.3">设计超车系统的模糊规则</h2>
+<p>
+	现在我们已经有了用于进行模糊规则判断的先决条件, 现在我们开始设计用于判断的模糊规则:
+</p>
+<ol>
+<li>
+规则一: 如果两车之间的距离为相距很远, 则结果正常驾驶状态
+
+<li>
+规则二: 如果两车之间的距离为相距不远或者相距很近, 且对方车处于超车状态, 则结果为正常驾驶状态
+
+<li>
+规则三: 如果两车在跑道上并列行驶, 则结果为上一帧状态
+
+<li>
+规则四: 如果对方车在后面不远处, 则且对方车不处于超车状态, 则结果为上一帧状态
+
+<li>
+规则五: 如果对方车在前面不远处, 对方车不处于超车状态, 且道路狭窄, 则结果为降速跟随状态
+
+<li>
+规则六: 如果对方车在前面不远处, 对方车不处于超车状态, 且道路很宽, 但对方速度大于本车速度, 则结果为正常驾驶状态
+
+<li>
+规则七: 如果对方车在前面不远处, 对方车不处于超车状态, 且道路很宽, 但对方速度小于本车速度, 则结果为超车状态
+
+</ol>
+	
+<p>
+	现在假设对方车在前方34.0米, 且对方车的超速状态权重值为0.2, 且车速大于对方车的车速, 道路宽度为18.5f, 逻辑判断如下:
+</p>
+<ol>
+<li>
+由于两车之间的距离为34.0f, 可计算出其距离变量"相距很远"的权重值为0.9, 应用规则一可以得到"正常状态输出"的值为0.9.
+
+<li>
+根据两车之间的距离, 可以得到两车之间"相距不远"和"相距很近"的权重值之和为(1.0 - 0.9), 根据规则二我们可以得到"正常状态输出"的值为(1.0-0.9)*0.2=0.02. 
+
+<li>
+由于两车之间的距离大于8.5, 所以两车"相距很近"的权重值为0.0, 根据规则三得到的"上一帧状态输出"的值为0.0f. 
+
+<li>
+由于对方在前方, 所以"后方不远处"的权重值为0.0, 根据规则四得到的"上一帧状态输出"的值为0.0f. 
+
+<li>
+由于道路宽度大于15.5, 所以"道路很窄"的权重值为0.0, 规则五得到的"降速跟随状态输出"的值为0.0f. 
+
+<li>
+由于对方车子速度小于本车速度. 根据规则六得到"正常驾驶状态输出"的值为0.0f. 
+
+<li>
+由于两车"相距不远"的权重值为0.1, "道路很宽"的权重值为1.0, 速度大于对方车速, 对方车子不超速的权重值为(1.0-0.2) 所以超车状态的权重值为0.08. 
+	最后计算出来的"正常状态输出"的值为0.9, "上一帧状态输出"的值为0.02, "超速状态输出"的值为0.08.
+
+</ol>
+
+<h1 id="toc_4">设计交通模拟系统</h1>
+<h2 id="toc_4.1">XNA与Racing Game Window 模板介绍</h2>
+<p>
+	XNA中的X表示能够在WindowsXbox和合作伙伴之间达到跨平台的强大的软件工具。N表示“下一代（Next-generation）”，A表示“架构（Architecture）”。XNA是基于DirectX的游戏开发环境，是微软对于 Managed DirectX 的修正及扩充版本。XNA Game Studio Express 是专业跨平台整合型游戏开发套件「XNA Studio」的简化版，以「Visual C# Express 2005」为基础，并针对业余创作者加以改良，提供简易的开发环境与详细的教学文件。<br />
+	XNA Game Studio Express 中将包含以 .NET Framework 2.0 为基础、并加入游戏应用所需之函式库所构成的 XNA Framework;由一系列工具所构成、让开发者能以更简易的方式将 3D 内容整合到游戏中的 XNA Framework Content Pipeline;以及教导使用者如何进行游戏开发的入门说明教学文件与范例.<br />
+	XNA Game Studio 3.1 于2009年7月11日发行, 该版本的API支持视频播放, 修改了音频API, <br />
+	RacingGame 则是由微软发布的专业级编程模板, 初学者使用该模板就可以创建类似于极品飞车的程序, 该程序可以直接编译以及运行, 而后通过修改代码实现其他的功能.<br />
+</p>
+<h2 id="toc_4.2">使用 Racing Game Window 建立交通模拟系统</h2>
+<p>
+	我们可使用 Racing Game Window 编程模板构建合适的交通模型和道路模型.<br />
+	在该编程模板的代码中, 主要的类有RacingGameManager, Carphysics, Player, GameScreen. 这些类的主要功能如下:
+</p>
+<ul>
+<li>
+RacingGameManger 用于控制在游戏中显示的屏幕, 例如菜单屏幕, 游戏场景屏幕. 该类还可用于控制车辆的更新.
+
+<li>
+Carphysics 主要用于车的物理测试以及车的驾驶. 在该类的Update方法中可以更新车的矩阵和速度.
+
+<li>
+Player 主要用于判断玩家是否游戏失败.
+
+<li>
+GameScreen 主要用于显示游戏场景内容. 根据玩家车和NPC车的矩阵, 就可以在场景中合适的位置绘制玩家车和NPC车.
+	由于Racing Game Window 模板默认只显示一辆车. 该车由玩家控制. 所以我们需要在程序中创建新的一辆车用于表示NPC车辆. 在程序中创建了一个NPCCar类. 由于NPC车辆不需要处理相机位置和方向的问题, 不需要处理游戏是否成功和失败. 所以NPCCar类不需要从其他类派生. 
+	NPCCar类需要将其设置NPC车正确的起点位置. 在本程序中, 读取车道的起点, 而设置车道起点前方25.0米处为NPC车的起点位置. 其次NPCCar类设置正确的更新函数, 更新函数主要用于更新NPC车的矩阵, 该矩阵主要用于保存NPC车在场景中的位置和方向. 更新函数主要内容为调用模糊有限状态机计算出NPC在车道的下一个位置以及车速. 从而设置NPC车正确的方向以及车速, 最后使用该方向和车速更新NPC车的矩阵.<br />
+	同上, 由于程序主要用于进行超车系统的演示, 所以玩家车也需要使用模糊有限状态机计算出其下一个位置和车速. 由于玩家车也会参与超车. 所以也需要修改 Carphysics 类的 update方法, 在这个方法中使用模糊有限状态机更新车子的矩阵和速度 <br />
+
+</ul>
+
+<h1 id="toc_5">超车系统的实现</h1>
+<h2 id="toc_5.1">建立单向交通模拟模型</h2>
+<p>
+	为了能够演示超车系统, 设定 Racing Game Window 编程模板创建的车道只能是单向行驶, 且所有在车道上行驶的车辆默认只能在车道左侧行驶. 只有通过模糊有限状态机判断需要进行超车时, 车辆才会进入车道右侧行驶. <br />
+	为了使所有在车道上行驶的车辆默认在车道左侧行驶, 需要修改模板代码. 主要原理为车子行驶的下一个位置为车道的左侧位置.
+	首先我们需要得到车辆在车道上的位置, 从而计算出车道中心位置以及车道宽度. 这个方法需要通过方法 RacingGameManager.Landscape.UpdateCarTrackPosition 和 RacingGameManager.Landscape.GetTrackPositionMatrix 来实现, 
+	 RacingGameManager.Landscape.UpdateCarTrackPosition方法的原型为:
+</p>
+<pre cnet>
+public void UpdateCarTrackPosition(Vector3 carPos, 
+			ref int trackSegmentNumber, ref float trackPositionPercent)
+</pre>
+<p>
+	其中参数 carPos 表示为车在场景中的位置. 用trackSegmentNumber和trackSegmentPercent可以用来精确该车在跑道中的位置. 这是由于车道被分成数千个段, trackSegmentNumber 表示车道位于跑道的何段. trackSegmentPercent 表示位于该段的何处, 该值以0.0到1.0之间的小数表示. 0.0 表示该段的起点, 1.0表示该段的终点. 
+	RacingGameManager.Landscape.GetTrackPositionMatrix方法的原型为:
+</p>
+<pre cnet>
+public Matrix GetTrackPositionMatrix(
+			int trackSegmentNum, float trackSegmentPercent,
+			out float roadWidth, out float nextRoadWidth)
+</pre>
+<p>
+	使用参数 trackSegmentNum 和 参数 trackSegmentPercent 可以精确得到跑道上的一个位置. 由于我们需要得到车子行驶的下一个位置, 所以需要将前面函数求出的 trackSegmentNumber加上1, 得到车道上下一段的位置. 参数roadWidth 和 参数 nextRoadWidth 则为车道的宽度. 该函数的返回值为一个矩阵, 由图形学可知, 矩阵可以分解成四个成分, 分别表示车道上向上的方向向量, 向前的方向向量, 向右的方向向量以及位移. 这里我们分别使用 Up, Forwad, Right, Translate表示. 假设该函数返回的矩阵为RoadMat. 则 RoadMat.Translate 表示为车道上的中心位置. 如果需要求出车道的左侧位置, 则使用 RoadMat.Translate - RoadMat.Right * RoadWidth / 6 得到该位置. 之所以不使用 RoadMat.Translate - RoadMat.Right * RoadWidth / 4 则是因为避免太过于靠近路栏. 如果当前车辆需要超车, 那么车辆的下一个位置应当是 RoadMat.Translate + RoadMat.Right * RoadWidth / 6;<br /> 
+</p>
+<h2 id="toc_5.2">有限状态机的实现</h2>
+<h3 id="toc_5.2.1">交通系统车辆状态的实现</h3>
+<p>
+	由于我们使用的是模糊有限状态机, 所以每个状态机只需要使用一个值来表示它的权重. 设置模糊状态机的基类如下:
+</p>
+<pre cnet>
+public class State
+{
+    protected float m_activationLevel = 0.0f;
+    public float ActivationLevel
+    {
+        get
+        {
+            return m_activationLevel;
+        }
+        set
+        {
+            m_activationLevel = value;
+        }
+    }
+}
+</pre>
+<p>
+	每辆车子有三种状态, 分别为正常驾驶状态, 超车状态, 降速跟随状态. 所以从State类可以派生出NormalState, OvertakeState, SpeeddownState. 这三个类有其自身的Excute方法. 其中 OvertakeState 类的Execute方法主要用于计算车子的下一个位置为车道右侧. SpeeddownState类的Execute方法主要用于限制车子的速度不超过对方的车速. 代码如下:
+</p>
+<pre cnet>
+public class OvertakeState : State
+{
+    public void execute(Machine machine)
+    {
+        Matrix mat = machine.Mat;
+        mat.Translation = mat.Translation + m_activationLevel * mat.Right * machine.RoadWidth / 3.0f;
+        machine.Mat = mat;
+    }
+}
+
+public class NPCSpeedDownState : State
+{
+    public void execute(Machine machine)
+    {
+        float speed = machine.Speed;
+        if (speed &gt; Other.Speed)
+        {
+            speed = speed + (Other.Speed - speed) * m_activationLevel;
+        }
+        machine.Speed = speed;
+    }
+}
+</pre>
+<p>
+	由于玩家车的速度可以由玩家控制, NPC车的速度只能由程序控制, 为了方便以后功能的扩展, 这里每个状态类分别实现了NPC版本和Player版本. 这里分别实现了 NPCNormalState, NPCOvertakeState, NPCSpeeddownState, 以及 PlayerNormalState, PlayerOvertakeState, PlayerSpeeddownState. 这样当以后实现多辆NPC和多个玩家车的时候, 可以分别使用对应的版本.
+</p>
+
+<h3 id="toc_5.2.2">有限状态机的实现</h3>
+<p>
+	状态机主要用于管理多个状态, 以及使用模糊逻辑模块更新所有状态的权重值.
+	在游戏的每次更新循环中, 都会根据当前车的信息和对方车的信息初始化用于模糊逻辑判断的值. 用于模糊逻辑判断的变量值有两车之间的距离, 两车的速度之差, 对方车超车状态的权重值. 道路的宽度.
+	两车之间距离指的是两车的空间距离在其中一辆车前行驶方向上的投影距离. 由于车的行驶方向为单位向量, 根据图形学的知识, 可知这两个向量的点乘即可求出该投影距离. 假设要求出两车之间的距离在玩家车行驶方向上的投影距离. 代码如下:
+</p>
+<pre c++>
+float verticalDistance = Vector3.Dot(RacingGameManager.Player.CarRenderMatrix.Translation - RacingGameManager.NPCCar1.CarMatrix.Translation, 
+		RacingGameManager.Player.CarDirection);
+</pre>
+<p>
+	在有限状态机中, 设计属性OvertakeFactor保存该状态机所表示车辆的超车状态权重值. 所以可以通过读取对方有限状态机的 OvertakeFactor 属性来得到其超车状态权重值.
+	道路的宽度可以通过上面所讲的 RacingGameManager.Landscape.GetTrackPositionMatrix 方法来得到. 该方法第三个和第四个参数都可以得到道路宽度.
+	两车的速度之差可以通过读取两车的Speed属性, 而后两者相减得到. 代码如下:
+</p>
+<pre c++>
+fuzzylogicInfo.enemyOvertak = RacingGameManager.Player.PlayerMachine.OvertakeFactor;
+fuzzylogicInfo.roadWidth = fRoadWidth;
+fuzzylogicInfo.speed = RacingGameManager.NPCCar1.Speed - RacingGameManager.Player.Speed;
+</pre>
+<p>
+	最后使用模糊逻辑判断模块更新该状态机所管理的所有状态的权重值.
+	更新了所有状态的权重值之后, 就调用所有状态的execute()方法, 从而得到该状态机所代表车下个位置的矩阵和当前速度.
+</p>
+<h2 id="toc_5.3">模糊逻辑的实现</h2>
+<h3 id="toc_5.3.1">模糊便落的初始化</h3>
+<p>
+	模糊逻辑的判断需要有外部的输入值, 所以我们需要将所有参与逻辑判断的变量使用一个结构体封装起来. 结构体定义如下:
+</p>
+<pre cnet>
+public struct FuzzLogicInfo
+{
+    public float distance;
+    public float enemyOvertak;
+    public float roadWidth;
+    public float speed;
+}
+</pre>
+<p>
+	模糊判断的规则有很多先决条件, 主要分为四类, 分别为两车之间的距离, 对方的超车状态, 道路宽度, 两车之间的速度之差. 
+	其中两车之间的距离又可分为四个变量, 分别为"相距很远", "相距很近". "前方不远处". "后方不远处". 求出两车"相距很远"和两车"相距很近"的变量值代码如下:
+</p>
+<pre c++>
+float distance = info.distance;
+if (distance &lt; 0.0)
+{
+    distance = -distance;
+}
+m_termDistanceFar = (distance - farToMedium) / (farDistance - farToMedium);
+m_termDistanceFar = clamp(m_termDistanceFar, 0.0f, 1.0f);
+m_termDistanceClose = (mediumToClose - distance) / (mediumToClose - closeDistance);
+m_termDistanceClose = clamp(m_termDistanceClose, 0.0f, 1.0f);
+</pre>
+<p>
+	在上面的代码中, farDistance 为两车"相距很远"权重值为1.0的起点, 当距离大于farDistance时, 两车"相距很远"的权重值为1.0, farToMedium 到 mediumToClose之间的值表示为两车"相距不远", 其权重值为1.0. 所有距离小于closeDistance的值都表示为两车"相距很近". 其权重值为1.0. farDistance 到 farToMedium 之间的值为两车"相距很远"和两车"相距不远"两者权重值的混合. mediumToClose 到 closeDistance 为两车"相距不远"和两车"相距相近"两者权重值的混合.
+	求前面不远处权重值的代码如下, 求后面不远处权重值的代码类似:
+</p>
+<pre c++>
+distance = info.distance;
+// Front 表示敌人在前
+if (distance &lt; farDistance &amp;&amp; distance &gt; farToMedium)
+{
+    m_termFrontMedium = (farDistance - distance) / (farDistance - farToMedium);
+}
+else if (distance &gt; closeDistance &amp;&amp; distance &lt; mediumToClose)
+{
+    m_termFrontMedium = (distance - closeDistance) / (mediumToClose - closeDistance);
+}
+else if (distance &gt; mediumToClose &amp;&amp; distance &lt; farToMedium)
+{
+    m_termFrontMedium = 1.0f;
+}
+else
+{
+    m_termFrontMedium = 0.0f;
+}
+</pre>
+	
+<p>
+	道路宽度又可以分解为两个变量, 分别为"道路很宽", "道路很窄", 由于"道路很窄"的权重值等于1.0减去"道路很宽"的权重值, 所以只需要求出"道路很宽"的权重值即可. 代码如下:
+</p>
+<pre c++>
+m_termRoadWidth = (info.roadWidth - 14.5f) / 1.0f;
+m_termRoadWidth = clamp(m_termRoadWidth, 0.0f, 1.0f);
+</pre>
+<p>
+	当道路宽度大于15.5时, "道路很宽"的权重值为1.0, 当道路宽度小于14.5是, "道路很宽"的权重值为0.0, 其余情况"道路很宽"的权重值在0.0和1.0之间.
+	对方的超车状态只需要读取对方车状态机的超车状态权重值即可. 
+	两车之间的速度差. 当车速大于对方的车速, 其权重值为1.0, 当车速小于对方的车速, 其权重值为0.0.
+</p>
+<pre c++>
+if (info.speed &gt; 0.0f)
+{
+    m_termSpeed = 1.0f;
+}
+else
+    m_termSpeed = 0.0f;
+</pre>
+<p>
+	根据输入值初始化所有先决条件变量的值, 然后初始化输出结果的变量值. 这里主要输出四个变量, 分别为"正常行驶状态输出", "超车行驶状态输出", "降速跟随状态输出". 以及"上一帧状态输出"的值. 将这四个输出变量的权重值初始化为0.0.
+</p>
+	
+<h3 id="toc_5.3.2">模糊规则的实现</h3>
+<p>
+	接着我们实现所有用于判断的规则, 根据上面的设计, 一共有七条规则. 
+	规则一: 如果两车之间的距离足够远, 则结果正常驾驶状态
+</p>
+<pre c++>
+m_termNormal += m_termDistanceFar;
+</pre>
+<p>
+	规则二: 如果两车之间的距离不远或者两车相距很近, 且对方车处于超车状态, 则结果为正常驾驶状态
+</p>
+<pre c++>
+float distantfactor = 1.0f - m_termDistanceFar;
+m_termNormal += distantfactor * m_termEnemyOvertake;	
+</pre>
+<p>
+	其中我们首先求出两车相距不远和两车相距很近的权重值, 这只需要减去两车相距很远的权重值即可. 再乘以对方的超车状态权重值就得到该规则的正常驾驶状态权重值结果.
+	规则三: 如果两车在跑道上并列行驶, 则结果为上一帧状态
+</p>
+<pre c++>
+m_termLastState = m_termDistanceClose;
+</pre>
+<p>
+	规则四: 对方车在后半部分时且对方不处于超车状态, 则本车保持上个状态
+</p>
+<pre c++>
+m_termLastState += m_termBackMedium * (1.0f - m_termEnemyOvertake);
+</pre>
+<p>
+	不处于超车状态的权重值只需要使用1.0减去其超车状态的权重值即可得到.
+	规则五: 如果对方车在前面不远处, 对方车不处于超车状态, 且道路狭窄, 则结果为降速跟随状态
+</p>
+<pre c++>
+m_termSpeeddown += m_termFrontMedium * (1.0f - m_termEnemyOvertake) * (1.0f - m_termRoadWidth) * (1.0f - m_termOvertake);
+</pre>
+<p>
+	由于 m_termRoadWidth 表示道路很宽的权重值, 所以需要用1.0减去该值得到道路很窄的权重值.
+	规则六: 如果对方车在前面不远处, 对方车不处于超车状态, 且道路很宽, 但对方速度大于本车速度, 则结果为正常驾驶状态
+</p>
+<pre c++>
+m_termNormal += m_termFrontMedium * m_termRoadWidth * (1.0f - m_termSpeed) * (1.0f - m_termEnemyOvertake);
+</pre>
+<p>
+	规则七: 如果对方车在前面不远处, 对方车不处于超车状态, 且道路很宽, 但对方速度小于本车速度, 则结果为超车状态
+</p>
+<pre c++>
+m_termOvertake += m_termFrontMedium * m_termRoadWidth * m_termSpeed * (1.0f - m_termEnemyOvertake);
+</pre>
+
+<h2 id="toc_5.4">使用状态机更新车的矩阵</h2>
+<p>
+	在程序中, 玩家车下一帧的矩阵是在类CarPhysics的Update()方法中计算出来. 因为我们可以在状态机中计算出玩家车的矩阵和速度, 所以我们在CarPhysics类中创建状态机的实例,  并在在CarPhysics的Update()方法中调用状态机的Update方法更新玩家车的矩阵和速度. 代码如下:
+</p>
+<pre cnet>
+playerMachine.update(trackSegmentNumber);
+mat = playerMachine.PlayerMat;
+speed = playerMachine.PlayerSpeed;
+</pre>
+<p>
+	因为程序中还创建了用于控制NPC车的类NPCCar, 该类也在Update()方法中更新NPC车的矩阵, 以便下一帧的GameScreen直接调用该矩阵, 从而在场景中的合适位置绘制NPC车.代码如下:
+</p>
+<pre c++>
+npc1Machine.update(trackSegmentNumber);
+mat = npc1Machine.NPCMat;            
+speed = npc1Machine.NPCSpeed;
+</pre>
+
+<h1 id="toc_6">评估与测试</h1>
+<p>
+	实现上面的功能之后, 超车系统中两辆车在车道上行驶之时, 无论玩家车还是NPC车, 每一帧更新的时候, 将对方车的状况和道路状况传送给模糊逻辑模块, 判断自身车应该处于何种状况. 测试的过程中, 模糊规则中的七条规则基本上考虑了两辆车的所有可能情况, 实现了两辆车在车道上的智能超车.
+	在上面的程序设计中, 仅仅设计了单向双跑道的情况, 而现实中的交通远远比这个更复杂, 现实中的交通不仅仅要考虑前面车辆的状况和道路的宽窄. 还要考虑道路的各种障碍物, 而且在道路上不仅仅只有两辆车在行驶. 如果是双向车道, 还要考虑另一侧的车道前方是否有车辆行驶过来. 要实现更多的功能, 就需要设计更多的模糊变量, 更多的模糊规则. 以及车子要设计更多的状态来应付更多的状况.
+</p>
+
+<h1 id="toc_7">结论</h1>
+<p>
+	本项目通过使用模糊有限状态机实现NPC车辆的决策系统. 通过本项目的设计与实现, 不但学会了XNA的游戏开发技术以及使用Racing Game Window模板写一个简单的交通环境. 而且还学习和掌握了当今游戏程序设计的一些AI技术, 其中有限状态机和模糊逻辑在实现游戏程序中NPC的智能系统有非常好的效果.
+</p>
+
+<p>
+参考书籍: 
+Programming Game AI by Example, Mat Buckland 
+3D Math Primer for Graphics and Game Development. Fletcher Dunn. lan Parberry
+Game Programming Gems 2, Eric Dysband 
+</p>
+
+<p>
+参考网站:
+<a href="http://en.wikipedia.org/wiki/Finite-state_machine">http://en.wikipedia.org/wiki/Finite-state_machine</a>
+<a href="http://en.wikipedia.org/wiki/Fuzzy_logic">http://en.wikipedia.org/wiki/Fuzzy_logic</a>
+</p>
+
+</body>
+</html>

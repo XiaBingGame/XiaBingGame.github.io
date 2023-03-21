@@ -1,0 +1,104 @@
+ï»¿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../../style.css" />
+    <title>Chapter11</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/ç™¾åº¦äº‘/Vimwiki/Vimwiki_html/index.html">é¦–é¡µ</a>
+		</li>
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/ç™¾åº¦äº‘/Vimwiki/Vimwiki_html/diary/diary.html">æ—¥è®°</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<h1 id="toc_1">µÚ12ÕÂ ½»»¥Ê½Í¼ÐÎ</h1>
+<p>
+1. Ñ¡Ôñ(selection) --- ÔÚ´°¿ÚµÄÄ³¸öÎ»ÖÃÓÃÊó±ê½øÐÐµã»÷, ¶øºóÈ·¶¨ÆäËùµã»÷µÄÊÇÄÄ¸öÎïÌå<br />
+	ÌôÑ¡(picking) --- ÔÚ³¡¾°ÖÐÑ¡ÔñÒ»¸öÌØ¶¨ÎïÌå<br />
+	Ñ¡Ôñ --- Ö¸¶¨Ò»¸ö¿ÉÊÓÇøÓòÀ´È·¶¨ÄÄÐ©ÎïÌåÎ»ÓÚÕâ¸ö¿ÉÊÓÇøÓòÖ®ÖÐ<br />
+	º¯Êý gluPickMatrix --- Éú³É¸Ã¿ÉÊÓÇøÓòµÄ¾ØÕó, ÓÃÓÚÌôÑ¡<br />
+2. ·´À¡(feedback) --- ´Ó OpenGL »ñµÃÐÅÏ¢, ÁË½â¶¥µã»æÖÆµ½Ö¡»º³åÇøÊ±ÊÇÈçºÎ½øÐÐ×ª»»ºÍ¹âÕÕµÄ<br />
+3. Ñ¡ÔñÊÇÒ»ÖÖäÖÈ¾Ä£Ê½, ÆäÏñËØ²¢²»»æÖÆµ½Ö¡»º³åÇø, Æä»æÖÆµÄÍ¼Ôª²úÉúÒ»¸öµã»÷¼ÇÂ¼<br />
+4. ÔÚÑ¡ÔñÄ£Ê½ÏÂ³öÏÖÒ»´ÎÊó±êµã»÷ÊÂ¼þÊ±, µ±Ç°Î»ÓÚÃû×Ö¶ÑÕ»ÖÐµÄËùÓÐÃû×Ö¶¼±»Ìí¼Óµ½Ñ¡Ôñ»º³åÇøµÄÎ²²¿. ËùÒÔÒ»°ãÊ¹ÓÃ glLoadName Ìæ»»Õ»¶¥µÄÃû³Æ<br />
+5. Ñ¡Ôñ»º³åÇø: Ãû×Ö¶ÑÕ»ÖÐÃû×ÖµÄÊýÁ¿--&gt;¶¥µã×îÐ¡ºÍ×î´óz´°¿Ú[0, 1]--&gt;Ãû×Ö¶ÑÕ»µÄµ×²¿--&gt;Ãû×Ö¶ÑÕ»ÏÂÒ»¸öÔªËØ---&gt;...<br />
+6. äÖÈ¾Ä£Ê½´Ó GL_SELECT ÇÐ»»»Ø GL_RENDER Ö®Ê±, glRenderModeµÄ·µ»ØÖµÎªÑ¡Ôñ»º³åÇøµã»÷¼ÇÂ¼µÄÊýÁ¿<br />
+7. OpenGL ´°¿Ú×ø±êÓëÏµÍ³µÄ´°¿Ú×ø±êÏà·´, ÊÓ¿ÚµÄ¸ß¶È¼õÈ¥Êó±êµÄy×ø±ê, ²úÉúOpenGLËùÓÃµÄ´°¿Ú´¹Ö±×ø±ê<br />
+8. Ê¹ÓÃ gluPickMatrix µÄ²½Öè: <br />
+	1) µ±Ç°Í¶Ó°¾ØÕóÑ¹Õ» 2) glLoadIdentity ´´½¨µ¥Î»¿ÉÊÓÇøÓò 3) gluPickMatrix 4) ÕýÈ·µÄÍ¶Ó°  5) äÖÈ¾ 6) ·µ»ØGL_RENDERäÖÈ¾Ä£Ê½, ¸ù¾Ý·µ»ØÖµµÃµ½µã»÷Êý<br />
+	7) »Ö¸´Í¶Ó°¾ØÕó(glMatrixMode(GL_PROJECTION))<br />
+9. Ãû×Ö¶ÑÕ»¿ÉÒÔÑ¹Èë¶à¸öÃû×Ö, ¶ø²»½ö½öÊÇÌæ»»Õ»¶¥µÄÃû×Ö. ÀýÈç: µã»÷Ò»¸öÂÝ¶¤Ê±, ²»½öÐèÒªÖªµÀÊÇÄÄ¸öÂÝ¶¤, »¹ÒªÖªµÀÂÝ¶¤ÊôÓÚÄÄ¸öÂÖÌ¥, ÄÄÁ¾Æû³µ<br />
+10. ·´À¡äÖÈ¾Ä£Ê½---GL_FEEDBACK, ÐÅÏ¢Ð´Èë·´À¡»º³åÇø<br />
+11. void glFeedbackBuffer(GLsizei size, GLenum type, GLfloat* buffer)<br />
+	type µÄÀàÐÍ: GL_2D, GL_3D, GL_3D_COLOR, GL_3D_COLOR_TEXTURE, GL_4D_COLOR_TEXTURE<br />
+12. ·´À¡»º³åÇø°üº¬Ò»¸ö±ê¼ÇÁÐ±í, ¶¥µãÊý¾ÝÒÔ¼°ÓÐ¿ÉÄÜ³öÏÖµÄÑÕÉ«ºÍÎÆÀíÊý¾Ý. Èç¹ûÊ¹ÓÃ¶àÖØÎÆÀí, ÔòÖ»·´À¡µÚÒ»¸öÎÆÀíµ¥ÔªµÄÎÆÀí×ø±ê<br />
+	±ê¼Ç: GL_*_TOKEN(*ÎªPOINT, LINE, LINE_RESET, POLYGON, BITMAP, DRAW_PIXEL, COPY_PIXEL, PASS_THROUGH)<br />
+		Ö±Ïß±ê¼Ç·µ»ØÁ½×é¶¥µãÊý¾Ý, ¶à±ßÐÎ±ê¼ÇºóÃæÊÇ¶¥µãµÄÊýÁ¿, GL_PASS_THROUGH_TOKEN ºóÃæÊÇÒ»¸öÓÃ»§¶¨ÒåµÄ¸¡µãÖµ<br />
+	·´À¡Ä£Ê½ÔÚÍ¼ÔªÖ®¼äÉèÖÃ±ê¼Ç, void glPassThrough(GLfloat token); // ÀàËÆÓÚÔÚÑ¡ÔñÄ£Ê½ÏÂÎªÍ¼ÔªÃüÃû<br />
+	·´À¡µÄÓÃÍ¾: ¸ù¾ÝÄãËùäÖÈ¾µÄÈÎºÎÎïÌå»ñÈ¡´°¿Ú×ø±êÐÅÏ¢<br />
+<br />
+</p>
+<h1 id="toc_2">µÚ16ÕÂ »º³åÇø¶ÔÏó</h1>
+<p>
+1. ÏÔ¿¨ÄÚ´æ¿É´æ´¢µÄÄÚÈÝ: Ç°»º³åÇø, ºó»º³åÇø, Éî¶È»º³åÇø, ÆäËû»º³åÇø, ÎÆÀí»º´æ, »º³åÇø¶ÔÏó<br />
+2. »º³åÇø¶ÔÏóµÄ¹ÜÀí<br />
+	glGenBuffers(1, &amp;bufferID);<br />
+	...<br />
+	glBindBuffer(GL_ARRAY_BUFFER, bufferID);<br />
+	...<br />
+	glDeleteBuffers(1, &amp;bufferID);<br />
+3. Ê¹ÓÃ»º³åÇø¶ÔÏó, ÓÃÆ«ÒÆÁ¿Ö¸¶¨Êý¾Ý<br />
+	glNormalPointer(GL_FLOAT, 0, 0);<br />
+	glVertexPointer(GL_FLOAT, 0, 0);<br />
+4. glBufferData() ¶ÁÈ¡Êý¾Ý, glBufferSubData() ¸üÐÂÊý¾Ý<br />
+5. ÓÃ·¨¼¼ÇÉ: Èç¹ûÊÇ¾²Ì¬Êý¾Ý, Ö±½ÓÊ¹ÓÃ glBufferData() ¶ÁÈ¡, Èç¹ûÊÇ¶¯Ì¬Êý¾Ý, ÏÈÓÃNULL²ÎÊýµ÷ÓÃ glBufferData(), ¶øºóÊ¹ÓÃ glBufferSubData() ¸üÐÂ<br />
+6. glBufferData() ×îºóÒ»¸ö²ÎÊýÓÃÓÚÓÃ·¨ÌáÊ¾<br />
+	GL_DYNAMIC_DRAW --- »º³åÇø¶ÔÏóÊý¾Ý¾­³£±ä»¯<br />
+	GL_STATIC_DRAW --- »º³åÇø¶ÔÏó²»¾­³£±ä»¯<br />
+	GL_STREAM_DRAW --- »º³åÇø¶ÔÏóÊý¾ÝÒ»°ãÖ»Ê¹ÓÃÒ»´Î¾Í»á±ä»¯, ¸ü¼ÓÆµ·±.<br />
+7. glMapBuffer() º¯Êý --- »ñµÃÒ»¸öÖ¸Ïò»º³åÇø¶ÔÏóÊý¾ÝµÄÖ¸Õë<br />
+	ÈýÖÖ·ÃÎÊÄ£Ê½: GL_READ_ONLY, GL_READ_WRITE, GL_WRITE_ONLY<br />
+	glUnMapBuffer() º¯Êý --- ½â³ýÓ³Éä, ½â³ýÖ®Ç°²»ÄÜÊ¹ÓÃ¸Ã»º³åÇø¶ÔÏó½øÐÐ»æÍ¼, ¸ÃÃüÁî¸æÖª OpenGL Êý¾ÝÐÞ¸ÄÍê±Ï<br />
+		// Èç¹û·µ»ØÖµÎª GL_FALSE, ³ÌÐòÓ¦µ±ÖØÐÂ¸ºÔðÌá¹©ËùÓÐµÄÊý¾Ý<br />
+8. ÓÃÓÚ»º³åÇø²éÑ¯µÄº¯Êý<br />
+	glGetBufferParameteriv, glGetBufferPointerv, glGetBufferSubData, glIsBuffer<br />
+9. Ê¹ÓÃGL_ELEMENT_ARRAY_BUFFER ´úÌæ GL_ARRAY_BUFFER Ôò¿ÉÒÔÊ¹ÓÃÊý¾ÝË÷Òý<br />
+<br />
+</p>
+<h1 id="toc_3">µÚ17ÕÂ ÕÚµ²²éÑ¯</h1>
+<p>
+1. ÕÚµ²¼ì²âµÄÀíÂÛ: Èç¹ûÒ»¸öÎïÌåµÄ±ß½çÇøÓò(bounding volume)²¢²»¿É¼û, ÄÇÃ´Õâ¸öÎïÌåÒ²²»¿É¼û<br />
+2. ÉèÖÃ¼òµ¥µÄ±ß½çÇøÓò: ËÄÃæÌå, ÁùÃæÌå, °ËÃæÌå, Ê®¶þÃæÌå, ¶þÊ®ÃæÌå. ¹ØµôËùÓÐ²»±ØÒªµÄ¹¦ÄÜ, °üÀ¨Ð´ÈëÑÕÉ«»º³åÇøÖÐ glColorMask(0, 0, 0, 0).<br />
+3. Éú³ÉºÍÉ¾³ýÕÚµ²²éÑ¯Ãû³Æ<br />
+	glGenQueries(27. queryIDs);<br />
+	...<br />
+	glDeleteQueries(27, queryIDs);<br />
+	¿ªÊ¼ºÍ½áÊø²éÑ¯: glBeginQuery() ºÍ glEndQuery()<br />
+4. glGetQueryObjectiv() º¯ÊýÅÐ¶Ï¼ÆÊýÆ÷ÊÇ·ñÎª0, Îª0±íÊ¾²»ÐèÒª»æÖÆ<br />
+5. ²éÑ¯ GL_QUERY_RESULT_AVAILABLE ÅÐ¶ÏÕÚµ²²éÑ¯¾ÍÚÀ¹ýÊÇ·ñÒÑ¾ÍÐ÷, Èç¹ûÎ´¾ÍÐ÷, ¿ÉÒÔ²éÑ¯ GL_QUERY_RESULT, Ò»Ö±µÈµ½½á¹û¾ÍÐ÷<br />
+6. ÔÚ glBeginQuery/glEndQuery Ö®¼ä¿ÉÒÔ²éÑ¯µ±Ç°ÕÚµ²²éÑ¯Ãû³Æ, »¹¿ÉÒÔ²éÑ¯µ±Ç°OpenGLµÄÕÚµ²²éÑ¯¼ÆÊýÆ÷µÄÎ»Êý<br />
+	glGetQueryiv(GL_SAMPLES_PASSED, GL_QUERY_COUNTER_BI);	// ²éÑ¯¼ÆÊýÆ÷Î»Êý<br />
+	glIsQuery --- ¼ì²éÒ»¸öÖ¸¶¨µÄÃû³ÆÊÇ·ñÎªÒ»¸öÏÖÓÐµÄ²éÑ¯¶ÔÏóµÄÃû³Æ<br />
+	<br />
+</p>
+<h1 id="toc_4">µÚ18ÕÂ Éî¶ÈÎÆÀíºÍÒõÓ°</h1>
+<p>
+1. ¸ù¾Ý¹âÔ´µÄÊÓµãÀ´»æÖÆ³¡¾°<br />
+	gluLookAt(lightPos[0], lightPos[1], lightPos[2], 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f);<br />
+2. ¸ù¾Ý¹âÔ´¾à³¡¾°ÖÐ×î½üºÍ×îÔ¶ÎïÌåµÄ¾àÀëÀ´ÉèÖÃ½ü²Ã¼ôÆ½ÃæºÍÔ¶²Ã¼ôÆ½Ãæ<br />
+3. ¹Ø±ÕËùÓÐ²»±ØÒªµÄ¹¦ÄÜ(¹âÕÕ, ·¨Ïß»¯, ²ÄÖÊÑÕÉ«¸ú×Ù, ÆÁ±ÎÑÕÉ«»º³åÇøµÄÐ´Èë)<br />
+4. glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, 0, 0, shadowSize, shadowSize, 0);<br />
+5. »æÖÆÒõÓ°, ÓÃ°µµ­µÄ»·¾³¹âºÍ¹âÕÕ»æÖÆÒ»±é, GL_ARB_shadow_ambient À©Õ¹¿ÉÒÔ²»ÓÃÕâÒ»²½, ¿ÉÍ¬Ê±»æÖÆÒõÓ°ÇøÓòºÍ¹âÕÕÇøÓò<br />
+6. <br />
+</p>
+
+    </div>
+</body>
+</html>

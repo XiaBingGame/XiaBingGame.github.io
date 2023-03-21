@@ -1,0 +1,104 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../../style.css">
+<title>How to Create an Application that has Office Style Toolbars and Menus</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</head>
+<body>
+
+<ul>
+<li>
+Add the following line to your StdAfx.h file: 
+<pre c++>
+#include &lt;XTToolkitPro.h&gt; // Xtreme Toolkit Pro component library
+</pre>
+
+<li>
+In your MainFrm.h file you need to change your base class to be CXTPMDIFrameWnd for MDI applications or CXTPFrameWnd for SDI applications: 
+<pre c++>
+class CMainFrame : public CXTPMDIFrameWnd
+{
+    ...
+};
+</pre>
+
+<li>
+If you plan to override either PreTranslateMessage or OnWndMsg make sure that you call the CXTPFrameWnd or CXTPMDIFrameWnd base class, for example: 
+<pre c++>
+BOOL CMainFrame::PreTranslateMessage(MSG* pMsg)
+{
+    // TODO: Add your specialized code here and/or call the base class
+
+    return CXTPMDIFrameWnd::PreTranslateMessage(pMsg);
+}
+
+BOOL CMainFrame::OnCmdMsg(UINT nID, int nCode,
+    void* pExtra, AFX_CMDHANDLERINFO* pHandlerInfo)
+{
+    // TODO: Add your specialized code here and/or call the base class
+
+    return CXTPMDIFrameWnd::OnCmdMsg(nID, nCode, pExtra, pHandlerInfo);
+}
+</pre>
+
+<li>
+Add the following code to the int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct) function
+<pre c++>
+int CMainFrame::OnCreate(LPCREATESTRUCT lpCreateStruct)
+{
+    if (CMDIFrameWnd::OnCreate(lpCreateStruct) == -1)
+        return -1;
+
+    // Create Status bar.
+    // Important: All control bars including the Status Bar
+    // must be created before CommandBars....
+    if (!m_wndStatusBar.Create(this) ||
+        !m_wndStatusBar.SetIndicators(indicators,
+        sizeof(indicators)/sizeof(UINT)))
+    {
+        TRACE0("Failed to create status bar\n");
+        return -1;      // fail to create
+    }
+
+    // Initialize the command bars
+    if (!InitCommandBars())
+        return -1;
+
+    // Get a pointer to the command bars object.
+    CXTPCommandBars* pCommandBars = GetCommandBars();
+    if(pCommandBars == NULL)
+    {
+        TRACE0("Failed to create command bars object.\n");
+        return -1;      // fail to create
+    }
+
+    // Add the menu bar
+    CXTPCommandBar* pMenuBar = pCommandBars-&gt;SetMenu(
+        _T("Menu Bar"), IDR_MDISAMTYPE);
+    if(pMenuBar == NULL)
+    {
+        TRACE0("Failed to create menu bar.\n");
+        return -1;      // fail to create
+    }
+
+    // Create ToolBar
+    CXTPToolBar* pToolBar = (CXTPToolBar*)
+        pCommandBars-&gt;Add(_T("Standard"), xtpBarTop);
+    if (!pToolBar || !pToolBar-&gt;LoadToolBar(IDR_MAINFRAME))
+    {
+        TRACE0("Failed to create toolbar\n");
+        return -1;
+    }
+
+    // Set Office 2003 Theme
+    CXTPPaintManager::SetTheme(xtpThemeOffice2003);
+
+    return 0;
+}
+</pre>
+
+</ul>
+
+</body>
+</html>

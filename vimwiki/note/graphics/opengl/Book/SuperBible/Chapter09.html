@@ -1,0 +1,382 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../../style.css" />
+    <title>Chapter09</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<ul>
+<li>
+主要函数
+
+<ul>
+<li>
+glLightModel/glSecondaryColor  --- 给纹理对象添加镜面高亮
+
+<li>
+glTexParameterf --- 使用 anisotropic 纹理过滤
+
+<li>
+glCompressedTexImage/glCompressedTexSubImage --- 加载和使用压缩纹理
+
+<li>
+glPointParameter --- 使用点作为要被纹理的矩形
+
+</ul>
+</ul>
+
+<h1 id="toc_1">Secondary Color</h1>
+<ul>
+<li>
+在纹理之后应用镜面高亮, 这个技术称之为 secondary specular color. 该技术可以手动应用或者使用光照模型自动计算出.
+
+<li>
+通常使用一般的OpenGL光照模型并简单地使用 glLightModeli 打开. 如下:
+<pre c++>
+	// 应用辅助镜面颜色
+	glLightModeli(GL_LIGHT_MODEL_COLOR_CONTROL, GL_SEPARATE_SPECULAR_COLOR);
+	// 使用原先的模式
+	glLightModeli(GL_LIGHT_MODEL_COLOR_CONTROL, GL_COLOR_SINGLE);
+</pre>
+
+<li>
+当你不使用光照时, 可通过函数 glSecondaryColor函数指定一个辅助颜色. 并且要允许 GL_COLOR_SUM flag.
+<pre c++>
+	glEnable(GL_COLOR_SUM);
+</pre>
+
+</ul>
+<h1 id="toc_2">Anisotropic Filtering</h1>
+<ul>
+<li>
+非OpenGL 核心规则, 但为一个广泛支持的扩展.
+
+<li>
+纹理过滤时考虑到观看角度的方法为 anisotropic filtering.
+
+<li>
+应用 anisotropic filtering 需要三个步骤:
+
+<ol>
+<li>
+确定扩展是否支持. 查询扩展字符串中是否包含 GL_EXT_texture_filter_anisotropic
+
+<li>
+查找支持的anisotropy的最大量. 使用 glGetFloatv 调用参数 GL_MAX_TEXTURE_MAX_ANISOTROPY_EXT;
+
+<ul>
+<li>
+1.0的值表示应用正常的纹理过滤(称之为 isotropic filtering).
+
+</ul>
+<li>
+调用 glTexParameter函数并设置 GL_TEXTURE_MAX_ANISOTROPY_EXT 参数和 anisotropy量的参数.
+<pre c++>
+	glTexParameterf(GL_TEXTURE_2D, GL_TEXTURE_MAX_ANISOTROPY_EXT, fLargest);
+</pre>
+
+</ol>
+</ul>
+<h1 id="toc_3">Texture Compression</h1>
+<ul>
+<li>
+支持纹理压缩的扩展 GL_ARB_texture_compression
+
+</ul>
+<h2 id="toc_3.1">Compressing Textures</h2>
+<ul>
+<li>
+压缩的纹理格式
+
+<li>
+调用函数 glGetTexLevelParameteriv 和参数 GL_TEXTURE_COMPRESSED 查看压缩是否成功.
+<pre c++>
+	GLint compFlag;
+	//. . .
+	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_COMPRESSED, &amp;compFlag);
+</pre>
+
+<li>
+glHint和GL_TEXTURE_COMPRESSION_HINT 参数可以选择压缩质量算法.
+
+<li>
+检查具体格式的扩展, 查看其是否支持一系列具体的压缩纹理格式. 例如 GL_EXT_texture_compression_s3tc 纹理压缩格式
+
+</ul>
+<h2 id="toc_3.2">加载压缩纹理</h2>
+<ul>
+<li>
+glGetCompressedTexImage 函数得到压缩的数据, 这点与 glGetTexImage 对应.
+
+<li>
+加载预先已压缩的纹理数据: glCompressedTexImage*D, 其内的 internalFormat 参数必须指定一个支持的压缩纹理图像.
+
+<li>
+还有对应的 glCompressedTexSubImage 函数.
+
+</ul>
+<h1 id="toc_4">纹理坐标生成</h1>
+<ul>
+<li>
+使用以下函数允许 S, T, R, Q 纹理坐标的生成:
+<pre c++>
+	glEnable(GL_TEXTURE_GEN_S);
+	glEnable(GL_TEXTURE_GEN_T);
+	glEnable(GL_TEXTURE_GEN_R);
+	glEnable(GL_TEXTURE_GEN_Q);
+</pre>
+
+<li>
+允许纹理坐标生成后, 忽略所有 glTexCoord 的调用.
+
+<li>
+下面的函数用于生成纹理坐标.
+<pre c++>
+	void glTexGenf(GLenum coord, GLenum pname, GLfloat param);
+	void glTexGenfv(GLenum coord, GLenum pname, GLfloat *param);
+</pre>
+
+<ul>
+<li>
+第一个参数 coord 为哪个纹理坐标: GL_S, GL_T, GL_R, GL_Q.
+
+<li>
+第二个参数 pname 为 GL_TEXTURE_GEN_MODE, GL_OBJECT_PLANE, GL_EYE_PLANE.
+
+<li>
+第三个参数为纹理生成函数或模式的值.
+
+<li>
+注意这些函数同样使用整数(GLint)和双精度版本(GLdouble).
+
+</ul>
+</ul>
+<h2 id="toc_4.1">Object Linear Mapping</h2>
+<ul>
+<li>
+当纹理生成模式为 GL_OBJECT_LINEAR, 使用下面的函数生成纹理坐标
+
+<ul>
+<li>
+coord = P1*X + P2*Y + P3*Z + P4*W
+
+<li>
+X, Y, Z, W 为纹理的物体顶点坐标.
+
+<li>
+P1, P2, P3, P4 为平面方程的系数.
+
+<li>
+所求的坐标等同于从平面的透视投影至几何体上. 个人认为等于距离该平面的距离.
+
+</ul>
+<li>
+注意纹理坐标的生成函数可以在每个坐标上使用不同的平面方程.
+
+</ul>
+<h2 id="toc_4.2">Eye Linear Mapping</h2>
+<ul>
+<li>
+纹理生成模式为 GL_EYE_LINEAR
+
+<li>
+这里平面方程和顶点坐标都要转换至视觉坐标系中.
+
+</ul>
+<h2 id="toc_4.3">Sphere Mapping</h2>
+<ul>
+<li>
+纹理生成模式 GL_SPHERE_MAP
+
+<li>
+是的物体看起来像是反射当前的纹理映射.
+<pre c++>
+	glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_SPHERE_MAP);
+	glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_SPHERE_MAP);
+</pre>
+
+<li>
+通常使用鱼眼镜头得到的照片作为纹理. 现主要被cube mapping代替.
+
+</ul>
+<h2 id="toc_4.4">Cube Mapping</h2>
+<ul>
+<li>
+最后两个纹理生成模式: GL_REFLECT_MAP 和 GL_NORMAL_MAP. 这两个模式要求使用一个新类型的纹理目标: the cube map. 由六个正方形2D图像组成一个正方体的六个面.
+
+</ul>
+<h3 id="toc_4.4.1">Loading Cube Maps</h3>
+<ul>
+<li>
+可以传递给 glTexImage2D 的六个值: GL_TEXTURE_CUBE_MAP_POSITIVE_X, GL_TEXTURE_CUBE_MAP_NEGATIVE_X, GL_TEXTURE_CUBE_MAP_POSITIVE_Y, GL_TEXTURE_CUBE_MAP_NEGATIVE_Y, GL_TEXTURE_CUBE_MAP_POSITIVE_Z, and GL_TEXTURE_CUBE_MAP_NEGATIVE_Z. 
+
+<li>
+这些常量表示围绕被映射物体的正方体的面在世界坐标系中的方向.
+<pre c++>
+	glTexImage2D(GL_TEXTURE_CUBE_MAP_POSITIVE_X, 0, GL_RGBA, iWidth, iHeight,
+		0, GL_RGBA, GL_UNSIGNED_BYTE, pImage);
+</pre>
+
+<li>
+允许 GL_TEXTURE_CUBE_MAP, 如果 GL_TEXTURE_CUBE_MAP 和 GL_TEXTURE_2D 同时被允许, 则 GL_TEXTURE_CUBE_MAP 优先级更高.
+
+<li>
+不想一个3D纹理, S, T, R纹理坐标表示一个来自纹理映射中心的有符号向量, 其与立体映射的六个面的一个相交, 而后采样交点处附近的纹素, 从纹理中创建过滤后的颜色值.
+
+</ul>
+<h3 id="toc_4.4.2">Using Cube Maps</h3>
+<ul>
+<li>
+立体映射可以应用于一个球体创建一个镜面表面. 相同的立体映射还可以用于skybox, 表示被反射的背景.
+
+<li>
+一个有效的天空盒有六个图像, 包含了你场景的中心六个方向轴观看的内容.
+
+<li>
+本书可以创建一个立体映射, 而后用 GL_QUADS 创建巨大的天空盒的六个面, 而后使用 glTexCoord3f 指定纹理坐标. 对于每个顶点, 纹理坐标指向天空盒的一个角.
+
+<li>
+注意指定纹理坐标之前关闭纹理坐标的生成.
+
+<li>
+为了绘制反射的球体, 设置纹理生成模式为 GL_REFLECTION_MAP 用于三个纹理坐标.
+<pre c++>
+	glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_REFLECTION_MAP);
+	glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_REFLECTION_MAP);
+	glTexGeni(GL_R, GL_TEXTURE_GEN_MODE, GL_REFLECTION_MAP);
+</pre>
+
+<li>
+为了提供一个真实的反射, 我们提取相机的旋转矩阵, 而求求其逆矩阵并应用该矩阵. 并且在之前将矩阵模式修改为纹理矩阵. 而后绘制球体. 绘制结束后将矩阵模式修改回原来的模式.
+
+</ul>
+
+<h1 id="toc_5">多纹理映射 </h1>
+<ul>
+<li>
+GL_MAX_TEXUTRE_UNITS --- 查询可以使用最多的纹理单元数量.
+
+<li>
+第一个纹理单元默认为活跃的纹理单元. glActiveTexture 可以改变当前活跃的纹理单元.
+
+</ul>
+<h2 id="toc_5.1">多纹理坐标 </h2>
+<ul>
+<li>
+glTexCoord 函数只用于第一个纹理单元 GL_TEXTURE0.
+
+<li>
+下面的函数指定不同纹理单元的坐标.
+<pre c++>
+	GlMultiTexCoord1f(GLenum texUnit, GLfloat s);
+	glMultiTexCoord2f(GLenum texUnit, GLfloat s, GLfloat t);
+	glMultiTexCoord3f(GLenum texUnit, GLfloat s, GLfloat t, Glfloat r);
+</pre>
+
+</ul>
+<h2 id="toc_5.2">一个多纹理的例子 </h2>
+<ul>
+<li>
+第一个纹理为"tarnish"查看纹理, 第二个纹理为立体映射纹理.
+
+</ul>
+
+<h1 id="toc_6">Texture Combiners</h1>
+<ul>
+<li>
+默认情况, 你可以简单地为每个纹理单元选择一个纹理环境模式(GL_DECAL, GL_REPLACE, GL_MODULATE, GL_ADD), 而后每个纹理应用的结果添加至下一个纹理单元.
+
+<li>
+一个新的纹理环境 GL_COMBINE, 允许你显式地设置每个纹理单元纹理片段组合的方式. 为了使用combiner, 调用下面的函数.
+<pre c++>
+	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_COMBINE);
+</pre>
+
+<li>
+而后第二个参数为 GL_COMBINE_RGB 或者 GL_COMBINE_ALPHA 来选择组合函数. 第三个参数为想要应用的纹理环境函数.
+<pre c++>
+	glTexEnvi(GL_TEXTURE_ENV, GL_COMBINE_RGB, GL_REPLACE);
+</pre>
+
+<li>
+GL_SOURCEx_RGB 和 GL_SOURCEx_ALPHA 用于指定 RGB 或 alpha 组合器函数的来源. x为0, 1, 2. 具体可见文档.
+
+<li>
+还可以使用 GL_OPERANDx_RGB 或 GL_OPERANDx_ALPHA 指定每个来源如何设置成操作数.
+
+<li>
+还可以使用纹理组合器设置RGB或alpha的常量缩放因子. 默认为
+<pre c++>
+	glTexEnvf(GL_TEXTURE_ENV, GL_RGB_SCALE, 1.0f);
+	glTexEnvf(GL_TEXTURE_ENV, GL_ALPHA_SCALE, 1.0f);
+</pre>
+
+</ul>
+
+<h1 id="toc_7">Point Sprites</h1>
+<ul>
+<li>
+通过绘制一个3D点你可以放置一个2D纹理的图像在屏幕任意位置.
+
+<li>
+常用于粒子系统.
+
+</ul>
+<h2 id="toc_7.1">Using Points</h2>
+<ul>
+<li>
+绑定至一个2D纹理, 允许 GL_POINT_SPRITE, 设置GL_POINT_SPRITE纹理环境目标的GL_COORD_REPLACE 参数为真. 而后绘制3D点.
+
+<li>
+一个严格的限制为这些点的大小受限于aliased point sizes的范围. 你可以确定这个范围.
+<pre c++>
+	GLfloat fSizes[2];
+	GLGetFloatfv(GL_ALIASED_POINT_SIZE_RANGE, fSizes);
+</pre>
+
+</ul>
+<h2 id="toc_7.2">Texture Application</h2>
+<ul>
+<li>
+point sprites 遵守所有的纹理规则. 
+
+<li>
+如果 GL_COORD_REPLACE 设置为假, 则只有一个纹素应用在该点上.
+<pre c++>
+	glTexEnvi(GL_POINT_SPRITE, GL_COORD_REPLACE, GL_FALSE);
+</pre>
+
+<li>
+点的大小要大于1.0
+
+</ul>
+<h2 id="toc_7.3">点参数 </h2>
+<ul>
+<li>
+glPointParameter, 如设置纹理坐标在点上原点的位置. 设置 GL_POINT_SPRITE_COORD_ORIGIN 参数.
+<pre c++>
+	glPointParameteri(GL_POINT_SPRITE_COORD_ORIGIN, GL_LOWER_LEFT);
+</pre>
+
+<li>
+还可以设置允许点的大小范围, 设置点大小随距离衰减.
+
+</ul>
+
+    </div>
+</body>
+</html>

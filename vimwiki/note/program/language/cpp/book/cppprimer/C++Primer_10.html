@@ -1,0 +1,117 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../../../../style.css">
+<title>C++Primer_10</title>
+<meta http-equiv="Content-Type" content="text/html; charset=cp936">
+</head>
+<body>
+
+<ul>
+<li>
+pair类型, 在 utility 头文件中定义, pair类型提供的操作:
+
+<ul>
+<li>
+pair&lt;T1, T2&gt; p1;
+
+<li>
+pari&lt;T1, T2&gt; p1(v1, v2);
+
+<li>
+make_pair(v1, v2);
+
+<li>
+p1 &lt; p2
+
+<li>
+p1 == p2
+
+<li>
+p.first
+
+<li>
+p.second
+
+</ul>
+<li>
+关联容器不提供 front, push_front, pop_front, back, push_back, pop_back操作
+
+<li>
+在实际使用中, map的键类型必须定义 &lt; 操作符, map的构造函数:
+
+<ul>
+<li>
+map&lt;k, v&gt; m;
+
+<li>
+map&lt;k, v&gt; m(m2);
+
+<li>
+map&lt;k, v&gt; m(b, e); --- 其中元素的类型必须能转换为 pair&lt;const k, v&gt;
+
+</ul>
+<li>
+map&lt;K, V&gt;::value_type为pair类型, 其中键为 const.  map&lt;K, V&gt;::key_type --- 用作索引的键类型; map&lt;K, V&gt;::mapped_type --- 键所关联的值的类型; 所以 map&lt;K, V&gt;为 pair&lt;const map&lt;K, V&gt;::key_type, map&lt;K, V&gt;::mapped_type &gt;.
+
+<li>
+map 迭代器解引用产生 pair类型 对象
+<pre c++>
+map&lt;string, int&gt;::iterator map_it = word_count.begin();
+cout &lt;&lt; map_it-&gt;first;
+cout &lt;&lt; " " &lt;&lt; map_it-&gt;second;
+</pre>
+
+<li>
+map的下标操作符, 如果该键已存在, 则返回其所关联的值, 否则为改键创建一个新的元素, 并插入到此map对象中. 
+
+<li>
+map容器提供的insert操作
+
+<ul>
+<li>
+m.insert(e) --- e 为 value_type类型的值, 如 e.first不在m中, 则插入新值, 否则m不变
+
+<li>
+m.insert(beg, end)
+
+<li>
+m.insert(iter, e) --- 以iter为起点搜索新元素存储的位置.
+
+</ul>
+<li>
+可以使用 make_pair 和 typedef 简化插入的实参. 返回值为pair类型, 包含一个迭代器和bool值, 迭代器指向插入的位置, bool表示受否插入该元素
+
+<li>
+map提供了函数 count()和find()用于查看某键值是否存在而不会插入该键值.
+
+<li>
+从map中删除对象: m.erase(k), m.erase(p), m.erase(b, e);
+
+<li>
+set不支持下标操作, 没有定义 mapped_type 类型, 存储的元素仅仅是键, 没有所关联的值.
+
+<li>
+set 使用 insert() 成员函数添加元素, 返回 pair类型的值, 第一个为指向插入元素的迭代器, 第二个为是否成功插入. 可使用 find() 成员函数查找元素, 使用 count() 判断元素是否存在. 
+
+<li>
+multimap 不支持下标运算, insert() 和 erase() 操作同样适用于 multimap 以及 multiset容器. multimap中的erase() 函数, 如果只有一个参数, 则删除所有该参数为键值的元素, 并返回删除元素的个数
+
+<li>
+如何在 multimap和 multiset中查找元素: (1) 使用 find 和 count 操作; (2) lower_bound 和 upper_bound 函数, 以及 equal_range 函数
+
+<ul>
+<li>
+lower_bound(k): 返回一个迭代器, 指向键不小于k的第一个元素
+
+<li>
+upper_bound(k): 返回一个迭代器, 指向键大于k的第一个元素, 如元素不存在, 和上面的操作返回同一个迭代器, 指向该元素应当插入的位置.
+
+<li>
+equal_range(k): 返回一个迭代器的pair对象, 成员为上面两个操作的结果
+
+</ul>
+</ul>
+
+</body>
+</html>

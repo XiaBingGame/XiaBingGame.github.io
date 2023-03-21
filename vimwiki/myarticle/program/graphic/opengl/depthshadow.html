@@ -1,0 +1,218 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../../style.css">
+<title>depthshadow</title>
+<meta http-equiv="Content-Type" content="text/html; charset=cp936">
+</head>
+<body>
+
+<h1 id="toc_1">深度阴影的原理</h1>
+<ul>
+<li>
+设置深度纹理一些参数
+<pre c++>
+	glGenTextures(1, &amp;shadowTextureID);
+	glBindTexture(GL_TEXTURE_2D, shadowTextureID);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP);
+	// 深度纹理每个像素只有一个元素D表示深度值, 而纹理读取每个像素需要有四个元素, 该函数可以设置读取的四个元素为(D, D, D, D)
+	// 使用深度纹理时, 必须设置 GL_DEPTH_TEXTURE_MODE 参数, 默认选项为 GL_LUMINANCE
+	glTexParameteri(GL_TEXTURE_2D, GL_DEPTH_TEXTURE_MODE, GL_INTENSITY);
+
+	// 设置纹理坐标(s, t, r, q)的生成模式, 有两个选项, GL_EYE_LINEAR 和 GL_OBJECT_LINEAR
+	// 两者都可以选择, 不过选择 GL_EYE_LINEAR 还需要乘以视图矩阵的逆矩阵得到场景空间的坐标, 因为 GL_EYE_* 生成的是相机的视觉空间坐标
+	// 如何乘以逆矩阵, 只需要在 gluLookAt 或者 其他移动旋转函数之后 调用 glTexGenfv(GL_S, GL_EYE_PLANE, sPlane) 等函数即可
+	// 如果在 gluLookAt 等函数之前调用 glTexGenfv 函数, 则场景中模型生成的纹理坐标为相机的视觉坐标.
+	// 对于这个问题的理解, 可以将在 glTexGenfv 函数在 gluLookAt等函数之后调用看成绘制模型的时候, 生成模型的场景坐标(s, t, r, q).
+	// 和 GL_EYE_* 不同, 可以在gluLookAt等函数之前设置 GL_OBJECT_* 参数, 这样直接生成的坐标就是场景空间的坐标 
+	glTexGeni(GL_S, GL_TEXTURE_GEN_MODE, GL_EYE_LINEAR);
+	glTexGeni(GL_T, GL_TEXTURE_GEN_MODE, GL_EYE_LINEAR);
+	glTexGeni(GL_R, GL_TEXTURE_GEN_MODE, GL_EYE_LINEAR);
+	glTexGeni(GL_Q, GL_TEXTURE_GEN_MODE, GL_EYE_LINEAR);
+</pre>
+
+<li>
+设置光源为观察点, 得到其投影矩阵和模型视图矩阵, 绘制模型, 得到其深度纹理
+<pre c++>
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+	gluPerspective(fieldOfView, 1.0f, nearPlane, nearPlane + 300.0f);
+	glGetFloatv(GL_PROJECTION_MATRIX, lightProjection);
+
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+	gluLookAt(lightPos[0], lightPos[1], lightPos[2], 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f);
+	glGetFloatv(GL_MODELVIEW_MATRIX, lightModelview);
+	glViewport(0, 0, shadowSize, shadowSize);
+	glClear(GL_DEPTH_BUFFER_BIT);
+	glShadeModel(GL_FLAT);
+	glDisable(GL_LIGHTING);
+	glDisable(GL_COLOR_MATERIAL);
+	glDisable(GL_NORMALIZE);
+	glColorMask(0, 0, 0, 0);
+	glEnable(GL_POLYGON_OFFSET_FILL);
+	DrawModels();
+	glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT, 0, 0, shadowSize, shadowSize, 0);
+	glShadeModel(GL_SMOOTH);
+	glEnable(GL_LIGHTING);
+	glEnable(GL_COLOR_MATERIAL);
+	glEnable(GL_NORMALIZE);
+	glColorMask(1, 1, 1, 1);
+	glDisable(GL_POLYGON_OFFSET_FILL);
+</pre>
+
+<li>
+设置纹理矩阵
+<pre c++>
+	glMatrixMode(GL_TEXTURE);
+	glLoadIdentity();
+	glTranslatef(0.5f, 0.5f, 0.5f);
+	glScalef(0.5f, 0.5f, 0.5f);
+	// Proj * Model 将纹理坐标转到世界空间
+	glMultMatrixf(lightProjection);
+	glMultMatrixf(lightModelview);
+</pre>
+
+</ul>
+	
+<ul>
+<li>
+这是最重要的一个步骤, 后面通过glTexGen()函数生成四个坐标(s, t, r, q). 该四个坐标经过转换后为场景中模型的场景空间坐标
+
+<li>
+现在我们需要将该坐标转换成以光源为原点的笛卡尔坐标系中的坐标
+
+<li>
+乘以lightModelview矩阵则会导致 (s, t, r, q)坐标转换到以光源为原点的笛卡尔坐标系中的坐标
+
+<li>
+而后lightProjection矩阵则得到投影裁剪坐标, x, y, z的范围都为[-1.0, 1.0]
+
+<li>
+经过scale, 范围为[-0.5, 0.5], glTranslate则为[0.0, 1.0], 这样其就可以与深度阴影纹理一一对应了
+
+</ul>
+<li>
+首先绘制图形的阴影部分, 即用很暗淡的环境过绘制一遍物体
+<pre c++>
+		glLightfv(GL_LIGHT0, GL_AMBIENT, lowAmbient);
+		glLightfv(GL_LIGHT0, GL_DIFFUSE, lowDiffuse);
+		DrawModels();	
+</pre>
+
+<li>
+启用Alpha测试, 设置纹理参数, 启用纹理生成, 而后绘制模型
+
+<ul>
+<li>
+在绘制模型的时候模型上的一点生成纹理坐标(s, t, r, q), 该纹理坐标也对应于场景空间的坐标, 经过转换为(s', t', r', q')为光源观察点的裁剪坐标
+
+<li>
+由于调用了 GL_COMPARE_R_TO_TEXTURE 比较模式, 则 r' 和 深度阴影纹理的 D值进行比较, 默认比较模式为GL_LEQUAL
+
+<li>
+由于 r' 也是场景空间中该点在光源观察点的深度值. 当 r' &lt; D 时, 场景中该点的纹理值为{1.0f, 1.0f, 1.0f, 1.0f}, 否则为(0.0f, 0.0f, 0.0f, 0.0f)
+
+<li>
+由于启用了 GL_ALPHA_TEST 和 GL_MODULATE, 所以当纹理为(1.0f, 1.0f, 1.0, 1.0)时, 经过光照和纹理, 该点像素的alpa必然为1.0, 绘制该点. 其他地方则不绘制
+<pre c++>
+		glAlphaFunc(GL_GREATER, 0.90);
+		glEnable(GL_ALPHA_TEST);
+		glEnable(GL_TEXTURE_2D);
+		glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_COMPARE_MODE, GL_COMPARE_R_TO_TEXTURE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glEnable(GL_TEXTURE_GEN_S);
+		glEnable(GL_TEXTURE_GEN_T);
+		glEnable(GL_TEXTURE_GEN_R);
+		glEnable(GL_TEXTURE_GEN_Q);
+		DrawModels();
+</pre>
+
+</ul>
+<li>
+最后禁用纹理生成
+<pre c++>
+		glDisable(GL_ALPHA_TEST);
+		glDisable(GL_TEXTURE_2D);
+		glDisable(GL_TEXTURE_GEN_S);
+		glDisable(GL_TEXTURE_GEN_T);
+		glDisable(GL_TEXTURE_GEN_R);
+		glDisable(GL_TEXTURE_GEN_Q);
+</pre>
+
+
+<ul>
+<li>
+总结: 阴影深度纹理的本质就是生成一张深度图, 描述场景中最靠近光源的各个点. 而后通过纹理生成的方法, 场景中每个点都生成一个纹理坐标(s, t, r, q)<br />
+	该坐标经过转换为光源观察点的裁剪坐标(s', t', r', q'), 而后 r' 和深度纹理对应的值进行比较, 而后通过比较, 设置场景中该点的纹理值是(1.0, 1.0, 1.0, 1.0),<br />
+	还是(0.0, 0.0, 0.0, 0.0), 凡是纹理值为(1.0, 1.0, 1.0, 1.0)则是光照区域, 否则就是阴影区域<br />
+	另外本例的纹理生成方式可以使用 GL_EYE_* 方式, 也可以使用 GL_OBJECT_* 方式, 前者要和 DrawModel()  在一起, 这样视觉空间坐标就会自动转换成场景空间坐标<br />
+	不过在使用 GL_OBJECT_* 容易出现阴影重叠问题, 这个问题我百思不得其解<br />
+
+</ul>
+<p>
+<br />
+</p>
+<ul>
+<li>
+glTexGeni 函数
+
+<ul>
+<li>
+控制纹理坐标的生成
+
+<ul>
+<li>
+void WINAPI glTexGeni(GLenum coord, GLenum pname, GLint param);	
+
+<li>
+coord: GL_S, GL_T, GL_R, GL_Q.
+
+<li>
+pname: GL_TEXTURE_GEN_MODE
+
+<li>
+param: GL_OBJECT_LINEAR, GL_EYE_LINEAR, GL_SPHERE_MAP, GL_NORMAL_MAP, GL_REFLECTION_MAP
+
+<li>
+GL_OBJECT_LINEAR: 
+
+<ul>
+<li>
+使用函数 g = p1x0 + p2y0 + p3z0 + p4w0
+
+<ul>
+<li>
+g 是最后算出的坐标值, p1, p2, p3, p4 是给出的平面方程参数, x0, y0, z0, w0 则是物体的场景坐标
+
+</ul>
+</ul>
+<li>
+GL_EYE_LINEAR:
+
+<ul>
+<li>
+使用函数 g = p1'xe + p2'ye + p3'ze + p4'we
+
+<ul>
+<li>
+[p1' p2' p3' p4'] = (p1 p2 p3 p4)M', M'为逆矩阵
+
+</ul>
+<li>
+xe, ye, ze, we 是顶点的视觉坐标, M 是调用 glTexGen 的模型视图矩阵, 注意当矩阵不可逆时, 会产生不可预料的结果
+
+<li>
+注意, p1, p2, p3, p4 定义了一个视觉坐标系中的一个平面, 模型视图矩阵可以应用于这些参数
+		启用和禁止 GL_TEXTURE_GEN_S, GL_TEXTURE_GEN_T, GL_TEXTURE_GEN_R, GL_TEXTURE_GEN_Q
+
+</ul>
+</ul>
+</ul>
+</ul>
+
+</body>
+</html>

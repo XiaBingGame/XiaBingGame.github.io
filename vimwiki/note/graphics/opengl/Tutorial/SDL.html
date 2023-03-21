@@ -1,0 +1,86 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../../style.css">
+<title>SDL</title>
+<meta http-equiv="Content-Type" content="text/html; charset=cp936">
+</head>
+<body>
+
+<ul>
+<li>
+使用 SDL
+
+<ul>
+<li>
+安装SDL
+
+<li>
+安装一个MakeFile
+
+<li>
+使用 SDL+OpenGL 写代码
+
+<li>
+GLSL 函数
+
+</ul>
+<li>
+Video Mode
+
+<ul>
+<li>
+如果除了设定的像素深度, 还接受其他的深度, 则 SDL_SetVideoMode 使用参数 SDL_ANYFORMAT. SDL_VideoModeOK() 查找最接近你要求的模式
+
+<li>
+SDL_MapRGB 得到特定的颜色, 修改 Surface 上数据时, 调用SDL_MUSTLOCK, SDL_LockSurface和SDL_UnlockSurface进行锁定和解锁
+
+</ul>
+<li>
+OpenGL
+
+<ul>
+<li>
+SDL_OPENGL 传递给 SDL_SetVideoMode
+
+<li>
+使用 SDL_GL_SetAttribute设置一些 GL属性(depth buffer size, framebuffer size).
+
+</ul>
+<li>
+键盘处理
+
+<ul>
+<li>
+SDLKey 枚举类型定义于 SDL/include/SDL_keysym.h, SDLK_a 表示按键'a'. SDLK_SPACE 表示空格
+
+<li>
+SDLMod 枚举类型表示 modifiers (Control, Alt, Shift).<br />
+<pre c++>
+typedef struct
+{
+	Uint8 scancode;
+	SDLKey sym;
+	SDLMod mod;
+	Uint16 unicode; // 要能够 Unicode 转换则使用 SDL_EnableUNICODE
+} SDL_keysym;
+
+typedef struct
+{
+	Uint8 type; // SDL_KEYUP, SDL_KEYDOWN
+	Uint8 state;	// SDL_RELEASED, SDL_PRESSED
+	SDL_keysym keysym;
+} SDL_KeyboardEvent;
+</pre>
+
+<li>
+使用 SDL_PollEvent 读取事件, 在while循环中检查 SDL_KEYUP 和 SDL_KEYDOWN 事件
+
+<li>
+按键事件只有当键由未按下状态变为按下状态时才发生. 所以如果用按键移动物体, 应当使用按键设置标志, 而后根据该标志移动.
+
+</ul>
+</ul>
+
+</body>
+</html>

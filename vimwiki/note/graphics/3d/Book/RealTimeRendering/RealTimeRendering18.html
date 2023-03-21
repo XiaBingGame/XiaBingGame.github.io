@@ -1,0 +1,493 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../../style.css" />
+    <title>RealTimeRendering18</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<h1 id="toc_1">Chapter 18 Graphics Hardware</h1>
+<h2 id="toc_1.1">18.1 Buffers and Buffering</h2>
+<ul>
+<li>
+这里, 我们将使用一个简单的模型描述颜色缓存的内容如何显示在显示器上. 帧缓存的内存也许位于和CPU用于该任务相同的内存中, 也许位于dedicated frame-buffer内存中, 也许位于video memory中, 该video memory可包含任意的GPU数据, 但这个数据不被CPU直接访问. 颜色缓存为帧缓存的一部分. 其以某种方式连接至 video controller, 而该video则连接至显示器. 可见图18.1所描述. video controller常包括一个digital-to-analog converter(DAC)(数字转模拟), 因为当使用模拟显示设备时, 数字像素值必须转换为一个相等的模拟值. 这个系统必须能够处理高的带宽. 基于CRT的显示器为模拟设备, 因此需要模拟输入. 基于LCD的显示器为数字设备, 但其可用模拟和数字输入. 个人电脑使用digital visual interface(DVI)或者DisplayPort digital interface, 同时消费者电子设备如游戏系统和电视机常使用high-definition multimedia interface(HDMI)标准.
+
+<li>
+阴极射线软管(CRT)显示器更新图像的频率通常为每秒60到120次(Hertz). video controller的工作为扫描通过颜色缓存, 以相同的频率扫描线逐扫描线地扫描. 显示器通过显示器光束同步化完成这个. 在图像的单个刷新中, 颜色缓存中的像素用于控制监视器光束的强度. 注意电子束的移动方式为从左到右和从上到下. 因此, 当电子束从右边移向左边时(换行)其对屏幕上图像没有帮助. 这个被称为 horizontal retrace. line rate或horizontal refresh rate则为完成一次从左到右再到左的一个周期所花费的时间. vertical retrace则为从底部到左上角. 也就是其返回到下一帧的起始位置. 其可见图18.2. vertical refresh rate则为每秒监视器执行这个程序的次数. 当频率低于72Hz时, 大多数viewer会觉得闪烁(见10.14关于其更多的细节). 
+
+<li>
+液晶显示器(LCD)其更新常为60Hertz. CRT更好的刷新率是因为当电子书通过磷光体后磷光体开始暗淡. 而LCD cell则连续不断地传输光, 所以通常不要求更高的刷新率. 其也不需要retrace时间. 垂直同步(vertical sync)的概念仍应用于LCD. 所生成的帧的速度其影响了有效率的更新率. 见章节2.1这些rates如何相互影响. 
+
+<li>
+另一相关的主题为interlacing(交错), 计算机显示器通常为noninterlaced, 或者其已知为progressive scan. 在电视机中, 水平线为交错的, 所以在一次vertical refresh(垂直刷新)中, 绘制奇数的行, 在下一次刷新中, 绘制偶数的行. 过滤计算机动画用于电视机为nontrivial(非平凡的)[230, 1202].
+
+</ul>
+
+<h3 id="toc_1.1.1">18.1.1 The Color Buffer</h3>
+<ul>
+<li>
+颜色缓存有几个颜色模式(mode), 其基于表示颜色的字节数量. 这些模式包含:
+
+<ul>
+<li>
+High color: 每个像素两个字节, 15或16位用于颜色, 其各自给出了32,768或65,536个颜色.
+
+<li>
+True color 或 RGB color: 每个像素三个或四个字节, 24位用于表示颜色, 其给出了16,777,216约等于16.8百万个不同的颜色.
+
+</ul>
+<li>
+该High color模式使用16位的颜色分辨率. 每个颜色成分至少分割5位, 其给出了32 level 的颜色 剩下的一位常用语绿色. 这是由于绿色表示眼睛上最大的亮度效果, 所以要求更高的精度.
+
+<li>
+High color相对于True color有速度优势. high color mode逐渐在桌面图形淡出. 然而一些笔记本电脑使用18位表示颜色, 也就是每个颜色成分6位. 另外, 移动设备, 类似于手机和便捷游戏控制台, 也常使用16或18位用于表示颜色. 但是其也同样每像素使用24位. 
+
+<li>
+随着每channel 32level或者64level颜色, 其可能识别出相邻颜色level之间的差异. 人类的视觉系统则进一步放大了差异, 这是因为被称为Mach banding的感知现象[408, 491]. 可见图18.3. dithering可以减轻这个效果, 其交换(trading)空间分辨率用于有效的颜色分辨率.
+
+<li>
+True color使用24位的RGB颜色, 每个颜色成分1个字节. 通常, 这些颜色常存储为24位或者32位. 有些系统后8位用于alpha通道. 24位表示(不含alpha)常被称为packed pixel format.
+
+<li>
+显示器则有比每channel 8位更多的位数. 例如, 2007年Dolby得到了Bright-Side技术. 其使用了LED背光的更低分辨率的数组用于加强它们LCD显示器. 这样给予他们显示器相对于其他典型显示器10倍的亮度和100倍的对比[1150].这些现实商业可用, 但是当前面向高端市场, 例如医学成像和电影后期制作.
+
+</ul>
+
+<h3 id="toc_1.1.2">18.1.2 Z-Buffering</h3>
+<ul>
+<li>
+深度分辨率非常重要, 这是因为其可以帮助避免渲染错误. 例如, 你建模一张在桌面上的图表纸, 甚至其稍微地位于桌面上方. 由于用于计算桌面和纸的z-depth的精度限制, 桌面可能在不同的斑点上突出通过(poke through)纸面. 这个问题有时称之为 z-fighting.
+
+<li>
+Z-buffer 用于解决可见性(visibility)问题. 这种类型的buffer通常为每像素24位. 对于正交viewing, 对应世界空间的距离值与z-value成正比, 所以深度分辨率为一致的. 例如, 近截平面和远截平面之间的世界空间距离为100米, Z-buffer则每像素存储16位, 其意味着任何相邻深度值之间的距离相同的, 为100/2的16次方, 大概为1.5毫米.
+
+<li>
+然而对于透视viewing, 其分布则为不一致的. 在应用了透视变换之后, 得到一个点 v = (v[x], v[y], v[z], v[w]), 除以v[w], 得到 (v[x]/v[w], v[y]/v[w], v[z]/v[w], 1), v[z]/v[w]则映射有效的范围值(例如, DX中的[0, 1])到范围[0, 2的b次方-1], 以及存储其在Z-buffer中, b为位数. 这个透视变换矩阵其结果导致在更靠近viewer的物体有更高的精度. 尤其是near和far值之间的巨大差异. 当near值靠近far值时, 这个精度随着深度趋向于一致. 回到桌面和纸的问题, 当viewer远离纸时, 该桌面的poke-through问题会发生的更频繁.
+
+</ul>
+
+<h3 id="toc_1.1.3">18.1.3 Single, Double, and Triple Buffering</h3>
+<ul>
+<li>
+单缓存为当前显示给viewer的缓存. 当在一帧中绘制多边形时, 当显示器更新之时, 我们将看见越来越多(逐步渲染)的多边形---一个不令人信服的效果. 即使我们的帧率等于显示器的更新率, 单缓存仍然有问题. 如果我们决定清空buffer或者绘制一个大的多边形, 则当显示器的电子束通过它们正在绘制的区域时, 我们会简短地看见颜色缓存其实际的部分变化. 有时候我们称之为tearing. 这是因为显示的图像看起来被简短地撕裂成两半, 这不是实时图形想要的内容.
+
+<li>
+双缓存可避免该可视性问题. 分为front buffer和back buffer. 其swap不发生在retrace期间.  instantly swapping很有用, 其可用于基准测试(benchmarking)一个渲染系统. 其也用于许多应用程序, 这是因为其可最大化帧率. 该程序过程可见图18.4. 对于控制整个场景的应用, 其使用一个color buffer flipping 技术[204]实现该swap, 这技术也成为 page flipping. 这意味着front buffer关联至专用寄存器的地址, 这个地址指向位置(0, 0)的像素, 其可能位于左下或者左上的角. 当缓存交换完毕, 寄存器的地址改变为back buffer的地址
+
+<li>
+对于窗口应用程序, 实现swapping的普通方式为使用被称为BLT swapping[204], 或者简单地称为blitting的技术.
+
+<li>
+双缓存可以通过第二个back buffer扩大, 我们称这个为pending buffer. 这就是triple buffering[832]. 这个pending buffer类似于back buffer, 其也为offscreen. 当front buffer正在显示之时, 可以修改这个buffer. 在一帧内, 这个pending buffer变成一个three-buffer周期的一部分, 可以访问该pending buffer. 在下一次交换中, 其变成back buffer, 即渲染完成了的buffer. 而后其变成front buffer, 显示于viewer之前, 在下一次交换中, 该buffer再次变成一个pending buffer. 这个过程可见图18.4的底部图.
+
+<li>
+Triple buffering对于双缓存有一个主要的优点, 当等待vertical retrace的时候, 系统可以访问pending buffer. 在双缓存中, 交换可能拖延了图形管线. 当等待vertical retrace时发生交换. 一个双缓存的构造必须简单地保持等待. 这是因为front buffer必须显示于viewer之前, 而back buffer必须维持不变, 这是因为其已经有一个完成的图像在其中, 其等待显示. triple buffering的缺点为对于一个完整的帧, 其latency增加了. 其增加了对于用户输入的延迟反应. 例如击键, 鼠标或者摇杆移动. 控制变得粘滞的(sluggish), 这是因为这些用户事件被推迟到渲染开始于pending buffer之后. 一些骨灰游戏玩家甚至关掉垂直同步以及接受tearing来最小化latency[1329].
+
+<li>
+理论上, 可以使用多于三个的缓存. 如果计算一个帧的时间量变化显著, 更多的缓存则可以给出更多的平衡和一个总体更高的显示率(display rate), 其代价为更多的潜在latency. 概括起来, multibuffering可以堪称一个ring structure. 其有一个渲染的指针和一个显示的指针, 每个指向不同的缓存. 渲染的指针引导显示指针, 当当前渲染的缓存完成之后移动计算出来的下一个缓存. 仅有的规则为显示指针永远不要和渲染指针相同. 
+
+<li>
+达到额外的用于PC图形加速器的加速为使用SLI mode. 回到1998年, 3dfx其用SLI为scanline interleave的字母缩写, 其两个图形芯片集并行运行, 一个处理奇数的scanlines, 另一个处理偶数的scanlines. NVIDIA(买下3dfx产品的公司)使用这个缩写用于一个连接两个(或更多)图形卡完全不同的方式, 称之为scalable link interface. ATI/AMD称其 CrossFire X. 这种平行形式通过分裂屏幕为两个(或更多)水平部分来划分工作, 每个卡则处理一部分, 或者每个卡完全渲染它自己的帧, 轮流输出. 还有一个模式允许该卡加速相同帧的反锯齿. 最常用的为每个GPU渲染一个单独的帧, 称其为 alternate frame rendering(AFR). 当这个方案听起来其应当会增加latency, 其常可有小的或者没有效果. 这里说单个GPU系统其渲染为10 frames per second(fps). 如果GPU为瓶颈, 两个GPUs使用AFR其渲染可为20 fps, 或者4个GPU为40 fps. 每个GPU采用相同的时间量渲染它的帧, 所以 latency 不会必然变化.
+
+</ul>
+
+<h3 id="toc_1.1.4">18.1.4 Stereo and Multi-View Graphics</h3>
+<ul>
+<li>
+在立体渲染中, 使用两个图像使得物体看起来更像三维的. 两个眼睛, 其视觉系统有两个view, 而后组合它们, 收回其深度信息. 这个能力称之为 stere-opsis, stereo vision[349, 408], 或者 binocular parallax. stereo visioin背后的思路为渲染两张图像, 一个用于左眼, 一个用于右眼(见图18.5), 而后使用某种技术确保人类观察者感受到渲染图像中的深度. 这两个图像被称为stereo pair. 一个创建stereo vision常用的方法为生成两个图像, 一个红色另一个为绿色(或者青色-cyan, 通过渲染蓝色和绿色通道实现), 组合这些图像, 然后通过红绿眼镜来观看结果. 这种情况中, 只需要一个普通的单显示缓存, 但是颜色的显示是有问题的. 对于颜色图像, 其解决可能很简单, 在一个 head-mounted显示设备, 两两个小的屏幕每个在每个眼睛之前. 另一个硬件解决方案为使用shutter glasses(快门眼镜), 每次只有一个眼睛允许观看场景. 两个不同的view可以通过眼睛之间快速地交替来显示, 以及其与显示器同步.
+
+<li>
+对于stereography的后者形式, 需要两个单独的显示缓存. 当在实时中进行观看, 双缓存用于连接stereo rendering. 在这种情况中, 需要有两个前缓存和两个后缓存(每个对应一个眼睛), 所以颜色缓存的要求为双倍. 
+
+<li>
+另一种技术则可能不需要眼镜而提供了全部的颜色. 类似的显示因此常被称为 autostereoscopic[267]. 基本思路为以某种方式修改显示面(display surface). 一个技术为LCD覆盖了可塑的垂直(或接近垂直的)镜头薄板, 或者折射光的棱镜. 其使得可以让像素列交错分别直接朝向左眼和右眼. 这个显示器称之为 lenticular display. 另一个机制为防止黑色垂直条(这个可能由另一个LCD实现)在该LCD很短的距离之前, 使得可以从每个眼睛mask out交错的列. 这些都被称为 parallax barrier displays.
+
+<li>
+到目前为止, 只考虑stereo rendering, 其显示了两个view. 然而, 其可能构建更多的view. 有九个view的商业显示器, 以及多于80个view的研究显示器. 大体上, 这些显示器常被称为 multiview 显示器. 其思路为类似的显示其可提供另一种类型的深度线索, 称之为 motion parallax. 其意味着人类viewer可以移动头部向左, 以便能够看到"around a corner". 另外, 其使得多于一个的人观看显示器更容易. 
+
+<li>
+用于三维TV的系统和视频已被建造, 以及进行标准化工作用于定义TV和视频信号如何发送使得其可用于很广范围的不同显示器. 三维TV, 当渲染这些显示器, 其简单地使用蛮力(brute force)技术: 其可仅依次渲染每个图像, 或者放置若干图形卡至计算机, 而后让每个卡渲染一张图像. 然而, 在这些图像中有许多的coherency(连贯性), 以及通过同步地渲染一个三角形至所有的view, 以及使用一个排序的便利次序, 可利用纹理cache内容至一个大的范围, 其可加速渲染[512].
+
+</ul>
+
+<h3 id="toc_1.1.5">18.1.5 Buffer Memory</h3>
+<ul>
+<li>
+这里, 给出一个简单的例子用于在图形系统中不同的缓存需要多少的内存. 假设有个颜色缓存 1280 x 1024像素, 其使用true colors. 也就是每颜色channel有8位, 每个颜色32位.  即 1280 x 1024 x 4 约等于 5 megabytes(MB). 使用双缓存则该值为10 MB. Z-buffer则每像素24位, 一个stencil buffer则为每像素8位(这些常组队形成一个32位字). 该Z-buffer和stencil buffer 则需要5M内存. 这个系统因此需要 15M内存用于这个相当最低限度的缓存集.stereo buffer也许需要双倍的颜色缓存大小. 注意所有情况下, 只需要有一个Z-buffer和stencilb buffer, 这是因为任意时刻它们总是成对的与一个活跃的颜色缓存用于渲染. 当使用supersampling或者multisampling技术用于改进质量, 则进一步增加内存缓存的总额. 每个像素使用4个样本则会用一个4的因子增加大多数缓存.
+
+</ul>
+
+<h2 id="toc_1.2">18.2 Perspective-Correct Interpolation</h2>
+<ul>
+<li>
+这是光栅化如何执行以使得纹理看起来在图元上正确的. 正如我们所见, 每个图元顶点使用公式4.68-4.70的任意一个来透视投影. 得到一个顶点 p = (p[x]w, p[y]w, p[z]w, w), 而后除以w得到 (p[x], p[y], p[z], 1). 对于Opengl, -1 &lt;= p[z] &lt;= 1, 然而其存储在Z-buffer中为 [0, 2的b次方-1], 其中b为Z-buffer中的位数. 其可通过简单地转化和缩放p[z]实现. 同样, 每个顶点也许还有其他的参数集关联至它, 例如, 纹理坐标(u, v), 雾, 和颜色, c.
+
+<li>
+可以线性地在三角形上正确插值屏幕位置(p[x], p[y], p[z]), 其不需要用于修正. 实际上, 其常计算 delta slopes: △z/△x 以及 △z/△y. 该slope表示在x-和y-方向中各自相邻的像素之间其p[z]的差异有多少. 当从一个像素移动至相邻的像素, 只需要一个简单的加法来更新该p[z]. 意识到颜色以及特别是纹理坐标通常不被线性插值这一点很重要. 其结果为不正确的透视画法(foreshortening), 这是由于其达到了透视的效果. 见图18.6的比较. 为了解决这个问题, Heckbert 和 Moreton [521]以及Blinn[103]显示了 1/w 和 (u/w, v/w)可以线性插值. 而后插值的纹理坐标可以被插值的1/w所除以得到正确的纹理位置. 即为, (u/w, v/w)/(1/w) = (u, v). 这种类型的插值称之为 hyperbolic interpolation(双曲线的插值). 也被称为 rational linear interpolation. 
+
+<li>
+作为一个例子, 假设一个三角形应当被光栅化, 以及每个顶点为:
+
+<ul>
+<li>
+公式18.1
+
+<li>
+
+
+<li>
+这里 p[i] = (p[ix], p[iy], p[iz]), 该点为投影且被w分量所除之后的点. 该w分量记为w[i]. (u[i], v[i])为该顶点的纹理坐标. 见图18.7所示, 这里要查找灰色水平扫描线上像素的纹理坐标, 首先根据上面的计算三个顶点的r, 而后根据三个r线性插值. 例如r0和r1插值的到r3, r2和r1插值得到r4, 而后r3和r4的插值的到扫描线上每个像素的r, r中这个插值的p值是为正确的, 不需要修改, 其他的面插值值(u/w, v/w)还需要乘以w的到(u, v). 为了得到w值, 则使用线性插值的值1/w, 故每个像素执行一个除法计算 w=1/(1/w).
+
+</ul>
+<li>
+这个插值的实现为仅有的一个选择. 另一个计算用于纹理插值的delta slope的可能为: △(u/w)/△x, △(u/w)/△y, △(v/w)/△x, △(v/w)/△y, △(1/w)/△x, △(1/w)/△y. 再次, u/w, v/w, 1/w值可通过相邻像素之间仅有的加法来更新, 此时, 纹理坐标(u, v)如之前一样计算出来.
+
+<li>
+关于perspective-correct interpolation的深度研究可见Bline的文章[103, 105, 108]. 应当注意到当前GPUs, edge functions[1016]常用于确定一个样本是否在三角形内. 一个edge function为一个二维线隐式形式的公式(见页面907的公式A.47). 作为一个有趣的副作用, perspective-correct interpolation也可通过使用evaluated edge functions完成[836].
+
+</ul>
+
+<h2 id="toc_1.3">18.3 Architecture</h2>
+<ul>
+<li>
+在这个章节中, 我们首先发表一个用于实时计算机图形系统的通用架构. 这里将会讨论 geometry 和 rasterizer stages, 以及 texture cache 机制. Bandwidth, memory, prts, 以及bus都为图形架构中的重要组成部分, 就像latency一样. 这些主题的讨论见章节18.3.2-18.3.5. 为了减少bandwidth需求, 可以压缩buffers以及执行occlusion culling. 类似的算法处理可见章节18.3.6以及18.3.7. 章节18.3.8则描述了可编程的culling单元, 一个用于culling片段着色器中多余的指令的硬件结构(construction).
+
+</ul>
+
+<h3 id="toc_1.3.1">18.3.1 General</h3>
+<ul>
+<li>
+图形加速器的进化是从管线尾端向后发展的. 例如, 第一个PC加速器只不过能快速地绘制像素插值或者纹理的span.  1998年3Dfx Voodoo 2则添加了triangle setup. 在1996年的GeForce 256[360]中, NVIDIA则引入了geometry stage acceleration, 即通称为 hardware transform and lighting(T&amp;L). 然而, 固定功能(fixed-function)的实现限制了这个hardware stage的有用性. 随着在2000年引入了vertex和pixel shaders, 则基本所有领域其图形硬件其有速度和可编程性, 则战胜了纯基于CPU的渲染器. 现代加速器因为这些能力常被称为一个graphics processing unit(GPU).
+
+<li>
+主机(The host)为没有任何图形硬件的计算机系统. 也就是, 其为有CPU(s), 内存, buses等的系统. 应用程序运行在主机上, 也就是, 在CPU(s)上, 应用程序和图形硬件之间的接口称之为driver(驱动).
+
+<li>
+GPU常被看成与CPU不同的术语. 一个GPU不是一个像CPU那样连续的处理器, 但为一个 dataflow或者stream处理器. 其为导致计算发生的管线开始部分的数据appearance(the appearance of data), 以及需要执行计算的输入的有限集. 这个不同的处理模型提供其为那些仅被邻近数据所影响的每个数据(datum). 研究的一个活跃领域为如何应用GPU至这类型的non-rendering问题. 例如流体流动计算和碰撞检测. 这种形式的计算称之为Ggeneral purpose computation on the GPU(通用计算). 简称为 GPGPU. AMD的CTM[994]和NVIDIA的CUDA[211]则为工具包用于帮助程序员使用GPU用于无图形应用, 以及类似ray tracing的交替渲染方法. 其他的架构, 例如Intel的Larrabee[1221], 其使用了有纹理采样器的CPU-centric处理器来提供了图形加速(acceleration). 该Larrabee架构被期待为能够处理更大范围的问题, 使得其能够从平行化中得益.
+
+</ul>
+
+<h4 id="toc_1.3.1.1">Pipelining and Parallelization</h4>
+<ul>
+<li>
+达到在图形硬件中更快处理的两个方式为pipelining和parallelism. 这些技术常连起来使用. 见章节2.1中pipelining的基础, 在本章节中我们并不意味着conceptual或者functional stages, 而是物理的pipeline stages.也就是那些并行执行的硅中构建的实际块(actual blocks built in silicon). 其值得重复划分一个确定的功能(例如, 一个顶点的光计算)为n个pipeline stage, 以理想地给出一个n倍的性能提升. 一般说来, 用于多边形渲染的图形硬件比一个CPU更简单地管线(to pipeline). 例如, Intel Pentium IV有20个pipeline stages, 而NVIDIA's GeForce3, 则有600-800 stages(依赖于采用哪个路径). 对于这个的原因有许多, 包括CPU为operation-driven, 而GPU为data-driven, 要渲染的数据相互独立, 以及GPU的某些部分为高度专用化(specialized)和固定功能(不是可编程的).
+
+<li>
+CPU的时钟频率常高于图形加速器的时钟频率, 但是其很难有现代加速器使用正确时所有的巨大优点, CPU有更高的时钟频率是因为, CPU设计者花费更多时间优化时钟, 对于这个的一个原因为CPU有10个pipeline stages, 而GPU有数百数千个. 同样, 对于GPUs, 时钟频率通常不为瓶颈---反而, 内存带宽为瓶颈. 为何图形算法可以在硬件中运行很快的另一个原因为可以相对地简单预期到要执行哪些内存访问, 以及可以达到有效率的memory prefetching. 大部分的内存访问为读取, 其也简化以及提升性能. 同样注意一个CPU不能忍受很长的latencies(当一个指令被执行, 其结果常立即需要). 然而一个图形加速器可以忍受更长的latencies, 只要每秒可以渲染足够多的图元. 另外, 在21世纪初期, 最复杂的GPUs在晶体管上超过了最复杂的PC CPUs. 最后, 如果使用与标准CPU相同的chip area构建一个dedicated graphics accelerator, 硬件渲染至少比CPU的软件渲染快一百倍.
+
+<li>
+达到更快图形另一种方法为parallelize, 以及这个可以在geometry和raterizer stages中完成, 其思路为同时计算多个结果而后在之后的stage中合并. 一般说来, 一个parallel graphics architecture有图18.8中的外观. 图形数据库遍历的结果发 送到许多的geometry units(G's), 以并行工作. 这些geometry units一起执行渲染管线的geometry-stage工作{见章节2.3}. 以及其结果向前发送给一系列 rasterizer units (R's), 这些一起实现了渲染管线中的rasterizer stage.
+
+<li>
+然而, 由于并行计算多个结果, 则需要执行某种类型的排序, 这样并行的单元合起来共同渲染用户想要的图像. 特别地, 需要的排序为从模型空间到屏幕空间(剑章节2.3.1和2.4). 注意G's和R's可能为相同的单元, 也就是 unified shader cores, 其能够执行 geometry and per-pixel 处理, 以及在它们之间切换(switching). 见章节18.4.1 XBox 360如何使用unified shaders, 及时为这种case, 理解哪里发生这种排序也很重要.
+
+<li>
+Molnax[896]发表了一个用于并行架构的分类学(taxonomy), 其基于在并行渲染管线中哪里发生排序. Eldridge[302]发表了这个分类学的轻微变种, 以及我们后面使用这里他们的记号. 排序可发生于管线的任意位置, 其给出了达到四种不同的并行架构分类, 见图18.9. 这里称之为 sort-first, sort-middle, sort-last fragment, 以及 sort-last image. 该rasterizer stage由两个internal stages(内部stages)组成. 也就是, fragment generation(FG)和fragment merge(FM). FG生成了图元内部的实际位置, 以及将它们向前发送给FM, 其使用Z-buffer合并这些结果. 着色这里不显示, 但是, 通常, 在FG的结束部分, 或者在FM的开始部分完成. 同样注意, geometry units可能有FGs两倍的数量, 任何配置(configuration)都是可能的.
+
+<li>
+一个sort-first-based架构在geometry stage之前排序图元. 其策略为划分屏幕为一系列区域, 以及一个区域内的图元被发送给一个"拥有"该区域的完整管线. 见图18.10. 一个图元最初被足够地处理, 以知道它需要哪些区域被发送---这就是排序步骤. Sort-first为用于单个机器的最小explored的架构[303, 896]. 当驱动一个有多个屏幕或者投影器形成一个大的显示器时使用该scheme, 因为单个计算机用于每个屏幕[1086]. 一个称为Chromium[577]的系统已被开发, 其可使用一组工作站实现任意类型的并行渲染算法. 例如, sort-first 和 sort-last可以被实现为有高渲染性能的算法.
+
+<li>
+该Mali 200(章节18.4.3)为一个sort-middle架构, Geometry processor为给定的任意图元集, 其有加载平衡(load-balancing)该工作的目标. 同样, 每个rasterizer unit负责一个screen-space区域, 这里称之为一个tile. 其可能为一个像素的矩形区域, 或者一个扫描行(scanlines)集合, 或者某些其他的交错模式(也就是, 每8个像素). 一旦图元被变换为屏幕坐标, 则发生排序以定出路线, 用于图元的处理其到rasterizer units(FGs and FMs)的路线, 而该rasterizer units则用于负责该屏幕tile. 注意当变换的三角形或mesh 重合了多余一个的tile, 其可能发送给若干个rasterizer units. 这些tiling架构的限制为使用不同post-processing effect的困难, 例如blurs或glows, 当它们要求相邻像素以及计算结果的相邻tiles之间通讯. 如果最大filter的neighborhood预先已知, 每个tile可以通过这个量扩大以捕捉需要的数据和避免该问题, 其代价为沿着缝隙的多余计算.
+
+<li>
+sort-last fragment architecture在fragment generation(FG)之后以及fragment merge(FM)之前排序, 一个例子为在章节18.4.2中介绍的PLAYSTATION 3系统的GPU. 正如sort-middle, 图元尽可能均匀散布扩展到该geometry units. sort-last fragment的一个优势为其不会有任何的重合, 意味着生成的片段仅发送给一个FM, 其为最优化的. 然而, 其可能很难平衡fragment generation的工作. 例如, 假设一个大的多边形的集合碰巧向下发送给一个FG单元, 该FG单元将必须生成这些多边形的所有片段, 但是此时排序该多边形到负责各自像素的FM units. 因此, 极可能发生这种案例的不平衡.
+
+<li>
+最后, 该sort-last image架构在整个rasterizer stage(FG和FM)之后排序. 其视觉化可见图18.11. PixelFlow[328, 895]为一个类似的例子. 这个架构可看成独立管线的集合. 图元散布扩展到该管线, 以及每个管线渲染带深度的图像. 在最后的组合stage, 所有的图像通过各自的Z-buffer合并. PixelFlow架构同样也引起兴趣的, 这是因为其使用了deferred shading, 意味着其仅纹理和着色可见的片段. 其应当注意到sort-last image不能够完全通过类似OpenGL的API实现, 这是因为OpenGL要求图元按照他们发送的顺序渲染.
+
+<li>
+一个用于large tiled display系统的纯sort-last方案的问题为渲染节点之间需要被传输(transfer)的图像和深度数据的sheer amount. Roth和Reiners[1086]通过使用每个处理器结果的屏幕和深度界限优化了数据传输和合成代价.
+
+<li>
+Eldridge[302, 303]发表了"Pomegranate", 一个 sort-everywhere 架构, 简单地说, 其在geometry stage和fragment generators[FGs]之间, 在FGs和fragment mergers(FMs)之间, 插入sort stages, 在FMs和display之间插入sort stages. 因此这个工作当系统scales时(例如, 当更多的管线被添加时)可以保持更多的平衡. 当有一个点对点链接的高速网络, 实现该sorting stages. 模拟(simulations)显示当添加更多管线时, 一个接近线性地的性能增加.
+
+<li>
+图形系统中的所有组成(host, geometry processing, 以及rasterization)连接在一起给出一个多处理系统, 类似的系统有两个著名的, 与多处理联系在一起的问题: load balancing和communications[204]. FIFO(first-in, first-out)队列常被插入到管线中的许多不同地方, 所以这个工作不能被queued, 所以不能避免管线中的stalling(拖延)部分. 例如, 其可能在geometry和rasterizer stage之间放置FIFO, 这个不同的sort architectures描述了有不同的加载平衡优点和缺点. 查阅Eldridge的博士论文[303]或者Molna[896]的论文. 对于这些更多的内容, 程序员可以影响加载平衡; 执行这个的技术可见第15章的讨论, 当buses的带宽很低, 或者使用不明智的时候, Communi-catioin可有一个问题. 因此, 设计一个图形系统极端重用, 以便在任何的buses中不发生瓶颈, 例如, 来自host到图形硬件的bus. 带宽的讨论见章节18.3.4.
+
+<li>
+2006年中在商业GPUs中一个有意义的开发为 unified shader model. 见章节15.2的简短描述,  以及章节18.4.1, 其描述了Xbox360的unified shader architecture.
+
+</ul>
+
+<h4 id="toc_1.3.1.2">Texture Access</h4>
+<ul>
+<li>
+纯计算的性能已指数增长多年, 当处理器的速度保持摩尔定律持续增长, 图形管线其实际增长则更快[735], 内存bandwith和内存latency则没有跟上这个更新速度. bandwidth为数据的传输率, latency则为request和retrieval之间的时间. 当处理器能力每年增长71%, 而DRAM带宽则为25%, latency则为5%[981]. 对于 NVIDIA的8800架构[948], 每个纹素访问你可以执行14个浮点操作, chip density的增加快于可用的带宽, 所以这个比率只有增加[1400]. 另外, 趋势为每个图元使用越来越多的纹理. 从纹理内存中读取为带宽经常的主要消费[10]. 因此, 当从内存中读取纹素, 必须小心减少带宽的使用和隐藏latency.
+
+<li>
+为了节省带宽, 大多数架构在管线中不同位置使用cache, 以及隐藏latency, 常使用一个被称为prefetching的技术. Caching其实现有小的芯片级内存(几个kilobytes), 其保存了最近读取的内存结果, 以及访问非常快速[489, 582, 583]. 这个内存由所有当前使用的纹理共享. 如果相邻的像素需要访问相同或者位置靠近的纹素, 它们可能在cache中查找. 这也是标准CPU中所作的内容. 然而, 读取纹理到cache中也花费时间, 以及大多数常一次读取整个cache块.
+
+<li>
+所以, 如果一个纹素不在cache中, 其可能在被查找到之前花费相对长的时间. 一个有GPU利用的解决方案为隐藏这个latency以一次保持许多片段 in flight. 当着色器程序将要执行一个纹理查找指令, 如果仅有一个片段保持in flight, 则我们需要在纹理cache中等待可利用的纹素, 以及它们将保持管线idle. 然而, 假设我们可以一次保持100个片段 in flight. 首先, 片段0将要求一个纹理访问. 然而, 由于请求数据在cache中之前它将会花费许多时钟周期, 该GPU执行了相同的纹理查找指令用于片段1, 而后同样用于所有100个片段. 当这100个纹理查找指令被执行, 我们返回到处理片段0, 例如说一个点乘指令, 使用纹理查找作为一个参数, 而后, 此时, 请求数据非常可能在cache中, 以及处理可以立即继续. 这是通用的在GPUs中隐藏latency的方法.  其也是为何一个GPU有许多寄存器的原因. 见X在章节18.4.1中的Xbox 360描述的一个例子.
+
+<li>
+Mipmapping(见章节6.2.2)对于texture cache连贯性很重要, 这是由于其实施一个最大的 texel-pixel ratio. 当遍历该三角形, 每个新的像素表示最多一个纹素的纹理空间中的一个step. Mipmapping为在渲染中提升视觉和性能的一个技术的少数情况中的一个. 这里有纹理访问的cache coherence可被改进的其他方式. Texture swizzling为一个技术, 可用于改进texture cache性能和页局部性(page locality). 这里有被不同GPU manufactures所利用的种种texture swizzling方法, 但是它们所有都有一个相同的目标: 最大化纹理的cache locality, 而且不管访问的角度. 我们将描述NVIDIA GPUs所使用的通用swizzling模式---其为代表的使用模式.
+
+<li>
+假设纹理坐标变换为一个定点数值:(u, v), u和v有n位. u的第i位记为u[i]. 此时重映射(u, v)到一个swizzled纹理地址为:
+
+<ul>
+<li>
+公式18.2
+
+<li>
+
+
+</ul>
+<li>
+这里, texelsize为一个texel所占据的字节数. 这个remmaping的优点为其给出了图18.12中的纹素次序. 正如所见, 其为space-filling曲线, 称之为Morton sequence[906]. 以及还知道为改进的coherency. 在本情况中, 该曲线为二维的, 这是由于纹理通常为二维的. 见章节12.4.4更多关于space-filling curves的内容.
+
+</ul>
+
+<h3 id="toc_1.3.2">18.3.2 Memory Architecture</h3>
+<ul>
+<li>
+这里, 我们将提及少数不同的用于内存布局的架构. XBox, 也就是来自微软的第一个游戏控制平台, 使用一个unified memory architecture (UMA), 即意味着图形加速器可使用host内存的任意部分用于纹理和不同类型的buffers[650]. UMA的一个例子见图18.13. 正如所见, CPU和图形加速器使用相同的内存, 以及相同的bus.
+
+<li>
+XBox 360(章节18.4.1)有一个不同的内存架构, 如页面860图18.15所示, CPU和GPU共享了相同的bus和接口到系统的内存, 其GPU主要用于纹理. 然而, 对于不同类型的buffer(颜色, stencil, Z, 等等), Xbox有单独的内存(eDRAM), 其仅GPU可访问. 该GPU独占(GPU-exclusive)内存 常被称为video memory或者local memory. 访问这种内存, 通常比让GPU通过一个bus访问系统内存更快. 作为一个例子, 2006年中在一个典型的PC上, local memory bandwidth超过50GB/sec, 而CPU和GPU使用PCI Express则最多 4GB/sec[123]. 使用更小的video memory(例如, 32MB)以及而后使用该GPU访问系统内存被NVIDIA称为Turbo Cache, 以及被ATI/AMD称为Hypermemory.
+
+<li>
+另外稍微少的unified layout为用于GPU的dedicated memory, 其可以以任何想要的方式使用以用于纹理和buffers, 但是不能直接被CPU使用. 这是PLAYSTATION3 系统所采用的方法(见章节18.4.2), 其可使用本地内存用于场景数据和用于纹理.
+
+</ul>
+
+<h3 id="toc_1.3.3">18.3.3 Ports and Buses</h3>
+<ul>
+<li>
+一个port为在两个设备间发送数据的一个channel, 一个bus为在多于2个设备间发送数据的共享channel. bandwidth用于描述在port或者bus上的数据通过量, 以及用 bytes per second描述, b/s. Ports 和 Buses 在计算机图形架构中很重要, 这是因为他们将不同的的构建块(building block)粘贴在一起. 同样重要的是带宽为 scarce(缺乏的)资源. 所以在构建一个图形系统之前必须执行小心地设计和分析. port的一个例子为链接CPU和图形加速器. 例如用于PCs中的 PCI Express(PCIs). 由于ports和buses都提供数据传输能力, 所以ports常被看成buses. 这里根据惯例我们也这样做.
+
+<li>
+场景中的许多物体并不明显地随帧变化其形状. 即时人性角色, 也使用一个不变化的meshes渲染, 其在GPU里的关节点上进行顶点混合以用于这类数据.  对于这类型的数据, 通过建模矩阵和顶点着色程序来进行动画. 通常其使用静态的vertex buffer, 该buffer可放置在video memroy(显存, 有时称之为local memroy), 也为, dedicated graphics memory. 这样做可以让GPU快速地访问. 对于CPU每帧更新的顶点, 则使用dynamic vertex buffers, 以及它们放置在系统内存中, 这样可以通过在一个bus上访问, 例如PCI Express. 这是为何vertex buffer这么快的主要原因. PCI Express另一个好的属性为它的queries可以被管线(pipelined), 所以可以在结果返回之前请求一些queries.
+
+</ul>
+
+<h3 id="toc_1.3.4">18.3.4 Memory Bandwidth</h3>
+<ul>
+<li>
+接下来, 我们将讲述CPU和GPU之间内存带宽使用的简化的view, 以及用于单个片段的带宽使用(usage). 我们说简化的, 这是因为还有许多的因素, 例如 caching和DMA, 这些很难去考虑.
+
+<li>
+这里开始, 让我们讨论被单个片段使用的用于带宽的理论模型. 让我们假设带宽由三个部分组成, 即, B[c]---对于颜色缓存的bindwidth usage. B[z]---对于深度缓存的bandwidth usage, 以及 B[t], 对于纹理的bandwidth usage. 总的bandwidth usage, B, 则为
+
+<ul>
+<li>
+公式 18.3
+
+<li>
+
+
+</ul>
+<li>
+回忆平均的深度复杂度, 这里记为d, 其为覆盖一个像素的次数. 平均地重写(overdraw)这里记为 o(d), 其为一个像素它的内容被写入的次数. 章节15.4.5介绍了深度复杂度和重写(overdraw). 平均的重写这里可以建模为一个谐波系列(Harmonic series), 见公式15.2. 以及这个公式这里重复一次以便于更清晰.
+
+<ul>
+<li>
+公式 18.4
+
+<li>
+
+
+</ul>
+<li>
+有趣的事情为假设d个三角形覆盖于一个像素上, 而后将写入他们 o(d), 而深度缓存带宽, B[z]. 其意味着读取d深度缓存(每个花费了Z[r]字节), 但是只有 o(d)深度缓存写入(每个花费了Z[w]字节). 其可概括为:
+
+<ul>
+<li>
+公式 18.5
+
+<li>
+
+
+</ul>
+<li>
+对于Blending操作, 也许也需要读取颜色缓存(C[r]), 但是我们假设其不为通用情况的一部分. 然而, 其有和深度缓存写入同样多的颜色缓存写入. 所以 B[c] = o(d)xC[w]. C[w]为写入单个像素颜色的代价(字节单位). 由于大多数场景为纹理的, 则会发生一个或多个纹理读取(T[r]).某些架构也许在深度测试之前执行texturing, 其意味着 B[t] = d X T[r]. 然而, 我们假设纹理读取在深度测试之后, 则意味着 B[t] = 0(d) x Tr. 因此总的带宽代价为[13]:
+
+<ul>
+<li>
+公式 18.6
+
+<li>
+
+
+</ul>
+<li>
+随着 trilinear mipmapping, 每个T[r]也许代价为 8x4 = 32, 也就是, 八个纹素访问每个花费了4个字节. 如果我们假设4个纹理被每个像素访问, 则 T[r] = 128 字节. 我们也假设 C[w], Z[r] 以及 Z[w]每个花费4个字节. 假设目标的深度复杂度为 d = 6, 给出 o (d) 约等于 2.45. 则一个像素代价为:
+
+<ul>
+<li>
+公式 18.7
+
+<li>
+
+
+</ul>
+<li>
+然而, 我们可以考虑采取一个纹理cache(章节18.3.1), 其可以相当多的减少B[t]的代价. 有一纹理cache miss rate m, 则提取公式18.6为:
+
+<ul>
+<li>
+公式 18.8
+
+<li>
+
+
+</ul>
+<li>
+这个公式我们称之为 rasterization equation. Hakura and Gupta 使用 m = 0.25, 其意味着每四个纹素访问, 我们在cache中得到一个miss. 举个例子, d = 6, o 约等于 2.45, B[c] = 2.45 x 4 = 9.8 字节, B[z] = 6 x 4 + 2.45 x 4 = 33.8 字节. 纹理带宽则为 B[z] = 2.45 x 4 x 8 x 4 x 0.25 = 78.4 字节. 总和为 b = 33.8 + 9.8 + 78.4 = 122 字节. 相对于前一个公式, 其大幅度的减少了.
+
+<li>
+实际的上下文中, 122字节仍然不小. 假设我们在 1920 x 1200 分辨率每秒渲染72帧, 则有 
+
+<ul>
+<li>
+公式 18.9
+
+</ul>
+<li>
+接下来, 假设内存系统的时钟运行为 500MHz, 同样, 假设使用被称为DDRAM的内存类型. 现在来自DDRAM的每个时钟可以访问256字节, 而对应SDRAM的每个时钟则只能访问128个字节. 使用DDRAM则给出:
+
+<ul>
+<li>
+公式 18.10
+
+</ul>
+<li>
+正如我们这里所见, 可用的内存带宽(15.6 GB/s)对于这个情况几乎足够的, 其 per-pixel 带宽使用为 18.8 GB/s. 但是 18.8 GB/s 这个数字同样也不是真正现实的. 深度复杂度可能更高, 而buffers每个可使用的成分可能有更多的字节(也就是, 浮点buffers, 等). 另外, 屏幕分辨率也会增加, 甚至可以访问更多的纹理, 更好的纹理过滤(其花费更多的纹理访问), 也可能使用多重采样和supersampling, 等等. 而且, 我们仅考虑用于片段处理的内存带宽使用. 读取顶点和顶点属性到GPU也会用光带宽资源.
+
+<li>
+这里有许多技术用于减少内存访问的数量, 包括带prefetching的texture cache, texture compression, 以及章节18.3.6和18.3.7中的技术. 另一种常使用的技术则放置可以访问的若干memory banks为并行的. 其也通过内存系统增加 bandwidth delivered.
+
+<li>
+让我们考虑CPU到GPU的带宽. 假设一个顶点需要56个字节(3x4用于位置, 3x4用于法线, 4x2x4用于纹理坐标). 使用一个索引的顶点数组, 每个三角形则需要另外的6个字节索引顶点. 对于大的封闭的三角形mesh, 三角形的数量为2倍的顶点数量(见页面554上的公式12.8). 其则给出了(56 + 6x2) / 2 = 34 个字节/每三角形. 假设每秒有300百万三角形的目标, 则每秒需要10.2G字节从CPU发送三角形到图形硬件中. 比较 PCI Express 1.1 有16个数据通道(lane)(2007年中的通用版本), 其可提供一个方向上 4.0 GBytes/sec 的峰值率.
+
+<li>
+这些数字暗示一个GPU的内存系统和对应算法应当小心地设计. 进一步, 一个图形系统中需要的bus bandwidth为巨大的, 以及人们应当在设计buses时考虑目标的性能.
+
+</ul>
+
+<h3 id="toc_1.3.5">18.3.5 Latency</h3>
+<ul>
+<li>
+一般说来, latency为query和接收结果之间的时间. 作为一个例子, 可以在内存中一个确定的地址上查询其值, 从query到得到结果之间的时间为latency. 在有n个管线stage的一个管线系统中, 其最少花费了n个时钟周期通过整个管线. 以及该latency则为n个时钟周期. 这类型的latency为一个相对小的问题. 作为一个例子, 我们将测试一个更老的GPU, 即类似着色器程序长度的效果相对小的可变因素. GeForce3加速器有 600-800管线stages以及其时钟为233MHz. 为了简化, 假设平均使用700个管线stages, 则通过整个管线需要700个时钟周期(理想情况). 则有 700/(233x10的负六次方)约等于3微秒. 现在假设我们在50Hz上渲染该场景, 则每帧20毫秒. 由于3微秒远远小于20毫秒, 其可能每帧多次通过整个管线. 更重要的是, 由于管线的设计, 每个时钟周期都会生成结果, 即 每秒233百万次. 除此只玩, 该架构常并行化. 所以, 为了渲染, 这个类型的latency常不为一个问题, 当请求纹理数据时也有latency. 隐藏这个类型的latency的技术见页面847.
+
+<li>
+一个不同类型的latency为则为从GPU读回数据到CPU. 一个好的虚拟模型为将GPU和CPU看成不同步工作的单独计算机, 在两者之间通讯花费了一些努力. 改变信息流方向的latency严重影响了性能. 当数据从加速器读回时, 管线常在读取之前刷新(flush). 在这期间, CPU为idle. 不产生stall的读回机制的一个例子为occlusion query. 见章节14.6.1. 对于occlusion testing, 这个机制执行query而后偶然地检查GPU以查看query的结果是否可用. 当等待结果时, 可以在CPU和GPU上做其他的工作.
+
+</ul>
+
+<h3 id="toc_1.3.6">18.3.6 Buffer Compression</h3>
+<ul>
+<li>
+正如我们在公式18.8所见, 有若干组成添加组成bandwidth traffic. 为了得到一个有效率的GPU架构, 首先要做的是减少带宽使用. 即使对于 occluded triangle, 其也有可观数量的Z-buffer带宽(d x Z[r]). 本章节介绍即时压缩和解压buffers的技术. 也就是, 当图像被渲染时, 其包含算法快速地清空buffer的内容. 自动的GPU occlusion culling(称之为Z-culling), buffers的压缩和解压, 硬件中相同的子系统中典型地实现快速的清空(rapid clears).由于他们共享实现的某些部分, 为了清晰, 我们在系统中首先一起介绍 buffer compression和fast clear, 以及讨论 Z-culling.
+
+<li>
+这些算法的中心为芯片级或者一个cache, 我们称之为tile table, 其有用于缓存中每个tile(也为一个矩形)像素的额外信息, 图18.14显示了该算法的一个块图标, 为了简化, 这里我们仅考虑Z-buffer compression, 然而, 这个通用架构也可用于其他的buffers, 例如 color 和 stencil.tile中的 每个元素存储帧缓存中一个 8x8 tiles像素的状态. 其包含了一个state和对于该tile最大的z值, Z[max](以及也可能为Z[min]---章节18.3.7中有更多介绍). 正如我们所见, 该Z[max]可用于 occlusion culling. 每个tile的states可以被压缩, 或解压, 或cleared. 通常情况它们可为压缩块的不同类型. 举个例子, 一个压缩模式可能压缩了25%, 而另一个压缩了50%. 这些模式用于实现了一个快速地缓存清空(clear)和压缩. 当该系统处理（issue）该缓存的一个清空， 则每个tile的state被设置为清空的， 以及完全没有接触该帧缓存. 当rasterizer需要读取该清空的缓存，则decompressor单元首先检查这个state， 查看该tile是否被清空， 而后可发送一个有所有值集的buffer tile到该清空的值上用于那个没有从实际buffer上读取和解压的buffer（例如， Z[far]用于Z-buffer）. 以这种方式， 可以在清空期间最小化访问buffer自身, 以节省带宽。 如果状态没有被清空， 此时必须读取用于该tile的buffer. 当rasterizer完成了写入新值到该tile， 其发送给compressor， 其尝试在其上压缩它。 如果有两个compression mode, 则都可被尝试, 以及其中一个可以压缩该tile有最少的使用位数量. 由于我们需要无损耗的buffer compression, 如果所有的压缩技术都失败了则需要一个fallback使用未压缩的数据. 其也暗示了无损耗的缓存压缩从不在实际的缓存中减少了内存使用---类似的技术仅仅减少了内存带宽的使用. 另外, 对于Z-buffer, 一个新的Z[max]也可被计算出来, 该Z[max]被发送给该tile table. 如果压缩成功, 则tile的state被设置为压缩的, 以及数据以压缩形式发送. 否则, 其发送未压缩的和state被设置为未压缩的.
+
+<li>
+来自ATI Radeon卡其使用 differential pulse code modulation (DPCM)scheme用于压缩该 8x8 tiles[902]. 当要压缩的数据中有大量的coherence时, 这类型的算法很好. 这个case常用于该Z-buffer的内容, 当一个三角形趋向于覆盖许多像素, 以及物体由相邻的三角形组成. 除此之外, 一个新的算法用于深度缓存压缩, Hasselgren和Akenine-Moller[511]则给出已有深度压缩专利的概括论述(survey). 对于颜色缓存压缩, Rasmusson[1049]有类似的概括论述, 其也推荐有损压缩可用于颜色缓存压缩, 当错误保持在严格控制之下时. 当减少带宽极端重要时, 这个为合理的, 例如对于一个手机.
+
+<li>
+测试该Z-depth为一个光栅操作, 其常在管线中其余部分完成其工作之后执行. 在访问一个像素着色器自身之前, 在一个tile中自动地killing一个fragment. 这为一个有用的最优化基本上在所有的现代GPU执行. 这个最优化被称为 hierarchical Z-culling, 或者简单地称为 Z-culling. 这里有两个变种, 分别称为Z[max]-culling和Z[min]-culling. 当像素着色器被分析和发现没有修改该片段的z-depth时[1065], GPU自动地使用这些技术. 这样做节省像素着色器程序的代价. 在下一个章节, 描述了一个alternative culling技术, 其也可用于在其他的状况(situations)下像素着色器修改该z-depth.
+
+<li>
+我们通过描述Z[max]-culling开始, 其与 hierarchical z-buffering 算法有相同的思路(见章节14.6.2). 有并不测试每个三角形用于 occlusion 这个例外, 以及并不使用整个 Z-pyramid 的限制. 其替代仅有几个levels被使用. 为了执行occlusion culling, 该 rasterizer 取得用于处理的tiles像素的Z[max], 以及其使用这个值早期退出管线用于occluded pixels&gt;. tiles的大小可能随架构变化, 但是 8x8 为常用的大小[902]. 对于这些技术, 三角形遍历访问一次一个tile. 想象一个三角形正被光栅化, 以及其访问一个特定的tile, 我们需要计算出三角形上的最小的z值, Z[min][tri](前者下标, 后者上标), 如果 Z[min][tri] &gt; Z[max], 则其保证该三角形被之前tile中渲染的几何体给occlude, 这样则可避免所有的像素着色器处理. 实际上, 我们不能提供计算精确地Z[min][tri]值. 因为为了替代, 我们计算一个保守的估计. 不同的方式计算Z[min][tri]为可能的, 每个有其自己的优点和缺点:
+
+<ul>
+<li>
+使用一个三角形的三个顶点的最小z值与Z[max]测试, 这不是非常精确的, 但是其有点 overhead.
+
+<li>
+使用三角形的平面公式求解一个tile的四个角的z值, 以及使用其最小值.
+
+</ul>
+<li>
+如果两个策略组合起来则可得到最好的culling性能. 这通过采用两个z[min]-value中最大的值来完成. 使用 Z[max]-culling则意味着像素着色器处理和与Z-buffer的测试可以避免大多数occluded像素在光栅化的(rassterized)图元上. 所以可以预期有一个显著的性能提升. 如果该tile或像素确定没有被occluded, 则处理如常继续. 注意这个描述这里只使用两层的hierarchical Z-buffer(the realZ-buffer, 以及 8x8 pixel tiles). 然而, GPUs很可能使用多于两层的hierarchical Z-buffers.
+
+<li>
+另一个技术则被称为 Z[min]-culling, 以及其思路为存储tile中所有像素的 z[min][13]. 这里有两个用于这个, 首先, 其可以被用于支持不同的深度测试. 对于 Z[max]-culling 方法, 我们假设一个"less than"深度测试, 然而, 如果可以与其他深度测试一起使用culling, 其将有益的. 以及如果 z[min]和z[max]都为可用的, 则可以在这个culling process中支持所有的深度测试. 第二, 其可以避免 Z-buffer 读取. 如果一个正被渲染的三角形为定义在所有之前渲染的几何体之前, 则per-pixel深度测试是没必要的. 在某些情况中, Z-buffer读取可以完全避免, 其可进一步提升性能.
+
+<li>
+ATI这类型occlusion culling的实现被称为 HyperZ[1065] NVIDIA的则被称为 Lightspeed Memory Architecture(LMA). 一如既往, occlusion culling可以从前到后的渲染中得到好处.
+
+<li>
+occlusion culling 硬件可以从multipass算法中获益(见章节7.9.1). 第一个pass建立建立z值和相应的z[max]值. 后续的passes使用所有的z[max]值, 其给出近似完美的occlusion culling用于隐藏的三角形.  像素着色器其求解(evaluate)常常为昂贵的, 可以渲染一个额外的pass使其在初期预先纯建立z-buffer和z[max]-value, 这样做可以得到好处.
+
+<li>
+如果一个tile经受了 Z-culling, 则有其他的测试其一个GPU可应用于每个片段上, 称之为 early-Z[879, 1108].  与和用于Z-culling一样的方式分析像素着色器程序, 如果其不修改 z-depth, 且设置渲染state用于典型的 Z-buffer 测试, 此时则可执行 early-Z. 在像素着色器程序执行之前, 计算出片段精确的z深度值, 以及和z-buffer存储的值比较. 如果片段被occluded, 则此时丢弃该片段. 这个过程可以避免像素着色器程序硬件不必要的执行. 该early-Z 测试常与 Z-culling 混淆, 但其被整个单独的硬件执行. 这些技术不能和另外一个技术一起使用.
+
+<li>
+另外的技术有类似的名字, 和类似的目的, 为"early z pass"方法. 其为软技术, 思路为渲染几何体一次并建立Z-buffer深度, 见章节7.9.2.
+
+</ul>
+
+<h3 id="toc_1.3.7">18.3.8 PCU:Programmable Culling Unit</h3>
+<ul>
+<li>
+正如之前章节所见, 当片段着色器写出(write out)一个每像素的自定义深度时Z-culling可以被硬件禁止. 类似 relief mapping 和在四边形内求解球体公式的渲染算法为着色器修改z深度的两个例子. Blythe[123]提及获得好的性能依赖于预测着色器的输出(在一个tile basis上). 一个原因为为何一个完全的可编程输出合并(merger)(也就是blending, depth testing, stencil testing)不包含在DirectX 10 中, 其为当着色器写入深度时禁止Z-culling, 举例. 
+
+<li>
+可编程的(programmable)culling unit(PCU)[513]则解决这个问题, 但是其应更通用其他的工作. 其核心思想为在整个tile的像素上运行以及确定片段着色器的部分, 距离, 一个z-values更低的边界(lower bound), 也就是 z[min][tri](见章节18.3.7). 在这个例子中, lower bound 可用于 Z-culling. 另一个例子应当可以确定, 如果一个tile中所有的像素完全在阴影中, 也就是全黑. 如果其为真, 则GPU可以避免执行很大部分的片段着色器程序用于当前的tile.
+
+<li>
+为了计算保守的边界(也就是, z[min][tri]), 使用interval arithmetic代替浮点数执行片段着色器指令. 也可定义算术操作在间隔上操作[900]. 两个间隔的加法结果为包括两个间隔操作数所有可能组合的间隔中. 具体表示可见例子.
+
+<ul>
+<li>
+例子...
+
+</ul>
+<li>
+如果片段着色器程序包含KIL指令, 则所有依赖于KIL的指令提取到一个cull shader program中, 其对于整个tile被执行一次. 在这个cull shader中, 所有的算术操作在interval上工作, 且所有变化的操作数为intervals. 当KIL指令的interval操作数被计算出, 其已知是否tile中所有的片段可以被killed, 而没有执行片段着色器用于该tile中的每个片段. 在开始该cull shader的执行之前, 变化的输入必须转换为intervals, 以及使用类似于用于计算之前z[min][tri]的技术来完成.
+
+<li>
+正如一个简单的例子, 想象着色器程序计算diffuse shading 如 d = l·n, 而后测试这个点乘以查看其是否小于0(其面远离光). 如果小于0, 则程序发送一个KIL命令, 当点乘小于0时其终止片段. 假设点乘的interval result为[-1.2, -0.3]. 则其意味着用于当前tile中片段的光向量l和法线n的所有可能组合求解为一个负的点乘值. 该tile此时被culled, 这是因为其diffuse shading保证为0.
+
+<li>
+假设tile的大小为 8x8 像素, 以及 cull shader program 使用四次[513]与片段着色器程序一样多的指令. 这是因为使用interval arithmeti完成求解cull shader, 其比使用floating-point artichmetic更昂贵. 在这个情况下, 其可能得到16倍的加速(理论上)用于可以被culled的tiles, 由于cull shader为仅有的求解一次用于一个tile以及而后终止执行. 对于不能被culled的tiles, 其实际上有轻微的减速, 由于你需要执行该PCU的cull shader program一次, 以及此时普通的(normal) 8x8 pixel shader programs. 其获取的总的性能是显著的, 有 1.4-2.1倍的加速. 当前其没有可用的商业实现, 但是PCU解决了一个重要的问题. 当维护性能时它允许程序员使用更多的通用着色程序(例如, 修改的z-depth). 一个研究的实现显示了一个简单的片段着色器单元的大小被gates少于10的部分增加. 其应当直接添加PCU硬件为一个unified shader architecture..
+
+</ul>
+
+<h2 id="toc_1.4">18.4 Case Studies</h2>
+<h3 id="toc_1.4.1">18.4.1 Case Study: Xbox 360</h3>
+<ul>
+<li>
+内存架构可见图18.15. 主要的GPU芯片看成内存控制器(称为北桥), CPU通过GPU芯片访问系统内存. 某种程度其为一种 unified memory architecture(UMA). 所以可见, 内存只有GPU可访问. 
+
+<li>
+Xbox 360 架构中, 着重于 GPU和daughter chip. 使用 embedded DRAM(eDRAM)用于帧缓存, 这个内存嵌入单独的daughter chip中. daughter chip 有额外的逻辑---AZ. 其用于所有的alpha和深度测试, 以及相关的操作. 通过有AZ逻辑的eDRAM访问帧缓存. eDRAM 有 10 x 1024 x 1024 个字节. 也就是10M的存储. Xbox 360 的设计其围绕于unified shader architecture的概念上. 
+
+<li>
+Xbox 360 GPU 的块图标见图18.16. 当command processor 开始从主存读取命令时渲染开始, 其可为rendering batch的开始, 或者state的变化. 绘制命令向前发送给 vertex grouper and tessellator(VGT) 单元, 这个单元接收顶点索引流, 其分组为图元(三角形或线条). 这个单元可以作为变换后的vertex cache. 因此重用已变换的顶点(already-transformed vertices). 另外可以在这里执行 tessellation(章节13.6有描述). 
+
+<li>
+Xbox 360的指令集为SM 3.0的超集. 它的顶点和像素着色语言趋近, 即它们共享相同的通用核心. 可以设计和实现单个着色器元素使得其可执行顶点和像素着色器程序. 这就是 unified shader architecture的主要思想. 在Xbox 360中, 着色器的执行永远在64个顶点或像素的向量上. 每个类似的向量执行为一个线程, 最多32个顶点线程或64个像素线程可以同时活跃. 所以当一个线程等待来自内存的一个纹理获取(texture fetch), 另一个线程可安排为在unified shader pipes上的执行. 当请求的内存内容可用时, 之前的线程切换回活跃的, 以及执行可以继续. 其很大的帮助隐藏latency, 以及提供比之前non-unified架构好得多的加载平衡. 举例, 一个典型的GPGPU应用, 其渲染一个屏幕大小的四边形, 以及有很长的像素着色程序. 在这个情况中, 再开始, 很少的着色器核心用于顶点计算, 所有的着色器核心用于 per-pixel 计算. 注意, 所有的执行都在32位浮点数上执行. 所有的线程共享了一个非常的寄存器文件, 其包含了用于着色器计算的寄存器. 对于 Xbox 360, 其有 24,576个寄存器, 通常, 一个着色器需要更多的寄存器, 更少的线程可在同一时刻即时(in flight). 这个概念详细介绍见下一个case study, 即 PLAYSTATION 3系统.
+
+<li>
+sequencer(图 18.16)从VGT中接受顶点索引. 它的内核任务为安排线程用于执行. 依赖于需要被处理的内容, 其发送顶点和像素向量至类似vertex cache, the texture pipes, 或者 the unified shader pipes的单元.
+
+<li>
+在unified shader pipes unit中, 有三个ALUs的集(算术逻辑), 每个由16个小的着色核心组成, 一个类似的核心集可以在四个时钟周期上在一个顶点向量(64 entries)或像素向量(64 entries)上执行一个操作. 每个着色器核心每周期可以执行一个向量操作以及一个标量操作.
+
+<li>
+在执行顶点或像素着色器程序之后, 其结果向前发送给 shader export. 如果一个顶点着色器已经执行, 所有的输出, 类似于变换地顶点坐标和纹理坐标, 被"export"回primitive assembler. 这个 primitve assembler从VGT中(通过deep FIFO)得到一个三角形是如何连接的. 以及从着色器export单元"imports"该变换的顶点. 注意FIFO buffer 为那些避免在带有长latency的操作期间避免停止. 此时执行三角形安装, clipping, 以及 viewport culling. 剩下的信息向前发送给 triangle-traversal 单元, 其操作在 8x8 的tiles上. 与 tiles 一起工作的原因是 texture caching 更有效率, 以及 buffer 压缩和不同的 z-culling 技术可以被使用. Tiles 发送给 hierarchical Z/stencil 单元, 这里执行了 Z-culling(见章节18.3.7)和早期的stencil rejection. 这个单元存储了11位用于深度(z[max])和一位用于深度缓存中每16样本的stencil. 测试每个四边形与z[max]用于occlusion, 以及可以多达16个四边形每个周期accepted/rejected. 此时仍存在的 2x2 像素四边形则发送回triangle traversal unit. 由于ALU集可以一次处理一个64个像素的向量, 以及triangle traversal unit packs 16个四边形(也就是, 16x2x2)到一个向量中. 注意, 其可为来自一个向量中的不同图元里的四边形. 类似的处理用于 PS3系统, 以及在该章节中进一步解释.
+
+</ul>
+
+    </div>
+</body>
+</html>

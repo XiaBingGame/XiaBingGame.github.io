@@ -1,0 +1,271 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../../../style.css">
+<title>RealTimeRendering8</title>
+<meta http-equiv="Content-Type" content="text/html; charset=cp936">
+</head>
+<body>
+
+<p>
+Chapter 11 Non-Photorealistic Rendering
+</p>
+<ul>
+<li>
+Non-photorealistic rendering(NPR), 也称之为 stylistic rendering. 
+
+</ul>
+
+<p>
+11.1 Toon Shading
+</p>
+<ul>
+<li>
+对于带纹理无关找的模型, 可由量化(quantize)纹理来近似该 solid-fill cartoon style. 为了着色, 两个常用的方法为使用solid color(unlit, 无光照)填充多边形区域, 或者使用一个 two-tone approach表示光好和阴影区域. Solid shading为繁琐的. two-tone approach 有时称为 hard shading. 可通过重映射传统的光照公式元素至不同的颜色palettes来执行. 轮廓常被渲染为黑色, 以放大卡通外观效果.
+
+<li>
+Lake[713, 714]和Lander[721], 计算每个顶点的点乘 n*l, 并使用该值作为纹理坐标访问一维纹理映射. 可由GPU或简单顶点着色执行. 该纹理映射包含只有两个着色, 光和暗. 当表面朝向光时, 访问纹理中更亮的着色. n*l &lt; 0 则表示在阴影中. 该表达式还可以用于重映射之其他值. 见图11.3. 
+
+<li>
+Silhouette方法可粗略的划分为基于表面角度, precedural geometry, image processing, vector edge detection, 或者以上的混合体.
+
+<li>
+这里有些不同类型的边缘用于 toon rendering:
+
+<ul>
+<li>
+边缘和边界不被两个多边形共享.例如图表纸的边缘. 一个实体物体通常没有边界边缘.
+
+<li>
+一折痕(crease), 硬, 或突出的边缘为两个多边形共享的边缘, 两个多边形之间的角度大于某个预定义的值. 一个好的缺省折痕角度(crease angle)为60度. 立方体有 crease edges. crease edge 可进一步划分为子类 ridge(山脊) 和 valley(山谷) edge
+
+<li>
+material edge---两个多边形共享它, 在材质上有所不同或其他改变着色的不同.
+
+<li>
+轮廓边缘相邻三角形面向不同的方向, 相比较于某个方向向量. 
+
+</ul>
+<li>
+见图 11.4, 有分类
+
+<li>
+对于 toon rendering, 边缘为相邻三角形一个正面, 一个背面.
+
+<li>
+轮廓边缘的定义有时可包含边界边缘, 即为连接相同三角形正面和背面的边缘. 我们定义轮廓边缘不包含边界边缘(boundary edges)
+
+</ul>
+
+<p>
+11.2.1 Surface Angle Silhouetting
+</p>
+<ul>
+<li>
+到viewpoint的方向与surface法线的点乘结果可用于给出轮廓边缘. 如果该值接近0, 则该surface接近于眼睛的边缘处, 很可能为接近一个轮廓边缘. 该技术等同于使用在边缘有黑色圆环的球面环境映射, 可见图11.5. 实际上, 一个一维纹理可用于替换该环境映射. Marshall[822]通过使用顶点着色器执行了该轮廓方法. 使用view ray和vertex normal的点乘访问一维纹理. Everitt[323]使用mipmap金字塔执行该过程. 最顶层为黑色. 当表面接近于边缘时, 其访问顶层, 所以着色为黑色. 由于没有执行顶点插值, 所以边缘更锐利. 
+
+</ul>
+
+<p>
+11.2.2 Procedural Geometry Silhouetting
+</p>
+<ul>
+<li>
+Rossignac and Emmerik[1083] 发表, Raskar and Cohen[1046]提纯. 正常渲染正面, 而后以某种方式渲染背面使得轮廓边缘显示出来. 这里有一些方法渲染这些背面, 带有其自己的强度和弱点. 每个方法第一个步骤绘制正面, 而后开启 frontface culling, 关闭 backface culling, 因此只有背面显示出来.
+
+<li>
+使用偏移或其他技术(见章节11.4)确保在frontface的前面绘制背面的边缘线条. 以这种方式下, 所有线条除了轮廓边缘都被隐藏起来
+
+<li>
+背面在屏幕中的Z值上偏移移动, 而后只有背面三角形的边缘可见. 可见图 11.6. 许多实现方法的主要问题是不能给出一个相同宽度的线条. 为了实现这个目标, 其在Z值上向前移动的距离不仅依赖于背面, 而且还依赖于相邻的正面. 
+
+<li>
+Raskar and Cohen[1046]解决相邻的依赖问题, 每个背面三角形沿着其边缘扩展(fattening), 确定保证一致粗度的所需扩展量. 其由三角形的坡度和到viewer之间的距离确定三角形的扩展量. 一个安全的方法向外移动三角形边并连接这些边. 可见图11.7. 这个方法不再需要偏移. 图11.8为这三种方法的结果. Raskar[1047]有计算该 edge expansion factors的改进方法.
+
+<li>
+另一种方法为沿着共享的顶点法线向外移动背面的顶点. 移动量和到眼睛的z-distance成正比. 该方法在GPU上执行有些优势. 其沿着法线移动顶点在顶点着色其上为很棒的实现任务. 无需CPU的帮助. 这种类型的扩展有时称之为 shell mapping. 可见图11.10关于该技术的使用例子.
+
+<li>
+该shell技术有一些隐患, 例如立方体. 要解决该问题, 相同位置的顶点应该共享单个, 新的, 平均度顶点法线. 其他技术这在该折痕处创建退化几何体(degenerate geometry), 然后扩展填充多边形间的空隙[1382].
+
+<li>
+fattening 技术不能用于由加速器生成曲面. shell 技术可用于曲面, 只要可以沿着曲面法线向外移动顶点. z偏移技术可用于所有曲面. 半透明表面很难渲染其轮廓, 以及缺少某种形式的antialiasing边缘.
+
+<li>
+这些几何技术的一个特点就是不需要连通性信息或边的列表. 每个多边形被单独处理.  每个mesh应当被预处理以保证这些面的一致性.
+
+<li>
+还可以以其他方式渲染其他边缘(边界, 折痕, 和材质). 使用章节11.4中的一个线条绘制技术. 对于可变形物体, 其折痕线随时变化. Raskar[1047]提出一个聪明的方案绘制脊线, 而无需创建和访问边的连通性数据结构(connectivity data structure). 其思路为沿着要被渲染的三角形的每个边生成一个额外的多边形. 该边多边形自三角形的平面弯曲, 其由用户定义的二面角角度以确定折痕是否可见. 如果该连接的三角形胜过该折痕角度, 则边多边形可见, 否则隐藏. 对于山谷边, 该技术通过stencil buffer执行, 其可多达有三个passes.
+
+</ul>
+
+<p>
+11.2.3 Silhouetting by Image Processing
+</p>
+<ul>
+<li>
+之前的算法都可归类为 image-based, 由屏幕分辨率确定如何执行. 另一种算法更直接地为image0based. 其完全在缓存中存储的数据上操作, 且不修改场景中的几何体. .
+
+<li>
+Saito and Takahashi [1097] 第一次提出了 G-buffer的概念. 其也可用于 deferred shading(章节7.9.2). Decaudin[238]扩展G-buffers执行 tone rendering. 其基本思路为在不同缓存的信息上执行图像处理技术. 在相邻的Z-buffer值上查找不连续的地方, 则可发现大多数轮廓边缘位置. 相邻面法线的不连续性标志边界(常为轮廓)边缘的位置. 渲染场景为环境光颜色, 可常用于检测另外两个技术所遗漏的边缘.
+
+<li>
+Card and Mitchell [155] 使用顶点着色器渲染该场景其世界空间的法线和z-depth值至一个纹理, 以便实时执行图像处理操作. 法线当作normal map 写入color channels中, z-depth的最高有效位数(the most significant byte of z-depths)作为alpha channel.
+
+<li>
+一旦图像被创建, 其下一步是发现轮廓, 边界和折痕边缘. 其思路为渲染一个屏幕填充(screen-filling)的四边形, 其有normal map 和 z-depth map, 并检测边缘的不连续性. 其思路为在单个pass中采样相同的纹理六次, 并实现一个Sobel edge detectioin filter[422]. 通过发送六对纹理坐标(down with quadrilateral)采样纹理六次. 应用该filter至纹理两次, 每次沿着一个轴, 而后合成两个结果图像. 还可使用进一步的图像处理技术扩展或eroded生成边缘的厚度, 图 11.11 为某些结果.
+
+<li>
+仍有些缺点, 对于表面接近边缘处, z-depth comparison filter 会错误地检测一穿过表面(across surface)的轮廓边缘像素. 其他的问题就是z-depth comparison 差异非常的小, 轮廓边缘则被忽视. 例如桌上的纸, 折叠的纸.
+
+<li>
+当z-depth信息只有最高有效位(the most significant byte)时, 比纸表更厚的轮廓边缘也会被忽略过. 除非扩展z-depth范围, 在深度信息上使用更高的精确度来避免该问题.
+
+</ul>
+
+<p>
+11.2.4 Silhouette Edge Detection
+</p>
+<ul>
+<li>
+轮廓边缘为相邻的两个三角形, 其中一个朝向viewer, 另一个背向viewer. 这两个三角形的相交之处. 测试如公式 11.1
+
+</ul>
+<p>
+公式 11.1
+</p>
+<ul>
+<li>
+n0和n1为两个三角形的法线, v为view direction(眼睛到边缘的方向). 
+
+<li>
+通过该测试循环查找模型中的轮廓边缘列表[822]. Lander[726]提出剔除掉平面多边形内部的边缘. 如果边缘相邻两个三角形在相同的平面上, 则不将该边缘加入要测试的边缘列表.
+
+<li>
+改进方法, Buchanan and Sousa[114] 重用用于每个单独面的dot product test. Markosian[819]从一轮廓集合循环开始, 使用随机查找算法更新该集合(set). Aila and Miettinen[4]其方法则关联每个边缘的有效距离. 
+
+<li>
+如果任意模型每个轮廓由单个封闭曲线组成, 则称之为 silhouette loop. 其每个轮廓顶点必须有偶数的轮廓边[12]. 一旦在每个轮廓上发现了一个边, 测试该边的邻居以查看它们是否为轮廓边. 重复执行直至整个轮廓被探寻出来.
+
+<li>
+如果逐帧一点点移动 camera view and 物体, 其可合理假设来自上帧的轮廓边仍为有效轮廓边, 测试少部分的轮廓边以发现用于下一帧的起始轮廓边(starting silhouette edges). 当模型变换方位时还可创建和销毁 silhouette loops. Hall[493]讨论了如何检测这些以及丰富的实现细节.
+
+<li>
+现可以绘制线条. 需要某种的偏移, 以确保线条被正确绘制在surface的前面. 如果绘制粗边, 为了边之间无间隙, 可在每个轮廓顶点在绘制 screen-aligned 的圆.
+
+<li>
+Lake[713]给出技术用于绘制曲线轮廓边.其思路为根据轮廓边的性质使用不同的纹理笔划(strokes). 这种技术只用于物体它们自身给出和背景同一的颜色. 否则stroke也许会形成填充区域不平配的地方. 另外轮廓边检测其他的缺点为不能用于 vertex blended, N-patch, 或其他 accelerator-generated surface. 这是由于在CPU上多边形不能被利用.
+
+<li>
+显式边缘检测的另一个缺点为CPU intensive. 主要问题为潜在的不连续内存访问. 为了避免每帧的处理, Card and Mitchell[155]使用顶点着色器检测和渲染轮廓边缘. 思路为将模型的每个边作为退化四边形发送给管线, 且每个顶点都关联相邻的三角形法线. 一旦发现边缘为轮廓的一部分, 则移动四边形上的点另其不再退化(使其可见), 形成一个thin quadrilateral-"fin". 这个技术其思路和用于阴影体(shadow volume)的顶点着色器一样(P347). 当边界边缘只有一个相邻三角形时, 其第二个法线为该三角形法线的相反方向. 这种方式下, 边界边永远被标识为被渲染的边.
+
+<li>
+如果几何着色器为管线的一部分, 该额外的多边形则无需在CPU上生成以及存储在mesh中, 几何着色器其在需要的时候可生成fin quadrilateral. 
+
+<li>
+其他用于查找轮廓的方法, Gooch[423]使用 Gauss map确定轮廓边. 14.2.1, hierarchical方法可以快速分类多边形为面向或背向. 见 Hertzman文章[546]或其他NPR书[425, 1226]
+
+</ul>
+
+<p>
+11.2.5 Hybrid Silhouetting
+</p>
+<ul>
+<li>
+Northrup and Markosian[940]其使用的轮廓绘制法有图像和几何元素. 他们的方法首先查找轮廓边缘边. 而后渲染所有物体的三角形和轮廓边, 每个分配不同的ID号码(例如: 每个给出唯一的颜色). 从该ID buffer读回, 并从中确定可见轮廓边. 检查这些可见片段(segment)它们的重叠(overlap), 并链接在起义以形成一个 smooth stroke paths. 而后沿着这些重构的路径渲染 stylized stroke. 该 stroke 它们可以在很多不同方式中被 stylized, 包括效果 taper, flare, wiggle, fading. 以及深度和距离的信号(cue). 例子可见 11.12
+
+<li>
+Kalninss[621]在他们的著作中使用了该方法, NPR中研究的一个重要领域: temporal coherence. 获取轮廓只是开始, 当物体和viewer移动时, 轮廓边也变化. 通过 tracking 各自的 silhouette loop, stroke extraction technique的一些coherence可以利用. 然而, 当两个 loops合并, 需要正确的measure或者可见的跳动会在下一帧可见. 使用一个像素查找和"vote"算法, 以维持帧间的轮廓一致性.
+
+</ul>
+
+<p>
+11.3 Other Styles
+</p>
+<ul>
+<li>
+另外, 对于toon rendering, Lake[713]讨论使用 diffuse shading term 选择哪个纹理用在surface上. 当该diffuse term更暗时, 使用更暗的纹理. 该纹理如应用了窗口空间的坐标, 则给出一个手绘的外观. 一个屏幕空间中的paper texture应用于所有surface上可以进一步加强草图的外观(sketched look). 当物体运动时, 它们"游过"该纹理, 这是由于纹理应用在屏幕空间. 其也可应用于世界空间中以有不同的效果. 见图11.13. Lander[722]与多重纹理一起完成这个处理. 该类型算法的一个问题就是显示 door effect. 当运动(animation)时看起来物体像是穿过一个压花玻璃(patterned glass).
+
+<li>
+解决方法很明显, 在surface使用纹理坐标. 其挑战为stroke-based纹理如何维持其相对一致的stroke粗度和密度. 如果纹理放大, strokes看起来太粗, 而缩小则变得更细. Praun[1031]发表一实时方法生成stroke-textured mipmaps. 第一步为形成要使用的纹理, 称之为 tonal art maps[TAMs]. 通过绘制strokes至mipmaps levels中完成. 见图11.14. 当纹理在合适的位置时, 通过在每个顶点所需要的tones之间插值渲染模型. 和一lapped texture parameterization 一起应用该技术至surface. 可见图11.15.
+
+<li>
+Card and Mitchell[155]给出使用像素着色器关于该技术更有效的实现. 他们逐像素计算diffuse term和插值, 而后其可当作纹理坐标用于one-dimensional maps, 其可产生 per-pixel TAM weight. Webb[1335]则发表了两个TAMs的扩展以给出更好的结果. 其中一个使用 volume texture, 其允许颜色的使用. 另一个使用 thresholding scheme, 其改进antialiasing. Nuebel[943]则给出执行charcoal rendering的相关方法. 他给出一个noise texture, 也是沿着一个轴从dark 到 light. 沿着盖州访问纹理的强度值(intensity value). Lee等人[747]使用Tams和一些其他有趣的技术生成铅笔绘制效果图.
+
+<li>
+关于strokes, 还有许多其他操作, 为了给一个sketch effect, 边可以被jittered或者extended他们原来位置之外(beyond). 可见页507图11.1右上和中下的图.
+
+<li>
+Girshick[403] 讨论沿着surface上的the principal curve direction line渲染strokes. surface上任意给定的一个点, 都有一个first principal direction 切线向量指向最大curvature(曲率)的方向, 其second principal direction为切线向量垂直于第一个向量, 且其方向为表面最小弯曲(is least curved)的方向.
+
+<li>
+Mohr and Gleicher[888]拦截OpenGL调用, 在 low-level 图元上执行NPR effects, 创建一绘制风格的种类. 
+
+<li>
+graftal[623, 820]的思路为可以依需要添加几何或贴花(decal)至surface上以产生特别的效果. 可由需要的level of detail控制, 也可由对眼睛该surface的朝向或其他因素控制. 可用于模拟 pen 或 bursh stroke. 例子可见图11.16. Geometric graftal 为一种形式的 procedural modeling.
+
+</ul>
+
+<p>
+11.4 Lines
+11.4.1 Edge Highlighting
+</p>
+<ul>
+<li>
+为了高亮一个物体, 我们以不同的颜色绘制其边. 
+
+</ul>
+
+<p>
+11.4.2 Polygon Edge Rendering
+</p>
+<ul>
+<li>
+为了确保线条渲染在多边形前面, 我们应当带一个固定的偏移渲染所有的线条. 实际上, 我们常偏移其下的多边形远离viewer.
+
+<li>
+当前的API提供了各自的因子, 使得偏移随渲染的多边形其坡度变化. 如果API支持不可利用, 其他技术包括变化投影矩阵, 可以修正viewport近和远的值, 或者直接修改z-scale因子. 
+
+<li>
+Herrell[545] 发表了一个 scheme 完全避免该 biasing. 其使用一系列步骤标识(mark)和清空stencil buffer. 所以边可正确绘制在多边形上方. 缺点为现代GPU上每个多边形需要各自绘制, 妨碍了整个性能.
+
+<li>
+Baerentzen[54, 949]其发表了方法很好的映射至图形硬件, 他们使用像素着色器, 其使用三角形的barycentric(重心的)坐标确定到最近边的距离. 如果该像素靠近一个边, 则使用边的颜色绘制该像素. 边的粗度可是任意值, 也可被距离所影响. 见图11.17. 
+
+</ul>
+
+<p>
+11.4.3 Hidden-Line Rendering
+</p>
+<ul>
+<li>
+在 wirefrome的绘制中, 一个模型的所有边可见, 当模型实体是, 则只绘制可见的线条. 直接的方式为以实体填充颜色渲染多边形, 以及使用之前章节的技术绘制边. 一种更快的方法则为绘制填充的多边形至Z-buffer, 但不写入color buffer. 而后绘制边. 这个方法可避免不必要的颜色填充.
+
+<li>
+可以绘制线条部分模糊代替完全隐藏. 例如, 隐藏线可用淡灰色绘制. 首先以obscured style绘制所有的边, 而后仅绘制填充多边形至Z-buffer, 最后以visble line的style重绘边.
+
+<li>
+如果不考虑obscured线条是否在可见线条的上方, 则有技术首先绘制surface至z-buffer, 而后以visible style 绘制所有的线. 而后反转 z-buffer, 只有那些在当前像素z-depth值之后的线被绘制, 则关闭z-buffer的修改, 以obscured style重绘所有的线. 
+
+<li>
+图11.19显示了一些不同线条绘制方法的结果. 
+
+</ul>
+
+<p>
+11.4.4 Haloing
+</p>
+<ul>
+<li>
+当两条线交叉时, 通常擦除更远线的一部分,使得次序明显. 计算机图形中, 则绘制每条线两次, 一次带光晕(a halo). 这个方法查处重叠部分, 而后在其上以背景颜色绘制. 假设线条为黑色, 背景白色, 每条线, 首先以背景颜色绘制thick version, 而后正常绘制该线条. 其可确保在上方的线条首先用白色背景擦除后要绘制的区域.
+
+<li>
+在隐藏线的渲染中, 该技术可首先绘制的白色halo线仅仅写入z-buffer中, 而后正常绘制黑色线条.
+
+<li>
+潜在问题因为一个线条的halo产生不必要的掩盖. 可见图11.18.  解决方法为缩短线条创建的halos.
+
+</ul>
+
+</body>
+</html>

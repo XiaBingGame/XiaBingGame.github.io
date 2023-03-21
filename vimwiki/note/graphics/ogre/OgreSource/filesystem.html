@@ -1,0 +1,190 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../style.css" />
+    <title>filesystem</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="../index.html">首页</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<p>
+一. 配置文件
+</p>
+<ul>
+<li>
+配置文件是以 key/value 形式保存的文件
+
+<li>
+Ogre的Demo中有如下配置文件:
+
+<ul>
+<li>
+ogre.cfg --- Render System的设置
+
+<li>
+plugins.cfg --- 插件目录及插件名称
+
+<li>
+resources.cfg --- 资源文件的位置
+
+<li>
+terrain.cfg --- 地形配置文件
+
+<li>
+media.cfg --- 媒体文件 (如 mesh, 图片等)
+
+<li>
+quake3settings.cfg 
+
+</ul>
+<li>
+有效的 Ogre 配置文件的要求
+
+<ul>
+<li>
+一个 key 对应一个 value
+
+<li>
+key 和 value 之间的分界符可以是 Tab, 冒号, 等号
+
+<li>
+可分成段, 段名在中括号内 [SectionName]
+
+<li>
+value后必须有回车符
+
+<li>
+可有注释, 用 # 或 @ 开头的行
+
+</ul>
+<li>
+Ogre::ConfigFile
+
+<ul>
+<li>
+Ogre有一Iterator模板 Ogre::MapIterator&lt;T&gt; 
+			SettingsMultiMap, SettingsIterator, SettingsBySection, SectionIterator
+
+</ul>
+</ul>
+<p>
+二. 文件容器和文件管理
+</p>
+<ul>
+<li>
+Ogre 文件系统的核心是 Archive 和 DataStream, Archive泛指文件容器, 可是文件夹, 也可使压缩包. DataStream 功能同 std::basic_istream, 读取文件
+
+<ul>
+<li>
+Archive
+
+<ul>
+<li>
+统一的接口(抽象基类)Ogre::Archive, 具体的实现方法分别由 Ogre::FileSystemArchive 和 Ogre::ZipArchive 完成 
+
+<li>
+采用抽象工厂模式实例化 Archive, FactorObj&lt;Archive&gt; --&gt; ArchiveFactor --&gt; (FileSystemArchiveFactory, ZipArchiveFactory)
+
+<li>
+Archive 管理类 Ogre::ArchiveManager, 所有的ArchiveFactory都必须注册到ArchiveManager
+
+</ul>
+<li>
+Data Stream
+
+<ul>
+<li>
+基类 Ogre::DataStream, 其派生类 FileHandleDataStream, FileStreamDataStream, MemoryDataStream, ZipDataStream
+
+<li>
+MemoryDataStream --- 内存区域, unsigned char内存, 由 '\n' 形成行. 
+
+<li>
+ZipDataStream --- 用 zlib 实现读取压缩文件, 对 zlib 包装, 使其能符合 DataStream 接口
+
+<li>
+FileHandleDataStream, FileStreamDataStream 为C语言的FILE和C++ stream的适配
+
+</ul>
+</ul>
+</ul>
+<p>
+三. 资源管理
+</p>
+<ul>
+<li>
+资源
+
+<li>
+资源管理, 每一种 Resource, 提供了相应的 ResourceManager, 具体的ResourceManager 负责管理对应的资源池, 并可以索引资源, 查找资源, 加载销毁资源
+
+<li>
+ResourceManager 维护了一个 Resource 的hash表用以资源的快速查找
+
+<li>
+Resource 利用 ResourceManger 来通知资源的加载情况, ResourceManger 利用 Resource 加载具体的资源
+
+<li>
+Resource 使用桥接模式使用不同的加载方式
+
+<li>
+资源组的管理, ResourceGroupManager
+
+<ul>
+<li>
+资源的加载顺序: ResourceGroupManager::addResource, ResourceGroupManager::initialiseResourceGroup, ResourceGroupManager::loadResourceGroup
+
+<li>
+ResourceGroupListener 用于监控资源的加载进度, ResourceGourpManger 维护了一个 ResourceGroupListener 的列表
+
+<li>
+加载之前, ResourceGroupManager 向各 Listeners 发送 resourceLoadStarted 消息, 完成后发送 resourceLoadEnd 消息
+
+</ul>
+<li>
+多线程下的资源管理, Ogre::ResourceBackgroundQueue, 用于资源的加载和卸载, 后台监听器 ResourceBackgroundQueueListener
+
+</ul>
+<p>
+四. Scripts
+</p>
+<ul>
+<li>
+分类: Material Scripts, Particle Scripts, Overlay Scripts, Font Definition Scripts
+
+<li>
+ScriptLoader 用于加载脚本
+
+</ul>
+<p>
+五. 序列化
+</p>
+<ul>
+<li>
+对于二进制文件的读写, 提供了专门的序列化类 --- Ogre::Serializer, 此类文件主要有 .mesh 和 .skeleton
+
+<li>
+Material, Ogre 看成脚本资源, 用 Ogre::MaterialSerializer
+
+</ul>
+<p>
+六. log 管理
+</p>
+<ul>
+<li>
+Ogre::Log --- 负责文件的读写, Ogre::LogManager --- 管理, 维护 log 的表和 LogListener的表, Ogre::LogListener --- 用于 Log 输出的重定向
+
+</ul>
+
+    </div>
+</body>
+</html>

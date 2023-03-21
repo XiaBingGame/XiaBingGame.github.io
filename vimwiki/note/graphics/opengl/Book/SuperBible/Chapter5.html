@@ -1,0 +1,1717 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../../style.css" />
+    <title>Chapter5</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<h1 id="toc_1">Buffers</h1>
+<ul>
+<li>
+使用 buffers 之前, OpenGL 请求名称, 而后分配内存, 放置数据. 一个buffer对象内存的分配称之为 data store. 使用时将该buffer绑定至一个buffer绑定点.
+
+</ul>
+<h2 id="toc_1.1">使用buffers分配内存</h2>
+<ul>
+<li>
+glBufferData
+<pre class="brush: c++">
+void glBufferData(GLenum target,  GLsizeptr size, const GLvoid* data, GLenum usage);
+</pre>
+
+<ul>
+<li>
+target: buffer要绑定至哪个目标, 如果你想要使用buffers存储OpenGL的顶点属性数据, 则绑定至 GL_ARRAY_BUFFER 绑定点.
+
+<li>
+usage:
+
+<ul>
+<li>
+GL_STREAM_DRAW: 应用程序设置buffer内容一次, 且用于不频繁的绘制
+
+<li>
+GL_STREAM_READ: 用一个OpenGL命令的输出设置缓存内容一次, 且用于不频繁的绘制
+
+<li>
+GL_STREAM_COPY: 用一个OpenGL命令的输出设置缓存内容一次, 且用于不频繁的绘制或拷贝至其他的图像中.
+
+<li>
+GL_STATIC_DRAW: 应用程序设置buffer内容一次, 且用于频繁的绘制或拷贝至其他图像中.
+
+<li>
+GL_STATIC_READ: 用一个OpenGL命令的输出设置缓存内容一次, 且由应用查询许多次.
+
+<li>
+GL_STATIC_COPY: 用一个OpenGL命令的输出设置缓存内容一次, 且用于频繁的绘制或拷贝至其他的图像
+
+<li>
+GL_DYNAMIC_DRAW: 应用频繁更新缓存内容, 且频繁绘制或拷贝至其他图像
+
+<li>
+GL_DYNAMIC_READ: OpenGL的输出频繁更新buffer内容, 且应用查询许多次
+
+<li>
+GL_DYNAMIC_COPY: OpenGL的输出频繁更新buffer内容, 且应用查询许多次或拷贝至其他图像.
+<pre class="brush: c++">
+// The type used for names in OpenGL is GLuint
+GLuint buffer;
+// Generate a name for the buffer
+glGenBuffers(1, &amp;buffer);
+// Now bind it to the context using the GL_ARRAY_BUFFER binding point
+glBindBuffer(GL_ARRAY_BUFFER, buffer);
+// Specify the amount of storage we want to use for the buffer
+glBufferData(GL_ARRAY_BUFFER, 1024 * 1024, NULL, GL_STATIC_DRAW);
+</pre>
+
+</ul>
+</ul>
+<li>
+拷贝数据至一个buffer对象: glBufferSubData().
+<pre class="brush: c++">
+void glBufferSubData(GLenum target, GLintptr offset, GLsizeptr size, const GLvoid* data)
+</pre>
+
+<li>
+请求缓存对象的指针: glMapBuffer(), 而后可以拷贝内容至其指针
+<pre class="brush: c++">
+// This is the data that we will place into the buffer object
+static const float data[] =
+{
+	0.25, -0.25, 0.5, 1.0,
+	-0.25, -0.25, 0.5, 1.0,
+	0.25, 0.25, 0.5, 1.0
+};
+// Get a pointer to the buffer’s data store
+void * ptr = glMapBuffer(GL_ARRAY_BUFFER, GL_WRITE_ONLY);
+// Copy our data into it...
+memcpy(ptr, data, sizeof(data));
+// Tell OpenGL that we’re done with the pointer
+glUnmapBuffer(GL_ARRAY_BUFFER);
+</pre>
+
+<li>
+glMapBuffer 的好处是省略一次拷贝, 可以直接读取文件直接写进内存, 无需多一次暂存.
+
+</ul>
+<h2 id="toc_1.2">填充和拷贝Buffer中的数据</h2>
+<ul>
+<li>
+如果你想要写至buffer的数据为一个常量值, 使用 glClearBufferSubData() 更有效率
+<pre class="brush: c++">
+void glClearBufferSubData(GLenum target, GLenum internalformat, GLintptr offset, GLsizeptr size, GLenum format, GLenum type, const void* data);
+</pre>
+
+<ul>
+<li>
+format 为数据类型, 有 GL_RED, GL_RG, GL_RGB, GL_RGBA
+
+</ul>
+<li>
+拷贝buffer的数据至其他buffer: glCopyBufferSubData()
+<pre class="brush: c++">
+void glCopyBufferSubData(GLenum readtarget, GLenum writetarget, GLintptr readoffset, GLintptr writeoffset, GLsizeptr size);
+</pre>
+
+<li>
+为了解决只能不同target拷贝的问题, OpenGL提供了 GL_COPY_READ_BUFFER 和 GL_COPY_WRITE_BUFFER target.
+
+</ul>
+<h2 id="toc_1.3">从Buffer中填充数据给顶点着色器</h2>
+<ul>
+<li>
+为了使用顶点属性, 首先创建一个顶点数组对象用于存储顶点数组状态
+<pre class="brush: c++">
+GLuint vao;
+GLGenVertexArrays(1, &amp;vao);
+glBindVertexArray(vao);
+</pre>
+
+<li>
+glVertexAttribPointer() 告知 OpenGL 我们的数据在buffer对象中的位置.
+
+<li>
+glEnableVertexAttribArray() 和 glVertexAttribPointer() 自动填充属性.
+<pre class="brush: c++">
+void glVertexAttribPointer(GLuint index, GLint size, GLenum type, GLboolean normalized, GLsizei stride, const GLvoid * pointer);
+void glEnableVertexAttribArray(GLuint index);
+</pre>
+
+<ul>
+<li>
+glVertexAttribPointer
+
+<ul>
+<li>
+index 为顶点属性的索引
+
+<li>
+normalized --- buffer中的数据是否应当被单元化.
+
+<li>
+offset 为buffer中的偏移
+<pre class="brush: c++">
+// First, bind our buffer object to the GL_ARRAY_BUFFER binding
+// The subsequent call to glVertexAttribPointer will reference this buffer
+glBindBuffer(GL_ARRAY_BUFFER, buffer);
+// Now, describe the data to OpenGL, tell it where it is, and turn on
+// automatic vertex fetching for the specified attribute
+glVertexAttribPointer(0, // Attribute 0
+	4, // Four components
+	GL_FLOAT, // Floating-point data
+	GL_FALSE, // Not normalized
+			  // (floating-point data never is)
+	0, // Tightly packed
+	NULL); // Offset zero (NULL pointer)
+glEnableVertexAttribArray(0);
+</pre>
+
+</ul>
+</ul>
+<li>
+对应的顶点着色器
+<pre class="brush: glsl">
+#version 430 core
+layout (location = 0) in vec4 position;
+void main(void)
+{
+	gl_Position = position;
+}
+</pre>
+
+<li>
+禁止属性数组: void glDisableAttribArray(GLuint index);
+
+<li>
+一旦禁止属性数组, 则其为静态的, 且通过 glVertexAttrib* 来传递值给着色器.
+
+</ul>
+<h2 id="toc_1.4">使用多个顶点着色器输入</h2>
+<ul>
+<li>
+使用layout
+<pre class="brush: glsl">
+layout (location = 0) in vec3 position;
+layout (location = 1) in vec3 color;
+</pre>
+
+<li>
+确定输入的位置: GLint glGetAttribLocation(GLuint program, const GLchar * name);
+
+<li>
+两种方式关联着色器输入和应用程序的数据. 分别为 separate attributes 和 interleaved attributes.
+
+<ul>
+<li>
+如果属性为分离的, 表示它们位于不同的buffers中, 或者位于相同 buffer 中的不同位置.
+<pre class="brush: c++">
+GLuint buffer[2];
+static const GLfloat positions[] = { ... };
+static const GLfloat colors[] = { ... };
+// Get names for two buffers
+glGenBuffers(2, &amp;buffers);
+// Bind the first and initialize it
+glBindBuffer(GL_ARRAY_BUFFER, buffer[0]);
+glBufferData(GL_ARRAY_BUFFER, sizeof(positions), positions, GL_STATIC_DRAW);
+glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+glEnableVertexAttribArray(0);
+// Bind the second and initialize it
+glBindBuffer(GL_ARRAY_BUFFER, buffer[1]);
+glBufferData(GL_ARRAY_BUFFER, sizeof(colors), colors, GL_STATIC_DRAW);
+glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+glEnableVertexAttribArray(1);
+</pre>
+
+<li>
+我们可以使用 array-of-structure 来形成数据
+<pre class="brush: c++">
+struct vertex
+{
+	// Position
+	float x;
+	float y;
+	float z;
+
+	// Color
+	float r;
+	float g;
+	float b;
+}
+
+GLuint buffer;
+static const vertex vertices[] = { ... };
+// Allocate and initialize a buffer object
+glGenBuffers(1, &amp;buffer);
+glBindBuffer(GL_ARRAY_BUFFER, buffer);
+glBufferData(GL_ARRAY_BUFFER, sizeof(vertices), vertices, GL_STATIC_DRAW);
+// Set up two vertex attributes - first positions
+glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, sizeof(vertex), (void *)offsetof(vertex, x));
+glEnableVertexAttribArray(0);
+// Now colors
+glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE, sizeof(vertex), (void *)offsetof(vertex, r));
+glEnableVertexAttribArray(1);
+</pre>
+
+</ul>
+</ul>
+<h2 id="toc_1.5">从文件中加载数据</h2>
+<ul>
+<li>
+本书使用 .SBM 文件表示模型, 完整的格式文档见附录B. 加载框架见 sb6::object.
+<pre class="brush: c++">
+sb6::object my_object;
+my_object.load("filename.sbm");
+// 渲染
+my_object.render();
+</pre>
+
+</ul>
+
+<h1 id="toc_2">一致变量 </h1>
+<ul>
+<li>
+两种一致变量: 一种一致变量声明在默认块中, 另一种为一致变量块.
+
+</ul>
+<h2 id="toc_2.1">Default Block Uniforms</h2>
+<ul>
+<li>
+顶点着色器最常见的一致变量为变换矩阵.
+
+<li>
+一致变量不能被赋值, 但可以被初始化.
+
+</ul>
+<h3 id="toc_2.1.1">安排你的一致变量 </h3>
+<ul>
+<li>
+可以使用 layout 前缀设置一致变量的位置
+<pre class="brush: glsl">
+layout (location = 17) uniform vec4 myUniform;
+</pre>
+
+<li>
+glGetUniformLocation() 获取一致变量的位置: GLint glGetUniformLocation(GLuint program, const GLchar* name);
+
+<li>
+如果着色器程序没有使用一个一致变量, 则会丢弃该一致变量.
+
+</ul>
+<h3 id="toc_2.1.2">设置标量和向量一致变量 </h3>
+<ul>
+<li>
+glUniform(1/2/3/4)(f/i/ui)
+
+<li>
+布尔类型一致变量可以使用整数和浮点形式传递值, 0表示false, 非0表示true
+
+</ul>
+<h3 id="toc_2.1.3">设置一致数组 </h3>
+<ul>
+<li>
+glUniform(1/2/3/4)(f/i/ui)v
+
+</ul>
+<h3 id="toc_2.1.4">设置一致矩阵 </h3>
+<ul>
+<li>
+一致矩阵变量只能设置单精度和双精度浮点数.
+
+<li>
+glUniformMatrix(2/3/4)(f/d)v()
+
+</ul>
+<h2 id="toc_2.2">Uniform Block</h2>
+<ul>
+<li>
+OpenGL 允许将一组 uniform 变量组合进一个 uniform block, 而后将整个 block 存储进一个 buffer object 中. 通过改变绑定的buffer或者重写所绑定buffer的内容来快速设置整组 uniform 变量. 
+
+<li>
+这种功能称之为 uniform buffer object 或 UBO.
+
+<li>
+所有全局中定义的uniform变量都在默认块中, 但其不能使用 buffer object. 你需要创建一个或多个命名的 uniform 块.
+<pre class="brush: glsl">
+uniform TransformBlock
+{
+	float scale;
+	vec3 translation;
+	float rotation[3];
+	mat4 projection_matrix;
+} transform;
+</pre>
+
+</ul>
+<h3 id="toc_2.2.1">构建 Uniform 块 </h3>
+<ul>
+<li>
+使用 glBufferData() 或 glMapBuffer() 填充 buffer object 的数据来设置uniform block的数据. 如何填充有两种方法
+
+<ol>
+<li>
+使用一个标准的, 一致的layout设置数据. 仅仅拷贝数据到buffers中, 且假设block中成员的具体位置. 你可以预先存储数据在磁盘上, 且使用glMapBuffer()简单地直接读取数据至buffer上. 这个标准 layout 也许在block 的不同成员之间留下一些空白空间, 使得buffer比所需要的更大.
+
+<li>
+由 OpenGL 确定数据在哪里. 应用需要计算出数据放在那里, 这样OpenGL可以读取它. 这种方式下, 存储在 uniform buffer 内的数据被安排为 shared layout. 这是默认的 layout. 使用 shared layout, 应用必须确定uniform block成员在buffer object中的位置.
+
+</ol>
+<li>
+standard layout, 推荐. 使用 layout 前缀声明一个uniform块
+<pre class="brush: glsl">
+layout(std140) uniform TransformBlock
+{
+	float	scale;				// Global scale to apply to everything
+	vec3	translation;		// Translation in X, Y, and Z
+	float	rotation[3];		// Rotation around X, Y, and Z axes
+	mat4	projection_matrix;	// A generalized projection matrix to apply after scale and rotate
+} transform;
+</pre>
+
+<ul>
+<li>
+一旦一个 uniform 块被声明为 standard, 或 std140. block 中每个成员占据buffer中一个预定量的空间, 且偏移量可预知, 有如下规则:
+
+<ol>
+<li>
+任意大小为N的类型, 其在buffer中以N-字节的边界开始. 表示标准的GLSL类型如int, float, bool(都为32位)都从4字节的倍数开始. 这些类型长度为2的向量都开始于8字节向量. 这些类型长度为3或4的向量都开始于16字节边界. 标量或向量的数组每个成员总开始于边界, 但都 round up to vec4 对齐. 矩阵被当作向量的数组看待, 矩阵数组则被当作向量的长数组看待. 最后, 结构的数组和结构的结构有额外的打包需求. 整个结构开始于其最大成员的边界, round up to vec4 的大小.
+<pre class="brush: glsl">
+layout(std140) uniform TransformBlock
+{
+	// Member					   base alignment	offset	aligned offset
+	float	scale;				// 4				0		0
+	vec3	translation;		// 16				4		16
+	float	rotation[3];		// 16				28		32 (rotation[0])
+								//							48 (rotation[1])
+								//							64 (rotation[2])
+	mat4	projection_matrix;	// 16				80		80 (column 1)
+								//							96 (column 2)
+								//							112 (column 3)
+								//							128 (column 4)
+} transform;
+</pre>
+
+</ol>
+<li>
+shared layout, 确定OpenGL分配给block成员的偏移. 每个uniform block成员有个索引, 用于查询其大小和位置. 为了得到该成员的index, 使用函数: glGetUniformIndices.
+<pre class="brush: c++">
+static const GLchar * uniformNames[4] =
+{
+	"TransformBlock.scale",
+	"TransformBlock.translation",
+	"TransformBlock.rotation",
+	"TransformBlock.projection_matrix"
+};
+GLuint uniformIndices[4];
+glGetUniformIndices(program, 4, uniformNames, uniformIndices);
+</pre>
+
+<ol>
+<li>
+查询这些成员在buffer中的位置, 函数: glGetActiveUniformsiv, 其中 pname 参数设置为 GL_UNIFORM_OFFSET, GL_UNIFORM_ARRAY_STRIDE, GL_UNIFORM_MATRIX_STRIDE.
+<pre class="brush: c++">
+GLint uniformOffsets[4];
+GLint arrayStrides[4];
+GLint matrixStrides[4];
+glGetActiveUniformsiv(program, 4, uniformIndices,
+	GL_UNIFORM_OFFSET, uniformOffsets);
+glGetActiveUniformsiv(program, 4, uniformIndices,
+	GL_UNIFORM_ARRAY_STRIDE, arrayStrides);
+glGetActiveUniformsiv(program, 4, uniformIndices,
+	GL_UNIFORM_MATRIX_STRIDE, matrixStrides);
+</pre>
+
+<ul>
+<li>
+uniformOffsets 含成员的偏移
+
+<li>
+arrayStrides 含数组成员的跨度
+
+<li>
+matrixStrides 含矩阵成员的跨度
+
+</ul>
+<li>
+关于uniform block 成员的其他信息有 uniform 的数据类型, 内存中的大小, 关于数组和矩阵的 layout 信息.
+
+<li>
+如果你所用 uniform 的类型为简单类型, 如 int, float, bool, 或者这些类型的向量(如vec4), 你所需要的就是它们的偏移. 一旦你知道 buffer 中uniform的位置, 你可在合适的位置上通过传递 offset 给 glBufferSubData() 加载数据, 或在代码中直接使用该偏移以聚集(assemble)内存中的buffer.
+
+<li>
+在例子中, 我们将数据聚集在应用的内存中, 而后使用 glBufferData() 加载进一个 buffer 中. 你可以使用 glMapBuffer() 得到 buffer 内存的指针, 并将数据聚集在那里.
+
+<li>
+现在开始例子 TransformBlock, 第一个元素为浮点 scale, 其位置存储于 uniformIndices 的第一个元素中.
+<pre class="brush: c++">
+// Allocate some memory for our buffer (don’t forget to free it later)
+unsigned char * buffer = (unsigned char *)malloc(4096);
+// We know that TransformBlock.scale is at uniformOffsets[0] bytes
+// into the block, so we can offset our buffer pointer by that value and
+// store the scale there.
+*((float *)(buffer + uniformOffsets[0])) = 3.0f;
+</pre>
+
+<li>
+接下来我们初始化 TransformBlock.translation 的数据.
+<pre class="brush: c++">
+// Put three consecutive GLfloat values in memory to update a vec3
+((float *)(buffer + uniformOffsets[1]))[0] = 1.0f;
+((float *)(buffer + uniformOffsets[1]))[1] = 2.0f;
+((float *)(buffer + uniformOffsets[1]))[2] = 3.0f;
+</pre>
+
+<li>
+接下来是 rotation, 介绍 GL_UNIFORM_ARRAY_STRIDE 的使用, 当使用 shared layout 时, 数组定义为被实现定义的stride字节分割的元素序列. 表示位置有 GL_UNIFORM_OFFSET 和 GL_UNIFORM_ARRAY_STRIDE 组合.
+<pre class="brush: c++">
+// TransformBlock.rotations[0] is at uniformOffsets[2] bytes into
+// the buffer. Each element of the array is at a multiple of
+// arrayStrides[2] bytes past that
+const GLfloat rotations[] = { 30.0f, 40.0f, 60.0f };
+unsigned int offset = uniformOffsets[2];
+for (int n = 0; n &lt; 3; n++)
+{
+	*((float *)(buffer + offset)) = rotations[n];
+	offset += arrayStrides[2];
+}
+</pre>
+
+<li>
+最后我们设置矩阵, 行为看成 vector 的数组.
+<pre class="brush: c++">
+// The first column of TransformBlock.projection_matrix is at
+// uniformOffsets[3] bytes into the buffer. The columns are
+// spaced matrixStride[3] bytes apart and are essentially vec4s.
+// This is the source matrix - remember, it’s column major so
+const GLfloat matrix[] =
+{
+	1.0f, 2.0f, 3.0f, 4.0f,
+	9.0f, 8.0f, 7.0f, 6.0f,
+	2.0f, 4.0f, 6.0f, 8.0f,
+	1.0f, 3.0f, 5.0f, 7.0f
+};
+for (int i = 0; i &lt; 4; i++)
+{
+	GLuint offset = uniformOffsets[3] + matrixStride[3] * i;
+	for (j = 0; j &lt; 4; j++)
+	{
+		*((float *)(buffer + offset)) = matrix[i * 4 + j];
+		offset += sizeof(GLfloat);
+	}
+}
+</pre>
+
+</ol>
+</ul>
+<li>
+每个 uniform block 都有一个索引. GL_MAX_UNIFORM_BUFFERS 可以使用的最多block.GL_MAX_VERTEX_UNIFORM_BUFFERS, GL_MAX_GEOMETRY_UNIFORM_BUFFERS, GL_MAX_TESS_CONTROL_UNIFORM_BUFFERS,GL_MAX_TESS_EVALUATION_UNIFORM_BUFFERS, GL_MAX_FRAGMENT_UNIFORM_BUFFERS 分别是每个阶段的. 
+
+<li>
+得到block索引:glGetUniformBlockIndex
+
+<li>
+这里有个绑定点集合，你可以将buffer绑定至其上. uniform block 分配一个绑定点, buffer 可以绑定至其上.
+
+<li>
+分配一个绑定点给一个 uniform block: glUniformBlockBinding
+
+<li>
+OpenGL 支持的最大绑定点数量: GL_MAX_UNIFORM_BUFFER_BINDINGS
+
+<li>
+可以在着色器中给 uniform block 分配一个绑定点, 使用 layout 前缀和 binding 关键字
+<pre class="brush: glsl">
+layout(std140, binding = 2) uniform TransformBlock
+{
+	// ...
+} transform;
+</pre>
+
+<ul>
+<li>
+着色器分配绑定点可以避免调用 glUniformBlockBinding(), 或从你的应用中确定block的索引.
+
+<li>
+可以绑定buffers至相同的绑定点, 使得数据在uniform blocks中的buffer中: glBindBufferBase(GL_UNIFORM_BUFFER, index, buffer);
+
+<ol>
+<li>
+GL_UNIFORM_BUFFER 告诉 OpenGL 我们绑定一个buffer至一个uniform绑定点.
+
+<li>
+index 为绑定点的索引. 要匹配你着色器中设置的索引或者 glUniformBlockBinding() 设置的值
+
+<li>
+buffer 为你相连接的 buffer object的名称.
+
+<li>
+注意 index 不是 uniform block 的索引, 而是 uniform buffer 绑定点的索引
+<pre class="brush: c++">
+// Get the indices of the uniform blocks using glGetUniformBlockIndex
+GLuint harry_index = glGetUniformBlockIndex(program, "Harry");
+GLuint bob_index = glGetUniformBlockIndex(program, "Bob");
+GLuint susan_index = glGetUniformBlockIndex(program, "Susan");
+// Assign buffer bindings to uniform blocks, using their indices
+glUniformBlockBinding(program, harry_index, 1);
+glUniformBlockBinding(program, bob_index, 3);
+glUniformBlockBinding(program, susan_index, 0);
+// Bind buffers to the binding points
+// Binding 0, buffer B, Susan’s data
+glBindBufferBase(GL_UNIFORM_BUFFER, 0, buffer_b);
+// Binding 1, buffer C, Harry’s data
+glBindBufferBase(GL_UNIFORM_BUFFER, 1, buffer_c);
+// Note that we skipped binding 2
+// Binding 3, buffer A, Bob’s data
+glBindBufferBase(GL_UNIFORM_BUFFER, 3, buffer_a);
+</pre>
+
+</ol>
+<li>
+如果我们在着色器中使用了layout设置了绑定点, 则我们可以不用调用 glUniformBlockBinding(), 如:
+<pre class="brush: glsl">
+layout (binding = 1) uniform Harry
+{
+	// ...
+};
+layout (binding = 3) uniform Bob
+{
+	// ...
+};
+layout (binding = 0) uniform Susan
+{
+	// ...
+};
+</pre>
+
+</ul>
+<li>
+uniform blocks 一个常用法为从 transient state 分离出 steady state. 使用一个标准的convention设置了所用程序的绑定, 当改变程序是, 可以保留buffer绑定.
+
+<ul>
+<li>
+例如, 你有一个相对固定的状态 --- 投影矩阵, 视口的大小, 或者其他一帧改变一次或更少的内容. 你可以让这些信息放在一个buffer中, 绑定至绑定点0. 这样, 当你设置所有程序该固定状态的绑定为0, 这样无论你何时使用 glUseProgram()切换程序对象, uniform 都会位于该buffer中准备使用.
+
+<li>
+如果你有个片段着色器模拟一些材质(例如衣物或金属), 你可以将用于该材质的参数放入其他buffer中. 在你的程序着色这些材质时, 绑定含该材质参数的uniform block至绑定点1. 每个object可能维护一个包含其surface参数的一个buffer object. 当你渲染每个object时, 其使用通用的材质着色器, 且仅绑定其参数buffer至buffer绑定点1.
+
+</ul>
+<li>
+uniform block最有意义的是它们可以相当大. 可以通过 glGetIntegetv()和GL_MAX_UNIFORM_BLOCK_SIZE得知大小. 一个程序可以访问的block数量可用 GL_MAX_UNIFORM_BLOCK_BINDINGS 得到.
+
+</ul>
+
+<h2 id="toc_2.3">使用 Uniform 变换几何</h2>
+<ul>
+<li>
+例子, 立方体, 首先使用 vertex array object 设置立方体几何.
+<pre class="brush: c++">
+// First, create and bind a vertex array object
+glGenVertexArrays(1, &amp;vao);
+glBindVertexArray(vao);
+static const GLfloat vertex_positions[] =
+{
+	-0.25f, 0.25f, -0.25f,
+	-0.25f, -0.25f, -0.25f,
+	0.25f, -0.25f, -0.25f,
+	0.25f, -0.25f, -0.25f,
+	0.25f, 0.25f, -0.25f,
+	-0.25f, 0.25f, -0.25f,
+	/* MORE DATA HERE */
+	-0.25f, 0.25f, -0.25f,
+	0.25f, 0.25f, -0.25f,
+	0.25f, 0.25f, 0.25f,
+	0.25f, 0.25f, 0.25f,
+	-0.25f, 0.25f, 0.25f,
+	-0.25f, 0.25f, -0.25f
+};
+// Now generate some data and put it in a buffer object
+glGenBuffers(1, &amp;buffer);
+glBindBuffer(GL_ARRAY_BUFFER, buffer);
+glBufferData(GL_ARRAY_BUFFER,
+	sizeof(vertex_positions),
+	vertex_positions,
+	GL_STATIC_DRAW);
+// Set up our vertex attribute
+glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+glEnableVertexAttribArray(0);
+</pre>
+
+<li>
+矩阵
+<pre class="brush: c++">
+float f = (float)currentTime * (float)M_PI * 0.1f;
+vmath::mat4 mv_matrix =
+	vmath::translate(0.0f, 0.0f, -4.0f) *
+	vmath::translate(sinf(2.1f * f) * 0.5f,
+		cosf(1.7f * f) * 0.5f,
+		sinf(1.3f * f) * cosf(1.5f * f) * 2.0f) *
+	vmath::rotate((float)currentTime * 45.0f, 0.0f, 1.0f, 0.0f) *
+	vmath::rotate((float)currentTime * 81.0f, 1.0f, 0.0f, 0.0f);
+</pre>
+
+</ul>
+<p>
+*视口变化调用 glViewport(). 
+</p>
+<pre class="brush: c++">
+void onResize(int w, int h)
+{
+	sb6::application::onResize(w, h);
+	aspect = (float)info.windowWidth / (float)info.windowHeight;
+	proj_matrix = vmath::perspective(50.0f,
+									aspect,
+									0.1f,
+									1000.0f);
+}
+</pre>
+<ul>
+<li>
+绘制
+<pre class="brush: c++">
+// Clear the framebuffer with dark green
+static const GLfloat green[] = { 0.0f, 0.25f, 0.0f, 1.0f };
+glClearBufferfv(GL_COLOR, 0, green);
+// Activate our program
+glUseProgram(program);
+// Set the model-view and projection matrices
+glUniformMatrix4fv(mv_location, 1, GL_FALSE, mv_matrix);
+glUniformMatrix4fv(proj_location, 1, GL_FALSE, proj_matrix);
+// Draw 6 faces of 2 triangles of 3 vertices each = 36 vertices
+glDrawArrays(GL_TRIANGLES, 0, 36);
+</pre>
+
+<li>
+着色器需要变换顶点位置.
+<pre class="brush: c++">
+#version 430 core
+in vec4 position;
+out VS_OUT
+{
+	vec4 color;
+} vs_out;
+uniform mat4 mv_matrix;
+uniform mat4 proj_matrix;
+void main(void)
+{
+	gl_Position = proj_matrix * mv_matrix * position;
+	vs_out.color = position * 2.0 + vec4(0.5, 0.5, 0.5, 0.0);
+}
+
+#version 430 core
+out vec4 color;
+in VS_OUT
+{
+	vec4 color;
+} fs_in;
+void main(void)
+{
+	color = fs_in.color;
+}
+</pre>
+
+</ul>
+
+<h1 id="toc_3">着色器的存储块</h1>
+<ul>
+<li>
+buffer object 还可用于使用shader的一般存储, 方法为使用 shader storage block. 类似于uniform block的相同方法绑定一个范围的buffer object至一个索引的GL_SHADER_STORAGE_BUFFER目标. 其与uniform block最大的不同是着色器可以写入shader storage block, 更进一步, 可以在shader storage block的成员上执行原子操作, 且有更高的多的大小上限限制.
+
+<li>
+声明, 使用 buffer 代替 uniform, 支持 std140 打包layout前缀. 也支持 std430 打包layout前缀(允许整数或浮点数组比较紧密打包).
+<pre class="brush: c++">
+#version 430 core
+struct my_structure
+{
+	int pea;
+	int carrot;
+	vec4 potato;
+};
+
+layout (binding = 0, std430) buffer my_storage_block
+{
+	vec4 foo;
+	vec3 bar;
+	int baz[24];
+	my_structure veggies;
+};
+</pre>
+
+<li>
+其成员可以看成其他任意的变量, 为了读取它们, 可以将其当成函数的参数, 通过给它们分配(assign)写入. 当变量用于一个表达式中, 数据源为buffer object, 当分配给变量, 被写入的数据为buffer object, 你可以使用 glBufferData() 将数据放置进buffer, 就和 uniform block 一样. 由于 buffer 是着色器可写的, 你可以调用 glMapBuffer 和 GL_READ_ONLY(或GL_READ_WRITE)读取数据.
+<pre class="brush: c++">
+#version 430 core
+struct vertex
+{
+	vec4 position;
+	vec3 color;
+};
+layout (binding = 0, std430) buffer my_vertices
+{
+	vertex vertices[];
+};
+uniform mat4 transform_matrix;
+out VS_OUT
+{
+	vec3 color;
+} vs_out;
+void main(void)
+{
+	gl_Position = transform_matrix * vertices[gl_VertexID].position;
+	vs_out.color = vertices[gl_VertexID].color;
+}
+</pre>
+
+<li>
+访问困难.
+
+</ul>
+
+<h2 id="toc_3.1">原子内存操作</h2>
+<ul>
+<li>
+原子操作为每个invocation产生一个完整的读-修改-写周期.
+
+<li>
+为了执行shader storage block成员的院子操作, 调用下面的原子内存函数
+
+<ul>
+<li>
+atomicAdd
+
+<li>
+atomicAnd
+
+<li>
+atomicOr
+
+<li>
+atomicXor
+
+<li>
+atomicMin
+
+<li>
+atomicMax
+
+<li>
+atomicExchange
+
+<li>
+atomicCompSwap
+
+</ul>
+<li>
+写入内存避免风险 hazards. 内存风险有三个类别:
+
+<ul>
+<li>
+Read-After-Write(RAW)风险, 由于架构可能在未写完时读取.
+
+<li>
+Write-After-Write(WAW)风险
+
+<li>
+Write-After-Read(WAR)风险, 发生于平行处理系统.
+
+</ul>
+<li>
+处理内存 hazard 的最主要工具是 memory barrier. 类似于一个marker. 
+
+<li>
+插入一个barrier:  glMemoryBarrier(), 参数表示哪个 OpenGL 子系统应当遵从 barrier. GL_ALL_BARRIER_BITS 可以控制所有内容.
+
+<ul>
+<li>
+GL_SHADER_STORAGE_BARRIER_BIT --- 在barrier之前的任何访问在任何barrier之后的数据访问之前完成.
+
+<li>
+GL_UNIFORM_BARRIER_BIT --- 表示可能写入内存且在barrier之后当作 uniform buffer. 在当作uniform buffer之前确保完成写入buffer.
+
+<li>
+GL_VERTEX_ATTRIB_ARRAY_BARRIER_BIT --- OpenGL 等到一个着色器写完buffer, 在任何通过顶点属性将该buffer当作顶点数据源之前.
+
+</ul>
+</ul>
+<h2 id="toc_3.2">着色器中使用 Barriers</h2>
+<ul>
+<li>
+void memoryBarrier();
+
+<li>
+如果调用该函数, 任何你执行的内存读写在该函数返回之前都完成.
+
+<li>
+其他形式, memoryBarrierBuffer() 只处理 buffer 的读写
+
+</ul>
+
+<h1 id="toc_4">Atomic Counter</h1>
+<ul>
+<li>
+特殊类型的变量, 表示通过多个shader invocation共享的storage. 该storage在buffer object之后, GLSL提供的函数可以增加和减少存储在buffer中的值. 这些操作为atomic.
+
+<li>
+声明
+<pre class="brush: glsl">
+layout (binding = 0) uniform atomic_uint my_variable;
+</pre>
+
+<li>
+OpenGL 提供了一些绑定点, 你可以将该buffer绑定其上, 并存储 atomic counter 的值. 另外, 每个atomic counter 都存储在buffer object中的一个具体偏移值上.
+
+<li>
+绑定可以用  binding 和 offset 前缀指定, 这两个前缀可应用于atomic counter uniform 声明.
+<pre class="brush: glsl">
+layout (binding = 3, offset = 8) uniform atomic_uint my_variable;
+</pre>
+
+<li>
+为了给该 atomic counter 提供storage, 我们先可以绑定一个buffer object至 GL_ATOMIC_COUNTER_BUFFER 带索引的绑定点.
+<pre class="brush: c++">
+// Generate a buffer name
+GLuint buf;
+glGenBuffers(1, &amp;buf);
+// Bind it to the generic GL_ATOMIC_COUNTER_BUFFER target and
+// initialize its storage
+glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, buf);
+glBufferData(GL_ATOMIC_COUNTER_BUFFER, 16 * sizeof(GLuint),
+	NULL, GL_DYNAMIC_COPY);
+// Now bind it to the fourth indexed atomic counter buffer target
+glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, 3, buf);
+</pre>
+
+<li>
+着色器使用之前, 最好重置其值. 可以使用  glBufferSubData() 重置, 用 glMapBufferRange()映射buffer, 并直接写入值. 或者使用 glClearBufferSubData()
+<pre class="brush: c++">
+// Bind our buffer to the generic atomic counter buffer
+// binding point
+glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, buf);
+// Method 1 - use glBufferSubData to reset an atomic counter.
+const GLuint zero = 0;
+glBufferSubData(GL_ATOMIC_COUNTER_BUFFER, 2 * sizeof(GLuint),
+	sizeof(GLuint), &amp;zero);
+// Method 2 - Map the buffer and write the value directly into it
+GLuint * data =
+	(GLuint *)glMapBufferRange(GL_ATOMIC_COUNTER_BUFFER,
+		0, 16 * sizeof(GLuint),
+		GL_MAP_WRITE_BIT |
+		GL_MAP_INVALIDATE_RANGE_BIT);
+data[2] = 0;
+glUnmapBuffer(GL_ATOMIC_COUNTER_BUFFER);
+// Method 3 - use glClearBufferSubData
+glClearBufferSubData(GL_ATOMIC_COUNTER_BUFFER,
+	GL_R32UI,
+	2 * sizeof(GLuint),
+	sizeof(GLuint),
+	GL_RED_INTEGER, GL_UNSIGNED_INT,
+	&amp;zero);
+</pre>
+
+<li>
+现在已经创建了一个buffer且绑定至一个atomic counter buffer  target, 且在着色器中已经声明一个atomic counter uniform. 开始计数, 增加:
+<pre class="brush: glsl">
+uint atomicCounterIncrement(atomic_uint c);
+</pre>
+
+<ul>
+<li>
+加1, 返回原来的值.
+
+</ul>
+<li>
+ 减
+<pre class="brush: glsl">
+uint atomicCounterDecrement(atomic_uint c);
+</pre>
+
+<ul>
+<li>
+减1, 返回新的值.
+
+</ul>
+<li>
+得到计数器的值
+<pre class="brush: glsl">
+uint atomicCounter(atomic_uint c);
+</pre>
+
+<li>
+例子, 片段着色器
+<pre class="brush: glsl">
+#version 430 core
+layout (binding = 0, offset = 0) uniform atomic_uint area;
+void main(void)
+{
+	atomicCounterIncrement(area);
+}
+</pre>
+
+<li>
+禁止写入帧缓存: glColorMask(GL_FALSE, GL_FALSE, GL_FALSE, GL_FALSE);
+
+<li>
+允许写入帧缓存: glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
+
+<li>
+因为 atomic counter 存储在 buffer 中, 可以将我们的 atomic counter 绑定至其他的 buffer target, 例如一个 GL_UNIFORM_BUFFER 目标, 且返回着色器中它的值. 这允许我们使用计数器的值控制之后程序中着色器的运行.
+<pre class="brush: glsl">
+#version 430 core
+layout (binding = 0) uniform area_block
+{
+	uint counter_value;
+};
+out vec4 color;
+uniform float max_area;
+void main(void)
+{
+	float brightness = clamp(float(counter_value) / max_area,
+		0.0, 1.0);
+	color = vec4(brightness, brightness, brightness, 1.0);
+}
+</pre>
+
+<ul>
+<li>
+通过 uniform block 读取计数器的值, 并将其作为输出颜色计算的一部分.
+
+<li>
+近处的物体计数越大越亮. 其值为要渲染几何体的面积
+
+</ul>
+</ul>
+<h2 id="toc_4.1">Synchronizing Access to Atomic Counters</h2>
+<ul>
+<li>
+原子计数器表示buffer object中的位置, 当着色器执行时, 其值位于显卡处理器中的特殊内存中. 着色器执行完毕之后, 其值写回内存. 所以原子计数器的加减操作可看成内存操作.
+
+<li>
+使用 glMemoryBarrier() 函数支持同步操作.
+<pre class="brush: c++">
+glMemoryBarrier(GL_ATOMIC_COUNTER_BARRIER_BIT);
+</pre>
+
+<ul>
+<li>
+确保对 buffer object中atomic counter的访问都反映shader对其的更新.
+
+</ul>
+<li>
+变种函数: memoryBarrierAtomicCounter(), 确保在该函数返回之前所有的atomic counter上的操作都完成.
+
+</ul>
+
+<h1 id="toc_5">纹理</h1>
+<h2 id="toc_5.1">创建和初始化纹理</h2>
+<ul>
+<li>
+glGenTextures() 生成纹理, glBindTexture() 绑定值2D纹理, glTexStorage2D() 分配存储
+<pre class="brush: c++">
+// The type used for names in OpenGL is GLuint
+GLuint texture;
+// Generate a name for the texture
+glGenTextures(1, &amp;texture);
+// Now bind it to the context using the GL_TEXTURE_2D binding point
+glBindTexture(GL_TEXTURE_2D, texture);
+// Specify the amount of storage we want to use for the texture
+glTexStorage2D(GL_TEXTURE_2D,	// 2D texture
+				1,				// 1 mipmap level
+				GL_RGBA32F,		// 32-bit floating-point RGBA data
+				256, 256);		// 256 x 256 texels
+</pre>
+
+<li>
+设置数据, glTexSubImage2D
+<pre class="brush: c++">
+// Define some data to upload into the texture
+float * data = new float[256 * 256 * 4];
+// generate_texture() is a function that fills memory with image data
+generate_texture(data, 256, 256);
+// Assume the texture is already bound to the GL_TEXTURE_2D target
+glTexSubImage2D(GL_TEXTURE_2D,	// 2D texture
+				0,				// Level 0
+				0, 0,			// Offset 0, 0
+				256, 256,		// 256 x 256 texels, replace entire image
+				GL_RGBA,		// Four channel data
+				GL_FLOAT,		// Floating-point data
+				data);			// Pointer to data
+// Free the memory we allocated before - OpenGL now has our data
+delete [] data;
+</pre>
+
+</ul>
+<h2 id="toc_5.2">纹理目标和类型 </h2>
+<ul>
+<li>
+纹理目标: GL_TEXTURE_* (1D, 2D, 3D, RECTANGLE, 1D_ARRAY, 2D_ARRAY, CUBE_MAP, CUBE_MAP_ARRAY, BUFFER, 2D_MULTISAMPLE, 2D_MULTISAMPLE_ARRAY).
+
+<ul>
+<li>
+RECTANGLE 和 2D纹理的一个特殊形式, 仅在着色器中如何读取以及支持的参数有微妙区别.
+
+<li>
+1D_ARRAY, 2D_ARRAY表示一组纹理图像, 聚合为单个对象.
+
+<li>
+Buffer纹理, 类似于1D纹理的特殊形式. 之外不同于1D纹理的是它们的最大大小比1D纹理大多了. 以及缺少1D纹理的一些功能, 如过滤和mipmap
+
+<li>
+2D_MULTISAMPLE和2D_MULTISAMPLE_ARRAY用于多重采样反锯齿
+
+</ul>
+</ul>
+<h2 id="toc_5.3">着色器中读取纹理 </h2>
+<ul>
+<li>
+sampler 变量. texelFetch 内置函数读取纹理
+<pre class="brush: glsl">
+#version 430 core
+uniform sampler2D s;
+out vec4 color;
+void main(void)
+{
+	color = texelFetch(s, ivec2(gl_FragCoord.xy), 0);
+}
+</pre>
+
+<li>
+gl_FragCoord 为窗口坐标中处理后片段的浮点坐标.
+
+<li>
+texelFetch 接收一个整数值坐标, 范围为(0,0)到纹理的高宽. 第三个参数为我 mipmap level.
+
+</ul>
+<h3 id="toc_5.3.1">Sampler 类型</h3>
+<ul>
+<li>
+sampler1D, 2D, 3D, 2DRect, 1DArray, 2DArray, Cube, CubeArray, Buffer, 2DMS, 2DMSArray
+
+<li>
+samper* 数据类型表示浮点数据, 也可存储有符号和无符号整数类型. 有isampler*, usampler* 类型.
+
+<li>
+texelFetch 有许多变种, 如
+<pre class="brush: glsl">
+vec4 texelFetch(sampler1D s, int P, int lod);
+vec4 texelFetch(sampler2D s, ivec2 P, int lod);
+ivec4 texelFetch(isampler2D s, ivec2 P, int lod);
+uvec4 texelFetch(usampler3D s, ivec3 P, int lod);
+</pre>
+
+<li>
+如果读取图像数据少于四个成员, 则绿色和蓝色通道默认为0, alpha 通道默认为1.
+
+</ul>
+<h2 id="toc_5.4">从文件中加载纹理.</h2>
+<ul>
+<li>
+OpenGL支持的格式: KTX 格式(Khronos TeXture format). 头文件如下:
+<pre class="brush: c++">
+struct header
+{
+	unsigned char identifier[12];
+	unsigned int endianness;
+	unsigned int gltype;
+	unsigned int gltypesize;
+	unsigned int glformat;
+	unsigned int glinternalformat;
+	unsigned int glbaseinternalformat;
+	unsigned int pixelwidth;
+	unsigned int pixelheight;
+	unsigned int pixeldepth;
+	unsigned int arrayelements;
+	unsigned int faces;
+	unsigned int miplevels;
+	unsigned int keypairbytes;
+};
+</pre>
+
+<ul>
+<li>
+identifier 标志
+
+<li>
+endianness, 小头还是大头
+
+<li>
+keypairbytes 用于允许应用存储额外的信息
+
+</ul>
+<li>
+自带的ktx加载器
+<pre class="brush: c++">
+// Generate a name for the texture
+glGenTextures(1, &amp;texture);
+// Load texture from file
+sb6::ktx::file::load("media/textures/icemoon.ktx", texture);
+</pre>
+
+<li>
+删除纹理: glDeleteTextures()
+
+</ul>
+
+<h2 id="toc_5.5">纹理坐标</h2>
+<ul>
+<li>
+简单顶点着色器接受单个纹理坐标并传递至片段着色器.
+<pre class="brush: glsl">
+#version 430 core
+uniform mat4 mv_matrix;
+uniform mat4 proj_matrix;
+layout (location = 0) in vec4 position;
+layout (location = 4) in vec2 tc;
+out VS_OUT
+{
+	vec2 tc;
+} vs_out;
+void main(void)
+{
+	// Calculate the position of each vertex
+	vec4 pos_vs = mv_matrix * position;
+	// Pass the texture coordinate through unmodified
+	vs_out.tc = tc;
+	gl_Position = proj_matrix * pos_vs;
+}
+
+
+#version 430 core
+layout (binding = 0) uniform sampler2D tex_object;
+// Input from vertex shader
+in VS_OUT
+{
+	vec2 tc;
+} fs_in;
+// Output to framebuffer
+out vec4 color;
+void main(void)
+{
+	// Simply read from the texture at the (scaled) coordinates, and
+	// assign the result to the shader’s output.
+	color = texture(tex_object, fs_in.tc * vec2(3.0, 1.0));
+}
+</pre>
+
+</ul>
+
+<h2 id="toc_5.6">Controlling How Texture Data Is Read</h2>
+<ul>
+<li>
+控制 sampler 的 wrapping 和 filter mode 的参数存储于 sampler object 中.
+
+<li>
+为了创建一个或多个 sampler objects.
+<pre class="brush: c++">
+void glGenSamplers(GLsizei n, GLuint * samplers);
+</pre>
+
+<li>
+两个设置sampler object参数的函数
+<pre class="brush: c++">
+void glSamplerParameteri(GLuint sampler, GLenum pname, GLint param);
+void glSamplerParameterf(GLuint sampler, GLenum pname, GLfloat param);
+</pre>
+
+<li>
+将一个 sampler object 绑定至一个纹理单元
+<pre class="brush: c++">
+void glBindSampler(GLuint unit, GLuint sampler);
+</pre>
+
+<li>
+分离sampler参数和纹理数据有三个好处:
+
+<ul>
+<li>
+允许你对许多纹理使用相同的采样参数
+
+<li>
+允许你改变纹理单元所绑定纹理, 而不需要更新采样参数
+
+<li>
+允许你同时使用多个sampler参数sets从相同的纹理读取.
+
+</ul>
+<li>
+当纹理单元没有绑定一个samper object, 则其有一个内置的sampler object. 要访问该object, 首先要绑定至目标, 而后调用函数
+<pre class="brush: c++">
+void glTexParameterf(GLenum target, GLenum pname, GLfloat param);
+// 或
+void glTexParameteri(GLenum target, GLenum pname, GLint param);
+</pre>
+
+</ul>
+<h2 id="toc_5.7">使用多重纹理</h2>
+<ul>
+<li>
+使用参数 GL_MAX_COMBINED_TEXTURE_IMAGE_UNITS  可以查询着色器同时可以访问纹理的最大数量.
+
+<li>
+为了将一个纹理绑定至具体的纹理单元, 你首先需要改变活跃的纹理单元选择器, 函数为 glActiveTexture(), 参数为纹理单元标识符, 标识符为 GL_TEXTURE0 加上想要选择的纹理单元索引.
+<pre class="brush: c++">
+glActiveTexture(GL_TEXTURE0 + 5);
+</pre>
+
+<ul>
+<li>
+默认有 GL_TEXTURE1 到 GL_TEXTURE31
+
+</ul>
+<li>
+两种方式关联 sampler uniforms 和 units
+
+<ul>
+<li>
+glUniformi()
+
+<li>
+在着色器编译时期使用 binding 布局前缀初始化 sampler uniform 的值
+<pre class="brush: glsl">
+layout (binding = 0) uniform sampler2D foo;
+layout (binding = 1) uniform sampler2D bar;
+layout (binding = 2) uniform sampler2D baz;
+</pre>
+
+<li>
+分别关联至纹理单元0, 1, 2
+
+<li>
+之后还可以使用 glUniform1() 修改其值.
+
+</ul>
+</ul>
+<h2 id="toc_5.8">纹理过滤</h2>
+<ul>
+<li>
+texelFetch() 在具体的整数纹理坐标得到单个像素
+
+<li>
+texture() 获取纹素
+
+<li>
+拉伸纹理 magnification, 收缩纹理 minification, GL_TEXTURE_MAG_FILTER 和 GL_TEXTURE_MIN_FILTER. 有 GL_NEAREST, GL_LINEAR.
+
+<li>
+设置
+<pre class="brush: c++">
+glSamplerParameteri(sampler, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+glSamplerParameteri(sampler, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+glSamplerParameteri(sampler, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+glSamplerParameteri(sampler, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+</pre>
+
+</ul>
+<h2 id="toc_5.9">MipMap</h2>
+<ul>
+<li>
+图像要求1/3更多的内存
+
+<li>
+当使用 glTexSubImage2D() 加载 Mipmap levels 时, 设置具体的level参数. 第一层是0, 而后1, 2. 当使用 glTexStorage2D() 分配纹理时, 可以设置 level 的数量, 可以限制 mipmap levels 的数量 GL_TEXTURE_BASE_LEVEL 和 GL_TEXTURE_MAX_LEVEL 
+<pre class="brush: c++">
+glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_BASE_LEVEL, 0);
+glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 4);
+</pre>
+
+</ul>
+<h2 id="toc_5.10">Mipmap Filterring</h2>
+<ul>
+<li>
+GL_NEAREST_MIPMAP_NEAREST, GL_NEAREST_MIPMAP_LINEAR, GL_LINEAR_MIPMAP_NEAREST, GL_LINEAR_MIPMAP_LINEAR, 前面的选择该mipmap上纹素的方式, 后者则是mipmap level的选择方式. 即为 GL_&lt;FILTER&gt;<em>MIPMAP</em>&lt;SELECTOR&gt;
+
+<li>
+如果过滤为 GL_LILNEAR 或 GL_NEAREST, 则仅使用基本的纹理 level, 忽略加载的任意 mip levels. 常使用 GL_LINEAR_MIPMAP_NEAREST
+
+<li>
+只有 GL_TEXTURE_MIN_FILTER 才能使用 mipmap filter.
+
+</ul>
+<h2 id="toc_5.11">生成 mip 等级</h2>
+<ul>
+<li>
+void glGenerateMipmap(GLenum target)
+
+<li>
+为了更好的质量, 最好加载自己预先生成的mipmap.
+
+</ul>
+<h2 id="toc_5.12">Texture Wrap</h2>
+<ul>
+<li>
+你可以设置纹理坐标每个成分的wrap模式, 使用函数 glSamplerParameteri(), 参数有GL_TEXTURE_WRAP_S, GL_TEXTURE_WRAP_T, GL_TEXTURE_WRAP_R, 设置的值有 GL_REPEAT, GL_MIRRORED_REPEAT, GL_CLAMP_TO_EDGE, GL_CLAMP_TO_BORDER
+
+<li>
+glSamplerParameterfv() 和参数 GL_TEXTURE_BORDER_COLOR 可以设置边框颜色
+
+</ul>
+<h2 id="toc_5.13">Array Textures</h2>
+<ul>
+<li>
+在 array textures中, 你可加载一些1D, 2D, 或者立体映射图像至单个纹理对象中.
+
+<li>
+可创建1D, 2D, cube map array textures. 但不能创建 3D array textures. array of samper 必须为一致变量
+
+<li>
+在 array texture 的 layers 之间, 没有 filtering.
+
+</ul>
+<h2 id="toc_5.14">加载一个 2D array texture</h2>
+<ul>
+<li>
+创建一个新的纹理对象, 绑定至 GL_TEXTURE_2D_ARRAY 目标, glTexStorage3D() 分配存储, glTexSubImage3D() 加载图像. 
+<pre class="brush: c++">
+GLuint tex;
+glGenTextures(1, &amp;tex);
+glBindTexture(GL_TEXTURE_2D_ARRAY, tex);
+glTexStorage3D(GL_TEXTURE_2D_ARRAY,
+	8,
+	GL_RGBA8,
+	256,
+	256,
+	100);
+for (int i = 0; i &lt; 100; i++)
+{
+	glTexSubImage3D(GL_TEXTURE_2D_ARRAY,
+		0,
+		0, 0,
+		i,
+		256, 256,
+		1,
+		GL_RGBA,
+		GL_UNSIGNED_BYTE,
+		image_data[i]);
+}
+</pre>
+
+</ul>
+<h2 id="toc_5.15">访问 Texture Arrays</h2>
+<ul>
+<li>
+纹理坐标的第三个坐标则是 texture array 的整数索引
+
+</ul>
+<h2 id="toc_5.16">在着色器中写入纹理 </h2>
+<ul>
+<li>
+你可以使用 image 变量表示纹理中的单个图像
+
+<ul>
+<li>
+可用的 Image 类型: image1D, image2D, image3D, imageCube, imageCubeArray, imageRect, image1DArray, image2DArray, imageBuffer, image2DMS, image2DMSArray
+
+</ul>
+<li>
+image 变量首先声明为 uniform 变量.
+<pre class="brush: glsl">
+uniform image2D my_image;
+</pre>
+
+<li>
+imageLoad() 和 imageStore() 分别用于读写.
+<pre class="brush: glsl">
+vec4 imageLoad(readonly image2D image, ivec2 P);
+void imageStore(image2D image, ivec2 P, vec4 data);
+ivec4 imageLoad(readonly iimage2D image, ivec2 P);
+void imageStore(iimage2D image, ivec2 P, ivec4 data);
+uvec4 imageLoad(readonly uimage2D image, ivec2 P);
+void imageStore(uimage2D image, ivec2 P, uvec4 data);
+</pre>
+
+<li>
+绑定一个纹理用于加载和存储操作,  glBindImageTexture() 绑定至 image unit
+<pre class="brush: c++">
+void glBindImageTexture(GLuint unit,
+						GLuint texture,
+						GLint level,
+						GLboolean layered,
+						GLint layer,
+						GLenum access,
+						GLenum format);
+</pre>
+
+<li>
+例子
+<pre class="brush: glsl">
+#version 430 core
+// Uniform image variables:
+// Input image - note use of format qualifier because of loads
+layout (binding = 0, rgba32ui) readonly uniform uimage2D image_in;
+// Output image
+layout (binding = 1) uniform writeonly uimage2D image_out;
+void main(void)
+{
+	// Use fragment coordinate as image coordinate
+	ivec2 P = ivec2(gl_FragCoord.xy);
+	// Read from input image
+	uvec4 data = imageLoad(image_in, P);
+	// Write inverted data to output image
+	imageStore(image_out, P, ~data);
+}
+</pre>
+
+</ul>
+<h2 id="toc_5.17">Atomic Operations on Images</h2>
+<ul>
+<li>
+一个原子操作为不可分割的读取, 修改, 写入序列.
+
+<li>
+内置GLSL函数: 
+
+<ul>
+<li>
+imageAtomicAdd --- 在图像的P处读取, 而后将其添加至data上, 最后在图像P处写回其数据, 返回P处原先的值
+
+<li>
+imageAtomicAnd, imageAtomicOr, imageAtomicXor, imageAtomicMin, imageAtomicMax, imageAtomicExchange, imageAtomicCompSwap --- 同上, 只是操作不同
+<pre class="brush: glsl">
+uint imageAtomicAdd(uimage1D image, int P, uint data);
+uint imageAtomicAdd(uimage2D image, ivec2 P, uint data);
+uint imageAtomicAdd(uimage3D image, ivec3 P, uint data);
+</pre>
+
+</ul>
+<li>
+不能添加一个任意的数字给一个 atomic counter, 支持的 atomic counters 数量也不会太大
+
+<li>
+你写入的内存可能是一个 shader storage buffer 或者另一个 image 变量, 如果图像包含"filled count"变量, 并被预先初始化为0, 则第一次着色器 invocation 则会在列表扩充时收到0, 并在其上写入, 下一次invocation则接收上次添加的内容, 之后依次类推.
+
+<li>
+用于 atomics 的另一个应用是在内存中构造类似链接列表的数据结构. 为了构造链接链表, 你需要三块 storage, 第一个存储列表项, 第二个存储项计数, 第三个为"头指针", 其为列表上最后一项的索引. 再者, 你可以使用着色器的 storage buffer 存储链接链表的项. 一个 atomic counter 则存储当前的项计数, 一个image则存储用于列表的头指针. 为了在列表上扩充一个项目, 你需要以下三个步骤:
+
+<ol>
+<li>
+atomic counter 增加, 返回之前的值, 使用 atomicCounterIncrement.
+
+<li>
+使用 imageAtomicExchange 交换更新的counter值和当前的head pointer.
+
+<li>
+在你的data store中存储你的数据. 用于每个元素的结构包含下一次的索引,
+
+</ol>
+<li>
+如果"head pointer"图像是一个2D图像, 大小为framebuffer的大小. 可用这个方法创建framebuffer的每像素列表.
+<pre class="brush: glsl">
+#version 430 core
+// Atomic counter for filled size
+layout (binding = 0, offset = 0) uniform atomic_uint fill_counter;
+// 2D image to store head pointers
+layout (binding = 0) uniform uimage2D head_pointer;
+// Shader storage buffer containing appended fragments
+struct list_item
+{
+	vec4 color;
+	float depth;
+	int facing;
+	uint next;
+};
+layout (binding = 0, std430) buffer list_item_block
+{
+	list_item item[];
+};
+// Input from vertex shader
+in VS_OUT
+{
+	vec4 in;
+} fs_in;
+void main(void)
+{
+	ivec2 P = ivec2(gl_FragCoord.xy);
+	uint index = atomicCounterIncrement(fill_counter);
+	uint old_head = imageAtomicExchange(head_pointer, P, index);
+	item[index].color = fs_in.color;
+	item[index].depth = gl_FragCoord.z;
+	item[index].facing = gl_FrontFacing ? 1 : 0;
+	item[index].next = old_head;
+}
+</pre>
+
+<li>
+gl_FrontFacing 内置变量, 即使back-face culling禁用, 其变量仍会求解出.
+
+<li>
+执行着色器之前, head pointer图像被清空为一个已知值, atomic counter 则重置为0
+
+<li>
+为了遍历这个列表, 我们加载第一个项的索引, 并从shader storage buffer 中读取.  对于每项, 我们简单跟随next index直到列表最后一项, 或到达了可遍历片段的最大数量.
+
+<li>
+列表 5.46, 遍历链接表, 维护一个存储在每个像素的片段深度的运行总数, 如果背面图元则深度减去一, 正面图元, 则深度加一.
+<pre class="brush: glsl">
+#version 430 core
+// 2D image to store head pointers
+layout (binding = 0, r32ui) coherent uniform uimage2D head_pointer;
+// Shader storage buffer containing appended fragments
+struct list_item
+{
+	vec4 color;
+	float depth;
+	int facing;
+	uint next;
+};
+layout (binding = 0, std430) buffer list_item_block
+{
+	list_item item[];
+};
+layout (location = 0) out vec4 color;
+const uint max_fragments = 10;
+void main(void)
+{
+	uint frag_count = 0;
+	float depth_accum = 0.0;
+	ivec2 P = ivec2(gl_FragCoord.xy);
+	uint index = imageLoad(head_pointer, P).x;
+	while (index != 0xFFFFFFFF &amp;&amp; frag_count &lt; max_fragments)
+	{
+		list_item this_item = item[index];
+		if (this_item.facing != 0)
+		{
+			depth_accum -= this_item.depth;
+		}
+		else
+		{
+			depth_accum += this_item.depth;
+		}
+		index = this_item.next;
+		frag_count++;
+	}
+	depth_accum *= 3000.0;
+	color = vec4(depth_accum, depth_accum, depth_accum, 1.0);
+}
+</pre>
+
+</ul>
+<h2 id="toc_5.18">对图像的同步访问</h2>
+<ul>
+<li>
+内存 barrier
+<pre class="brush: c++">
+glMemoryBarrier(GL_SHADER_IMAGE_ACCESS_BIT);
+</pre>
+
+<ul>
+<li>
+使用参数  GL_SHADER_IMAGE_ACCESS_BIT
+
+</ul>
+<li>
+memoryBarrierImage(): GLSL中的函数, 确保着色器中图像的操作在其返回之前完成.
+
+</ul>
+<h1 id="toc_6">纹理压缩</h1>
+<ul>
+<li>
+原生OpenGL纹理压缩格式: GL_COMPRESSED_* --- RED, RG, RGB, RGBA, SRGB, SRGB_ALPHA, RED_RGTC1, SIGNED_RED_RGTC1, RG_RGTC2, SIGNED_RG_RGTC2, RGBA_BPTC_UNORM, SRGB_ALPHA_BPTC_UNORM, RGB_BPTC_SIGNED_FLOAT, RGB_BPTC_UNSIGNED_FLOAT, RGB8_ETC2, SRGB8_ETC2, RGB8_PUNCHTHROUGHT_ALPHA1_ETC2, SRGB8_PUNCHTHROUGH_ALPHA1_ETC2, RGBA8_ETC2_EAC, SRGB8_ALPHA8_ETC2_EAC, R11_EAC, SIGNED_R11_EAC, RG11_EAC, SIGNED_RG11_EAC
+
+</ul>
+<h2 id="toc_6.1">使用压缩</h2>
+<ul>
+<li>
+你可以要求OpenGL在你加载纹理时要求其以某种格式压缩纹理, 强连建议自己压缩纹理, 并将压缩的纹理存储在文件中.
+
+<li>
+使用压缩纹理和未压缩纹理几乎没什么区别, GPU会处理器转换
+
+<li>
+glGetTexLevelParameteriv() 可查询纹理是否压缩. 使用纹理的GL_TEXTURE_INTERNAL_FORMAT参数可以显示测试是否为一种压缩的格式. 或者使用GL_TEXTURE_COMPRESSED查询是否为压缩纹理.
+
+<li>
+glGetCompressedTexImage() 得到压缩的图像.
+
+<li>
+ glGetTexParameteriv() 和参数 GL_TEXTURE_COMPRESSED_IMAGE_SIZE 得到压缩的纹理图像大小.
+<pre class="brush: c++">
+Glint imageSize = 0;
+glGetTexParameteriv(GL_TEXTURE_2D,
+	GL_TEXTURE_COMPRESSED_IMAGE_SIZE,
+	&amp;imageSize);
+void *data = malloc(imageSize);
+glGetCompressedTexImage(GL_TEXTURE_2D, 0, data);
+</pre>
+
+<li>
+如果要自己加载压缩纹理, glTexStorage2D() 或 glTexStorage3D(), 使用想要的压缩内部格式分配纹理的存储, 而后调用 glCompressedTexSubImage2D() 或 glCompressedTexSubImage3D() 上传数据. 注意确保 xoffset, yoffset, 以及其他参数遵守纹理格式的具体规则.
+
+</ul>
+<h2 id="toc_6.2">Shared Exponents</h2>
+<ul>
+<li>
+虽然shared exponent texture并不是真正意义上的压缩格式, 但允许你使用浮点纹理数据在storage space中保存, 代替存储R, G, B值每个的成分, shared exponent格式为整个纹素使用相同的exponent. 小数和exponent部分存储为整数, 当纹理采样时组合在一起. 对于 GL_RGB9_E5, 每颜色存储为9位, 所有channel的共同exponent存储为5位.
+
+</ul>
+
+<h1 id="toc_7">Texture Views</h1>
+<ul>
+<li>
+你创建和加载的纹理可能和着色器所期待的纹理格式不一致. 你可以使用 texture view 在一个纹理对象中重用纹理数组. 以下为两个主要使用情况:
+
+<ul>
+<li>
+一个 texture view 可以用于一个类型的纹理"假装"为其他类型的纹理. 例如你有一个2D纹理, 而后创建它的一个view, 将其看成只有一层的2D array texture.
+
+<li>
+一个 texture view 可以用于纹理中的数据格式为另一种数据格式. 例如内部格式 GL_RGBA32F 看成格式 GL_RGBA32UI.
+
+</ul>
+</ul>
+<h2 id="toc_7.1">创建 Texture Views</h2>
+<ul>
+<li>
+使用函数 glTextureView() 
+<pre class="brush: c++">
+void glTextureView(GLuint texture,
+					GLenum target,
+					GLuint origtexture,
+					GLenum internalformat,
+					GLuint minlevel,
+					GLuint numlevels,
+					GLuint minlayer,
+					GLuint numlayers);
+</pre>
+
+<ul>
+<li>
+texture 为纹理对象
+
+<li>
+target 为你想要创建的类型, 但其必须与原先纹理兼容.
+
+<li>
+origtexture 为原先纹理的名称
+
+<li>
+internalformat 为新纹理view的内部格式, 必须与原先纹理兼容.
+
+<li>
+最后四个参数允许你创建原先纹理数据子集的view.
+
+</ul>
+<li>
+对于大多数纹理目标而言, 你可以创建相同目标的纹理view. 除了 buffer texture 为一个buffer object 的views. --- 你可以连接相同的 buffer object 到其他的 buffer texture上以得到其数据的其他view.
+
+<li>
+表格5.13, P183显示了兼容性. 表格5.14 纹理视图格式的兼容性.
+
+<li>
+可以创建与原先纹理相同内部格式的view
+
+</ul>
+
+    </div>
+</body>
+</html>

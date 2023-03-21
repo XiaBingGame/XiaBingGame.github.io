@@ -1,0 +1,729 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../../../style.css" />
+    <title>C++Primer17</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<h1 id="toc_1">第17章 用于大型程序的工具 </h1>
+<ul>
+<li>
+异常的处理: 有问题检测部分抛出一个对象给处理代码
+<pre class="brush: c++">
+Sales_item
+operator+(const Sales_item&amp; lhs, const Sales_item&amp; rhs)
+{
+	if(!lhs.same_isbn(rhs))
+		throw runtime_error("Data must refer to same isbn");
+	Sales_item ret(lhs);
+	ret += rhs;
+	return ret;
+}
+
+Sales_item item1, item2, sum;
+while(cin &gt;&gt; item1 &gt;&gt; item2)
+{
+	try
+	{
+		sum = item1 + item2;
+	} catch(const runtime_error &amp;e) {
+		cerr &lt;&lt; e.what() &lt;&lt; " Try again.\n"
+			&lt;&lt; endl;
+	}
+}
+</pre>
+
+<li>
+异常可以是可以传给非引用形参的任意类型的对象, 这就意味着必须能够复制该类型的对象. 如果抛出了数组和函数对象, 这两者都会被转换为指针对象. 
+
+<li>
+处理异常的时候, 抛出异常的块中的局部存储不存在了; 
+
+<li>
+throw 表达式初始化一个异常对象(exception object), 初始化为被抛出的表达式的副本, 该异常对象存放在可以被任意catch访问的空间内, 处理了异常之后撤销该异常对象.
+
+<li>
+当抛出一个表达式的时候, 被抛出对象的静态编译时类型将决定异常对象的类型. 如果抛出的是一个指针解引用, 指针为一个指向派生类对象的基类类型指针, 则只需要该抛出对象的基类部分, 派生类部分丢弃. 抛出指针的时候, 注意在catch该异常的时候, 该指针所指向的对象是否还存在.
+
+<li>
+栈展开: 
+
+<ol>
+<li>
+抛出异常时, 暂停当前函数的执行
+
+<li>
+首先检查throw本身是否在try块中内部, 如果是, 检查与该try相关的catch子句, 看其是否与被抛出对象相匹配, 如匹配则处理异常, 
+
+<li>
+否则退出当前函数(释放当前函数的内存并撤销局部对象), 并继续在调用函数中查找, 
+
+<li>
+如对抛出异常的函数的调用是在try块中, 检查与该try块相关的 catch子句. 如找到匹配的catch, 处理异常, 
+
+<li>
+否则退出调用函数, 继续在调用该调用函数的函数中查找. 这个过程称之为栈展开(stack unwinding).
+
+<li>
+直至为异常找到一个 catch 子句, 找到能够处理异常的 catch 子句, 就进入该 catch 子句, 并在处理代码中继续执行. 当 catch 结束的时候, 在紧接在与该try块相关的最后一个catch子句之后的点继续执行.
+
+</ol>
+<li>
+在栈展开的过程中, 因异常退出函数时, 编译器会自动撤销异常发生之前所创建的所有对象, 如对象为类类型, 则自动调用该对象的析构函数, 而后释放局部内存. 如果在块中直接分配资源, 如用new语句动态分配内存, 则发生异常时, 栈展开期间不会释放该资源.
+
+<li>
+在栈展开期间, 一个对象的析构函数又抛出一个异常, 则会调用标准库 terminate 函数, 该 terminate 函数将调用 abort 函数, 强制从整个程序非正常退出. 所以析构函数应该从不抛出异常
+
+<li>
+构造函数部分构造了对象, 初始化足足或其他容器类型元素的时候发生了异常时, 都要保证适当的撤销已构造的元素
+
+<li>
+如果找不到匹配的 catch, 则程序调用库函数 terminate 函数.
+
+<li>
+catch子句(catch clause)中的异常说明符(exception specifier), 该异常说明符之后跟一个(可选)形参名的类型名. 说明符的类型决定了处理代码能够捕获的异常种类. 该类型必须为完整类型, 即内置类型和已经定义的程序自定义类型. 类型的前向声明不行(即只声明还未定义). catch 异常说明符可以省略形参, 如果不需要该形参的话.
+
+<li>
+第一个找到的可以处理该异常的catch将处理该异常, 因此最特殊的catch必须最先出现.
+
+<li>
+除了以下几种情况, 能够处理异常的catch说明符的类型必须与异常的类型完全匹配:
+
+<ul>
+<li>
+允许从非 const 到 const 的转换. 即throw一个非const对象, 而catch如接受该对象的const引用时, 两者可匹配.
+
+<li>
+允许从派生类型到基类类型的转换
+
+<li>
+将数组转换为指向数组类型的指针, 将函数转换为指向函数类型的适当指针. 
+
+</ul>
+<li>
+进入catch的时候, 用异常对象来初始化catch的形参. catch形参可以是引用类型, 如果是非引用类型, 则该形参为异常对象的副本. 如果是const类型, 则形参只是异常对象的另一个名字.
+
+<li>
+异常说明符的静态类型决定catch子句可以执行的动作.
+
+<li>
+通常, 如果catch子句处理因继承而相关的类型的异常, 它应该将自己的形参定义为引用.
+
+<li>
+如果只希望清除并退出的应用程序可以定义一个try块, 该 try 块包围 main 函数中带有如下 catch 代码:
+<pre class="brush: c++">
+catch(exception &amp;e)
+{
+	cerr &lt;&lt; "Exiting: " &lt;&lt; e.what() &lt;&lt; endl;
+	size_t status_indicator = 42;
+	return(status_indicator);
+}
+</pre>
+
+<li>
+带有因继承而相关的类型的多个catch子句, 应当从最下面派生类型开始到上面基类类型的顺序排序.
+
+<li>
+在 catch 块中或者从catch调用的函数中, 可以重新抛出(rethrow)将异常传递给函数调用链中更上层的函数. 格式为: throw; 它只能出现在catch或者从catch调用的函数中. 如果在catch之外的其他地方碰到空throw, 则会调用 terminate 函数. 其重新抛出的对象是原来的异常对象, 而不是catch形参, 除非 catch 使用引用形参改变了该异常对象, 才会传播catch处理中对异常的改变
+
+<li>
+重新抛出的时候, 如果catch形参是基类类型, 则重新抛出的对象未必是基类类型, 而是该异常对象的动态类型.
+
+<li>
+可以捕获所有异常的catch子句(catch-all)形式为(...), 该子句与任意类型的异常都匹配. 常与重新抛出表达式一起使用, catchwan完成可做的所有局部工作, 然后重新抛出异常. 如果 catch(...) 与其他 catch 子句结合使用, 它必须是最后一个.
+
+<li>
+catch(...)子句可以单独使用, 也可以用在几个catch子句中间
+<pre class="brush: c++">
+catch(...)
+{
+	// 处理代码
+}
+</pre>
+
+<li>
+为了处理来自构造函数初始化式的异常, 必须将构造函数式编写为函数测试块(function try block), 可以使用函数测试块将一组 catch 子句与函数联成一个整体. 关键字 try出现在成员初始化式列表之前, 并且测试块的复合语句包围了构造函数的函数体. catch子句既可以处理从成员初始化式列表中抛出的异常, 也可以处理从构造函数体中抛出的异常. 函数测试块是唯一可以能够处理构造函数初始化式抛出异常的方法.
+<pre class="brush: c++">
+template &lt;class T&gt; Handle&lt;T&gt;::Handle(T *p)
+try : ptr(p), use(new size_t(1))
+{
+	// ...
+}
+catch(const std::bad_alloc &amp;e)
+{
+	handle_out_of_memory(e);
+}
+</pre>
+
+<li>
+exception 派生的类: bad_cast, runtime_error, logic_error, bad_alloc
+
+<ul>
+<li>
+runtime_error: overflow_error, underflow_error, range_error
+
+<li>
+logic_error: domain_error, invalid_argument, out_of_range, length_error
+
+</ul>
+<li>
+exception 类定义的唯一操作是 what 的虚成员, 返回 const char* 对象, 这是一个虚函数, 可以动态绑定.
+
+<li>
+我们可以定义自己的异常派生类
+<pre class="brush: c++">
+class out_of_stock: public std::runtime_error { ... };
+class isbn_mismatch : public std::logic_error { ... };
+</pre>
+
+<li>
+异常安全的(exception safe) --- 即时发生异常, 程序也能正确操作. 在这种情况下, "安全"来自于保证"如果发生异常, 被分配的任何资源都适当地释放".
+
+<li>
+定义一个类来封装资源的分配和释放, 可以保证正确释放资源. 这一技术常称为 "资源分配即初始化", 简称 RAII.
+
+<li>
+用一个类来管理资源的分配, 而不是由其他的类分散管理资源. 这样就可以统一的分配和释放.
+<pre class="brush: c++">
+class Resource {
+public:
+	Resource(param p) : r(allocate(p)) {}
+	~Resource() { release(r); }
+private:
+	resource_type *r;
+	resource_type *allocate(param p);
+	void release(resouce_type*);
+};
+</pre>
+
+<li>
+可能存在异常的程序以及分配资源的程序应该使用类来管理那些资源.
+
+<li>
+标准库的auto_ptr类, 为动态分配的对象提供异常安全, 在 memory 头文件中定义. auto_ptr 只能管理从 new 返回的一个对象, 不能管理动态分配的数组, 不能将 auto_ptr存储在标准容器中.
+
+<li>
+如果 auto_ptr 对象是全局对象, 则在程序末尾删除其引用的对象.
+
+<li>
+auto_ptr 和内置指针对待复制和赋值有非常关键的重要区别. 当复制 auto_ptr 对象或者将它的值赋给其他 auto_ptr 对象的时候, 将基础对象的所有权从原来的 auto_ptr 对象转给副本. 原来的 auto_ptr 对象重置为未绑定状态.
+
+<li>
+因为 auto_ptr 的复制和赋值能改变右操作数, 因此, 赋值的左右操作数必须都是可修改的左值
+<pre class="brush: c++">
+auto_ptr&lt;string&gt; ap3(new string("Pterodactyl"));
+ap3 = ap2;
+</pre>
+
+<ul>
+<li>
+删除了 ap3 所指向的对象
+
+<li>
+将 ap3 置为指向 ap2 所指的对象
+
+<li>
+ap2 是未绑定的 auto_ptr 对象
+
+</ul>
+<li>
+auto_ptr 的默认构造函数创建未绑定的对象.
+
+<li>
+auto_ptr 的 get() 函数可以返回其内的基础指针, 用来判定其是否指向一个对象
+<pre class="brush: c++">
+if(p_auto.get())
+	*p_auto = 1024;
+</pre>
+
+<ul>
+<li>
+注意不准用 auto_ptr 的 get() 函数返回值来初始化其他的 auto_ptr 对象. 在任意时刻只有一个 auto_ptr 对象保存给定指针.
+
+</ul>
+<li>
+了解引用操作符(*)和箭头操作符(-&gt;)的重载版本.
+
+<ul>
+<li>
+auto_ptr&lt;T&gt; ap;			未绑定的 auto_ptr 对象
+
+<li>
+auto_ptr&lt;T&gt; ap(p);		ap拥有指针p指向的对象.
+
+<li>
+auto_ptr&lt;T&gt; ap1(ap2);		ap2将所有权转给ap1, ap2成为未绑定的 auto_ptr 对象
+
+<li>
+ap1 = ap2;				ap2所有权转给ap1, 删除ap1所指向的对象, ap2成为未绑定的对象
+
+<li>
+~ap						析构函数, 删除ap指向的对象
+
+<li>
+*ap						返回对ap所绑定对象的引用
+
+<li>
+ap-&gt;						返回ap所保存的指针
+
+<li>
+ap.reset(p);				如果ap和p的值不同, 删除ap所指向的对象, 并将ap绑定到p
+
+<li>
+ap.release()				返回ap所保存的指针, 并将ap设为未指定的
+
+<li>
+ap.get()					返回ap所保存的指针. 可用于确定是否指向一个对象, 干函数不能作为创建其他auto_ptr对象的实参.
+<pre class="brush: c++">
+void f()
+{
+	auto_ptr&lt;int&gt; ap(new int(42));
+	// ... 此处抛出异常, 则会正确地释放上面分配的内存
+}
+</pre>
+
+</ul>
+<li>
+不能将一个地址(或者其他指针) 赋值给 auto_ptr 对象, 只能用 reset() 函数来改变指针.
+<pre class="brush: c++">
+if(p_auto.get())
+	*p_auto = 1024;
+else
+	p_auto.reset(new int(1024));
+</pre>
+
+<li>
+为了避免 auto_ptr 的缺陷, 使用 auto_ptr 的时候坚持强加的下列限制:
+
+<ul>
+<li>
+不要使用 auto_ptr 对象保存指向静态分配对象的指针(个人认为new和malloc之外分配的对象为静态分配对象)
+
+<li>
+不要两个 auto_ptr 对象指向同一对象. 例如使用同一个指针初始化或者reset两个不同的 auto_ptr 对象. 或者使用一个 auto_ptr 对象的 get() 函数初始化或 reset 另一个auto_ptr对象.
+
+<li>
+不要使用 auto_ptr 对象保存指向动态分配数组的指针, 因为 auto_ptr 对象被删除的时候, 只能释放一个对象.
+
+<li>
+不要将 auto_ptr 对象存储在容器中. 由于容器要求元素复制(或者赋值)之后, 两个对象必须具有相同值.
+
+</ul>
+<li>
+异常说明(exception specification) 可了解函数是否抛出异常以及抛出哪种异常. 如果函数抛出异常, 被抛出的异常则是该说明中的一种. 或者列出的异常中派生的类型.
+
+<li>
+异常说明跟在函数形参表之后, throw 关键字之后跟着一个(可能为空的)由圆括号括住的异常类型列表. 空说明列表指出不抛出任何异常. 注意: 函数定义和函数的任意声明必须有相同的异常说明. 如果一个函数没有指定异常说明, 则表示该函数可以抛出任意类型的异常.
+<pre class="brush: c++">
+void recoup(int) throw(runtime_error);
+void no_problem() throw();
+</pre>
+
+<li>
+如果函数抛出了没有在异常说明中列出的异常, 则调用标准库函数 unexpected, 该函数默认调用 terminate 函数.
+
+<li>
+异常说明有用的一种重要情况是, 如果函数可以保证不会抛出任何异常.
+
+<li>
+累得成员函数和非成员函数一样, 声明的异常说明跟在函数形参表之后, 的const成员函数的异常说明放在 const 限定符之后
+
+<li>
+基类中虚函数的异常说明, 可以与派生类中对应虚函数的异常说明不同, 但是派生类虚函数的异常说明必须与对应基类虚函数的异常说明同样严格, 或者比后者更受限. 这样当使用指向基类类型的指针调用派生类虚函数的时候, 派生类的异常说明不会增加新的可抛出异常. 
+
+<li>
+异常说明可以是函数指针的一部分. 用另一个指针初始化带异常说明的函数指针, 两者的异常说明可以不同, 但前者的异常说明必须比后者更严格
+<pre class="brush: c++">
+void (*pf) (int) throw(runtime_error);
+
+void recoup(int) throw(runtime_error);
+void (*pf) (int) throw(runtime_error) = recoup;		// 可以
+void (*pf) (int) throw(runtime_error, logic_error) = recoup; 	// 可以
+void (*pf) (int) throw() = recoup;		// 错误
+void (*pf) (int) = recoup;		// 可以
+</pre>
+
+<li>
+命名空间以关键字 namespace 开始, 后接命名空间的名字.
+
+<li>
+命名空间可以在全局作用域或其他作用域内部定义, 但不能在函数或类内部定义. 命名作用域不能以分号结束
+
+<li>
+在命名空间中定义的名字可以被命名空间中的其他成员直接访问, 命名空间外部的代码必须指出名字定义在哪个命名空间中.
+
+<li>
+编写 using 声明来获得常使用的名字的直接访问, 例如 using cplusplus_primer;:Query; 这样之后的程序可以直接使用 Query.
+
+<li>
+命名空间可以是不连续的, 命名空间可以在几个部分中定义, 命名空间由它的分离定义部分的总和构成, 可以在不同的文件中, 不同的部分里定义命名空间的不同部分, 而后将这些分离的不同部分结合在一起, 累积成一个命名空间.
+
+<li>
+命名空间的定义
+<pre class="brush: c++">
+namespace namespace_name {
+// 声明
+}
+</pre>
+
+<li>
+可以使用分离的接口文件和实现文件构成命名空间, 命名空间类成员的定义,  函数声明与对象声明可以放在头文件中; 命名空间成员的定义可以放在单独的源文件中.
+
+<li>
+一个命名空间内声明的函数或类成员函数, 可以在命名空间外定义函数体, 但是需要加上命名空间作用域操作符. 但只能在全局作用域中定义, 不能在不相关的命名空间中定义.
+
+<li>
+定义多个不相关类型的命名空间应该使用分离的文件. 表示该命名空间定义的每个类型.
+
+<li>
+可以在命名空间的外部定义命名空间爱你成员
+<pre class="brush: c++">
+cplusplus_primer::Sales_item cplusplus_primer::operator+(const Sales_item&amp; lhs, const Sales_item&amp; rhs)
+{
+	Sales_item ret(lhs);
+	// ...
+}
+</pre>
+
+<li>
+不能在不相关的命名空间中定义成员
+
+<li>
+::member_name 可以引用全局命名空间的成员, 可以使用嵌套命名空间.
+
+<li>
+外围命名空间中声明的名字被嵌套命名空间中同一名字的声明所屏蔽. 外围命名空间之外的代码只能通过限定引用嵌套命名空间中的名字.
+
+<li>
+嵌套命名空间中成员的名字由外围命名空间的名字和嵌套命名空间的名字构成
+<pre class="brush: c++">
+cplusplus_primer::QueryLib::Query
+</pre>
+
+<li>
+未命名的名字空间(unnamed namespace)在定义的时候没有给定名字. 以关键词 namespace 开头, 后跟花括号定界的声明块. 
+
+<ul>
+<li>
+未命名的命名空间可以在给定文件中不连续, 但不能跨文件. 每个文件都有其自己的未命名的命名空间. 未命名空间用于局部于文件的变量和对象. 
+
+<li>
+在未命名空间中定义的变量在程序开始时创建, 一直到程序结束时都存在. 
+
+<li>
+不能使用作用域操作符引用未命名的命名空间的成员. 未命名的命名空间中定义的名字只在包含该命名空间的文件中可见. 
+
+<li>
+如果在最外层的作用域中定义未命名的命名空间, 那么未命名的命名空间中的名字必须与全局作用域中定义的名字不同. 
+
+<li>
+如果在其他命名空间内嵌套定义未命名空间, 其内的成员按照常规方法是用外围命名空间的名字访问.
+<pre class="brush: c++">
+int i;
+namespace 
+{
+	int i;
+}
+i = 10; 	// 发生错误, 不知道引用哪个i
+
+namespace local
+{
+	namespace 
+	{
+		int i;
+	}
+}
+
+local::i = 42;	// 访问
+</pre>
+
+</ul>
+<li>
+如果头文件定义了未命名的命名空间, 则每个包含该头文件的文件中, 该命名空间中的名字将定义不同的局部实体.
+
+<li>
+在C语言中, 声明为 static 的局部实体在声明它的文件之外不可见, 其局部于文件. C++ 不赞成文件静态声明, 应该避免文件静态声明而使用未命名的命名空间代替.
+
+<li>
+using 声明, 除了在函数或者其他作用域内部, 头文件不应该包含 using 指示或者 using 声明. 
+
+<li>
+一个 using 声明一次只引入一个命名空间成员, 它使得无论程序中使用哪些名字, 都能够非常明确. 一个using 声明的作用域: 从声明点开始, 直到包含该 using 声明的作用域的末尾, 名字都是可见的. 外部作用域定义的同名实体被屏蔽.
+
+<li>
+using 声明可以出现在全局作用域, 局部作用域或者命名空间作用域中. 类作用域中的 using 声明局限于被定义类的基类中定义的名字.
+<pre class="brush: c++">
+using std::map;
+using std::pair;
+using std::size_t;
+using std::string;
+using std::vector;
+
+map&lt;string, vector&lt; pair&lt;size_t, size_t&gt; &gt; &gt; word_map;
+</pre>
+
+<li>
+命名空间别名 (namespace alias), namespace 开头, 接(较短的)命名空间别名名字, 后跟=, 再接原来的命名空间名字和分号. 如果原来的命名空间名字是未定义的, 就会出错. 一个命名空间, 可以有许多别名.
+<pre class="brush: c++">
+namespace primer = cplusplus_primer;
+cplusplus_primer::QueryLib::Query tq;
+namespace Qlib = cplusplus_primer::QueryLib;
+Qlib::Query tq;
+</pre>
+
+<li>
+using 指示: 关键字 using 开头, 后接关键字 namespace, 再接命名空间名字. 该指示使得命名空间内的所有名字都可见, 没有了限制. 短格式名字可从using指示点开始使用, 直到出现 using 指示的作用域的末尾. 该using指示在使用多个库的时候, 会重新引入名字冲突的所有问题. using 指示可以将该命名空间内的所有成员提升到包含using指示的最近作用域. 一般用于命名空间本身的实现文件中. 下面是产生二义性的例子
+<pre class="brush: c++">
+namespace blip
+{
+	int bj;
+}
+int bj = 0;
+void manip()
+{
+	using namespace blip;
+	++bj;	// 此时不知道是用 ::bj, 还是 blip::bj;
+}
+</pre>
+
+<li>
+尽量使用 using 声明, 而不是 using 指示. 这样做减少注入到命名空间中的名字数目, 由 using 声明引起的二义性错误在声明点而不是使用点检测, 因此更容易发现和修正.
+
+<li>
+当在类作用域中使用名字的时候, 首先在成员本身中查找, 然后在类中查找, 包括任意基类, 只有在查找完类之后, 才检查外围作用域.
+
+<li>
+接受类类型形参(或类类型指针及引用形参)的函数(包括重载操作符), 以及与类本身定义在同一命名空间中的函数(包括重载函数), 在用类类型对象(或类类型的引用及指针)作为实参的时候是可见的.
+<pre class="brush: c++">
+std::string s;
+getline(std::cin, s);
+</pre>
+
+<ul>
+<li>
+上面的代码在三个地方查找 getline() 函数, (1) 当前作用域 (2) 包含调用的作用域 (3) 定义 cin 的类型和 string 类型的命名空间中查找匹配的函数.
+
+</ul>
+<li>
+一个友元类和友元函数声明于类中, 则其声明的友元与类具有相同的名字空间. 如果不存在可见的声明, 则友元声明具有将友元函数或类的声明放入外围作用域的效果.
+<pre class="brush: c++">
+namespace A{
+	class C{
+		friend void f(const C&amp;);  // f() 为 A::f();
+	};
+}
+
+void f2()
+{
+	A::C obj;
+	f(obj);		// 调用的是 A::f()
+}
+</pre>
+
+<li>
+using 声明增加了重载函数的候选函数集合
+
+<ul>
+<li>
+using 声明和 using 指示可以将函数加到候选集合. 
+
+<li>
+当函数的形参有一个或多个类类型时, 还要查找每个形参类型的命名空间是否有同名函数, 见下面的例子.
+<pre class="brush: c++">
+namespace NS {
+	class Item_base { /* ... */ };
+	void display(const Item_base) {}
+}
+class Bulk_item : public NS::Item_base {};
+
+int main()
+{
+	Bulk_item book1;
+	display(book1);		// Bulk_item 基类 Item_base 的名字空间 NS下的display也作为重载函数的候选集合
+	return 0;
+}
+</pre>
+
+</ul>
+<li>
+using 声明只能声明一个名字, 没有办法编写 using 声明来引用特定函数声明
+<pre class="brush: c++">
+using NS::print(int); // 出错, 不能指定参数列表
+using NS::print; // 可以.
+</pre>
+
+<li>
+如果 using 声明在已经有同名且带相同形参表的函数的作用域中引入函数, 则 using 声明出错, 否则, using 定义给定名字的另一重载实例.
+
+<li>
+一个模板的特化版本需要与该模板的通用版本定义与同一个名字空间, 否则两者的模板不同名
+
+<li>
+两种方式定义特化:
+
+<ul>
+<li>
+重新打开命名空间并加入特化的定义, 因为命名空间定义可以是不连续的
+
+<li>
+用于命名空间定义外部定义命名空间成员相同的方式来定义特化: 使用由命名空间名字限定的模板名定义特化.
+
+</ul>
+<li>
+多重继承: 从多于一个直接基类派生类. 由逗号分隔基类列表.
+<pre class="brush: c++">
+class Bear : public ZooAnimal {
+};
+class Panda : public Bear, public Endangered {
+};
+</pre>
+
+<li>
+派生类的对象包含每个基类的基类子对象
+
+<li>
+派生类的构造函数可以在构造函数初始化式中给零个或多个基类传递值
+<pre class="brush: c++">
+Panda::Panda(std::string name, bool onExhibit)
+	: Bear(name, onExhibit, "Panda"),
+		Endangered(Endangered::critical) { }
+</pre>
+
+<li>
+基类构造函数按照基类构造函数在类派生列表中的出现次序调用, 例如上例:
+
+<ul>
+<li>
+ZooAnimal, Bear, Endangered, Panda 的次序.
+
+</ul>
+<li>
+析构函数按照构造函数运行的逆序调用析构函数.
+
+<li>
+对于多重继承, 派生类的指针或引用可以转换为其任意基类的指针和引用.
+
+<li>
+在多重继承下, 遇到二义性转换的可能性更大.
+<pre class="brush: c++">
+void print(const Bear&amp;);
+void print(const Endangered&amp;);
+
+Panda ying_yang("ying_yang");
+print(ying_yang); 	// 错误, 产生了二义性
+</pre>
+
+<li>
+多重继承的派生类的逐个成员初始化, 赋值和析构, 表现得与单继承下的一样, 使用基类自己的复制构造函数, 赋值操作符或析构函数隐式构造, 赋值或撤销每个基类.
+
+<li>
+像单继承的情况一样, 如果具有多个基类的类定义了自己的析构函数, 该析构函数只负责清除派生类. 如果派生类定义了自己的复制构造函数或赋值操作符, 则类负责复制(赋值)所有的基类子部分. 只有派生类使用复制构造函数或赋值操作的合成版本, 才自动复制和赋值基类部分.
+
+<li>
+当一个类有多个基类的时候, 通过所有直接基类同时进行名字查找. 多重基类的派生类有可能从两个或多个基类继承同名成员, 对该成员不加限制的使用是二义性的.
+
+<li>
+多个基类可能导致二义性, 即便两个继承的函数有不同的形参表, 或者函数在一个类中是私有的, 而在另一个类是公有的或受保护的, 都是有二义性的. 
+
+<li>
+避免潜在二义性最好的办法是, 在解决二义性的派生类中定义函数的一个版本.
+
+<li>
+虚继承: 指出它希望共享其虚基类的状态, 在虚继承下, 对给定虚基类, 无论该类在派生层次中作为虚基类出现多少次, 只继承一个共享的基类子对象. 共享的基类子对象称为虚基类(virutal base class)
+
+<li>
+通过在派生列表中包含关键字 virutal 设置虚基类
+<pre class="brush: c++">
+class istream :: public virutal ios { ... };
+class ostream :: virutal public ios { ... };
+
+class iostream : public istream, public ostream { ... };
+</pre>
+
+<li>
+通常, 使用虚继承的类层次是一次性由一个人或一个项目设计组设计的, 独立开发的类很少需要基类中的一个是虚基类, 而且新基类的开发者不能改变已经存在的层次.
+
+<li>
+虚继承 virutal 说明符陈述了在后代派生类中共享指定基类的单个实例的愿望.
+
+<li>
+虚继承支持到基类的常规转换
+
+<li>
+使用虚继承的多重继承层次比没有徐基层的引起更少的二义性问题. 可以无二义性地直接访问共享虚基类中的成员. 假定通过多个派生路径继承名为X的成员, 则有三种可能性
+
+<ol>
+<li>
+每个路径中 X表示同一虚基类成员, 则为该成员的单个实例
+
+<li>
+某个路径中 X 是虚基类的成员, 而在另一路径中 X 是后代派生类的成员, 则特定派生类的实例的优先级高于共享虚基类实例.
+
+<li>
+每个继承路径X表示后代派生类的不同成员, 则产生二义性.
+
+</ol>
+<li>
+这种二义性最好用在派生类提供覆盖实例的类来解决.
+
+<li>
+由最低层派生类的构造函数初始化虚基类. 假设 Bear 和 Raccoon 从 ZooAnimal 虚继承, Panda 从 Bear, Raccoon, Endangered 继承而来.
+<pre class="brush: c++">
+Panda::Panda(std::string name, bool onExihibit)
+	: ZooAnimal(name, onExhibit, "Panda"),
+	  Bear(name, onExhibit),
+	  Raccoon(name, onExihibit),
+	  Endangered(Endangered::critical),
+	  sleeping_flag(false) {}
+
+Bear winnie("pooh");
+Raccoon meeko("meeko");
+Panda yolo("yolo");
+</pre>
+
+<ul>
+<li>
+创建 Panda 对象的时候
+
+<ol>
+<li>
+使用构造函数初始化列表中制定的初始化式构造 ZooAnimal 部分
+
+<li>
+构造 Bear 部分, 忽略 Bear 用于 ZooAnimal 构造函数初始化列表的初始化式
+
+<li>
+构造 Raccoonn 部分, 忽略 ZooAnimal 初始化式
+
+<li>
+最后构造 Panda 部分.
+
+</ol>
+</ul>
+<li>
+无论虚基类出现在继承层次中任何地方, 总是在构造非虚基类之前构造虚基类.
+
+<ul>
+<li>
+合成复制构造函数中的构造次序以及析构函数的次序也依照上面的规则. 
+
+</ul>
+</ul>
+
+    </div>
+</body>
+</html>

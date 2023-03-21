@@ -1,0 +1,361 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../../style.css" />
+    <title>programminginlua</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<h1 id="toc_1">Chpater 1 Getting start</h1>
+<h2 id="toc_1.1">1.1 Chunks</h2>
+<ul>
+<li>
+chunk看成一个语句序列.
+
+<li>
+分号和换行并不起任何作用, 仅可提高代码可读性.
+
+<li>
+chunk可有任意大小.
+
+<li>
+CMD中输入lua进入互动模式, C-Z或者输入os.exit()退出互动模式.
+
+<li>
+互动模式中, 每行输入看成一个完整的chunk, 如果一行形成不了一个完整chunk, 则会在下一行开头"&gt;&gt;"继续输入.
+
+<li>
+为了执行一个chunk序列, 可以将这些chunk作为参数以及使用-l选项传递给lua解释器.
+<pre lua>
+--连续执行文件a和b
+lua -la -lb
+</pre>
+
+<li>
+使用-i选项, 在运行给定的chunk之后开始一个interactive session. 对于调试和手动测试很有用.
+<pre lua>
+lua -i -la -lb
+</pre>
+
+<li>
+使用 dofile 函数链接chunks, 该函数对于调试很有益, 可以同时打开文本编辑器和CMD进行调试.
+
+</ul>
+<h2 id="toc_1.2">1.2 Global Variables</h2>
+<ul>
+<li>
+访问一个未初始化的变量, 其返回nil值.
+
+<li>
+如果想让一个变量有一个短的生命期, 可使用关键字local. 或者给全局变量赋值nil.
+
+</ul>
+<h2 id="toc_1.3">1.3 Some Lexical Conventions</h2>
+<ul>
+<li>
+标识符不要数字开头, 避免下划线开头且之后跟随数个大写字母
+
+<li>
+区域依赖性(locale dependent), 可使用其他语言的文字作为标识符.
+
+<li>
+保留标识符: and, break, do, else, elseif, end, false, for, function, if, in, local, nil, not, or, repeat, return, then, true, until, while
+
+<li>
+Lua语言是大小写敏感的
+
+<li>
+单行注释: --开头. 多行注释: --[[ 开头
+
+<ul>
+<li>
+多行注释: --]] 结尾.
+
+</ul>
+</ul>
+<h2 id="toc_1.4">1.4 The Stand-Alone Interpreter</h2>
+<ul>
+<li>
+解释器加载一个文件, 如果第一行开头带有数字记号('#'), 则忽略之. 这样可以让其作为Unix系统中的脚本解释器.
+
+<li>
+格式
+<pre>
+lua [options] [script [args]]
+</pre>
+
+<li>
+-e 选项可以让我们将代码直接输入到命令行中.
+<pre>
+lua -e "print(math.sin(12))"
+</pre>
+
+<li>
+-l 加载文件, -i 进入互动模式
+
+<li>
+无论何时定义全局变量 _PROMPT, 互动的时候会使用该值
+<pre>
+prompt&gt; lua -i -e "_PROMPT=' lua&gt; '"
+</pre>
+
+<li>
+在运行参数之前, 查找环境变量 LUA_INIT, 如果其为"@filename", 则预先加载该文件, 如果不带"@"开头, 则运行该部分代码.
+
+<li>
+script 可以使得在全局变量arg中返回参数
+<pre>
+lua -e "sin=math.sin" script a b
+</pre>
+
+<ul>
+<li>
+arg[-3] = "lua"
+
+<li>
+arg[-2] = "-e"
+
+<li>
+arg[-1] = "sin=math.sin"
+
+<li>
+arg[0] = "script"
+
+<li>
+arg[1] = "a"
+
+<li>
+arg[2] = "b"
+
+</ul>
+</ul>
+
+<h1 id="toc_2">Chapter 2 Types and Values</h1>
+<ul>
+<li>
+lua是动态类型语言, 每个值带有自己的类型.
+
+<li>
+八个基本类型: nil, boolean, number, string, userdata, function, thread, table. type函数返回参数的类型信息.
+
+<li>
+变量不包含任何预定义的值, 其可含任何类型的值.
+
+</ul>
+<h2 id="toc_2.1">2.1 Nil</h2>
+<h2 id="toc_2.2">2.2 Booleans</h2>
+<ul>
+<li>
+true和false
+
+<li>
+只有false和nil被认为假, 其余为真, 包括0和空字符串都为真.
+
+</ul>
+<h2 id="toc_2.3">2.3 Numbers</h2>
+<ul>
+<li>
+使用双精度表示整数, 没有取舍错误.
+
+<li>
+数字常量可使用可选的小数部分, 可选的十进制指数
+
+</ul>
+<h2 id="toc_2.4">2.4 Strings</h2>
+<ul>
+<li>
+可在字符串中存储二进制数据, 字符串为不可改变的值
+
+<li>
+使用双引号或单引号界限字符串常量, 可以使用反斜号来代表其他字符.
+
+<li>
+可以使用\ddd表示一个字符
+
+<li>
+可以使用[\[..]]表示字符串
+
+<li>
+lua提供了数字和字符串的自动转换. 任何数字操作都将字符串试图转换为一个数字.
+
+<li>
+可以将数字转换为字符串. 例如使用 .. 字符串连接操作符. 可以使用函数 tonumber 显式地将一个字符串转换为数字. 可以调用函数 tostring 或者连接一个数字至一个空字符串来转换数字为字符串.
+
+</ul>
+<h2 id="toc_2.5">2.5 Tables</h2>
+<ul>
+<li>
+table还可表示一个package.
+
+<li>
+通过构造函数表达创建table. 最简单的形式为{};
+
+<li>
+table 永远是匿名的. 即在table变量名和table之间没有固定的联系.
+
+<li>
+支持使用field name作为做引. 例如 a.x 等同于 a["x"]
+<pre>
+    -- read 10 lines storing them in a table
+    a = {}
+    for i=1,10 do
+      a[i] = io.read()
+    end
+
+    -- print the lines
+    for i,line in ipairs(a) do
+      print(line)
+    end
+</pre>
+
+<li>
+遍历数组时, 可以将第一个未初始化的数值元素(即nil值)作为结束.
+
+<li>
+通常数组索引从1开始, 而不是从0开始.
+
+</ul>
+<h2 id="toc_2.6">2.6 Functions</h2>
+<ul>
+<li>
+函数在Lua中是first-class值, 可存储为变量, 作为参数, 作为返回值.
+
+<li>
+Lua可以调用用Lua或者C语言编写的函数.
+
+</ul>
+<h2 id="toc_2.7">2.7 Userdata and Threads</h2>
+<ul>
+<li>
+userdata允许任意的C数据存储在Lua变量中. 其在Lua中没有预定义的操作, 除了分配和相等测试. 
+
+</ul>
+
+<h1 id="toc_3">Chapter 3 Expressions</h1>
+<ul>
+<li>
+表达式包括数字常量, 字符串, 变量, 一元和二元操作, 函数调用, 还有非常规的函数定义和表格构造器.
+
+</ul>
+<h2 id="toc_3.1">3.1 Arithmetic Operators</h2>
+<ul>
+<li>
+加减乘除, 负号, 指数.
+
+</ul>
+<h2 id="toc_3.2">3.2 Relation Operators</h2>
+<ul>
+<li>
+&lt;   &gt;   &lt;=  &gt;=  ==  ~=, 返回 true 或者 false
+
+<li>
+对于表格, userdata, 函数而言, 两个值只有相同的对象才相等.
+
+<li>
+只有数字和字符串才能比较大小. 否则只能比较两者是否相等.
+
+</ul>
+<h2 id="toc_3.3">3.3 Logical Operators</h2>
+<ul>
+<li>
+逻辑操作符有 and, or, not. 只有false和nil为假. 当第一个参数为false时, and操作符返回第一个参数, 当第一个参数不为假时, or操作符返回第一个参数.
+
+<li>
+一个技巧 x = x or v. 等同于 if not x then x = v end
+
+<li>
+(a and b) or c 等同于C表达式 a ? b : c
+
+<li>
+求出最大值: max = (x &gt; y) and x or y
+
+</ul>
+<h2 id="toc_3.4">3.4 Concatenatioin</h2>
+<ul>
+<li>
+操作符 "..", 如果操作数为number, 则转换为字符串.
+
+</ul>
+<h2 id="toc_3.5">3.5 Precedence</h2>
+<ul>
+<li>
+操作数优先级
+
+<li>
+所有二元操作符都是左连接的, 除了 ^ 和 .. 是右连接的.
+
+<li>
+尽量使用括弧.
+
+</ul>
+<h2 id="toc_3.6">3.6 Table Constructor</h2>
+<ul>
+<li>
+构造器为创建和初始化表格的表达式.
+
+<li>
+空构造器: {}. 初始化数组, 列表体第一个数组元素索引为1.
+<pre lua>
+    days = {"Sunday", "Monday", "Tuesday", "Wednesday",
+            "Thursday", "Friday", "Saturday"}
+</pre>
+
+<li>
+构造器不仅使用常量表达式, 还使用任意类型的表达式作为元素值.
+
+<li>
+可以将表格当成记录使用.
+
+<li>
+我们可以在一个构造器中混合记录体和列标题初始化.
+<pre lua>
+    polyline = {color="blue", thickness=2, npoints=4,
+                 {x=0,   y=0},
+                 {x=-10, y=0},
+                 {x=-10, y=1},
+                 {x=0,   y=1}
+               }
+</pre>
+
+<li>
+你不能使用负值索引或者不正确标识符的字符串来初始化域(fields), 更正式通用的格式, 使用方括号表达式初始化索引.
+<pre lua>
+    opnames = {["+"] = "add", ["-"] = "sub",
+               ["*"] = "mul", ["/"] = "div"}
+    
+    i = 20; s = "-"
+    a = {[i+0] = s, [i+1] = s..s, [i+2] = s..s..s}
+    
+    print(opnames[s])    --&gt; sub
+    print(a[22])         --&gt; ---
+</pre>
+
+<li>
+{x=0, y=0} 等同于 {["x"]=0, ["y"]=0}
+
+<li>
+{"red", "green", "blue"} 等同于 {[1]="red", [2]="green", [3]="blue"}
+
+<li>
+可以在最后一个元素后添加逗号. 还可以使用分号代替逗号.
+
+</ul>
+
+<h1 id="toc_4">Chapter 4 Statements</h1>
+
+    </div>
+</body>
+</html>

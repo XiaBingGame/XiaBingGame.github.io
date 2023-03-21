@@ -1,0 +1,135 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../../style.css">
+<title>clipquation</title>
+<meta http-equiv="Content-Type" content="text/html; charset=cp936">
+</head>
+<body>
+
+<ul>
+<li>
+空间中的坐标乘以视图模型矩阵得到视觉坐标, 再乘以投影矩阵得到裁剪坐标. 现在我求出裁剪矩阵M, 其等于投影矩阵左乘模型视图矩阵
+<pre c++>
+    GLfloat   clip[16];
+	GLfloat   proj[16];
+    GLfloat   modl[16];
+
+	glGetFloatv( GL_PROJECTION_MATRIX, proj );
+	glGetFloatv( GL_MODELVIEW_MATRIX, modl );
+	// 而后 proj 左乘 modl 得到裁剪矩阵
+    clip[ 0] = modl[ 0] * proj[ 0] + modl[ 1] * proj[ 4] + modl[ 2] * proj[ 8] + modl[ 3] * proj[12];
+    clip[ 1] = modl[ 0] * proj[ 1] + modl[ 1] * proj[ 5] + modl[ 2] * proj[ 9] + modl[ 3] * proj[13];
+    clip[ 2] = modl[ 0] * proj[ 2] + modl[ 1] * proj[ 6] + modl[ 2] * proj[10] + modl[ 3] * proj[14];
+    clip[ 3] = modl[ 0] * proj[ 3] + modl[ 1] * proj[ 7] + modl[ 2] * proj[11] + modl[ 3] * proj[15];
+
+    clip[ 4] = modl[ 4] * proj[ 0] + modl[ 5] * proj[ 4] + modl[ 6] * proj[ 8] + modl[ 7] * proj[12];
+    clip[ 5] = modl[ 4] * proj[ 1] + modl[ 5] * proj[ 5] + modl[ 6] * proj[ 9] + modl[ 7] * proj[13];
+    clip[ 6] = modl[ 4] * proj[ 2] + modl[ 5] * proj[ 6] + modl[ 6] * proj[10] + modl[ 7] * proj[14];
+    clip[ 7] = modl[ 4] * proj[ 3] + modl[ 5] * proj[ 7] + modl[ 6] * proj[11] + modl[ 7] * proj[15];
+
+    clip[ 8] = modl[ 8] * proj[ 0] + modl[ 9] * proj[ 4] + modl[10] * proj[ 8] + modl[11] * proj[12];
+    clip[ 9] = modl[ 8] * proj[ 1] + modl[ 9] * proj[ 5] + modl[10] * proj[ 9] + modl[11] * proj[13];
+    clip[10] = modl[ 8] * proj[ 2] + modl[ 9] * proj[ 6] + modl[10] * proj[10] + modl[11] * proj[14];
+    clip[11] = modl[ 8] * proj[ 3] + modl[ 9] * proj[ 7] + modl[10] * proj[11] + modl[11] * proj[15];
+
+    clip[12] = modl[12] * proj[ 0] + modl[13] * proj[ 4] + modl[14] * proj[ 8] + modl[15] * proj[12];
+    clip[13] = modl[12] * proj[ 1] + modl[13] * proj[ 5] + modl[14] * proj[ 9] + modl[15] * proj[13];
+    clip[14] = modl[12] * proj[ 2] + modl[13] * proj[ 6] + modl[14] * proj[10] + modl[15] * proj[14];
+    clip[15] = modl[12] * proj[ 3] + modl[13] * proj[ 7] + modl[14] * proj[11] + modl[15] * proj[15];	
+</pre>
+
+<li>
+假设空间有点P(x, y, z, 1), 乘以裁剪矩阵M得到点(x', y', z', w'). 齐次化为P' (x'/w', y'/w', z'/w', 1).假设点P'位于平截头体的近截面处, 则z'/w'=1.0. 如果位于平截头体的左平面处, 则x'/w'=-1.0, 以此类推.
+
+<li>
+假设裁剪矩阵M为上面代码的clip数组所表示. 则x' = clip[0] * x + clip[4] * y + clip[8] * z + clip[12]; w' =  clip[3] * x + clip[7] * y + clip[11] * z + clip[15]; 
+
+<li>
+如果P'位于平截头体的右平面处, 则 x'/w' = 1.0, 即 x' - w' = 0.0. 所以得 (clip[0]-clip[3]) * x + (clip[4]-clip[7]) * y + (clip[8]-clip[11]) * z + (clip[12]-clip[15]) = 0; 其余平截头体的平面方程以此类推, 具体代码如下:
+<pre c++>
+	GLfloat m_Frustum[6][4];
+    //提取右面的平面方程系数
+    m_Frustum[0][0] = clip[ 3] - clip[ 0];
+    m_Frustum[0][1] = clip[ 7] - clip[ 4];
+    m_Frustum[0][2] = clip[11] - clip[ 8];
+    m_Frustum[0][3] = clip[15] - clip[12];
+    t = GLfloat(sqrt( m_Frustum[0][0] * m_Frustum[0][0] + m_Frustum[0][1] * m_Frustum[0][1] + m_Frustum[0][2] * m_Frustum[0][2] ));
+    m_Frustum[0][0] /= t;
+    m_Frustum[0][1] /= t;
+    m_Frustum[0][2] /= t;
+    m_Frustum[0][3] /= t;
+
+    //提取左面的平面方程系数
+    m_Frustum[1][0] = clip[ 3] + clip[ 0];
+    m_Frustum[1][1] = clip[ 7] + clip[ 4];
+    m_Frustum[1][2] = clip[11] + clip[ 8];
+    m_Frustum[1][3] = clip[15] + clip[12];
+    t = GLfloat(sqrt( m_Frustum[1][0] * m_Frustum[1][0] + m_Frustum[1][1] * m_Frustum[1][1] + m_Frustum[1][2] * m_Frustum[1][2] ));
+    m_Frustum[1][0] /= t;
+    m_Frustum[1][1] /= t;
+    m_Frustum[1][2] /= t;
+    m_Frustum[1][3] /= t;
+
+    //提取下面的平面方程系数
+    m_Frustum[2][0] = clip[ 3] + clip[ 1];
+    m_Frustum[2][1] = clip[ 7] + clip[ 5];
+    m_Frustum[2][2] = clip[11] + clip[ 9];
+    m_Frustum[2][3] = clip[15] + clip[13];
+    t = GLfloat(sqrt( m_Frustum[2][0] * m_Frustum[2][0] + m_Frustum[2][1] * m_Frustum[2][1] + m_Frustum[2][2] * m_Frustum[2][2] ));
+    m_Frustum[2][0] /= t;
+    m_Frustum[2][1] /= t;
+    m_Frustum[2][2] /= t;
+    m_Frustum[2][3] /= t;
+
+    //提取上面的平面方程系数
+    m_Frustum[3][0] = clip[ 3] - clip[ 1];
+    m_Frustum[3][1] = clip[ 7] - clip[ 5];
+    m_Frustum[3][2] = clip[11] - clip[ 9];
+    m_Frustum[3][3] = clip[15] - clip[13];
+    t = GLfloat(sqrt( m_Frustum[3][0] * m_Frustum[3][0] + m_Frustum[3][1] * m_Frustum[3][1] + m_Frustum[3][2] * m_Frustum[3][2] ));
+    m_Frustum[3][0] /= t;
+    m_Frustum[3][1] /= t;
+    m_Frustum[3][2] /= t;
+    m_Frustum[3][3] /= t;
+
+    //提取远面的平面方程系数
+    m_Frustum[4][0] = clip[ 3] - clip[ 2];
+    m_Frustum[4][1] = clip[ 7] - clip[ 6];
+    m_Frustum[4][2] = clip[11] - clip[10];
+    m_Frustum[4][3] = clip[15] - clip[14];
+    t = GLfloat(sqrt( m_Frustum[4][0] * m_Frustum[4][0] + m_Frustum[4][1] * m_Frustum[4][1] + m_Frustum[4][2] * m_Frustum[4][2] ));
+    m_Frustum[4][0] /= t;
+    m_Frustum[4][1] /= t;
+    m_Frustum[4][2] /= t;
+    m_Frustum[4][3] /= t;
+
+    //提取近面的平面方程系数
+    m_Frustum[5][0] = clip[ 3] + clip[ 2];
+    m_Frustum[5][1] = clip[ 7] + clip[ 6];
+    m_Frustum[5][2] = clip[11] + clip[10];
+    m_Frustum[5][3] = clip[15] + clip[14];
+    t = GLfloat(sqrt( m_Frustum[5][0] * m_Frustum[5][0] + m_Frustum[5][1] * m_Frustum[5][1] + m_Frustum[5][2] * m_Frustum[5][2] ));
+    m_Frustum[5][0] /= t;
+    m_Frustum[5][1] /= t;
+    m_Frustum[5][2] /= t;
+    m_Frustum[5][3] /= t;
+</pre>
+
+<li>
+上面代码求右平面方程时使用的是 w'-x' = 0;, 而不是 x'-w' = 0的方程, 这是由于满足方程 w' - x' &lt; 0 的所有点位于右平面左方, 满足 w' + x' &lt; 0 的所有点位于左平面左方. 这样求解一个点是否在平截头体之内, 可以只需要使用一个小于号就可以了, 代码如下:
+<pre c++>
+	// 假设有点 P, p.x, p.y, p.z 为其坐标
+	for(i = 0; i &lt; 6; i++)
+	{
+		if(m_Frustum[i][0] * p.x + m_Frustum[i][1] * p.y + m_Frustum[i][2] * p.z + m_Frustum[i][3] &lt;= 0)
+		{
+			return(FALSE);
+		}
+	}
+</pre>
+
+</ul>
+
+</body>
+</html>

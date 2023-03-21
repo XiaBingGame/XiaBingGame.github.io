@@ -1,0 +1,77 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../../style.css">
+<title>MainWindows1</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</head>
+<body>
+
+<pre c++>
+int WINAPI WinMain(HINSTANCE	hInstance,			// 当前窗口实例
+				   HINSTANCE	hPrevInstance,		// 前一个窗口实例
+				   LPSTR		lpCmdLine,			// 命令行参数
+				   int			nCmdShow)			// 窗口显示状态
+{
+	MSG		msg;									// Windowsx消息结构
+	BOOL	done=FALSE;								// 用来退出循环的Bool 变量
+
+	// 创建窗口
+	if (!CreateGLWindow("Windows Title",640,480,32,false))
+	{
+		return 0;									// 失败退出
+	}
+
+	while(!done)									// 保持循环直到 done=TRUE
+	{
+		if (PeekMessage(&amp;msg,NULL,0,0,PM_REMOVE))	// 有消息在等待吗?
+		{
+			if (msg.message==WM_QUIT)				// 收到退出消息?
+			{
+				done=TRUE;							// 是，则done=TRUE
+			}
+			else									// 不是，处理窗口消息
+			{
+				TranslateMessage(&amp;msg);				// 翻译消息
+				DispatchMessage(&amp;msg);				// 发送消息
+			}
+		}
+		else										// 如果没有消息
+		{
+			// 绘制场景。监视ESC键和来自DrawGLScene()的退出消息
+			if (active)								// 程序激活的么?
+			{
+				if (keys[VK_ESCAPE])				// ESC 按下了么?
+				{
+					done=TRUE;						// ESC 发出退出信号
+				}
+				else								// 不是退出的时候，刷新屏幕
+				{
+					DrawGLScene();					// 绘制场景
+					SwapBuffers(hDC);				// 交换缓存 (双缓存)
+				}
+			}
+
+			if (keys[VK_F1])						// F1键按下了么?
+			{
+				keys[VK_F1]=FALSE;					// 若是，使对应的Key数组中的值为 FALSE
+				KillGLWindow();						// 销毁当前的窗口
+				fullscreen=!fullscreen;				// 切换 全屏 / 窗口 模式
+				// 重建 OpenGL 窗口
+				if (!CreateGLWindow("NeHe's 3D",640,480,16,fullscreen))
+				{
+					return 0;						// 如果窗口未能创建，程序退出
+				}
+			}
+		}
+	}
+
+	// 关闭程序
+	KillGLWindow();									// 销毁窗口
+	return (msg.wParam);							// 退出程序
+}
+
+</pre>
+
+</body>
+</html>

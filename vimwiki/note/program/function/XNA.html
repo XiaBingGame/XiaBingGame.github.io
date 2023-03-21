@@ -1,0 +1,273 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../style.css">
+<title>XNA</title>
+<meta http-equiv="Content-Type" content="text/html; charset=cp936">
+</head>
+<body>
+
+<ul>
+<li>
+System
+
+<ul>
+<li>
+TimeSpan 结构体
+
+<ul>
+<li>
+TotalSeconds: 获取以整秒数和秒的小数部分
+
+</ul>
+</ul>
+</ul>
+
+<ul>
+<li>
+Microsoft.Xna.Framework
+
+<ul>
+<li>
+GraphicsDeviceManager: 控制图形设备的配置与管理
+
+<ul>
+<li>
+GraphicsDevice: 属性
+
+</ul>
+<li>
+Vector2: 有两个组成部分的向量
+
+<li>
+Content: 属性, 类型为 ContentManager, 主要用于得到当前的 ContentManager
+
+<li>
+Game
+
+<ul>
+<li>
+方法
+
+<ul>
+<li>
+Initialize --- 在 Game 和 GraphicsDevice 创建之后调用, 在 LoadContent 之前调用
+
+</ul>
+</ul>
+<li>
+GameTime: 游戏时间状态在值方面的表达
+
+<ul>
+<li>
+属性
+
+<ul>
+<li>
+ElapsedGameTime --- 自从上次更新之后流逝的时间, 为 TimeSpan 类型
+
+<li>
+ElapsedRealTime --- 自上一帧流逝的实时时间
+
+</ul>
+</ul>
+<li>
+MathHelper
+
+<ul>
+<li>
+方法
+
+<ul>
+<li>
+ToRadians: 将角度转换弧度
+
+</ul>
+</ul>
+<li>
+Matrix --- 表示一个矩阵
+
+<ul>
+<li>
+方法
+
+<ul>
+<li>
+CreateRotation* 系列
+
+<li>
+CreateTranslation
+
+<li>
+CreateLookAt --- 创建一个视图矩阵
+
+<li>
+CreatePerspectiveFieldOfView --- 创建一个投影矩阵
+
+</ul>
+</ul>
+</ul>
+</ul>
+
+<ul>
+<li>
+Microsoft.Xna.Framework.Content
+
+<ul>
+<li>
+ContentManager: 处理加载的可管理对象
+
+<ul>
+<li>
+属性
+
+<ul>
+<li>
+RootDirectory --- 设置资源的根目录
+
+<li>
+Load --- 加载资源
+
+</ul>
+</ul>
+</ul>
+</ul>
+	
+<ul>
+<li>
+Microsoft,Xna.Framework.Graphics
+
+<ul>
+<li>
+BasicEffect --- 着色模型1.1的Effect, 支持 顶点颜色, 纹理, 光照
+
+<ul>
+<li>
+属性
+
+<ul>
+<li>
+World --- 设置和读取其世界矩阵
+
+<li>
+View --- 设置和读取其视图矩阵
+
+<li>
+Projection --- 设置和读取其投影矩阵
+
+<li>
+AmbientLightColor, DiffuseColor, SpecularColor, SpecularPower 设置材质光照属性
+
+</ul>
+<li>
+方法
+
+<ul>
+<li>
+EnableDefaultLighting --- 允许该 Effect 的光照缺省设置
+
+</ul>
+</ul>
+<li>
+GraphicsDevice
+
+<ul>
+<li>
+Viewport: 属性, 可得到 AspectRatio, Width, Height
+
+</ul>
+<li>
+Model --- 由多个 ModelMesh 对象组成的 3D模型
+
+<ul>
+<li>
+属性
+
+<ul>
+<li>
+Bones --- ModelBone 对象的集合, 类型为 ModelBoneCollection
+
+<li>
+Meshes --- ModelMesh 对象的集合
+
+</ul>
+<li>
+方法
+
+<ul>
+<li>
+CopyAbsoluteBoneTransformsTo --- 拷贝模型中的每个骨头的变换至给定的数组
+
+</ul>
+</ul>
+<li>
+ModelBone
+
+<ul>
+<li>
+属性
+
+<ul>
+<li>
+Index --- 表示骨头在集合中的索引
+
+</ul>
+</ul>
+<li>
+ModelMesh --- 表示一个 mesh 
+
+<ul>
+<li>
+属性
+
+<ul>
+<li>
+ParentBone --- 得到该 mesh 的父骨头
+
+</ul>
+<li>
+方法
+
+<ul>
+<li>
+Draw --- 绘制该Mesh所有的 ModelMeshPart 对象
+
+</ul>
+</ul>
+<li>
+SpriteBatch: 控制一组sprite使用相同的设置绘制
+
+<ul>
+<li>
+构造函数: 允许一组 sprite 以相同的设置绘制
+
+<li>
+方法
+
+<ul>
+<li>
+Begin(), End() 开始绘制
+
+<li>
+Draw --- 渲染一个 sprite, 注意 layerDepth 设为1.0 可以让该纹理为背景
+
+</ul>
+</ul>
+<li>
+Texture2D: 表示一个2D格栅纹素
+
+<ul>
+<li>
+属性
+
+<ul>
+<li>
+Width, Height
+
+</ul>
+</ul>
+</ul>
+</ul>
+
+</body>
+</html>

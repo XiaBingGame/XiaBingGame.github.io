@@ -1,0 +1,72 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../../style.css">
+<title>behaviorplanning</title>
+<meta http-equiv="Content-Type" content="text/html; charset=cp936">
+</head>
+<body>
+
+<h2 id="toc_0.1">Background and Motivation</h2>
+<ul>
+<li>
+虚拟环境要求motion的连续流. 而以前的方法只能创建单独的, 静态的动作片段. 不易于使用. 包括 keyframing, motion capture editing, motion interpolation. procedural animation 技术能够生成任意长的动作流, 但代价高昂.
+
+<li>
+以前的规划方法使用图结构预处理静态环境几何体, 而后使用motion capture数据生成似人的动作. 预处理带roadmap的环境也可以用于生成flocking behaviors. 对象动画的manipulation task通过使用规划技术综合起来. 规划算法还可用于生成周期性动作如行走和爬行. 
+
+<li>
+我们的方法构建motions的graph-like data structures(类图的数据结构).该方法使得重用大量的motion capture数据非常容易, 因为将构建motion图的处理自动化了. 我们的方法需要有behavior FSM和motion数据(有合适的片段).
+
+</ul>
+
+<h2 id="toc_0.2">Behavior Planning</h2>
+<ul>
+<li>
+我们算法的输入: FSM of behaviors, 一些信息(环境, 起点和重点). 使用A*算法查找sequence of behaviors使得角色从起点移动到终点
+
+</ul>
+<h3 id="toc_0.2.1">Behavior Finite-State Machine</h3>
+<ul>
+<li>
+behavior FSM 定义了角色的移动能力. 每个状态包含了一系列motion clip组成一个高级行为. 每个有向边表示两个行为之间的可能转换.
+
+<li>
+有限状态机
+
+</ul>
+<h3 id="toc_0.2.2">Environment Abstraction</h3>
+<ul>
+<li>
+对于静态环境, 可以将环境e表达成二维高度网格图. 编码那些角色需要躲避的障碍物, 可以行走的空间, 以及特殊的障碍物, 如可以爬行穿过的拱道. 高度图用于表示地形. 对于特殊障碍物, 我们计算(1)一系列周边区域, 当角色接近障碍物时可以执行一些特殊的动作, 如跳跃. 以及(2)一些within region, 角色在执行特殊的动作过程中.
+
+<li>
+虚拟角色围绕盒, 半径r. 不允许走进一个障碍物半径为r的范围内. 这样做方便把角色看成网格图上的一点.`
+
+<li>
+每个特殊的motion(如爬行)需要被pre-annotated其对应的特殊障碍物的类型. 另外, 比较复杂的motion clip可以有选择pre-annotated其执行特殊motion的时间. 例如, 一个很长的跳跃 motion clip, 角色可能在跳跃之前执行一些步骤, 并pre-annotated什么时候开始起跳. 如果没有这个annotation, 则假设在motion clip的中段进行起跳.* 我们的算法处理动态环境, 假设已知每个障碍物的移动, 得到所有移动对象的移动轨迹. 函数E(t)返回时间t时的环境e. 如果移动对象的motion未知, 则可以利用后面轨道的估计法来预测他们后面的位置和规划. 如果这些预测都错误, 我们的方法还能够进行重新遍历规划.
+
+</ul>
+<h3 id="toc_0.2.3">Behavior Planner</h3>
+<ul>
+<li>
+查算算法使用两个相关的数据结构: (1) 一个树, 它的节点记录FSM中的explored state, 并在查找中不断的扩展. (2) FSM的优先级队列. 表示下一次查找迭代中被扩展的可能节点. 书中的每个节点存储motion clip或者该状态一个选择的action, 以及位置, 方位, 时间和花费. 这表示如果我们选择一条根节点到达节点n的路径, 节点n存储的位置为表示该角色应用该路径所存储的action序列最后到达的全局位置. 该优先级序列的目的是为了选择路径上扩展的下一个节点(跟踪该路径到达该节点的所有花费), 以及预计到达目标的所有花费. 优先级序列可以使用堆数据结构实现.
+
+<li>
+为了查找过程中每个节点的位置, 方位, 时间和代价. 我们首先自动计算每个action a的下列信息: (1)角色位置和方位的相对变化(x(a), y(a), r(a)), (2)时间的变化t(a)(可表示成帧数的变化)(3)代价的变化cost(a).
+<pre c++>
+// 算法1: Behavior Planner
+Tree.Initialize(S)
+</pre>
+
+</ul>
+
+
+<ul>
+<li>
+图7演示3个概念, 第一个, 我们的算法处理简单粗糙的地形环境. 角色能够成功不平的地形行走. 如果地形有斜面, 最好FSM有个 jog up terrein 行为. 第二, animator可以控制角色的preference, 由于一些类型的behavior会被cost函数修改. 例子中起跳和上升的代价不同时, 路线完全不同. 第三, 由于查找性能依赖于 behavior FSM 的复杂度, 而不是motion数据的数量, 所以当面对巨大的motion数据库时, 性能很有效.
+
+</ul>
+
+</body>
+</html>

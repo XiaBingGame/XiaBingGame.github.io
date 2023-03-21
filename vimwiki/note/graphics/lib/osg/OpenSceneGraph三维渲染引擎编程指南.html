@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../../style.css">
+<title>OpenSceneGraph��ά��Ⱦ������ָ��</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</head>
+<body>
+
+<ul>
+<li>
+四个库
+
+<ul>
+<li>
+Core
+
+<ul>
+<li>
+osg 库: 基本数据类, 基本场景图类, 构建场景图形节点
+
+<li>
+osgUtil 库: 工具类库, 通用公用类, 操作场景图形及内容, 如更新, 裁剪, 遍历, 数据统计及场景图优化
+
+<li>
+osgDB 库: 数据的读写库, OSG 中场景图管理是通过遍历场景图层次结构完成大部分数据处理工作
+
+<li>
+osgViewer 库: 视窗管理库
+
+</ul>
+<li>
+OSG 工具库
+
+<ul>
+<li>
+osgFX 库: 特殊效果节点工具, 用于渲染特效节点
+
+<ul>
+<li>
+osgFX::AnisotropicLighting
+
+<li>
+osgFX::BumpMapping
+
+<li>
+osgFX::Cartoon
+
+<li>
+osgFX::Scribe
+
+<li>
+osgFX::SpecularHighlights
+
+</ul>
+<li>
+osgParticle 库: 粒子系统的节点工具
+
+<li>
+osgSim 库: 虚拟仿真效果的节点工具, 用于特殊渲染, 如地形高程图, 光点节点, DOF 变换节点等
+
+<li>
+osgTerrain 库: 生成地形数据的节点工具, 用于渲染高程数据, 如 TIF, IMAGE, DEM 等各种高程数据格式
+
+<li>
+osgText 库: 文字节点工具, 用于向场景中添加文字信息
+
+<li>
+osgShadow 库: 阴影节点工具, 用于场景添加实时阴影
+
+</ul>
+<li>
+OSG 插件库
+
+<ul>
+<li>
+各种第三方库的支持, 能够直接或间接地导入 3D 模型或图片等场景数据
+
+</ul>
+<li>
+OSG 内省库
+
+<ul>
+<li>
+允许软件系统使用反射式或自省式的编程范例与 OSG 交互.
+
+</ul>
+</ul>
+<li>
+建议使用智能指针
+<pre c++>
+osg::ref_ptr&lt;Geode&gt; geode = new osg::Geode():
+</pre>
+
+<li>
+压缩文件可以按照普通 OSG 文件的形式来读取, 第一个解压的文件将作为 osgDB 返回的结果
+<pre c++>
+osg::ref_ptr&lt;osg::Node&gt; masterNode = osgDB::readNodeFile("archive.osga");
+osg::ref_ptr&lt;osg::Node&gt; gliderNode = osgDB::readNodeFile("archive.osga/glider.osg");
+</pre>
+
+<li>
+osgarchive 可以压缩文件
+
+<li>
+osgdem 程序支持生成 .osga 压缩文件.
+
+<li>
+允许 istream 和 osgream 操作压缩包的数据流: osg, ive, dds, jp2
+
+<li>
+osgConv 读取 3D 数据
+
+<ul>
+<li>
+obj 转 ive
+
+</ul>
+</ul>
+
+<div id="第2章 数学基础"><h1 id="第2章 数学基础">第2章 数学基础</h1></div>
+<ul>
+<li>
+OSG 和 opengl 的方向不一致
+
+<ul>
+<li>
+OSG: X 正方向向右, Y 正方向超内, Z 正方向朝上
+
+<li>
+OpenGL: X 正方向向右, Y 正方向向上, Z 正方向朝外
+
+</ul>
+<li>
+通过访问器遍历的方式访问节点, 以便计算某节点的变换矩阵
+
+<li>
+osg 的向量类: osg::Vec(234)(bdfs), 有方法 length(), length2(), normalize()
+
+<li>
+矩阵的方法: 乘法, inver() 逆矩阵, makeScale() 缩放, makeTranslate() 平移, makeRotate() 旋转, &lt; == != 比较
+
+<li>
+四元数 [w, x, y, z], w=cos(a/2), x = ax*sin(a/2), y = ay*sin(a/2), z = az*sin(a/2);
+
+<li>
+四元数 osg::Quat
+
+<ul>
+<li>
+void makeRotate(value_type angle, value_type x, value_type y, value_type z)
+
+<li>
+value_type length() const
+
+<li>
+value_type length2() const
+
+<li>
+const Quat operator+(const Quat &amp;rhs) const
+
+<li>
+Quat&amp; operator+=(const Quat&amp; rhs)
+
+<li>
+void slerp(value_type t, const Quat&amp; from, const Quat &amp;to)
+
+<li>
+Vec3f opertor*(const Vec3f &amp;v) const // 与向量相乘
+
+<li>
+Vec3d opertor*(const Vec3d &amp;v) const
+
+</ul>
+</ul>
+
+</body>
+</html>

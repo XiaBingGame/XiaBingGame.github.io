@@ -1,0 +1,587 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../style.css" />
+    <title>qtbook chapter 16</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<h1 id="toc_1">Chapter 16 XML</h1>
+<ul>
+<li>
+XML(eXtensible Markup Language)为一通用的文本格式, 用于数据交换和数据存储, 由 W3C开发的轻量级SGML, 语法类似HTML. XML-compliant 版本的 HTML 称之为 XHTML.
+
+<ul>
+<li>
+对于流行的SVG XML 格式, QtSvg模块提供了类可以加载和渲染SVG图像. QtMmlWidget可以渲染XML格式的MathML. 为了渲染使用 MathML XML 格式的文档, 可以使用 Qt 解决方案中的 QtMmlWidget.
+
+</ul>
+<li>
+Qt 4.4 预期包含额外的高层类用于处理 XML, 其包括了 XQuery 和 XPath 的支持, 这些都在单独的 QtXmlPatterns 模块中.
+
+<ul>
+<li>
+为了通常的XML处理, Qt提供了QtXml模块, 提供了三个不同的APIs读取XML文档
+
+<ul>
+<li>
+QXmlStreamReader 为一快速读取XML的分析器, 用于读取 well-formed XML, 非常适合于写 one-pass 分析器.
+
+<li>
+DOM 转换XML文档为树结构, 应用可以在该树上进行浏览. 可以让我们以任何次序浏览一个表示 XML 文档的树, 允许我们实现 multi-pass 分析算法.
+
+<li>
+SAX(Simple API for XML) 通过虚函数直接向应用程序报告"分析事件".
+
+</ul>
+<li>
+为了写XML文件, Qt提供了三个选项:
+
+<ul>
+<li>
+我们可以使用QXmlStreamWriter, 最简单的方法, 比手动生成的XML更可靠.
+
+<li>
+我们可以在内存中把数据表示成DOM树, 且要求该树将其自身写入文件, 当一个 DOM 树已经用于当作应用程序的主数据结构, 使用 DOM 生成 XML 更合理.
+
+<li>
+手动生成XML文件
+
+</ul>
+</ul>
+</ul>
+
+<h2 id="toc_1.1">16.1 Reading XML with QXmlStreamReader</h2>
+<ul>
+<li>
+使用 QXmalStreamReader 是 Qt 中读取 XML 最快和最简单的方法. 因为分析器是增量地工作(works incrementally), 对于以下几个地方很有用, (1)在一个 XML 文档上发现给定 tag 的所有位置. (2) 读取也许不适合在内存中的非常大的文件. (3)用于防治自定义数据结构以反映一个 XML 文档的内容. 
+
+<li>
+QXmlStreamReader 分析器以图16.1中列出的token来工作. 每次调用 readNext() 函数, 读取下一个 token, 并将该 tocken 设置为当前 token. 当前 token 的属性依赖于 token 的类型, 且使用表格中的获取函数来访问.
+
+</ul>
+<p>
+<br />
+<table>
+<tr>
+<th>
+Token Type
+</th>
+<th>
+Example
+</th>
+<th>
+Getter Functions
+</th>
+</tr>
+<tr>
+<td>
+StartDocument
+</td>
+<td>
+N/A
+</td>
+<td>
+isStandaloneDocument
+</td>
+</tr>
+<tr>
+<td>
+EndDocument
+</td>
+<td>
+N/A
+</td>
+<td>
+isStandaloneDocument
+</td>
+</tr>
+<tr>
+<td>
+StartElement
+</td>
+<td>
+&lt;item&gt;
+</td>
+<td>
+namespaceUri(), name(), attributes(), namespaceDeclarations()
+</td>
+</tr>
+<tr>
+<td>
+EndElement
+</td>
+<td>
+&lt;/item&gt;
+</td>
+<td>
+namespaceUri(), name()
+</td>
+</tr>
+<tr>
+<td>
+Characters
+</td>
+<td>
+AT&amp;amp;T
+</td>
+<td>
+text(), isWhitespace(), isCDATA()
+</td>
+</tr>
+<tr>
+<td>
+Comment
+</td>
+<td>
+&lt;!-- fix --&gt;
+</td>
+<td>
+text()
+</td>
+</tr>
+<tr>
+<td>
+DTD
+</td>
+<td>
+&lt;!DOCTYPE ...&gt;
+</td>
+<td>
+text(), notationDeclarations(), entityDeclarations()
+</td>
+</tr>
+<tr>
+<td>
+EntityReference
+</td>
+<td>
+&amp;trade;
+</td>
+<td>
+name(), text()
+</td>
+</tr>
+<tr>
+<td>
+ProcessingInstruction
+</td>
+<td>
+&lt;?alert?
+</td>
+<td>
+processingInstructionTarget(), processingInstructionData()
+</td>
+</tr>
+<tr>
+<td>
+Invalid
+</td>
+<td>
+&gt;&amp;&lt;!
+</td>
+<td>
+error(), errorString()
+</td>
+</tr>
+</table>
+<br />
+</p>
+<ul>
+<li>
+例子:
+<pre c++>
+        &lt;doc&gt;
+            &lt;quote&gt;Einmal ist keinmal&lt;/quote&gt;
+        &lt;/doc&gt;
+</pre>
+
+<li>
+使用readNext() 每次可以产生一个新的token, 而后使用 getter 函数得到额外的信息.
+<pre c++>
+        StartDocument
+        StartElement (name() == "doc")
+        StartElement (name() == "quote")
+        Characters (text() == "Einmal ist keinmal")
+        EndElement (name() == "quote")
+        EndElement (name() == "doc")
+        EndDocument
+</pre>
+
+<li>
+在每个readNext()之后, 我们可以使用 isStartElement(), isCharacters(), 或类似函数进行测试, 或者使用state()函数
+
+</ul>
+<li>
+例子
+
+<ul>
+<li>
+使用readFile()函数读取XML文件, 其进行递归下降
+
+<ul>
+<li>
+readBookindexElement() 分析 &lt;bookindex&gt;...&lt;/bookindex&gt; 元素
+
+<li>
+readEntryElement() 分析 &lt;entry&gt;...&lt;/entry&gt; 元素
+
+<li>
+readPageElement() 分析 &lt;page&gt;...&lt;/page&gt;元素
+
+<li>
+skipUnknownElement() 跳过不认识的元素
+
+</ul>
+<li>
+QXmlStreamReader::setDevice() 设置该XML流的输入文本
+
+<ul>
+<li>
+reader.setDevice(&amp;file);
+
+</ul>
+<li>
+开始读取
+
+<ul>
+<li>
+reader.readNext();
+
+<li>
+reader.atEnd() --- 判断是否到尾部
+
+</ul>
+<li>
+在循环中只有三种状态: 读到&lt;bookindex&gt; 启动tag, 其他启动tag, 其他的token.
+
+<li>
+QXmlStreamReader::raiseError() 报错误, 其到达XML文件尾部. 可调用error()或者QFile的errorString()查看错误信息.
+
+<li>
+reader.hasError() --- 判断是否有错误.
+
+</ul>
+<li>
+QTreeWidget::invisibleRootItem() 是 QTreeWidget 的根 item.
+
+<li>
+QXmlStreamReader.attributes() --- 得到当前 token 的属性.					  
+
+<li>
+QXmlStreamReader::readElementText() 读取元素文本
+
+<li>
+QXmlStreamReader::raiseError() 提出一个错误, 下次调用 atEnd() 时其返回真. 可以通过调用 error() 和在 QFile 上调用 errorString() 来查询错误.
+
+<ul>
+<li>
+raiseError() 函数让我们对底层的XML分析错误使用相同的错误报告机制, 即当 QXmlStreamReader 运行一个无效的XML或者有应用程序特定的错误时自动引发该错误.
+
+</ul>
+<li>
+Q_ASSERT 用于提示错误
+
+<ul>
+<li>
+QXmlStreamReader 可以从任意QIODevice读取XML文件, 如QFile, QBuffer, QTcpSocket.
+
+</ul>
+<li>
+一个 QXmlStreamReader 可以采用任意 QIODevice 的输入, 包括 QFile, QBuffer, QProcess, QTcpSocket. 一些输入元也许不能够在分析器需要时提供其需要的数据. 例如, 由于网络的延迟, 它可能使用 QXmlStreamReader 在这样的网络环境; 关于这个主题的更多信息可见关于 QXmlStreamReader 的参考文档中的"Incremential Parsing".
+
+<li>
+QXmlStreamReader 类属于 QtXml 库的一部分.
+
+    
+<h2 id="toc_1.2">16.2 Reading XML with DOM</h2>
+<ul>
+<li>
+DOM 是一个由W3C开发用于分析 XML 的标准API. Qt 提供了一个 non-validating DOM Level2 的实现用于读取, 操作, 和写入XML文档.
+
+<li>
+DOM 表示一个 XML 文件为内存中的一棵树. 我们可以通过 DOM 树进行浏览, 我们可以修改该树并将其保存至硬盘内的XML文件.
+
+<ul>
+<li>
+见文档:
+<pre c++>
+        &lt;doc&gt;
+            &lt;quote&gt;Scio me nihil scire&lt;/quote&gt;
+            &lt;translation&gt;I know that I know nothing&lt;/translation&gt;
+        &lt;/doc&gt;
+    DOM树
+        Document
+            |
+            ---Element(doc)
+                |
+                ---Element(quote)
+                |    |
+                |    ---Text("Scio me nihil scire")
+                ---Element(translation)
+                    |
+                    ---Text("I know that I know nothing")
+</pre>
+
+<li>
+对DOM来说, Elment节点表示有相互对应封闭的tag, 在Qt中, 节点类型都有一个QDom前缀, QDomElement表示一个Element节点, QDomText表一个Text节点
+
+<li>
+不同类型的节点可拥有不同类型的子节点,
+
+<ul>
+<li>
+例如: Element节点可以包含其他Element, 以及 EntityReference, Text, CDATASection, ProcessingInstruction, 普通节点
+
+</ul>
+<li>
+图16.3表示哪些节点可拥有哪种类型子节点, 灰色的表示不能拥有子节点.
+
+</ul>
+<li>
+例子
+
+<li>
+QDomDocument::setContent(), QDomDocument::documentElement(), QDomElement
+
+<li>
+QDomDocument::setContent() 函数自动打开设备(当设备未打开时). 其第二个参数设置为false表示禁止namespace的处理
+
+<li>
+QDomDocument::documentElement() 得到单个 QDomElement 的孩子. 
+
+<li>
+QDomElement::firstChild() 得到其第一个孩子. QDomNode::isNull() 是否空, QDomNode::toElement 转换其为一个 QDomElement, 而后调用它的 tagName() 得到该元素的 tag 名. 如果该节点不是 Element 类型, 则 toElement() 函数返回一个空的 QDomElement 对象, 以及一个空的 tag 名.
+
+<li>
+QDomElement::attribute(), QDomElement::text() 得到该元素的属性, 文本.
+
+</ul>
+    
+<h2 id="toc_1.3">16.3 Reading XML with SAX</h2>
+<ul>
+<li>
+SAX 是一个公共的 domain de facto 标准 API 用于读取 XML 文档. Qt 的 SAX 类在 SAX2 Java 实现之后建模, 主要的不同就是命名匹配 Qt 的惯例. 和 DOM 比较, SAX 更底层且更快. 但 QXmlStreamReader 类提供了更像 Qt 的API且更快. 所以 SAX 分析器的主要用途是将使用 SAX API 的代码引入 Qt.
+
+<li>
+Qt 提供一个基于SAX的无验证的XML分析器称之为 QXmlSimpleReader, 这个分析器可以识别 well-formed XML 且支持 XML namespaces. 当分析器经过文档时, 其调用注册处理类(registered handler classes)中的虚函数指出处理的事件(indicate parsing events).
+
+<li>
+SAX分析器常用于将SAX API转至Qt. 如需更多的SAX信息, 见网页 <a href="http://www.saxproject.org/">http://www.saxproject.org/</a>
+
+<ul>
+<li>
+Qt提供了类 QXmlSimpleReadere, 基于SAX的XML分析器
+
+<li>
+假设分析一下文档:
+<pre c++>
+        &lt;doc&gt;
+            &lt;quote&gt;Gnothi seauton&lt;/quote&gt;
+        &lt;/doc&gt;
+</pre>
+
+<li>
+则分析器会调用以下分析事件处理函数
+<pre c++>
+        startDocument()
+        startElement("doc")
+        startElement("quote")
+        characters("Gnothi seauton")
+        endElement("quote")
+        endElement("doc")
+        endDocument()
+</pre>
+
+<li>
+这些处理函数都在QXmlContentHandler中声明. 这里为了简化, 我们略过了 startElement() 和 endElement() 的一些参数.
+
+<li>
+QXmlContentHandler 仅仅是许多处理类中的一个, 这些处理类可以连接至 QXmlSimpleReader.
+
+<ul>
+<li>
+其他类有QXmlEntityResolver, QXmlDTDHandler, QXmlErrorHandler, QXmlDeclHandler, QXmlLexicalHandler
+
+<li>
+这些类仅仅声明虚函数, 并给出不同类型分析事件的信息. 对于大多数程序来说, 仅需要 QXmlContentHandler 和 QXmlErrorHandler.
+
+<li>
+这些类的层次可见图 16.4, 基类为 SaxHandler, 而后派生 QXmlDefaultHandler, 最后派生出上面众多处理类.
+
+</ul>
+</ul>
+<li>
+最主要的不同是使用 SAX API 和 QXmlStreamReader, SAX API 要求我们使用成员变量手动跟踪分析器的状态, 这一点在其他2个应用都不需要, 因为它们可以允许递归下降.
+
+<li>
+例子, 使用 QXmlSimpleReader 和 QXmlDefaultHandler 派生类处理.
+
+<ul>
+<li>
+继承自 QXmlDefaultHandler, 重实现四个函数: startElement(), endElement(), characters(), fatalError(). 前三个函数在QXmlContentHandler中声明. 最后一个函数则在QXmlErrorHandler中声明.
+
+<li>
+在readFile函数中
+
+<ul>
+<li>
+创建一个QXmlInputSource 读取XML文件内容, 而后调用QXmlSimpleReader::parse分析该QXmlInputSource.
+
+<ul>
+<li>
+并调用setContentHandler和setErrorHandler设置其处理函数, 本类中实现了这两个函数.
+
+<li>
+本类仅重实现了来自 QXmlContentHandler 和 QXmlErrorHandler 类的函数, 如果我们要处理来自其他处理类的函数, 则我们需要调用对应的 setXxxHandler() 函数.
+
+</ul>
+<li>
+在parse() 函数中, 我们传递了一个 QXmlInpuSource 对象, 这个类打开给定的文件, 读取它并提供了一个分析器用于读取文件的接口.
+
+</ul>
+<li>
+startElement() 函数在遇到一个新的开放 tag 时调用, 第三个参数为 tag 名, 第四个参数为属性列表, 忽略第一个和第二个参数, 其用于 XML 的 namespace 机制.
+
+<ul>
+<li>
+该函数返回 true 表示继续分析这个文件, 如果我们想要将未知的 tags 报告为错误, 我们应当在这种情况中返回 false. 我们可能想要重实现来自 QXmlDefaultHandler 中的 errorString() 以返回合适的错误信息.
+
+<li>
+当报告XML文档中的字符数据时调用 characters() 函数.
+
+</ul>
+<li>
+当遇到一个关闭tag的时候会调用endElement()函数, 第三个参数为 tag 的名称.
+
+<li>
+当分析XML文件发生失败时会调用fatalError函数
+
+<li>
+QXmlParseException::lineNumber(), QXmlParseException::columnNumber() --- 异常的行号和列号. QXmlParseException::message() --- 错误的文本.
+
+</ul>
+</ul>
+        
+<h2 id="toc_1.4">16.4 Writing XML</h2>
+<ul>
+<li>
+Qt 应用中三种生成 XML 文件的方法:
+
+<ul>
+<li>
+QXmlStreamWriter
+
+<li>
+构建一个 DOM 树而后在其上调用 save()
+
+<li>
+手动生成 XML 文件
+
+</ul>
+<li>
+使用QXmlStreamWriter类写入XML文本, 这个类会负责 escapint special 字符.
+
+<ul>
+<li>
+QXmlStreamWriter::setAutoFormatting() --- 可以让结果数据使用缩进来表示数据的递归结构.					  
+
+<li>
+QXmlStreamWriter::writeStartDocument() 用于写 XML的头行: &lt;?xml version="1.0" encoding="UTF-8"?&gt;
+
+<li>
+QXmlStreamWriter::writeStartElement()  用于生成新的tag. writeEndDocument() 则关闭该tag.
+
+<li>
+对于每个顶层条目, 我们调用 writeIndexEntry() --- 自定义函数
+
+<ul>
+<li>
+QXmlStreamWriter::writeAttribute() 加入一个属性至刚被写入的 tag 上. QXmlStreamWriter::writeTextElement() 写入一个文本元素.
+
+<li>
+writeAttribute --- 属性
+
+<li>
+writeIndexEntry() --- 每个子条目
+
+<li>
+writeEndElement()  --- 结束该元素
+
+</ul>
+</ul>
+<li>
+QDomDocument调用save()函数就可以保存XML文件. 默认为 UTF-8 格式, 如果想要其他的编码, 则在前面加上一个 &lt;?xml?&gt; 声明. 如下:
+<pre>
+	&lt;?xml version="1.0" encoding="ISO-8859-1"?&gt;
+</pre>
+
+<ul>
+<li>
+接下来的代码演示如何做:
+<pre c++>
+        const int Indent = 4;
+
+        QDomDocument doc;
+        ...
+        QTextStream out(&amp;file);
+        QDomNode xmlNode = doc.createProcessingInstruction("xml",
+                                     "version=\"1.0\" encoding=\"ISO-8859-1\"");
+        doc.insertBefore(xmlNode, doc.firstChild());
+        doc.save(out, Indent);
+</pre>
+
+<li>
+对于 Qt 4.3, 另一种做法是在 QTextStream 使用 setCodec() 设置编码, 而后传递 QDomNode::EncodingFromTextStream 作为 save() 的第三个参数.
+<pre c++>
+        QTextStream out(&amp;file);
+        out.setCodec("UTF-8");
+        out &lt;&lt; "&lt;doc&gt;\n"
+            &lt;&lt; "   &lt;quote&gt;" &lt;&lt; Qt::escape(quoteText) &lt;&lt; "&lt;/quote&gt;\n"
+            &lt;&lt; "   &lt;translation&gt;" &lt;&lt; Qt::escape(translationText)
+            &lt;&lt; "&lt;/translation&gt;\n"
+            &lt;&lt; "&lt;/doc&gt;\n";
+</pre>
+
+</ul>
+<li>
+手动生成最不注意的部分是文本中的 escape special 字符以及属性值.
+
+<ul>
+<li>
+在文本和属性值中进行换码, Qt::escape() 用于  '&lt;', '&gt;', '&amp;'.  详细情况见例子代码
+
+<li>
+这里有一些代码利用了这点:
+<pre c++>
+	QTextStream out(&amp;file);
+	out.setCodec("UTF-8");
+	out &lt;&lt; "&lt;doc&gt;\n"
+    	&lt;&lt; "   &lt;quote&gt;" &lt;&lt; Qt::escape(quoteText) &lt;&lt; "&lt;/quote&gt;\n"
+    	&lt;&lt; "   &lt;translation&gt;" &lt;&lt; Qt::escape(translationText)
+    	&lt;&lt; "&lt;/translation&gt;\n"
+    	&lt;&lt; "&lt;/doc&gt;\n";
+</pre>
+
+</ul>
+<li>
+另外如果必须正确的写 &lt;?xml?&gt; 声明和设置正确的编码, 我们必须继续 escape 我们写的文本. 如果我们使用属性, 我们必须在它们的的值中 escape 单引号或双引号. 使用 QXmlStreamWriter 更简单, 因为他们可以处理所有这些事情.
+
+</ul>
+
+    </div>
+</body>
+</html>

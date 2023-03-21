@@ -1,0 +1,107 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../style.css" />
+    <title>my_code</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="../index.html">首页</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<pre c++>
+
+void writeBMP(const char* filename, unsigned char* data, int W, int H)
+{
+	// 获取 GDAL driver
+	// GDALDriverH driver = GDALGetDriverByName("BMP");
+	QImage img(W, H, QImage::Format_Grayscale8);
+	int lineCOunt = W*H;
+	// 打开文件准备写入
+	// GDALDatasetH pDst = GDALCreate(driver, filename, W, H, 1, GDT_Byte, 0);
+	// 分配临时内存用于写入
+	unsigned char* write_data = new unsigned char[W*H];
+	unsigned char* temp_data = new unsigned char[3 * W];
+	unsigned char* line_data = new unsigned char[W];
+	// 读取裸数据， 将RGB裸数据转换为灰度裸数据
+	for (unsigned int j = 0; j &lt; H; j++)
+	{
+		memcpy(temp_data, data + 3 * W*j, 3 * W);
+		for (unsigned int i = 0; i &lt; W; i++)
+		{
+			line_data[i] = temp_data[3 * i];
+		}
+		memcpy(write_data + W*(H - 1 - j), line_data, W);
+	}
+	// 使用 GDAL 保存数据
+	int bytes_per_line = img.bytesPerLine();
+	unsigned char* dest_data = img.bits();
+	unsigned char* p = dest_data;
+	for (unsigned int i = 0; i &lt; H; i++)
+	{
+		memcpy(p, write_data + W * i, W);
+		p += bytes_per_line;
+	}
+	/*
+	for (unsigned int i = 1; i &lt;= 1; i++)
+	{
+		// GDALRasterBandH pBand = GDALGetRasterBand(pDst, 1);
+		// GDALRasterIO(pBand, GF_Write, 0, 0, W, H, write_data, W, H, GDT_Byte, 1, W * 1);
+	}
+	*/
+	// 释放之前分配的临时内存
+	delete[] line_data;
+	delete[] temp_data;
+	delete[] write_data;
+	// GDALClose(pDst);
+	img.save(filename);
+}
+
+QImage ToGrayImage_triggered(QImage m_QImage)
+{
+    QSize size=m_QImage.size();
+    QImage m_QGrayImage = QImage(size,QImage::Format_Indexed8);
+    int width=size.width();
+    int height=size.height();
+    uchar * rgbImageData=m_QImage.bits();
+    uchar * grayImageData=m_QGrayImage.bits();
+    if(m_QImage.allGray())
+    {
+        m_QGrayImage = QImage(m_QImage);
+        //qDebug()&lt;&lt;"Image is already gray!Conversion stopped!";
+        return ;
+    }
+    //若width不是4的倍数，会自动添加字节，使之对齐到4的倍数
+    int realWidth1=m_QImage.bytesPerLine();
+    int realWidth2=m_QGrayImage.bytesPerLine();
+    uchar * backup1=rgbImageData;
+    uchar * backup2=grayImageData;
+    for(int i=0;i&lt;height;i++)
+    {
+        for(int j=0;j&lt;width;j++)
+        {
+            uchar R = *rgbImageData;
+            uchar G = *(rgbImageData+1);
+            uchar B = *(rgbImageData+2);
+            *grayImageData=(uchar)(0.29900*R + 0.58700*G + 0.11400*B);
+            rgbImageData+=3;
+            grayImageData++;
+        }
+        rgbImageData=backup1+realWidth1*i;
+        grayImageData=backup2+realWidth2*i;
+    }
+  
+    return m_QGrayImage;
+}
+</pre>
+
+    </div>
+</body>
+</html>

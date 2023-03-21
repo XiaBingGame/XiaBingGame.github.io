@@ -1,0 +1,178 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../../style.css" />
+    <title>Chapter12</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<ul>
+<li>
+函数
+
+<ul>
+<li>
+glInitNames/glPushName/glPopName
+
+<li>
+glSelectBuffer/glRenderMode
+
+<li>
+glFeedbackBuffer/gluPickMatrix
+
+</ul>
+<li>
+选择: gluPickMatrix
+
+<li>
+反馈: 得到你的顶点写至帧缓存时如何变换和如何照明.
+
+</ul>
+
+<h1 id="toc_1">Selection</h1>
+<ul>
+<li>
+选择模式中, 没有像素拷贝至帧缓存, 图元绘制至viewing volume中, 在selection buffer中产生hit records. 这个缓存不像其他的OpenGL缓存, 只是一个整数值的数组.
+
+<li>
+必须预先设置 selection buffer, 而后命名你的图元或图元组, 这样在selection buffer中可以鉴别出这些图元. 此时你分析selection buffer, 确定哪些对象和viewing volume相交.
+
+</ul>
+<h2 id="toc_1.1">命名你的图元</h2>
+<ul>
+<li>
+名称为无符号整数.
+
+<li>
+名称列表则是在name stack中维护. 初始化name stack之后, 你可以push name或者替换stack当前顶部的name. 当hit在选择模式时发生时, 所有name stack中的names添加至selection buffer的尾部. 因此, 单个hit可以返回多于一个的name.
+
+</ul>
+<h2 id="toc_1.2">Working with Selection Mode</h2>
+<ul>
+<li>
+设置渲染模式
+<pre c++>
+	glRenderMode(GL_SELECTION);
+</pre>
+
+<ul>
+<li>
+还有一种渲染模式为 GL_FEEDBACK.
+
+</ul>
+</ul>
+<h2 id="toc_1.3">The Selection Buffer</h2>
+<ul>
+<li>
+selection buffer是一个无符号整数数组, 每个hit record 占至少4个元素的数组. 第一个数组索引包含了当hit发生时在name stack中的name数量. 接下来两个元素包含了在该viewing volume中所有顶点窗口z坐标的最大和最小值. 第四个为name stack底部的名称. 如果多于1个name在name stack上, 则他们跟随第四个元素. 而后, 重复所有的hit records在selection buffer中.
+
+<li>
+只有当渲染模式切换回 GL_RENDER 的时候, 才填充 selection buffer. 此时调用 glRenderMode 函数, 这个函数返回的值为要拷贝hit record的数量.
+
+<li>
+通过 glSelectionBuffer分配和指定selection buffer.
+
+</ul>
+<h2 id="toc_1.4">Picking</h2>
+<pre c++>
+	void gluPickMatrix(GLdouble x, GLdouble y, GLdouble width, GLdouble height, GLint viewport[4]);
+</pre>
+<ul>
+<li>
+如果有多个物体重叠, 则可以得到多个hit records. 而后比较其z值来判断哪个靠近屏幕.
+
+</ul>
+<h2 id="toc_1.5">Hierarchical Picking</h2>
+<ul>
+<li>
+在 name stack 中存储多个名字可以实现层次性结构.
+
+</ul>
+
+<h1 id="toc_2">Feedback</h1>
+<ul>
+<li>
+在 feedback buffer 中写入信息指示场景将会如何渲染. 信息包括窗口坐标系中变换后的顶点, 光计算后的颜色数据, 纹理数据 --- 即所有需要光栅化该图元的数据.
+
+</ul>
+<h2 id="toc_2.1">The Feedback Buffer</h2>
+<ul>
+<li>
+feedback buffer 是一个浮点值数组, 由 glFeedbackBuffer 函数指定.
+<pre c++>
+	void glFeedbackBuffer(GLsizei size, GLenum type, GLfloat* buffer);
+</pre>
+
+<ul>
+<li>
+type 表示feedback buffer中每个顶点放置多少的数据. 颜色数据在颜色索引模式中由单个值表示, 或者在RGBA颜色模式中由四个值表示.
+
+<li>
+GL_2D, GL_3D, GL_3D_COLOR, GL_3D_COLOR_TEXTURE, GL_4D_COLOR_TEXTURE
+
+</ul>
+</ul>
+<h2 id="toc_2.2">Feedback Data</h2>
+<ul>
+<li>
+feedback buffer 包含一个token列表, 之后有顶点数据, 或者还有颜色或纹理数组.
+
+<ul>
+<li>
+限制: 当使用多纹理时, 只返回第一个纹理的纹理坐标.
+
+<li>
+GL_POINT_TOKEN, GL_LINE_TOKEN, GL_LINE_TOKEN, GL_LINE_RESET_TOKEN, GL_POLYGON_TOKEN, GL_BITMAP_TOKEN, GL_DRAW_PIXEL_TOKEN, GL_COPY_PIXEL_TOKEN, GL_PASS_THROUGH_TOKEN.
+
+<li>
+线token后面跟两个顶点的数据. 多边形token后面跟顶点的数量. 用户定义的marker(GL_PASS_THROUGH_TOKEN)则跟一个用户定义的单浮点值.
+
+</ul>
+</ul>
+<h2 id="toc_2.3">Passthrough Markers</h2>
+<ul>
+<li>
+在 feedback 模式中, 你可以在你的图元间设置marker. 以及你可以通过调用 glPassThrough完成这个.
+<pre c++>
+	void glPassThrough(GLfloat token);
+</pre>
+
+<ul>
+<li>
+这个函数放置一个 GL_PASS_THROUGH_TOKEN至feedback buffer, 接下来的值则为你调用函数指定的值.
+
+<li>
+这是在feedback buffer中给对象打标签的唯一方法.
+
+</ul>
+</ul>
+<h2 id="toc_2.4">A Feedback Example</h2>
+<ul>
+<li>
+feedback的一个使用是得到对象的窗口坐标信息, 而后使用这个信息在窗口中该对象附近放置控制或标签.
+
+</ul>
+
+<h1 id="toc_3">总结</h1>
+<ul>
+<li>
+可以以比较粗糙的内容来进行选择和反馈, 以加快速度.
+
+</ul>
+
+    </div>
+</body>
+</html>

@@ -1,0 +1,217 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../style.css">
+<title>WindowsAPI</title>
+<meta http-equiv="Content-Type" content="text/html; charset=cp936">
+</head>
+<body>
+
+<h1 id="toc_1">系统</h1>
+<ul>
+<li>
+InitCommonControlsEx --- 注册从DLL加载的 common control 类, 该函数可以反复调用, 用于注册不同的类
+
+<li>
+GetModuleFileName
+
+<li>
+GetModuleHandle
+
+<li>
+GetObject
+
+<li>
+GetTickCount
+
+<li>
+PlaySound
+
+<li>
+PostMessage
+
+<li>
+ZeroMemory
+
+<li>
+GetSystemMetrics: 参数 SM_CXSCREEN, SM_CYSCREEN 可以得到分辨率
+
+<li>
+GetTextMetrics
+
+<li>
+Shell_NotifyIcon --- 设置托盘
+
+</ul>
+
+<h1 id="toc_2">窗口</h1>
+<ul>
+<li>
+ShowWindow
+
+<li>
+UpdateWindow
+		如果有区域需要更新, 则发送 WM_PAINT 消息
+
+<li>
+SetWindowText
+
+<li>
+CreateWindow
+
+<ul>
+<li>
+风格: WS_BOARDER, WS_CAPTION, WS_CHILD(不能和WS_POPUP一起使用), WS_CLIPCHILDREN(当窗口绘制时不包含子窗口区域的绘制), WS_CLIPSIBLING, WS_DISABLED, WS_DLGFRAME, WS_GROUP, WS_HSCROLL, WS_OVERLAPPED, WS_OVERLAPPEDWINDOW, WS_POPUP, WS_SIZEBOX, WS_SYSMENU, WS_TABSTOP, WS_THICKFRAME, WS_VISIBLE, WS_VSCROLL
+
+</ul>
+</ul>
+
+<h1 id="toc_3">图形</h1>
+<ul>
+<li>
+LoadImage
+
+<li>
+LoadBitmap --- 加载位图, 从指定模块的可执行文件中加载位图资源, 现被 LoadImage 函数取代了
+
+</ul>
+
+<h1 id="toc_4">绘制</h1>
+<ul>
+<li>
+BeginPaint, EndPaint
+
+<li>
+DrawText
+
+<li>
+TextOut
+
+<li>
+SetTextAlign
+
+<li>
+InvalidateRect 指定重绘区域, 第三个参数表示更新区域是否更新背景, 为true时当调用 BeginPaint时就会刷新背景 
+
+</ul>
+
+<h1 id="toc_5">操作</h1>
+<ul>
+<li>
+GetClientRect
+
+</ul>
+
+<h1 id="toc_6">控件</h1>
+<ul>
+<li>
+SetScrollPos/GetScrollPos --- 控制滚动条的事件, 最好使用 SetScrollInfo 函数
+
+<li>
+SetScrollRange
+
+</ul>
+	
+<h1 id="toc_7">I/O</h1>
+<ul>
+<li>
+wsprintf --- 格式化一个字符缓存, 参数为 LPTSTR 格式
+
+</ul>
+
+<h1 id="toc_8">消息</h1>
+<ul>
+<li>
+WM_ENABLE 
+
+<ul>
+<li>
+当窗口禁止或启用一个窗口时, 发送该消息
+
+</ul>
+<li>
+WM_NCCREATE
+
+<ul>
+<li>
+该消息在 非客户端部分(边框, 标题栏, 菜单等等)创建之前调用, 该消息还带一个 CREATESTRUCT 结构指针在 lParam 参数里
+
+<li>
+lpCreateParams 是 CREATESTRUCT 的成员, 包含 CreateWindowEX() 的 lpParame 的值
+
+</ul>
+<li>
+WM_SIZE
+
+<ul>
+<li>
+大小变化时发送该消息
+
+<li>
+wParam: 表示重置大小的类型
+
+<li>
+lParam: 低位字节表示宽度, 高位字节表示高度
+
+</ul>
+<li>
+WM_VSCROLL
+
+<ul>
+<li>
+该消息表示窗口标准竖滚动条的滚动事件. 也可以表示一个拥有竖滚动条控件的窗口的滚动事件
+
+<li>
+wParam: 当其低位字节为SB_THUMBPOSITION或SB_THUMBTRACK时高位字节表示位置. 低位字节表示滚动条的动作
+
+</ul>
+</ul>
+
+<h1 id="toc_9">结构体</h1>
+<ul>
+<li>
+INITCOMMONCONTROLSEX
+
+<ul>
+<li>
+该结构体保存从 DLL 加载的 common control 类信息
+
+</ul>
+<li>
+TEXTMETRIC --- 保存当前物理字体的信息, 大小是逻辑单位. 依赖于当前的映射模式
+<pre c++>
+typedef struct tagTEXTMETRIC { 
+  LONG tmHeight; 	// 字体的总高度(包括上半部[ascent]+下半部[descent], 前者可看成字体的主体部分, 后者可看成字体的下面一小截)
+  LONG tmAscent; 
+  LONG tmDescent; 	
+  LONG tmInternalLeading;	// 可看成头部(位于ascent之内) 
+  LONG tmExternalLeading; 	// 字体上方的空闲大小, 表示两行之间的间距. 不位于(tmHeight)范围之内
+  LONG tmAveCharWidth; 		// 字体的平均宽度. 通常为字符'x'
+  LONG tmMaxCharWidth;
+  LONG tmWeight; 
+  LONG tmOverhang; 
+  LONG tmDigitizedAspectX; 
+  LONG tmDigitizedAspectY; 
+  TCHAR tmFirstChar; 
+  TCHAR tmLastChar; 
+  TCHAR tmDefaultChar; 
+  TCHAR tmBreakChar; 
+  BYTE tmItalic; 
+  BYTE tmUnderlined; 
+  BYTE tmStruckOut; 
+  BYTE tmPitchAndFamily; 	// 可用于判断字体间隔是否变化等信息
+  BYTE tmCharSet; 
+} TEXTMETRIC, *PTEXTMETRIC; 
+</pre>
+
+</ul>
+
+<h1 id="toc_10">类型</h1>
+<ul>
+<li>
+LPSTR --- CHAR*
+
+</ul>
+
+</body>
+</html>

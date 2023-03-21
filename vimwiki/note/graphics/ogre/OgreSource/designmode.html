@@ -1,0 +1,148 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../style.css" />
+    <title>designmode</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="../index.html">首页</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<div id="Ogre 分析之设计模式 "><h1 id="Ogre 分析之设计模式 ">Ogre 分析之设计模式 </h1></div>
+<div id="Ogre 分析之设计模式 -一. Singleton"><h2 id="一. Singleton">一. Singleton</h2></div>
+<blockquote>
+Ogre::Singleton&lt;T&gt; --- 模板类
+</blockquote>
+<pre class="brush: c++">
+		template&lt;typename T&gt; class Singleton
+		{
+		protected:
+			static T* ms_Singleton;
+		public:
+			Singleton(void)
+			{
+				assert(!ms_Singleton);
+				ms_Singleton = static_cast&lt;T*&gt;(this);
+			}
+			~Singleton(void)
+			{ assert(ms_Singleton); ms_Singleton = 0; }
+			static T&amp; getSingleton (void)
+			{ assert(ms_Singleton); return (*ms_Singleton); }
+			static T* getSingletonPtr (void)
+			{ return ms_Singleton; }
+		};
+</pre>
+<blockquote>
+使用: class Myclass : public Singleton&lt;Myclass&gt; {//...}
+</blockquote>
+<div id="Ogre 分析之设计模式 -二. Factory 方法"><h2 id="二. Factory 方法">二. Factory 方法</h2></div>
+<ul>
+<li>
+Factory Method 本质上代理了某个类的实例化过程, 封装了一个 new 的语句而已, 负责对象的 delete.
+
+<li>
+如类的构造函数参数很多, Factory Method 还可简化对象的创建
+        模板化的Factory Method --- Ogre::FactoryObj&lt;T &gt;
+<pre class = "brush: c++">
+			template&lt;typename T&gt;class FactoryObj
+			{
+			public:
+				virtual ~FactoryObj() {};
+				virtual const String&amp; getType() const = 0;
+				virtual T* createInstance(const String&amp; name) = 0;
+				virtual void destroyInstance(T*) = 0;
+			}
+</pre>
+
+</ul>
+<div id="Ogre 分析之设计模式 -三. Abstract Factory"><h2 id="三. Abstract Factory">三. Abstract Factory</h2></div>
+<ul>
+<li>
+用来创建一系列相关或相互依赖对象的接口, 体现在它的 Plug-in 机制, Abstract Factory 实现的 Plug-in 机制
+
+<li>
+Plug-in 机制把与平台相关的部分和平台无关的部分分离开来, 如底层渲染使用OpenGl或DirectX, 场景使用BSP或Octree方式管理
+
+</ul>
+<div id="Ogre 分析之设计模式 -四. Adapter"><h2 id="四. Adapter">四. Adapter</h2></div>
+<ul>
+<li>
+使得原本由于接口不兼容而不能一起工作的类在一起工作
+
+<li>
+处理文件目录 Ogre::Archive. Ogre::ZipArchive, Ogre::FileSystemArchive
+
+<li>
+文件的处理使用 Ogre::DataStream 接口 --- FileHandleDataStream, FileStreamDataStream, MemoryDataStream, ZipDataStream
+
+</ul>
+<div id="Ogre 分析之设计模式 -五. Bridge"><h2 id="五. Bridge">五. Bridge</h2></div>
+<ul>
+<li>
+抽象部分和实现部分分离
+		具体见 MeshSerializer
+
+</ul>
+<div id="Ogre 分析之设计模式 -六. Proxy"><h2 id="六. Proxy">六. Proxy</h2></div>
+<ul>
+<li>
+为其他对象提供一种代理以控制对该对象的访问. GoF 提到四种常见情况: Remote Proxy, Virtual Proxy, Protection Proxy, Smart Pointer
+
+<li>
+Ogre的Smart Pointer --- Ogre::SharedPtr, 引用计数的共享指针, mutex 机制实现
+
+</ul>
+<div id="Ogre 分析之设计模式 -七. Chain of Responsibility"><h2 id="七. Chain of Responsibility">七. Chain of Responsibility</h2></div>
+<ul>
+<li>
+把请求或消息以链的方式传送给对象处理者, 避免请求的发送者和接收者之间的耦合关系
+
+<li>
+传递顺序: InputReader -&gt; EventProcessor -&gt; EventDispatcher -&gt; EventTarget -&gt; EventListener
+
+<li>
+1) 消息的获取
+
+<ul>
+<li>
+startRendering --&gt; renderOneFrame --&gt; _fireFrameStarted --&gt; FrameEvnet evt; _fireFrameStarted(evt);
+
+<ul>
+<li>
+--&gt; mFrameListeners.begin-end::frameStarted(evt); 遍历帧监听器
+
+<li>
+--&gt; 帧监听器中有一个监听器为 EventProcessor册, 在它的frameStarted方法内有 InputEvent *e = mEventQueue-&gt;pop(); processEvent(e);
+
+<li>
+--&gt; Ogre 中鼠标消息封装在 MouseEvent, 键盘消息封装在 KeyEvent
+
+<li>
+--&gt; mDispatcherList().begin-end::dispatchEvent(e); 在 EventDispatcher::dispatchEvent 处理该事件,有 processMouseEvent, processKeyEvent
+
+<li>
+--&gt; EventDispatcher::processKeyEvent --&gt; mKeyCursorOn-&gt;processEvent(e);
+
+</ul>
+</ul>
+<li>
+2) 图形更新消息
+
+<ul>
+<li>
+Root -&gt; RenderSystem -&gt; RenderTarget -&gt; Viewport -&gt; Camera -&gt; SceneManager -&gt; RednerSystem 
+
+</ul>
+</ul>
+
+    </div>
+</body>
+</html>

@@ -1,0 +1,212 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../style.css" />
+    <title>GLFWNote</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+<!--
+	<ul id="top-nav">
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+-->	
+</div>
+</div>
+    <div class="content">
+    
+<h1 id="toc_1">New features in 3.1</h1>
+<ul>
+<li>
+自定义的光标: glfwCreateCuorsor, glfwCreateStandardCursor 用于创建. glfwSetCursor 和 glfwDestrory 用于设置和销毁
+
+<li>
+接受将文件和目录的路径拖进 GLFW 的窗口, 该回调见 glfwSetDropCallback
+
+<li>
+glfwPostEmptyEvent 函数: 从其他线程发送一个空的事件给主线程的事件序列, 导致 glfwWaitEvent 返回
+
+<li>
+glfwGetWindowFrameSize --- 可查询窗口窗口客户端区域其帧各边的大小
+
+<li>
+支持禁用全屏窗口的 auto-iconification 功能. 使用 GLFW_AUTO_ICONIFY 窗口提示
+
+<li>
+支持浮动窗口, 也称之为 topmost 或永远在最顶层, 使用 GLFW_FLOATING 窗口提示
+
+<li>
+可以防止创建一个窗口化的窗口时获得输入焦点, 使用 GLFW_FOCUSED 窗口提示.
+
+</ul>
+
+<h1 id="toc_2">开始 </h1>
+<ul>
+<li>
+头文件
+<pre class="brush: c++">
+#include &lt;GLFW/glfw3.h&gt;
+</pre>
+
+<li>
+几个要点
+
+<ul>
+<li>
+不要自己去包含 OpenGL 头文件
+
+<li>
+不要包含 windows.h 或其他平台特有的头文件, 除非你计划直接使用这些 API
+
+<li>
+如果你需要包含这些头文件, 请在包含 GLFW 之前包含.
+
+</ul>
+<li>
+从 3.0 版本开始, GLU 头文件 glu.h 不再默认包含, 在GLFW头文件之前宏定义GLFW_INCLUDE_GLU可以包含这个文件
+<pre class="brush: c++">
+#define GLFW_INCLUDE_GLU
+#include &lt;GLFW/glfw3.h&gt;
+</pre>
+
+<li>
+初始化和终止 GLFW
+
+<ul>
+<li>
+如初始化成功, 则返回 GL_TRUE, 否则 GL_FALSE
+<pre class="brush: c++">
+if(!glfwInit())
+	exit(EXIT_FAILURE);
+</pre>
+
+<li>
+退出应用程序之前终止 GLFW
+<pre class="brush: c++">
+glfwTerminate();
+</pre>
+
+</ul>
+</ul>
+<p>
+*设置一个错误回调
+</p>
+<pre class="brush: c++">
+void error_callback(int error, const char* description)
+{
+	fputs(description, stderr);
+}
+</pre>
+<ul>
+<li>
+设置错误回调函数是少数可以在初始化之前设置的函数: glfwSetErrorCallback(err_callback);
+
+</ul>
+<li>
+创建窗口和其上下文.
+<pre class="brush: c++">
+GLFWwindow* window = glfwCreateWindow(640, 480, "My Title", NULL, NULL);
+if(!window)
+{
+	glfwTerminate();
+	exit(EXIT_FAILURE);
+}
+// ...
+glfwDestroyWindow(window);
+</pre>
+
+<li>
+在你使用 OpenGL API 之前, 你必须有当前的 OpenGL context: glfwMakeConextCurrent(window);
+
+<ul>
+<li>
+这个函数会保持上下文的current, 除非你做了另外一个 context current, 或者窗口拥有的current context 被销毁.
+
+</ul>
+<li>
+检查窗口的关闭标志
+<pre class="brush: c++">
+while(!glfwWindowShouldClose(window))
+{
+	// Keep runnung
+}
+</pre>
+
+<ul>
+<li>
+glfwSetWindowCloseCallback --- 设置窗口关闭的回调函数, 当窗口关闭标志设置后立即调用该函数
+
+<li>
+glfwSetWindowShoudClose --- 用于将某种输入解释为关闭窗口, 如 Escape 键
+
+</ul>
+<li>
+接受输入事件
+<pre class="brush: c++">
+static void key_callback(GLFWwindow* window, int key, int scancode, int action, int mods)
+{
+	if(key == GLFW_KEY_ESCAPE &amp;&amp; action == GLFW_PRESS)
+		glfwSetWindowShouldClose(window, GL_TRUE);
+}
+
+glfwSetKeyCallback(window, key_calback);
+</pre>
+
+<li>
+渲染OpenGL
+
+<ul>
+<li>
+需要返回用于 glViewport 的 framebuffer 的大小
+<pre class="brush: c++">
+int width, height;
+glfwGetFramebufferSize(window, &amp;width, &amp;height);
+glViewport(0, 0, width, height);
+</pre>
+
+<li>
+你可以设置一个 framebuffer 的大小变化回调函数 --- glfwSetFramebufferSizeCallback
+
+</ul>
+<li>
+读取计时器
+<pre class="brush: c++">
+double time = glfwGetTime();
+</pre>
+
+<li>
+交换缓存
+<pre class="brush: c++">
+glfwSwapBuffers(window);
+</pre>
+
+<li>
+设置交换缓存的间隔
+<pre class="brush: c++">
+glfwSwapInterval(1);
+</pre>
+
+<li>
+处理事件
+
+<ul>
+<li>
+有两种方法处理 pending 事件: polling 和 waiting
+
+<li>
+glfwPollEvents() 处理已经接收的时间并立即返回
+
+<li>
+如果你想要等到接收到新的输入再更新渲染可以使用 glfwWaitingEvents. 其等到接收到至少一个或以上的事件时, 将线程沉睡, 同时处理所有接收到的事件, 适用于编辑工具.
+
+</ul>
+
+    </div>
+</body>
+</html>

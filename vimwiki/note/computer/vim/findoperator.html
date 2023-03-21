@@ -1,0 +1,65 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../style.css">
+<title>findoperator</title>
+<meta http-equiv="Content-Type" content="text/html; charset=cp936">
+</head>
+<body>
+
+<h2 id="toc_0.1">搜索</h2>
+<p>
+/joe/e: 查找字符串"joe", 光标直接定位于"joe"的末尾
+/joe/e+1: 查找字符串"joe", 光标直接定位于"joe"的末尾再后移一位
+/joe/s-2: 查找字符串"joe", 光标直接定位于"joe"的开头再前移两位
+/^joe.*fred.*bill/ : 查找"joe"开头的行, 且"joe"到"fred", "fred"到"bill"之间至少有一个字符
+</p>
+<ul>
+<li>
+'^'匹配一行的开头; '$'匹配一行的末尾
+
+<li>
+'.'除换行符和其他Unicode行终止符之外的任意字符
+
+<li>
+'?'匹配前一项0次或1次, '+'匹配前一项1次或多次, '*'匹配前一项0次或多次
+
+</ul>
+<p>
+/^[A-J]\+/: 匹配'A'到'J'之间字符重复一次以上的开头行
+/begin\_.*end: 跨行查找匹配begin开头, end结束的字符串
+/fred\_s*joe/i : 可以是任何空白字符包括\n,\t等等, \_s 表示跨行的空白字符, /i 表示大小写不敏感的匹配. /g 全局匹配. /m 多行模式
+</p>
+<ul>
+<li>
+\s 表示任意 Unicode 空白符
+
+</ul>
+<p>
+/fred\|joe: 搜索 fred 或者 joe
+/.*fred\&amp;.*joe: 搜索同时包括 fred 跟 joe 的行
+/\&lt;fred\&gt;/i: 搜索独立的单词fred, 即单词前后有空格
+/\&lt;\d\d\d\d\&gt;: 搜索独立的4位数字, 即前后有空格的3位数字
+/\D\d\d\d\d\D: 搜索六位字符串中间4位数字前后两位不能为数字
+/\&lt;\d\{4}\&gt;:等同于/\&lt;\d\d\d\d\&gt;
+</p>
+
+<h2 id="toc_0.2">查找空行</h2>
+<p>
+/^\n\{3}: 三个连续的空行
+</p>
+
+<p>
+== 使用正则表达式组查找
+/\(fred\).*\(joe\)\2\1: fred开头, 在joe之前有0到多个字符, 然后接着joefred. \2和\1分别表示第二个括号和第一个括号括起来的字符串
+/<sup><small>\([</small></sup>.]*.\)\{8}
+</p>
+
+<h2 id="toc_0.3">可视查找</h2>
+<p>
+:vmap // y/&lt;C-R&gt;"&lt;CR&gt;: visually模式下的键盘映射，把//映射成匹配当前选中的文本
+:vmap &lt;silent&gt; // y/&lt;C-R&gt;=escape(@", '\\/.*$^~[]')&lt;CR&gt;&lt;CR&gt;: 包括空白字符
+</p>
+
+</body>
+</html>

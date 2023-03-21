@@ -1,0 +1,77 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../style.css" />
+    <title>TLBBSource</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="../index.html">首页</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<div id="地形的分析 "><h1 id="地形的分析 ">地形的分析 </h1></div>
+<ul>
+<li>
+场景管理器默认使用 Octree SceneManager 管理场景内容
+
+<li>
+地形分割成大大小小的 tile, 每个 tile 挂接至节点上, 且其设置了围绕盒信息, 以便场景管理器通过相机的视锥体屏蔽掉不需要渲染的部分
+
+</ul>
+
+<div id="库的使用"><h1 id="库的使用">库的使用</h1></div>
+<div id="库的使用-expat 库 "><h2 id="expat 库 ">expat 库 </h2></div>
+<ul>
+<li>
+代码使用该库处理大文件的 xml.
+
+<li>
+使用方法:
+
+<ol>
+<li>
+XML_ParserCreate 创建分析器
+
+<li>
+XML_SetUserData 设置用户数据, 使用者可以在这里面保存指针(如处理数据的类实例的指针)
+
+<li>
+XML_SetElementHandler 设置处理 XML 一个元素的函数, 包括XML元素起始的处理, 和结尾的处理
+
+<li>
+XML_SetCharacterDataHandler 设置字符处理函数
+
+<li>
+XML_GetBuffer 获取一段缓存用于保存读取的数据
+
+<ol>
+<li>
+读取 XML 内容, 将其保存至缓存, 本例是用 Ogre 的数据流读取.
+
+</ol>
+<li>
+XML_ParseBuffer 开始处理前面缓存的内容
+
+<li>
+XML_ParserFree 处理完毕后释放
+
+</ol>
+</ul>
+
+<div id="库的使用-Ogre 库 "><h2 id="Ogre 库 ">Ogre 库 </h2></div>
+<ul>
+<li>
+Ogre::ResourceGroupManager::openResource() 可以读取资源得到数据流, 而后通过该数据流的 read() 函数读取内容.
+
+</ul>
+
+    </div>
+</body>
+</html>

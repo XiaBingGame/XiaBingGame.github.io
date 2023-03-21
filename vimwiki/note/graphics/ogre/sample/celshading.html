@@ -1,0 +1,75 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../../style.css">
+<title>celshading</title>
+<meta http-equiv="Content-Type" content="text/html; charset=cp936">
+</head>
+<body>
+
+<ul>
+<li>
+检测是否支持顶点着色程序和片段着色程序
+
+<li>
+使用 Examples/CelShading 材质
+
+<li>
+SubEntity::setCustomParameter --- 设置着色器参数
+
+</ul>
+
+<h1 id="toc_1">Ogre学习如何使用着色器脚本(参考例子CelShading)</h1>
+<h2 id="toc_1.1">Ogre中如何使用着色器</h2>
+<ul>
+<li>
+通过SDK中的例子CelShading来了解如何使用着色器.
+
+<li>
+通过源码分析, 需要包含头文件 "RTShaderSystem/OgreRTShaderSystem.h", 以及库文件 OgreRTShaderSystem.lib
+
+<li>
+源码构造了一个类 ShaderGeneratorTechniqueResolverListener, 由类Ogre::MaterialManager::Listener派生而成.
+
+<li>
+使用 Ogre::RTShader::ShaderGenerator::initialize() 和 Ogre::RTShader::ShaderGenerator::finalize() 初始化和关闭着色器生成器
+
+<li>
+如何着色程序传递 uniform 参数
+
+<ul>
+<li>
+调用 Ogre::Entity::getSubEntity() 得到一个 Ogre::SubEntity
+
+<li>
+调用 Ogre::SubEntity::setCustomParameter 传递一个自定义 uniform 参数给着色器
+
+<li>
+本例传递了散色光颜色, 镜面光颜色, 以及 shininess 值
+
+</ul>
+</ul>
+
+<h2 id="toc_1.2">CelShading 使用的脚本分析</h2>
+<ul>
+<li>
+材质 Examples/CelShading 
+
+<ul>
+<li>
+vertex_program_ref和fragment_program_ref分别关联顶点着色器脚本和片段着色器脚本
+
+<li>
+param_named_auto 定制了由Ogre更新的CUSTOM参数
+
+<li>
+default_params 参数定制了一系列参数缺省的值
+
+<li>
+着色器原理: 顶点着色其计算三个浮点数 diffuse, specular, edge. diffuse 和 specular 则是根据光照公式计算出来的散射光和镜面光因子. edge 则为目标到眼睛的单位向量在法线上的投影值. 如果如果角度大于90, 则edge为0, 如果角度等于0, 则edge为1. 角度越小, 则可以表示更清晰的颜色. 在片段着色器中, 最终颜色为 diffuse * edge * 散射颜色 + specular * 镜面颜色.
+
+</ul>
+</ul>
+
+</body>
+</html>

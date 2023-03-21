@@ -1,0 +1,409 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../../style.css">
+<title>LoadingXFile</title>
+<meta http-equiv="Content-Type" content="text/html; charset=cp936">
+</head>
+<body>
+
+<ul>
+<li>
+mesh的成分有顶点, 纹理坐标, 材质
+
+<li>
+.X文件可有文本和二进制格式
+
+<li>
+文本格式, 一对括号定义一块, 有层次
+
+<li>
+内部描述
+
+<ul>
+<li>
+Block
+
+<ul>
+<li>
+Frame
+
+<ul>
+<li>
+FrameTransformMatrix
+
+<li>
+Frame
+
+<li>
+Mesh
+
+</ul>
+<li>
+Mesh
+
+<ul>
+<li>
+MeshNormal
+
+<li>
+MeshTextureCoords
+
+<li>
+MeshMaterialList
+
+<li>
+SkinMeshHeader
+
+<li>
+SkinWeights
+
+</ul>
+<li>
+MeshMaterialList
+
+<ul>
+<li>
+Material
+
+</ul>
+<li>
+Material
+
+<ul>
+<li>
+TextureFileName
+
+</ul>
+<li>
+AnimationSet
+
+<ul>
+<li>
+Animation
+
+</ul>
+<li>
+Animation
+
+<ul>
+<li>
+AnimationKey
+
+</ul>
+</ul>
+</ul>
+<li>
+ 我们关注的是 Mesh block, X文件中可能有多个Mesh, mesh block控制的信息:
+
+<ul>
+<li>
+MeshNormals: 法线向量列表
+
+<li>
+MeshTextureCoords: 每个材质的纹理坐标
+
+<li>
+MeshMaterialList: 用于该mesh的材质列表	
+
+</ul>
+<li>
+需要完成的任务 
+
+<ul>
+<li>
+认识文件格式的类型(文本或二进制)
+
+<li>
+提取所有的mesh以及其关联的块
+
+<li>
+连接一模型上所有的mesh
+
+<li>
+创建 mesh subset 以便每个材质使用
+
+<li>
+计算该mesh的围绕盒
+
+<li>
+在 OpenGL 中显示该模型
+
+</ul>
+<li>
+代码设计
+
+<ul>
+<li>
+Model: Concat(), Subset()
+
+<li>
+Mesh: Vertices(), TCoords(), Normals()
+
+<li>
+Material: Colour, Bitmap
+
+<li>
+Object3D: Init(Model*), Draw() --- 带动画, 且计算包围盒
+
+<li>
+文件有多个格式, 每个格式有不同的加载方式, 我们从 X File Loading 类派生一个类
+
+<ul>
+<li>
+IO: virtual Load()
+
+<li>
+IOModel_x: Load()
+
+</ul>
+</ul>
+<li>
+实现
+
+<ul>
+<li>
+Sample0.zip 可查看基本框架
+
+<li>
+Scene 对象包装了所有屏幕操作, 字体管理, 纹理加载和注册
+
+<li>
+Sample0 演示了如何显示加载的OpenGL logo 纹理
+
+<li>
+还有 timer 类用于计时, 根据 Win32 函数 GetTickCount
+
+<li>
+还有一些 tracing 宏定义与 ToolBox\MyTrace.h
+
+<ul>
+<li>
+DECLARE_TRACE: 声明一个 tracing 对象
+
+<li>
+START_TRACE: 初始化
+
+<li>
+END_TRACE: 移除和删除tracing对象
+
+<li>
+MYTRACE: 打印数据
+
+</ul>
+<li>
+文件 Sample1.zip
+
+<ul>
+<li>
+加载接口定义与 framework\Frm_IO.h
+
+<li>
+X文件的加载类定义与 TOOLbOX\IOModel_x.h 和 cpp, 伪代码
+
+<ul>
+<li>
+打开文件
+
+<li>
+检查文件头
+
+<li>
+得到模型对象的关联
+
+<li>
+进入主处理循环
+
+<ul>
+<li>
+读块名称
+
+<ul>
+<li>
+如果认识快名称, 则进行处理
+
+</ul>
+</ul>
+</ul>
+<li>
+文件头的检查通过定义于 XfileStructs.h 的值进行比较来完成
+
+<li>
+两个主要函数
+
+<ul>
+<li>
+ProcessBlock: 找到有效的块, 辨识块的类型(在 XOF_TEMPLATEID 结构列表中查找)
+
+<li>
+AvoidTemplate: 用于查找一个开括号对应的闭括号位置
+
+</ul>
+<li>
+同样的情况还可用于 ProcessBone(void);
+
+<li>
+ProcessMesh, 伪代码
+
+<ul>
+<li>
+创建一个空的 Mesh 对象, 并初始化
+
+<li>
+读取名称
+
+<li>
+如果没名称, 则分配一个名称
+
+<li>
+读取顶点数
+
+<li>
+加载顶点列表至Mesh对象
+
+<li>
+进入 Mesh 处理循环
+
+<ul>
+<li>
+查看块名是否认识, 认识就进行处理
+
+</ul>
+<li>
+处理之后, 将Mesh对象添加进Model的Mesh列表
+
+</ul>
+<li>
+Material 伪代码
+
+<ul>
+<li>
+读取该mesh使用的材质数量
+
+<li>
+读取每个face的材质索引
+
+<li>
+进入材质列表处理循环
+
+<ul>
+<li>
+读取Block name, 如认识则处理
+
+</ul>
+</ul>
+<li>
+处理材质伪代码
+
+<ul>
+<li>
+读取face的颜色
+
+<li>
+读取emission power
+
+<li>
+读取镜面颜色
+
+<li>
+读取散色颜色
+
+<li>
+进入材质描述处理循环
+
+<li>
+将该材质添加进mesh的材质列表
+
+</ul>
+</ul>
+</ul>
+<li>
+连接mesh, 创建 subset
+
+<ul>
+<li>
+见 framework\Frm_Mesh.h 和 cpp 文件
+
+<ul>
+<li>
+连接mesh 有利于简化mesh的维护(只有一个材质列表, 一个法线向量列表, 一个顶点和面的列表); 简化绘制, 用单个顶点数组实现
+
+</ul>
+<li>
+伪代码
+
+<ul>
+<li>
+在mesh list中从上个mesh中创建一个新的mesh以及返回其尺寸大小
+
+<li>
+检查新的mesh尺寸以及解决所有的不符之处
+
+<li>
+创建一个新的mesh数组
+
+<li>
+处理model list中的所有mesh
+
+<ul>
+<li>
+每个mesh 增加其关联索引
+
+<li>
+拷贝每个mesh数据至新的mesh中
+
+<li>
+将每个mesh材质移至新的mesh材质列表
+
+</ul>
+<li>
+删除model的mesh list
+
+<li>
+添加进 model mesh
+
+</ul>
+<li>
+注意mesh可分为有纹理着色的mesh和纯颜色着色的mesh
+
+<li>
+创建subset, 使得一个mesh有多个材质. 分割我们的faces数组为每个材质使用的faces列表. 目的是在绘制我们的mesh subset之前设置一个材质
+
+<li>
+伪代码
+
+<ul>
+<li>
+遍历材质列表中的每个材质
+
+<ul>
+<li>
+在 FaceMaterial 列表中计算出现该材质的数目
+
+<li>
+初始化subset
+
+<li>
+每个使用该材质的面的数据拷贝至subset
+
+</ul>
+<li>
+添加subset进subset列表
+
+</ul>
+</ul>
+<li>
+Displaying the result
+
+<ul>
+<li>
+Object3D 类负责基于原始mesh的计算
+
+<li>
+见 Sample1.cpp, 分析 tiny_4anim.x 文件
+
+</ul>
+</ul>
+
+</body>
+</html>

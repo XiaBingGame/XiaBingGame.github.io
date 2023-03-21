@@ -1,0 +1,825 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../../../style.css" />
+    <title>C++Primer_14</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<h1 id="toc_1">第14章 重载操作符与转换</h1>
+<ul>
+<li>
+重载操作符的形参数目(包括成员函数的隐式this指针)与操作符的操作数数目相同.
+
+<li>
+可重载的操作符: +, -, *, /, %, ^, &amp;, |, ~, !, ,, =, &lt;, &gt;, &lt;=, &gt;=, ++, --, &lt;&lt;, &gt;&gt;, ==, !=, &amp;&amp;, ||, +=, -=, /=, %=, ....
+
+<li>
+不可重载的操作符: ::, .*, ., ?:
+
+<li>
+不能通过连接其他合法符号来创建新的操作符. 例如试图定义一个 operator ** 操作符
+<pre class="brush: c++">
+// 下面的重载是非法的.
+int operator+(int, int);
+</pre>
+
+<li>
+用于内置类型的操作符, 其含义不能改变. 所以重载操作符必须具有至少一个类类型或枚举类型的操作数.
+
+<li>
+操作符的优先级, 结合性和操作数数目不能改变
+
+<li>
+除了函数操作符operator ()之外, 重载操作符使用默认实参是非法的.
+
+<li>
+重载操作符并不保证操作数的求值顺序, 尤其是, 不会保证内置逻辑 AND, 逻辑 OR 和逗号操作符的操作数顺序. 在&&amp;和||的重载版本中, 两个操作数都要进行求值.
+
+<li>
+作为类成员函数的操作符有一个隐含的this形参, 限定为第一个参数.
+
+<li>
+一般将算术运算和关系操作符定义为非成员函数, 而赋值操作符定义为类的成员函数. 复合赋值返回对左操作符的引用.
+
+<li>
+操作符定义为非成员函数时, 通常必须将它们设置为所操作类的友元.
+<pre class="brush: c++">
+class Sales_item{
+	friend std::istream&amp; operator&gt;&gt;
+		(std::istream&amp;, Sales_item&amp;);
+	friend std::ostream&amp; operator&lt;&lt;
+		(std::ostream&amp;, const Sales_item&amp;);
+public:
+	Sales_item&amp; operator+=(const Sales_item&amp;);
+}
+// 可以通过 Sales_item类的成员函数 operator+= 实现加法, 所以不将 operator+ 函数设置为友元
+Sales_item operator+(const Sales_item&amp;, const Sales_item);
+</pre>
+
+<li>
+可以像调用普通函数一样调用重载操作符函数, 例如:
+<pre class="brush: c++">
+// 假设 item1 和 item2 是 Sales_item对象, 则下面两个表达式等价
+cout &lt;&lt; item1 + item2 &lt;&lt; endl;
+cout &lt;&lt; operator+(item1 + item2) &lt;&lt;endl;
+// 下面也等价
+item1 += item2;
+item1.operator+=(item2);
+</pre>
+
+<li>
+不要重载具有内置含义的操作符, 如赋值操作符, 取地址操作符, 逗号操作符. 
+
+<ul>
+<li>
+合成赋值操作符会逐个成员赋值; 
+
+<li>
+取地址操作符(&amp;)返回类对象的地址; 
+
+<li>
+逗号操作符(,)从左至右计算每个表达式的值, 返回最右边操作数的值. 
+
+<li>
+内置逻辑与(&amp;&amp;)和逻辑或(||)操作符使用短路求值, 如果重定义该操作符, 将失去操作符的短路求值特征. 
+
+</ul>
+<li>
+如果我们要重载赋值操作符, 在赋值之后, 左右操作数的值应该相同, 并返回对左操作数的引用.
+
+<li>
+首先设计一个公用接口, 而后考虑其是否应该映射到一个操作符. 一般重载的操作符: 
+
+<ul>
+<li>
+相等测试操作应使用 operator==; 
+
+<li>
+通过重载移位操作符(&gt;&gt;和<&lt;)进行输入和输出; 
+
+<li>
+测试对象是否为空的操作可用逻辑非操作符 operator! 表示. 
+
+</ul>
+<li>
+如果一个类有算术操作符或为操作符, 那么最好提供相应的复合赋值操作符, 例如, 一个类已经有了+操作符, 那应该定义operator+=.
+
+<li>
+当一个重载操作符的含义不明显时, 给操作取一个名字更好; 对于很少用到的操作使用命名函数比用操作符更好; 如果不是普通函数, 没有必要为了简洁而使用操作符.
+
+<li>
+将要用作关联容器元素类型的类应当定义 operator&lt; 操作符, 如果用作顺序容器, 则类通常也应当定义相等(==)操作符, 许多算法都假定相等和小于操作符存在. 类此, 也可定义(!=), (&gt;, &gt;=, &lt;=, &lt;)操作符.
+
+<li>
+选择成员或非成员函数实现的指导原则
+
+<ul>
+<li>
+赋值(=), 下标([]), 调用(())和成员访问箭头(-&gt;)等操作符必须定义为成员. 
+
+<li>
+复合赋值操作符通常也定义为类的成员; 
+
+<li>
+改变对象状态或与给定类型紧密联系的其他一些操作符, 如自增, 自减和解引用, 通常应定义为类成员. 
+
+<li>
+对称的操作符, 如算术操作符, 相等操作符, 关系操作符和位操作符, 最好定义为普通非成员函数.
+
+</ul>
+<li>
+输出操作符(&lt;&lt;)的重载, 一般的简单定义如下:
+
+<ul>
+<li>
+为了与IO标准库一致, 操作符应该接受 ostream&amp; 作为第一个形参, 对类类型 const 对象的引用作为第二个形参, 并返回对 ostream 形参的引用
+<pre class="brush: c++">
+ostream&amp;
+operator&lt;&lt;(ostream&amp; os, const ClassType &amp;object)
+{
+	// ... 其他操作
+	// 输出
+	os &lt;&lt; // ...
+	return os;
+}
+</pre>
+
+</ul>
+<li>
+一个const的类对象, 只能调用该类对象的 const 成员函数, 例如:
+<pre class="brush: c++">
+const Sales_item&amp; s;
+// ...
+s.avg_price();		// avg_price() 是 Sales_item类的const成员函数.
+</pre>
+
+<li>
+输出操作符所做的格式化应该尽可能少, 比如不应该输出换行符, 让用户自己控制输出细节. 
+
+<li>
+IO操作符必须为非成员函数. 类通常将 IO 操作符设为友元
+
+<li>
+输入操作符的第一个形参是一个引用, 指向要读取的流, 并返回同一个流的引用. 第二个形参是要读入的对象的非const引用, 因为输入操作符要将数据读到这个对象中.
+
+<li>
+重载输入操作符必须处理错误和文件结束的可能性.
+
+<ul>
+<li>
+任何读操作都可能因为提供的值不正确而失败
+
+<li>
+任何读入都可能碰到输入流中的文件结束符或其他一些错误.
+<pre class="brush: c++">
+istream&amp; operator&gt;&gt;(istream&amp; in, Sales_item&amp; s)
+{
+	double price;
+	in &gt;&gt; s.isbn &gt;&gt; s.units_sold &gt;&gt; price;
+	if(in)
+		s.revenue = s.units_sold * price;
+	else
+		s = Sales_item();
+}
+</pre>
+
+</ul>
+<li>
+设计输入操作符时, 要确定错误恢复措施, 这很重要.
+
+<li>
+输入流可通过检查流来判断输入是否成功. 如果用户需要设置输入流失败, 例如输入的isbn字符串格式错误, 则设输入操作符仅需设置 failbit即可. eofbit表示文件耗尽, badbit表示流被破坏. 这些错误最好留给IO标准库自己来指出.
+
+<li>
+算术运算操作符, 例如其中加法运算操作符, 参数为const引用类型, 返回的值为类类型, 而非引用, 在函数体内应创建一个临时变量计算最终的结果, 而后返回该临时变量. 如定义了该算术操作符相关的复合赋值操作符, 一般应使用该复合赋值操作符实现算术操作符.
+
+<li>
+如果类定义了==操作符, 该操作符的函数是两个对象包含相同的数据成员. 如果定义了operator==, 那么也应当定义operator!=. 定义了相等操作符, 一般也会定义operator&lt;等关系操作符. 一般而言, 关系操作符, 诸如相等操作符应定义为非成员函数. 
+
+<li>
+定义 &lt; 操作符时不要和 == 操作符冲突, 一般如果一个类的两个对象都不小于对方, 则看成两个对象相等.
+
+<li>
+赋值操作符可以重载, 无论形参为何类型, 赋值操作符必须定义为成员函数, 这一点和复合赋值操作符有所不同. 
+
+<li>
+赋值必须要返回对 *this的引用, 这样就不需要创建和撤销结果的临时副本. 一般而言, 赋值和复合赋值操作符应返回左操作数的引用.
+
+<li>
+下标操作符必须定义为类成员函数. 定义下标操作符比较复杂的地方在于, 它在用作赋值的左右操作数时都应该表现正常. 下标操作符出现在左边, 必须生成左值, 可以指定引用作为返回类型而得到左值.
+
+<li>
+所以一般要定义两个版本, 一个为非const成员并返回引用, 另一个为const成员并返回const引用. 
+<pre class="brush: c++">
+int&amp; Foo::operator[] (const size_t index)
+{
+	return data[index];
+}
+const int&amp; Foo::operator[] (const size_t index) const
+{
+	return data[index];
+}
+</pre>
+
+<li>
+解引用操作符(*)和箭头操作符(-&gt;)的重载, 箭头操作符必须为成员函数, 解引用操作符不要为定义为成员函数, 但定义为成员函数一般也是正确的.
+
+<li>
+解引用操作符和箭头操作符常用于实现智能指针
+
+<ul>
+<li>
+ScrPtr: 伙伴类, 保存指针及其相关使用计数.
+<pre class="brush: c++">
+class ScrPtr {
+	friend class ScreePtr;
+	Screen *sp;
+	size_t use;
+	ScrPtr(Screen *p) : sp(p), use(1) { }
+	~ScrPtr() { delete sp; }
+}
+</pre>
+
+<li>
+ScreenPtr 类, 指针指向动态分配的Screen, 最后一个 ScreenPtr 消失时删除基础对象. 不用为ScreenPtr定义默认构造函数, 其总是指向一个Screen对象.
+<pre class="brush: c++">
+class ScreenPtr {
+public:
+	ScreenPtr(Screen* p) : ptr(new ScrPtr(p)) { }
+	ScreenPtr(const ScreenPtr &amp;orig) : ptr(orig.ptr) { ++ptr-&gt;use; }
+	ScreenPtr&amp; operator=(const Screen&amp;);
+	~ScreenPtr() { if (--ptr-&gt;use == 0) delete ptr; }
+	
+	Screen&amp; operator*() { return *ptr-&gt;sp; }
+	Screen* operator-&gt;() { return ptr-&gt;sp; }
+	const Screen&amp; operator*() const { return *ptr-&gt;sp; }
+	const Screen* operator-&gt;() const { return ptr-&gt;sp; }
+private:
+	ScrPtr *ptr;
+}
+</pre>
+
+</ul>
+<li>
+与下标操作符一样, 解引用操作符我们需要const和非const版本.
+
+<li>
+不管外表如何, 箭头操作符不接受显式形参
+
+<li>
+箭头操作符在编译器内的操作: 例如 point-&gt;action(); 
+
+<ul>
+<li>
+如果point是一个指针, 指向一个有action()成员函数的类对象, 则调用该对象的action()函数
+
+<li>
+否则, 假设pointer为定义了operator-&gt;操作符的类, 则执行 point.operator-&gt;()-&gt;action(); 而后重复第一步, 看这个operator-&gt;操作返回的指针所指的类对象是否有action() 函数 
+<pre class="brush: c++">
+ScreenPtr p(&amp;myScreen);
+p-&gt;display(cout);	// 等同于 (p-&gt;operator())-&gt;display();
+</pre>
+
+</ul>
+<li>
+所以重载箭头操作符必须返回指向类类型的指针, 或者返回定义了自己的箭头操作符(如上面的display())的类类型对象.
+
+<li>
+如果箭头操作符返回的不是指针, 而是类类型的其他对象(或这些对象的引用), 则递归应用该操作符
+
+<li>
+自增或自减操作符会改变操作对象的状态, 所以更倾向于将它们作为成员.
+
+<li>
+自增自减(++, --)操作符的重载, 其中分为前缀和后缀, 后缀的重载带一个int形参, 该形参没有任何用处, 只是用来分别前缀和后缀. 前缀操作符返回一个引用, 后缀操作符不返回引用, 而是返回一个操作之前该类对象的副本.
+
+<li>
+显式调用自增自减操作符
+<pre class="brush: c++">
+CheckedPtr parr(ia, ia + size);
+parr.operator++(0);	// 后自增
+parr.operator++();	// 前自增
+</pre>
+
+<li>
+调用操作符, 一般为表示操作的类重载调用操作符. 函数调用操作符必须声明为成员函数. 一个类可以定义函数调用操作符的多个版本, 由形参的数目或类型加以区别. 这种类的对象成为(Function object), 函数对象/仿函数.
+<pre class="brush: c++">
+struct absInt {
+	int operator()(int val) { return val &lt; 0 ? -val : val; }
+};
+
+int i = -42;
+absInt absObj;
+unsigned int ui = absObj(i);
+</pre>
+
+<li>
+重载了调用操作符的类, 其对象被称为函数对象(function object)
+
+<li>
+将函数对象应用于标准库算法, 可根据不同的状态创建不同的函数对象, 无需重新定义多个函数. 例如 count_if 算法:
+<pre class="brush: c++">
+bool GT6(const string&amp; s)
+{
+	return s.size() &gt; 6;
+}
+vector&lt;string&gt;::size_type wc = count_if(words.begin(), words.end(), GT6);
+// 上面算法的缺点就是如果要计算大于7, 8或者其他数字的单词数目, 就要重新定义函数. 使用函数对象就没有这么麻烦, 例如
+class GT_cls
+{
+public:
+	GT_cls(size_t val = 0) : bound(val) {}
+	bool operator()(const string&amp; s)
+	{
+		return s.size() &gt; bound;
+	}
+private:
+	std::string::size_type bound;
+};
+vector&lt;string&gt;::size_type wc = count_if(words.begin(), words.end(), GT_cls(6));
+</pre>
+
+<li>
+标准库定义的函数对象类型, 在 functional 中定义的
+
+</ul>
+<ul>
+<li>
+每个标准库函数对象类表示一个操作符. 每个函数对象类都是一个类模板, 例如:
+<table>
+<tr>
+<th>
+类型
+</th>
+<th>
+函数对象
+</th>
+<th>
+所应用的操作符
+</th>
+</tr>
+<tr>
+<td>
+算术函数对象类型
+</td>
+<td>
+plus&lt;Type&gt;
+</td>
+<td>
++
+</td>
+</tr>
+<tr>
+<td>
+&nbsp;
+</td>
+<td>
+minus&lt;Type&gt;
+</td>
+<td>
+-
+</td>
+</tr>
+<tr>
+<td>
+&nbsp;
+</td>
+<td>
+multiplies&lt;Type&gt;
+</td>
+<td>
+*
+</td>
+</tr>
+<tr>
+<td>
+&nbsp;
+</td>
+<td>
+divides&lt;Type&gt;
+</td>
+<td>
+/
+</td>
+</tr>
+<tr>
+<td>
+&nbsp;
+</td>
+<td>
+modulus&lt;Type&gt;
+</td>
+<td>
+%
+</td>
+</tr>
+<tr>
+<td>
+&nbsp;
+</td>
+<td>
+negate&lt;Type&gt;
+</td>
+<td>
+-
+</td>
+</tr>
+<tr>
+<td>
+关系函数对象类型
+</td>
+<td>
+equal_to&lt;Type&gt;
+</td>
+<td>
+==
+</td>
+</tr>
+<tr>
+<td>
+&nbsp;
+</td>
+<td>
+not_equal_to&lt;Type&gt;
+</td>
+<td>
+!=
+</td>
+</tr>
+<tr>
+<td>
+&nbsp;
+</td>
+<td colspan="2">
+greater&lt;Type&gt;
+</td>
+</tr>
+<tr>
+<td>
+&nbsp;
+</td>
+<td>
+greater_equal&lt;Type&gt;
+</td>
+<td>
+&gt;=
+</td>
+</tr>
+<tr>
+<td>
+&nbsp;
+</td>
+<td>
+less&lt;Type&gt;
+</td>
+<td>
+&lt;
+</td>
+</tr>
+<tr>
+<td>
+&nbsp;
+</td>
+<td>
+less_equal&lt;Type&gt;
+</td>
+<td>
+&lt;=
+</td>
+</tr>
+<tr>
+<td>
+逻辑对象类型
+</td>
+<td>
+logical_and&lt;Type&gt;
+</td>
+<td>
+&amp;&amp;
+</td>
+</tr>
+<tr>
+<td>
+&nbsp;
+</td>
+<td>
+logical_or&lt;Type&gt;
+</td>
+<td>
+&nbsp;
+</td>
+</tr>
+<tr>
+<td>
+&nbsp;
+</td>
+<td>
+logical_not&lt;Type&gt;
+</td>
+<td>
+!
+</td>
+</tr>
+</table>
+<pre class="brush: c++">
+plus&lt;int&gt; intAdd;
+negate&lt;int&gt; intNegate;
+int sum = intAdd(10, 30);
+sum = intAdd(19, intNegate(10));
+</pre>
+
+<li>
+在算法中使用标准库函数对象
+<pre class="brush: c++">
+sort(svec.begin(), svec.end(), greater&lt;string&gt;());
+</pre>
+
+<li>
+函数适配器(function adapter), 用于特化和扩展一元和二元函数对象. 分为两类: 
+
+<ol>
+<li>
+绑定器(binder), 将一个操作数绑定到给定值, 从而将二元函数对象转换为一元函数对象. 有 bind1st 和 bind2nd. 
+
+<li>
+求反器(negator), 将函数对象的真值求反. 有 not1, not2. 前者将一元函数对象的值求反, 后者将二元函数对象的值求反. 例如:
+<pre class="brush: c++">
+// 所小于等于10的元素个数
+count_if(vec.begin(), vec.end(), bind2nd(less_equal&lt;int&gt;(), 10));
+not1(count_if(vec.begin(), vec.end(), bind2nd(less_equal&lt;int&gt;(), 10)));
+</pre>
+
+</ol>
+<li>
+一个实参调用的非 explicit 构造函数定义了一个隐式转换
+
+<li>
+我们可以定义转换操作符, 给定类类型的对象, 该操作符将产生其他类型的对象.
+
+<li>
+一个类可以定义自己的转换, 将自己转换至其他类的类型. 例如有一个用户定义的类 SmallInt, 定义了到int的转换, 这样就可以实现 SmallInit 类对象和其他内置类型的算术运算操作. 这是由于SmallInt可以转换为int之后再进行算术操作. 
+
+<li>
+转换操作符是一种特殊的类成员函数, 定义将类类型转换为其他类类型的转换. 在类定义体内声明, 在保留字 operator 之后跟着转换的目标类型, 转换函数的通用形式: operator type(); 转换函数一般不改变被转换的对象, 所以转换函数一般为 const 成员函数. 例如:
+
+<li>
+一般而言, 不允许转换为数组和函数类型, 转换为指针类型(数据和函数指针)以及引用类型都是可以的
+
+<li>
+转换函数必须是成员函数, 不能指定返回类型, 并且形参表必须为空.
+
+<li>
+虽然转换函数不能指定返回类型, 但是每个转换函数必须显式返回一个指定类型的值.
+<pre class="brush: c++">
+class SmallInt {
+public:
+	SmallInt(int i = 0) : val(i)
+	{
+		if(i &lt; 0 || i &gt; 255)
+		{
+			throw std::out_of_range("Bad Smallint initializer");
+		}
+	}
+	operator int() const { return val; }
+private:
+	std::size_t val;
+};
+</pre>
+
+<li>
+使用转换函数时, 被转换的类型不必与所需要的类型完全匹配, 必要时可在类类型转换之后跟上标准转换以获得想要的类型
+<pre class="brush: c++">
+SmallInt si;
+double dval;
+si &gt;= dval;
+</pre>
+
+<li>
+只能应用一个类型转换, 类类型转换之后不能再跟另一个类类型转换. 例如 Integral 内有转换函数 operator SmallInt(), 则 Integral 对象只能用于需要 SmallInt对象的地方, 不能用于需要 int 类型的地方.
+
+<li>
+标准转换可放在类类型转换之前, 例如下面的因为单参数非explict构造函数产生的隐式转换, 其首先将short标准转换提升至int, 而后使用隐式转换.
+<pre class="brush: c++">
+void calc(SmallInt);
+short sobj;
+calc(sobj);
+</pre>
+
+<ul>
+<li>
+如 SmallInt 类构造函数的参数为一个 double值, 可用标准转换来讲 double 值转换为 int, 而后调用 SmallInt(int) 构造函数.
+
+</ul>
+<li>
+实参匹配和转换
+<pre class="brush: c++">
+class SmallInt {
+public:
+	SmallInt(int = 0);
+	SmallInt(double);
+	operator int() const ( return val; )
+	operator double() const { return val; }
+
+private:
+	std::size_t val;
+};
+</pre>
+
+<ul>
+<li>
+如果两个转换符都可用在一个调用中, 而且在转换函数之后存在标准转换, 则根据该标准转换的类别选择最佳匹配. 见下例
+<pre class="brush: c++">
+void compute(int);
+void fp_compute(double);
+void extended_compute(long double);
+SmallInt si;
+compute(si);			// 使用SmallInt::operator int()
+fp_compute(si);			// 使用SmallInt::operator double()
+extended_compute(si);	// 二义性
+</pre>
+
+<li>
+当两个构造函数定义的转换都可以使用时, 如果存在构造函数实参所需的标准转换, 就用该标准换的类别选择最佳匹配
+<pre class="brush: c++">
+void manip(const SmallInt&amp;);
+double d; int i; long double l;
+manip(d);		// SamllInt(double)
+manip(i);		// SamllInt(int)
+manip(l);		// 二义性
+</pre>
+
+<li>
+两个类定义了相互转换产生的二义性
+<pre class="brush: c++">
+class Integral;
+class SmallInt {
+public:
+	SmallInt(Integral);
+};
+class Integral {
+public:
+	operator SmallInt() const;
+};
+// 产生了两个从 Integral 到 SmallInt 的转换
+void compute(SmallInt);
+Integral int_val;
+compute(int_val); // 产生二义性
+// 这种情况无法使用显式类型转换来解决二义性, 需要显式调用转换操作符或这个构造函数
+compute(int_val.operator SmallInt());
+compute(SmallInt(intval));
+</pre>
+
+</ul>
+<li>
+最好不要编写互相提供隐式转换的成对的类
+
+<li>
+避免二义性最好的方法是: 保证最多只有一种途径将一个类型转换为另一个类型, 限制转换操作符的数目, 且到一种内置类型应该只有一种转换. 
+
+<li>
+函数重载确定, 即确定使用哪个重载函数:  
+
+<ol>
+<li>
+确定候选函数集合, 即与被调用函数同名的函数; 
+
+<li>
+选择可行的函数, 即形参数目和类型与函数调用中的实参相匹配的候选函数, 如有转换操作, 确定需要哪个转换操作来匹配每个形参; 
+
+<li>
+选择最佳匹配的函数, 对将实参转换为对应形参所需的类型转换进行分类.
+
+</ol>
+<li>
+如果重载集中的两个函数可以用同一个转换函数匹配, 则使用在转换之后或之前的标准转换序列的等级来确定哪个函数具有最佳匹配. 例如下面三个函数可以用同一个SmallInt到int的转换函数来匹配.
+<pre class="brush: c++">
+void compute(int);
+void compute(double);
+void compute(long double);
+</pre>
+
+<ul>
+<li>
+注意, 只有两个转换序列使用同一转换操作时, 才用类类型转换之后的标准转换序列作为选择标准
+
+<li>
+上面的三个函数如果可以使用不同的转换操作, 则认为这些不同的转换是一样好的匹配. 见下例
+<pre class="brush: c++">
+class SmallInt {
+public:
+	operator int() const { return val; }
+	operator double() const { return val; }
+private:
+	std::size_t val;
+};
+void compute(int);
+void compute(double);
+void compute(long double);
+SamllInt si;
+compute(si); // 两个转换操作都是一样好的匹配, SamllInt-&gt;int, SamllInt-&gt;double, 因此无法选择 compute(int), 还是 compute(double)
+</pre>
+
+<li>
+使用强制转换解决二义性问题
+<pre class="brush: c++">
+compute(static_cast&lt;int&gt;(si));
+</pre>
+
+</ul>
+<li>
+存在多个转换构造函数的重载确定
+<pre class="brush: c++">
+class SmallInt {
+public:
+	SmallInt(int = 0);
+};
+class Integral {
+public:
+	Integral(int = 0);
+};
+void mainip(const Integral&amp;);
+void mainip(const SmallInt&amp;);
+manip(10);	// 10 可以隐式转换成两个对象.
+</pre>
+
+<ul>
+<li>
+上面的例子, 如果 SmallInt(int) 改成 SmallInt(short), 仍会有二义性, 改变不了其本质.
+
+<li>
+使用显式构造函数解决二义性.
+<pre class="brush: c++">
+manip(SmallInt(10));
+manip(Integral(10));
+</pre>
+
+</ul>
+</ul>
+
+<ul>
+<li>
+操作符重载一定要确定使用哪个版本的操作符函数. 成员函数和非成员函数都是可能的候选函数
+
+<li>
+操作符的候选函数
+
+<ol>
+<li>
+操作符的内置版本
+
+<li>
+操作符的普通非成员函数
+
+<li>
+如果左操作数为类类型, 则类类型其操作符的重载版本
+
+</ol>
+<li>
+设计类的重载操作符, 转换构造函数和转换函数时, 避免二义性的几个经验
+
+<ol>
+<li>
+不要定义相互转换的类, 例如类Foo具有接受类Bar的对象的构造函数, 不要再为类Bar定义到类型Foo的转换操作符
+
+<li>
+避免到内置算术类型的转换. 如果一定要定义, 则注意
+
+<ul>
+<li>
+不要定义接受算术类型的操作符的重载版本, 而是选择提供到算术类型的转换, 如 operator int(), 如果用户需要使用算术运算符, 如+,-,*,/等, 使用转换操作符转换你所定义的类类型为算术类型, 而后使用内置操作符. 
+
+<li>
+不要定义转换到一个以上算术类型的转换, 例如, 同时提供到int和double的转换.
+<pre class="brush: c++">
+class SmallInt{
+	SmallInt(int = 0);
+	operator int() const;
+	friend SmallInt operator+(const SmallInt&amp;, const SmallInt&amp;); 
+};
+
+SmallInt s1, s2;
+SmallInt s3 = s1 + s2;
+int i = s3 + 0;		// 这一句产生了二义性. 是用 SmallInt operator+() 版本, 还是用 int内置的 operator+().
+</pre>
+
+</ul>
+</ol>
+</ul>
+
+    </div>
+</body>
+</html>

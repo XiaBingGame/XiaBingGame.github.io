@@ -1,0 +1,127 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../../style.css" />
+    <title>Chapter02</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<p>
+OpenGL 超级宝典 第2章 使用OpenGL<br />
+1. OpenGL的工作原理<br />
+	泛型实现<br />
+		泛型实现就是软件实现. 硬件实现是为一种特定的硬件设备所创建的<br />
+	硬件实现<br />
+		又称为加速实现<br />
+<br />
+2. 管线<br />
+	OpenGL API调用-&gt;OpenGL命令缓冲区-&gt;转换和光照-&gt;光栅化-&gt;帧缓冲区<br />
+<br />
+3. OpenGL 是API而不是编程语言<br />
+	使用OpenGL定义的变量类型, 是你的代码避免由于类型的不一致所带来的影响.<br />
+<br />
+4. 使用GLUT<br />
+	GLUT---OpenGL工具箱<br />
+	GLU---OpenGL utility library<br />
+<br />
+5. glGetError函数得到程序错误<br />
+6. gluErrorString函数获得描述错误标志的字符串<br />
+7. glGetString函数<br />
+8. glHint函数设定性能<br />
+9. 本书附加代码gltools文件提供了<br />
+	void* gltGetExtensionPointer(const char* szExtensionName);<br />
+<br />
+第3章 在空间中绘图<br />
+1. 点的大小<br />
+	void glPointSize(GLfloat size);<br />
+		GL_POINT_SIZE_RANGE<br />
+		GL_POINT_SIZE_GRANULARITY<br />
+2. GL_FLAT表示用多边形最后一个顶点的颜色来绘制多边形<br />
+3. 剔除<br />
+	GL_CULL_FACE<br />
+4. 点画模式<br />
+	glEnable (GL_POLYGON_STIPPLE)<br />
+	glPolygonStipple(pBitmap)<br />
+5. glEdgeFlag设置边缘标志<br />
+6. OpenGL并不是直接在屏幕上渲染(绘制)图元的, 相反, 它是在一个缓冲区中完成渲染的, 然后把渲染结果交换到屏幕上.<br />
+	缺省情况下, OpenGL命令是在后缓冲区中进行渲染的.<br />
+	void glDrawBuffer(GLenum mode). 告诉OpenGL你希望在哪里进行绘图.<br />
+7. 禁止或允许写入深度缓冲区<br />
+	glDepthMask(GLboolean mask);<br />
+8. 裁剪测试<br />
+	glEnable(GL_SCISSOR_TEST);<br />
+	glScissor设置裁剪区域.<br />
+9. 使用模板<br />
+	GLUT_STENCIL<br />
+	GL_STENCIL_TEST<br />
+	glStencilFunc<br />
+	清除模板缓冲区<br />
+		glClearStencil和GL_STENCIL_BUFFER_BIT<br />
+	根据测试列表-通过模版测试才能绘图, 如果打开模版测试的话<br />
+	可以使用glStencilMask禁止写入模板缓冲区<br />
+<br />
+10. glDepthRange 允许z值从标准化的设备坐标映射到窗口坐标.<br />
+	glPolygonOffset    设置用于计算深度值的规模和单位<br />
+		允许对一个片段已经计算好的深度值加上或减去一个偏移量. 这个偏移量是用下面这个公式计算的<br />
+		offset = (m * factor) + (r * factor;<br />
+11. glt 函数<br />
+	gltRotationMatrix    旋转一个矩阵<br />
+	gltDegToRad        将角度转换为弧度.<br />
+	gltTransformPoint    将该点经过矩阵转换.<br />
+<br />
+	gltMultiplyMatrix函数完成矩阵乘法<br />
+	glMultMatrix函数实现矩阵乘法<br />
+<br />
+	使用一个数据结构来表示参考帧, 包含空间中的一个位置, 一个指向前面的向量, 以及一个指向上面的向量.<br />
+</p>
+<pre c++>
+		typedef struct{
+			GLVector3f    vLocation;
+			GLTVector3f    vUp;
+			GLTVector3f    vForwad
+		} GLFrame;
+</pre>
+<p>
+<br />
+	这些数据可以直接创建一个4x4的转换矩阵. 向上的向量作为矩阵的y列. 向前的向量作为z列. y和z相乘得到x列向量.<br />
+<br />
+12. 欧拉角-- 一个存储物体的位置和方向的更简单机制. 存储一个物体的位置以及3个角度.<br />
+</p>
+<pre c++>
+	struct EULER
+	{
+	    GLTVector3f    vPosition;
+ 	   GLfloat        fRoll;
+ 	   GLfloat        fPitch;
+ 	   GLfloat        fYaw;
+	};
+</pre>
+<p>
+<br />
+	3D环境的典型渲染循环<br />
+<br />
+13. 将3D数据压平为2D数据的过程称为投影.<br />
+14. OpenGL的转换<br />
+	视图-指定观察者或相机位置; 模型-移动物体; 模型视图-统一视图和模型; 投影-对观察区域进行裁剪和缩放; 视口-对窗口的最终输出进行缩放.<br />
+15. 矩阵在OpenGL中为一个大小为16的一维数组, a0, a1, a2, a3为X轴的方向向量, a4, a5, a6, a7为Y轴的方向向量, a8, a9, a10, a11为Z轴的方向向量, a12, a13, a14, a15为移动向量.<br />
+16. 乘法为矩阵左乘顶点, 或者顶点右乘矩阵,如顶点V(v0, v1, v2);则新的顶点位置为(a0*v0+a4*v1+a8*v2+a12, a1*v1+a5*v2+a9*v2+a13, a2*v1+a6*v2+a10*v3+a14)<br />
+	乘法的顺序: 如果先进行转化M, 然后进行转换N, 而后进行转换P, 则绘制的顶点V, 则乘法为 M*N*P*V则为求出的顶点, 注意这个结论即可.<br />
+17. 模型视图矩阵乘以顶点可以得到顶点的视觉坐标. 投影矩阵乘以世界坐标可以得到裁剪后的视觉坐标<br />
+</p>
+
+    </div>
+</body>
+</html>

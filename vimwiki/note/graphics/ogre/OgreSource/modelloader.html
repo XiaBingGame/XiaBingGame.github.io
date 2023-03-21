@@ -1,0 +1,264 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../style.css" />
+    <title>modelloader</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="../index.html">首页</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<p>
+在本程序中, 其中的骨骼和网格数据都是使用 XML 格式保存的.
+</p>
+
+<ul>
+<li>
+model_loader_app 类
+
+<ul>
+<li>
+该类主要负责加载模型, 处理按键, 并控制模型的渲染
+
+<li>
+model_loader_app::startup() 函数内加载模型, 加载着色器, 获取着色器常用变量的位置
+
+<li>
+model_loader_app::onKey() 处理按键事件
+
+<li>
+model_loader_app::render() 渲染模型
+
+</ul>
+</ul>
+
+<ul>
+<li>
+Mesh 类: 通过该类加载模型的材质, 网格数据, 骨骼数据
+
+<ul>
+<li>
+该类的构造函数有三个参数, 分别表示模型材质, 模型网格, 模型骨骼, 例如:
+
+</ul>
+</ul>
+<p>
+Mesh* m = new Mesh("../media/sinbad/sinbad.material", "../media/sinbad/sinbad.mesh.xml", program, "../media/sinbad/sinbad.skeleton.xml");
+</p>
+<ul>
+<li>
+通过 MeshAnimation::LoadSkeletonXML() 方法加载动画数据
+
+<li>
+读取网格数据, 并根据网格数据创建顶点数组对象, 设置顶点数据的布局, 在 Mesh::buildGeometry() 方法内实现
+
+<li>
+通过 Mesh::changeAnim(bool binc) 方法更换模型使用的动画, 比如从跳舞动画转换至跑步, 主要是通过更换动画的索引实现.
+
+<li>
+Mesh::draw() 方法则绘制该模型, 首先求解模型当前每个骨头的矩阵, 而后这些矩阵传递给着色器, 在着色器中每个顶点根据权重值求解出最终的变换矩阵, 从而实现动画.
+
+</ul>
+	
+<ul>
+<li>
+MeshAnimation 类: 该类加载骨骼数据, 在 MeshAnimation::LoadSkeletonXML() 方法内实现.
+
+<li>
+MeshAnimation::LoadSkeletonXML() 方法
+
+<ul>
+<li>
+首先根据骨骼文件的根节点是否为 skeleton 节点判断是否为有效的骨骼文件
+
+<li>
+进入 bones 部分, 遍历所有的 bone 项, 保存每个骨头的初始位置和旋转状态.
+
+<li>
+进入 bonehierarchy 部分, 保存每个骨头的父骨头是属于哪个骨头.
+
+<ul>
+<li>
+同时保存每个骨头有哪些孩子骨头
+
+</ul>
+<li>
+进入 animations 部分, 开始遍历所有的 animation 动画
+
+<ul>
+<li>
+读取每一个 animation, 获取其名称与动画长度, 而后遍历其内每个骨头的动画
+
+<ul>
+<li>
+获取每个骨头在不同关键帧的位移与旋转
+
+</ul>
+</ul>
+<li>
+重新设置动画, 确保每个动画每一秒刚好有二十个关键帧
+
+<li>
+保存每个骨头最初状态的逆矩阵
+
+</ul>
+<li>
+MeshAnimation::SetPose() 方法
+
+<ul>
+<li>
+主要通过该方法更新模型在不同时间骨头的矩阵表示移动或旋转, 以形成动画.
+
+<li>
+首先根据动画索引获取动画数据
+
+<li>
+而后根据时间, 获取动画位于哪一帧, 通常位于两个关键帧之间
+
+<li>
+根据帧号更新每个骨头在当前时间的矩阵(用以表示位移和旋转).
+
+<li>
+如果有父骨头, 则还要加上父骨头的矩阵, 因为骨骼动画是具有层级的, 因此矩阵是需要累加相乘的.
+
+</ul>
+</ul>
+
+<ul>
+<li>
+模型是如何实现动画的
+
+<ul>
+<li>
+在每一帧开始之前, 更新模型中每个骨头的矩阵
+
+<li>
+每个骨头的变换矩阵事先还要先乘以每个骨头自身的逆矩阵, 这是因为每个骨头的变换是作用于骨头自身的坐标空间, 因此模型坐标系的每个顶点需要乘以骨头的逆矩阵进入骨头的坐标空间内.
+
+<li>
+而后把这些矩阵传递给着色器
+
+<li>
+着色器中模型的每个顶点根据权重值得知使用哪些矩阵, 将这些矩阵通过权重值累加, 获得最终的变换矩阵.
+
+<li>
+模型顶点乘以最终的变换矩阵实现动画.
+
+</ul>
+</ul>
+
+<ul>
+<li>
+材质部分
+
+<ul>
+<li>
+模型仅仅有顶点, 网格是不行的, 我们还需要给模型加上材质, 材质主要是给模型加上光照, 纹理
+
+<li>
+本实验模型使用的材质文件为 sinbad.material
+
+<li>
+通过材质文件可知, 模型不同的部分使用了不同的材质, 例如身体, 眼睛, 刀鞘使用了不同的材质.
+
+<ul>
+<li>
+举例: 身体部分的材质: material Sinbad/Body
+
+<ul>
+<li>
+设置了环境光材质为(0.75, 0.75, 0.75), 散射光材质为 (1.0, 1.0, 1.0)
+
+<li>
+设置了使用纹理 sinbad_body.bmp
+
+</ul>
+</ul>
+</ul>
+</ul>
+
+<ul>
+<li>
+网格部分
+
+<ul>
+<li>
+本例使用的网格数据文件为: Sinbad.mesh.xml, 使用 xml 格式存储
+
+<li>
+根据使用材质的不同, 将网格数据划分为不同的部分
+
+<li>
+每一部分的网格主要包含了如下部分
+
+<ul>
+<li>
+每部分的网格其属性有使用的材质名称
+
+<li>
+包含了网格中每个面使用的顶点索引, 例如 &lt;face v1="0" v2="1" v3="2" /&gt; 表示使用了索引为0和1, 2 的顶点构成一个三角形面
+
+<li>
+包含了大量的顶点, 每个顶点有位置和法线, 以及大量的纹理坐标数据
+
+</ul>
+</ul>
+</ul>
+
+<ul>
+<li>
+动画部分
+
+<ul>
+<li>
+本例使用的骨骼数据为 Sinbad.skeleton.xml
+
+<li>
+骨骼文件的分析, 可以看出主要分为三个部分, 分别为 bones, bonehierarchy, animations.
+
+<ul>
+<li>
+对于 bones 部分, 其中的每一项保存了每一个骨头的数据, 对于每一个骨头都有ID号和名称
+
+<ul>
+<li>
+每一个骨头的数据主要包含了这几样, 一个是最初状态骨头的位置, 另一个为最初状态骨头的旋转状态.
+
+</ul>
+<li>
+对于 bonehierarchy 部分, 主要表示了骨头之间的层次关系, 主要是每个骨头都可以找到父骨头, 其中最高层次的骨头名称为 "Root", 该骨头没有父骨头.
+
+<li>
+对于 animations 部分, 则包含了不同的骨骼动画, 这里每个 animation 项都是一个动画, 这里一共有 13 个动画
+
+<ul>
+<li>
+对于每个 animation, 其属性包含了动画名称与动画长度, 包含了一个动画的所有数据, 主要设置了每一个骨头在每一个关键帧的位置和旋转, animation 的 tracks 项内每一项 track 都是每一个骨头的数据.
+
+<ul>
+<li>
+对于每个 track, 包含了一个骨头的相关数据, 通过名称可判知是哪个骨头的数据
+
+<li>
+在每个 track 的内部, 每一项都是一个关键帧, 每个关键帧表示某个时间时该骨头的位置和旋转
+
+<li>
+对于每个关键帧, 首先有时间属性, 表示位于动画的哪个时间, 而后有 translate 属性, 表示骨头的位置(位移), 最后有个 ratate 属性, 表示骨头的旋转.
+
+</ul>
+</ul>
+</ul>
+</ul>
+</ul>
+
+    </div>
+</body>
+</html>

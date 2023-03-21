@@ -1,0 +1,708 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../style.css" />
+    <title>qtbook chapter 12</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<h1 id="toc_1">Chapter 12 Input/Output</h1>
+<ul>
+<li>
+Qt 提供了QIODevice类支持I/O, 以及其派生类
+
+<ul>
+<li>
+QFile --- 访问本地文件系统中或者内嵌资源中(in embedde resources)的文件
+
+<li>
+QTemporaryFile --- 在本地文件系统中创建和访问临时文件
+
+<li>
+QBuffer --- 对一个 QByteArray读写数据.
+
+<li>
+QProcess --- 运行外部程序或处理进程间的通讯.
+
+<li>
+QTcpSocket --- 使用TCP在网络上传输一个数据流.
+
+<li>
+QUdpSocket --- 在网络上发送和接收UDP数据报
+
+<li>
+QSslSocket --- 在网络上使用 SSL/TLS 传输一个加密的数据流.
+
+</ul>
+<li>
+QProcess, QTcpSocket, QUdpSocket, QSslSocket 为sequential devices, 即数据只能访问一次. 从第一个字节开始连续处理至最后一个字节.
+
+<li>
+QFile, QTemporaryFile, QBuffer 为随机访问设备. 在任何位置可以访问任意次数, 用 QIODevice::seek() 函数重新设置文件指针的位置.
+
+<li>
+Qt 提供了两个高层stream类用于读取和写入任意I/O设备: QDataStream 用于二进制数据, QTextStream 用于文本.
+
+<ul>
+<li>
+这些类处理了一些问题, 如字节排序和文本编码, 确保运行于不同的平台或者不同的国家的Qt应用程序可以相互读写文件.
+
+</ul>
+<li>
+QFile 访问单个文件很容易. 无论是文件系统中的文件还是嵌入可执行应用中当作资源的文件.
+
+<ul>
+<li>
+Qt还提供了 QDir 和 QFileInfo类, 可以处理目录和其内文件的信息.
+
+</ul>
+<li>
+QProcess 允许我们启动外部程序, 并可通过标准输入, 标准输出和标准错误频道与其通讯(cin, cout, cerr)
+
+<li>
+我们可设置外部程序会用到的环境变量和工作目录. 缺省情况下, 通讯是异步的(非堵塞的), 但在一定的操作下也可能堵塞.
+
+</ul>
+
+<h2 id="toc_1.1">12.1 Reading and Writing Binary Data</h2>
+<ul>
+<li>
+加载和保存二进制文件最简单的方法是实例化一个QFile, 而后打开文件, 以及通过 QDataStream对象访问.
+
+<ul>
+<li>
+QDataStream提供跨平台的存储格式, 支持基本C++类型(int和double), Qt数据类型, Qt容器. 包括 QByteArray, QFont, QImage, QPixmap, QString, QVariant, 以及 Qt 容器类, 如 QList&lt;T&gt;, QMap&lt;K, T&gt;.
+<pre c++>
+	QImage image("philip.png");
+
+	QMap&lt;QString, QColor&gt; map;
+	map.insert("red", Qt::red);
+	map.insert("green", Qt::green);
+	map.insert("blue", Qt::blue);
+
+	QFile file("facts.dat");
+	if (!file.open(QIODevice::WriteOnly)) {
+	std::cerr &lt;&lt; "Cannot open file for writing: "
+		&lt;&lt; qPrintable(file.errorString()) &lt;&lt; std::endl;
+	return;
+	}
+
+	QDataStream out(&amp;file);
+	out.setVersion(QDataStream::Qt_4_3);
+
+	out &lt;&lt; quint32(0x12345678) &lt;&lt; image &lt;&lt; map;
+</pre>
+
+<li>
+qPrintable宏用于QString返回一个const char*, 另一个方法是用QString::toStdString()返回一个std::string, &lt;iostream&gt;有一个这个类型的&lt;&lt;操作符重载.
+
+<li>
+创建一个QDataStream对象并设置其版本号, 在Qt 4.3中, 最广泛的格式是版本9, 我们可以硬编码常量9或者使用 QDataStream::Qt_4_3 符号名. 
+
+<li>
+调用 quint32用于确保整数保存为无符号32位整数格式. 为了确保两台电脑之间的交通能力, QDataStream默认标准化为big-endian, 可通过 setByteOrder() 改变字节顺序.
+
+<li>
+如果我们想要验证实际已被写入的数据, 我们可以调用flush()检查它的返回值(真表示成功).
+<pre c++>
+        quint32 n;
+        QImage image;
+        QMap&lt;QString, QColor&gt; map;
+
+        QFile file("facts.dat");
+        if (!file.open(QIODevice::ReadOnly)) {
+            std::cerr &lt;&lt; "Cannot open file for reading: "
+                      &lt;&lt; qPrintable(file.errorString()) &lt;&lt; std::endl;
+            return;
+        }
+
+        QDataStream in(&amp;file);
+        in.setVersion(QDataStream::Qt_4_3);
+
+        in &gt;&gt; n &gt;&gt; image &gt;&gt; map;
+</pre>
+
+<li>
+该QDataStream调用setVersion, 版本和之前一样, 使用版本号用于确保应用程序可以读取和写入数据
+
+<li>
+例如当QDataStream存储一个QByteArray时, 第一个32位字节表示后面字节的数量. QDataStream 可用于读取和写入原始数据, 而不使用字节数量的头部分. 使用readRawBytes()和writeRawBytes()方法
+
+<li>
+QDataStream读取时的错误处理也很简单, status()的返回值如为 QDataStream::Ok, QDataStream::ReadPastEnd 或者 QDataStream::ReadCorruptData
+
+<li>
+当发生错误时, &gt;&gt; 操作符会读取0或者空值. 这表示我们可以随意读取整个文件而不需要担心错误, 只需最后检查一下status()值即可.
+
+<li>
+QDataStream可处理一系列C++和Qt数据类型, 参考文档 <a href="http://doc.trolltech.com/4.3/datastreamformat.html">http://doc.trolltech.com/4.3/datastreamformat.html</a>
+
+<li>
+我们也可使用自定义类型, 但需要重载 &lt;&lt; 和 &gt;&gt; 操作符.
+<pre c++>
+        class Painting
+        {
+        public:
+            Painting() { myYear = 0; }
+            Painting(const QString &amp;title, const QString &amp;artist, int year) {
+                myTitle = title;
+                myArtist = artist;
+                myYear = year;
+            }
+
+            void setTitle(const QString &amp;title) { myTitle = title; }
+            QString title() const { return myTitle; }
+            ...
+
+        private:
+            QString myTitle;
+            QString myArtist;
+            int myYear;
+        };
+
+        QDataStream &amp;operator&lt;&lt;(QDataStream &amp;out, const Painting &amp;painting);
+        QDataStream &amp;operator&gt;&gt;(QDataStream &amp;in, Painting &amp;painting);
+        
+        QDataStream &amp;operator&lt;&lt;(QDataStream &amp;out, const Painting &amp;painting)
+        {
+            out &lt;&lt; painting.title() &lt;&lt; painting.artist()
+                &lt;&lt; quint32(painting.year());
+            return out;
+        }    
+
+        QDataStream &amp;operator&gt;&gt;(QDataStream &amp;in, Painting &amp;painting)
+        {
+            QString title;
+            QString artist;
+            quint32 year;
+
+            in &gt;&gt; title &gt;&gt; artist &gt;&gt; year;
+            painting = Painting(title, artist, year);
+            return in;
+        }
+</pre>
+
+<li>
+提供自定义数据类型流操作符的一些好处, 其中一个是允许我们使用自定义类型的容器可以流输出输入.
+<pre c++>
+		QList&lt;Painting&gt; paintings = ...;
+		out &lt;&lt; paintings;
+
+		QList&lt;Painting&gt; paintings;
+		in &gt;&gt; paintings;
+</pre>
+
+<li>
+对自定义类型提供流操作的另一个好处就是我们可以将这些类型的值存储为QVariantS, 而后注册该类型qRegisterMetaTypeStreamOperators&lt;T&gt;(), 这样该类型就可以广泛使用, 比如被 QSetting 使用, 具体可见第11章.
+
+<li>
+QDataStream 的读和写注意次序要完全相同. 才能够读出正确的数据. 这是Qt使用者唯一需要负责的事情.
+
+<li>
+QDataStream 我们可以读写标准的二进制格式, 主要是通过在基本类型(quint16 或者 float)上使用流操作符读写标准二进制格式. 或者使用 readRawBytes() 和 writeRawBytes()函数. 如果QDataStream仅仅读写基本的C++数据类型, 那么我们不需要调用setValue()函数
+
+<li>
+QDataStream::Qt_4_3 硬编码, 如果之后的版本有些数据类型发生了变化, 比如QFont增添了新属性, 则该版本的QDataStream则不能保存和读取该新属性.
+
+<li>
+解决方法:
+
+<ul>
+<li>
+在文件中保存 QDataStream 版本.
+<pre c++>
+		// 写入:
+        QDataStream out(&amp;file);
+        out &lt;&lt; quint32(MagicNumber) &lt;&lt; quint16(out.version());
+
+        // 读出:
+        quint32 magic;
+        quint16 streamVersion;
+
+        QDataStream in(&amp;file);
+        in &gt;&gt; magic &gt;&gt; streamVersion;
+
+        if (magic != MagicNumber) {
+            std::cerr &lt;&lt; "File is not recognized by this application"
+                      &lt;&lt; std::endl;
+        } else if (streamVersion &gt; in.version()) {
+            std::cerr &lt;&lt; "File is from a more recent version of the "
+                      &lt;&lt; "application" &lt;&lt; std::endl;
+            return false;
+        }
+
+        in.setVersion(streamVersion);
+</pre>
+
+</ul>
+<li>
+读的时候, QDataStream的版本只能比源数据的大或相等, 否则报错.
+
+<li>
+魔法数字是一个常量, 用于惟一地标识出文件类型.
+
+<li>
+如果文件格式包含自己的版本号, 我们可以使用它推导出 stream 版本号, 而非显式存储它. 例如下面我们应用程序的版本为1.3
+<pre c++>
+		QDataStream out(&amp;file);
+		out.setVersion(QDataStream::Qt_4_3);
+		out &lt;&lt; quint32(MagicNumber) &lt;&lt; quint16(0x0103);
+</pre>
+
+<li>
+而后基于应用程序的版本号确定QDataStream的版本.
+<pre c++>
+		QDataStream in(&amp;file);
+		in &gt;&gt; magic &gt;&gt; appVersion;
+		
+		if (magic != MagicNumber) {
+		    std::cerr &lt;&lt; "File is not recognized by this application"
+		              &lt;&lt; std::endl;
+		    return false;
+		} else if (appVersion &gt; 0x0103) {
+		    std::cerr &lt;&lt; "File is from a more recent version of the "
+		              &lt;&lt; "application" &lt;&lt; std::endl;
+		    return false;
+		}
+		
+		if (appVersion &lt; 0x0103) {
+		    in.setVersion(QDataStream::Qt_3_0);
+		} else {
+		    in.setVersion(QDataStream::Qt_4_3);
+		}
+</pre>
+
+</ul>
+<li>
+总的来说, 处理 QDataStream 版本有三个策略: 硬编码版本号, 显示读写版本号, 根据应用程序版本使用不同的硬编码版本. 所有这些策略确保旧版本应用程序所写的数据可以被新版本应用程序读取. 
+
+<li>
+如果我们想一次读写一个文件, 则避免使用QDataStream, 而是用 QIODevice的 write() 和 readAll() 方法
+<pre c++>
+        bool copyFile(const QString &amp;source, const QString &amp;dest)
+        {
+            QFile sourceFile(source);
+            if (!sourceFile.open(QIODevice::ReadOnly))
+                return false;
+
+            QFile destFile(dest);
+            if (!destFile.open(QIODevice::WriteOnly))
+                return false;
+
+            destFile.write(sourceFile.readAll());
+
+            return sourceFile.error() == QFile::NoError
+                   &amp;&amp; destFile.error() == QFile::NoError;
+        }
+</pre>
+
+<ul>
+<li>
+调用readAll之后, 源数据的所有内容都被写入 QByteArray, 写入QByteArray 比逐条目存放要用更多的内存. 但其有些优点:
+
+<ul>
+<li>
+它可以调用 qCompress() 和 qUnCompress() 压缩和解压数据. 另外还可以用进行压缩操作.
+
+<li>
+另一个选择是使用 Qt 解决方案中的 QtIOCompressor, 一个 QtCompressor 压缩其写的流和解压其读的流. 而不在内存中存储整个文件.
+
+</ul>
+<li>
+另一个更适合使用QIODevice的场景就是QIODevice可以调用peek()函数返回下一个数据字节而不需要移动设备指针. 其和ungerChar()函数一样"未读取"一个字节. 这一点可以作用在随机访问设备(如文件)以及连续设备(如网络的sockets). 
+
+<li>
+可以用函数 seek() 设置设备的位置, 该设备需要支持随机访问.
+
+</ul>
+<li>
+二进制文件提供了最通用和最紧密的数据存储方式. QDataStream使得访问二进制数据很容易.
+
+</ul>
+
+<h2 id="toc_1.2">12.2 Reading and Writing Text</h2>
+<ul>
+<li>
+Qt 提供了 QTextStream类来读写纯文本文件, 或者其他文本格式的文件, 如HTML, XML 和源代码
+
+<ul>
+<li>
+QTextStream 负责 Unicode和系统本地编码以及其他编码的转换. 透明地处理不同操作系统的不同换行符(Window为"\r\n", Unix和Mac都是"\n").
+
+<li>
+QTextStream 使用 16 位QChar类型作为数据的基本单位. 在字符和字符串之外, QTextStream 支持 C++ 的基本数字类型, 其可以与字符串相互转换. 
+<pre c++>
+		QFile file("sf-book.txt");
+		if (!file.open(QIODevice::WriteOnly)) {
+		    std::cerr &lt;&lt; "Cannot open file for writing: "
+		              &lt;&lt; qPrintable(file.errorString()) &lt;&lt; std::endl;
+		    return;
+		}
+		
+		QTextStream out(&amp;file);
+		out &lt;&lt; "Thomas M. Disch: " &lt;&lt; 334 &lt;&lt; endl;
+</pre>
+
+<li>
+读取的时候则要注意, 其无法分辨出不同的字符串, 而QDataStream则不存在这个问题, 因为其存储一个数据都事先保存其大小.
+
+<li>
+对于复杂的文件格式, 可能需要一个完全成熟的分析器. 类似的一个分析器可能通过在一个QChar上使用操作符&gt;&gt;逐字符读取数据. 或者使用 QTextStream::readLine() 逐行读取数据. 
+
+<li>
+对于在整个文本上工作的分析器, 我们可以通过使用 QTextStream::readAll() 读取完整的文件.
+
+<li>
+默认情况下, QTextStream 使用系统的本地编码(美国和欧洲大部分都为ISO 8859-1 或 ISO 8859-15), 可以用setCodec() 更改, 如: stream.setCodec("UTF-8");
+
+<li>
+UTF-8编码是一个流行的 ASCII-cmpatible 编码, 可以表示完全的Unicode字符集.
+
+<li>
+QTextStream 有一些选项进行设置. 可通过传递一些叫流操作(stream manipulators)的特殊对象, 在流上修改流的状态. 或者通过一些函数进行修改.
+
+<ul>
+<li>
+设置数字底数(2进制, 8进制...), 大写数字, 十六进制选项. 代码如右: out &lt;&lt; showbase &lt;&lt; uppercasedigits &lt;&lt; hex &lt;&lt; 12345678;
+
+<li>
+setIntegerBase(int) --- 设置整数底数. 参数有 0(当读取时基于前缀的自动检测), 2, 8, 10, 16.
+
+<li>
+setNumberFlags(NumerFlags)
+
+<ul>
+<li>
+ShowBase --- 显示前缀, 2("0b"), 8("0"), 16("0x")
+
+<li>
+ForceSign --- 永远在实数中显示符号
+
+<li>
+ForcePoint --- 永远在数字中显示十进制分隔符
+
+<li>
+UppercaseBase --- 使用底数前缀的大写版本
+
+<li>
+UppercaseDigits --- 使用十六进制数的大写字母
+
+</ul>
+<li>
+setRealNumberNotation(RealNumberNotation)
+
+<ul>
+<li>
+FixedNotation --- 定点标记(例如, "0.000123")
+
+<li>
+ScientificNotation --- 科学标记(例如, "1.234568e-04")
+
+<li>
+SmartNotation --- 顶点标记或者科学标记, 看哪个更紧凑
+
+</ul>
+<li>
+setRealNumberPrecision(int)
+
+<ul>
+<li>
+设置应当生成数字的最大数量(默认为6)
+
+</ul>
+<li>
+setFieldWidth(int)
+
+<ul>
+<li>
+设置域(field)的最小大小(默认为0)
+
+</ul>
+<li>
+setFieldAlignment(FieldAlignment
+
+<ul>
+<li>
+AlignLeft
+
+<li>
+AlignRight
+
+<li>
+AlignCenter
+
+<li>
+AlignAccountingStyle
+
+</ul>
+<li>
+setPadChar(QChar)
+
+<ul>
+<li>
+设置用于padding(填充) fields的字符(默认为空格)
+
+</ul>
+</ul>
+<li>
+可以使用成员函数来设置选项.
+<pre c++>
+	out.setNumberFlags(QTextStream::ShowBase | QTextStream::UppercaseDigits);
+	out.setIntegerBase(16);
+	out &lt;&lt; 12345678;
+</pre>
+
+<li>
+和QDataStream 一样, QTextStream 可对 QIODevice的派生类进行操作, 如 QFile, a QTemporaryFile, a QBuffer, a QProcess, a QTcpSocket, a QUdpSocket, a QSslSocket
+
+<li>
+另外QTextStream还可以直接对QString进行操作
+<pre c++>
+            QString str;
+            QTextStream(&amp;str) &lt;&lt; oct &lt;&lt; 31 &lt;&lt; " " &lt;&lt; dec &lt;&lt; 25 &lt;&lt; endl;
+</pre>
+
+<li>
+在之前章节中的SpreadSheet例子中, 使用 QTextStream 代替 QDataStream, 可以增加文本的可读性以及更易编辑:
+<pre c++>
+        QTextStream out(&amp;file);
+        for (int row = 0; row &lt; RowCount; ++row) {
+            for (int column = 0; column &lt; ColumnCount; ++column) {
+                QString str = formula(row, column);
+                if (!str.isEmpty())
+                    out &lt;&lt; row &lt;&lt; " " &lt;&lt; column &lt;&lt; " " &lt;&lt; str &lt;&lt; endl;
+            }
+        }
+
+        QTextStream in(&amp;file);
+        while (!in.atEnd()) {
+            QString line = in.readLine();
+            QStringList fields = line.split(' ');
+            if (fields.size() &gt;= 3) {
+                int row = fields.takeFirst().toInt();
+                int column = fields.takeFirst().toInt();
+                setFormula(row, column, fields.join(' '));
+            }
+        }
+</pre>
+
+<ul>
+<li>
+QStringList::takeFirst() 删除第一个元素, 并返回该元素.
+
+<li>
+QTextStream::readLine() 读取一行.
+
+</ul>
+<li>
+QTextStream::atEnd() 是否到了尾部.
+
+<li>
+QTextStream &gt;&gt; QChar 读入一个字符.
+
+<li>
+QTextStream &lt;&lt; QChar 写入一个字符.
+
+</ul>
+<li>
+当我们在程序中仅使用 Qt 的工具类时, 我们不需要一个 QApplication 对象. 见网页 <a href="http://doc.trolltech.com/4.3/tools.html">http://doc.trolltech.com/4.3/tools.html</a> , 这里有所有工具类的列表. 
+
+<li>
+如果我们的程序是控制台程序, 则其 .pro 文件和GUI应用程序的有所不同. 如下:
+<pre>
+TEMPLATE      = app
+QT            = core
+CONFIG       += console
+CONFIG       -= app_bundle
+SOURCES       = tidy.cpp
+</pre>
+
+<ul>
+<li>
+这里仅使用 QtCore 库, 允许窗口上的控制台输出. 不想要Mac OS上一个bundle中的应用生存.
+
+</ul>
+<li>
+为了读写 纯 ASCII 文件或者 ISO 8589-1 文件,  可以直接使用QIODevice的API函数, 而不是使用QTextStream. 且必须在 open() 函数中指定 QIODevice::Text 标志. 
+<pre c++>
+    file.open(QIODevice::WriteOnly | QIODevice::Text); // 注意指定 QIODevice::Text 标志
+</pre>
+
+<ul>
+<li>
+当写入时, 这个标志在Windows系统中告知 QIODevice 转换 '\n' 字符为 "\r\n", 当读取时, 这个标志告知设备在所有平台上忽略'\r'字符. 
+
+</ul>
+</ul>
+    
+<h2 id="toc_1.3">12.3 Traversing Directories</h2>
+<ul>
+<li>
+QDir 类提供了跨平台的方法, 用于浏览目录和得到文件的信息.
+
+<li>
+下面的代码读取一个目录以及其任意深度子目录中图像文件所占的空间.
+<pre c++>
+	qlonglong imageSpace(const QString &amp;path)
+	{
+	    QDir dir(path);
+	    qlonglong size = 0;
+
+	    QStringList filters;
+	    foreach (QByteArray format, QImageReader::supportedImageFormats())
+	        filters += "*." + format;
+
+	    foreach (QString file, dir.entryList(filters, QDir::Files))
+	        size += QFileInfo(dir, file).size();
+
+	    foreach (QString subDir, dir.entryList(QDir::Dirs
+	                                           | QDir::NoDotAndDotDot))
+	        size += imageSpace(path + QDir::separator() + subDir);
+
+	    return size;
+	}
+</pre>
+
+<li>
+我们通过使用一个给定的路径创建一个 QDir 对象. 其有可能是当前目录的相对路径或者是绝对路径. 
+
+<li>
+QDir::entryList 有两个参数, 第一个问文件名过滤器的列表, 其可以包含 '*' 和 '?' 通配符. 第二个参数用于指定我们想要哪种类型的条目(普通文件, 目录, 驱动器, 等等.).
+
+<li>
+方法 QImageReader::supportedImageFormats() 得到所有QImageReader支持的图像文件格式
+
+<li>
+QFileInfo(dir, file) 可以访问文件的属性
+
+<li>
+QDir::separator() --- QDir 在所有平台上将'/'看成目录分隔符, 另外, Windows 认定 '\' 为目录分隔符. 我们可以调用静态函数 QDir::toNativeSeparators() 转换斜线为正确的平台专有的分隔符.
+
+<li>
+QDir::currentPath(),  QDir::homePath()
+
+<li>
+QDir还提供了其他方法: entryInfoList() (返回 QFileInfo 对象的一个列表), rename(), exists(), mkdir(), rmdir().
+
+<li>
+QFile提供的静态方法: remove(), exists()
+
+<li>
+QFileSystemWatcher类则可监视文件和目录的变化, 发生变化则发送信号directoryChanged(), fileChanged()
+
+</ul>
+    
+<h2 id="toc_1.4">12.4 Embedding Resources</h2>
+<ul>
+<li>
+Qt 可以将二进制数据或文本放置在应用可执行文件内部. 可以使用QFile像文件系统的普通文件一样读取嵌入的文件.
+
+<li>
+可通过 rcc 将资源转换成C++代码, 可通过添加下面一行至.qrc文件告知qmake需要包含特定规则运行rcc.
+<pre c++>
+        RESOURCES = myresourcefile.qrc
+</pre>
+
+<ul>
+<li>
+该 myresourcefile.qrc 文件是一个XML文件, 是嵌入可执行文件的文件列表.
+<pre c++>
+&lt;RCC&gt;
+&lt;qresource&gt;
+    &lt;file&gt;datafiles/phone-codes.dat&lt;/file&gt;
+&lt;/qresource&gt;
+&lt;/RCC&gt;
+</pre>
+
+</ul>
+<li>
+在应用程序中, 通过 :/ 路径前缀识别出资源. 在这个例子中, 文件有路径 :/datafiles/phone-codes.dat, 可以使用QFile像其他文件一样读取.
+
+<li>
+内嵌数据的有点: 不会遗失, 可以创建独立的可执行文件(如果也使用静态链接的话). 缺点, 内嵌数据改变时需要替换整个可执行文件, 可执行文件的大小可能更大.
+
+<li>
+资源文件文档见:<a href="http://doc.trolltech.com/4.3/resources.html.">http://doc.trolltech.com/4.3/resources.html.</a>
+
+</ul>
+
+<h2 id="toc_1.5">12.5 Inter-Process Communication</h2>
+<ul>
+<li>
+本例使用的类以私有形式继承 Ui::ConvertDialog 类. 这避免了在 form 函数之外访问该 form 的 widget.
+
+<li>
+由于 Qt Designer 的自动连接机制, on_browseButton_clicked() 自动连接至  Browse button 的点击信号.
+
+<li>
+QProcess 可运行外部程序且与其互动, 该类异步工作, 后台完成其工作所以不影响用户界面接口的反映. 当外部程序拥有数据或者完成时发送信号通知我们.
+
+<li>
+QProcess的信号
+<pre c++>
+    connect(&amp;process, SIGNAL(readyReadStandardError()),
+            this, SLOT(updateOutputTextEdit()));
+    connect(&amp;process, SIGNAL(finished(int, QProcess::ExitStatus)),
+            this, SLOT(processFinished(int, QProcess::ExitStatus)));
+    connect(&amp;process, SIGNAL(error(QProcess::ProcessError)),
+            this, SLOT(processError(QProcess::ProcessError)));
+</pre>
+
+<ul>
+<li>
+上面三个进程相关的信号.
+
+<li>
+QProcess::start() 启动应用程序, 这用于异步的操作.
+
+<li>
+启动: process.start("convert", args);
+
+<li>
+QProcess::readAllStandardError() --- 读取该进程标准错误输出的内容
+
+<li>
+QString::fromeLocal8Bit() --- QByteArray 转换至 QString
+
+<li>
+QProcess::CrashExit --- 一个退出状态的枚举值.
+
+</ul>
+<li>
+QTemporaryFile 创建一个具有唯一名称的临时文件
+
+<li>
+QProcess::execute() 执行外部程序直至程序完成才能够允许用户操作. 这用户同步的操作.
+
+<ul>
+<li>
+使用execute(), 就不需要signal-slot, 如果你需要更好的控制, 可以仍然使用start()来启动, 而后使用QProcess::waitForStarted()和 QProcess::waitForFinished()来阻塞程序
+
+</ul>
+<li>
+使用 QProcess 访问已存在的功能程序可节省开发时间, 另一种方法是链接提供了已有功能的库.
+
+<li>
+如果使用 QProcess 启动其他的GUI应用程序, 想要在应用程序之间通讯, 则我们可能使用Qt网络类或Windows上的ActiveQt 扩展.
+
+<li>
+如果我们仅仅是想打开用户偏好的浏览器或email客户端, 调用QDesktopServices::openUrl()即可
+
+</ul>
+
+    </div>
+</body>
+</html>

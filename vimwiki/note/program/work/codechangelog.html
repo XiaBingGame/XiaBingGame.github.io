@@ -1,0 +1,133 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../style.css">
+<title>codechangelog</title>
+<meta http-equiv="Content-Type" content="text/html; charset=cp936">
+</head>
+<body>
+
+<h1 id="toc_1">代码主要改动</h1>
+<h2 id="toc_1.1">RacingGameManager.cs</h2>
+<ul>
+<li>
+行 303: 自定义变量和属性
+
+<li>
+行 338: 修改程序显示的菜单屏幕
+
+</ul>
+<h2 id="toc_1.2">CarPhysics.cs</h2>
+<ul>
+<li>
+这里使用判断车子类型为 Player.CarRunType.AutoDrive 来确定是否处于超车的游戏界面, 判断代码: if (RacingGameManager.Player.CurrentCarType == Player.CarRunType.AutoDrive)
+
+<li>
+行 411: 自定义变量和属性
+
+<li>
+行 618: 超车Demo中, 增加左右键和H,J键的控制
+
+<li>
+行 927: 修改代码, 实现玩家的超车功能, 具体有PlayerMahine实现
+
+<li>
+行 1056: 修改车子位置, 以免撞向路栏
+
+<li>
+行 1452: 修改代码, 这样是左键右键能够旋转相机
+
+<li>
+重要的代码位于946行, 该处调用状态机进行更新矩阵和速度
+
+</ul>
+<h2 id="toc_1.3">NPCCar.cs</h2>
+<ul>
+<li>
+新增文件, 用于控制NPC车
+
+</ul>
+<h2 id="toc_1.4">Player.cs</h2>
+<ul>
+<li>
+行 77: 自定义变量和属性
+
+</ul>
+<h2 id="toc_1.5">OvertakeMenu.cs</h2>
+<ul>
+<li>
+根据 Menu.cs 改进而来
+
+<li>
+行 183: 注释掉按钮下的文字
+
+<li>
+行 256: 修改前两个按钮的功能
+
+</ul>
+<h2 id="toc_1.6">OvertakeScreen.cs</h2>
+<ul>
+<li>
+由GameScreen.cs 改进而来
+
+<li>
+行 96: 绘制NPC车辆
+
+</ul>
+<h2 id="toc_1.7">TrackSelection.cs</h2>
+<ul>
+<li>
+跑道选择界面
+
+<li>
+行 213: 增加进入超车界面的代码
+
+</ul>
+<h2 id="toc_1.8">UIRenderer.cs</h2>
+<ul>
+<li>
+行 715: 在超车界面中不会屏幕上显示太多无用的信息
+
+</ul>
+<h2 id="toc_1.9">FuzzyLogic.cs</h2>
+<ul>
+<li>
+用于逻辑判断的类
+
+</ul>
+<h2 id="toc_1.10">NPCMachine.cs</h2>
+<ul>
+<li>
+NPC车的状态机, 控制NPC车的所有状态, 这些状态可以更新NPC车的矩阵和速度
+
+</ul>
+<h2 id="toc_1.11">PlayerMachine.cs</h2>
+<ul>
+<li>
+玩家车的状态机, 控制玩家车的所有状态, 这些状态可以更新玩家车的矩阵和速度
+
+</ul>
+
+<h1 id="toc_2">其他</h1>
+<ul>
+<li>
+演示超车系统最好第一张地图, 第二张第三张地图由于难度高, 所以很多地方比较窄, 只能在前面一点路进行超车
+
+<li>
+NPC车的速度恒定为70mph, 所以演示的时候玩家车子注意左下角的速度
+
+<li>
+方向键左键和右键可以旋转相机, 可以看到NPC车如何进行超车, 其他的可以通过pagedown, pageup键拉长和缩短相机与NPC车的距离, H键, J键拉高和拉低相机高度
+
+<li>
+注意修改AssemblyInfo.cs文件, 
+
+<ul>
+<li>
+比如 assembly: AssemblyCompany("POYANGLAKE") 为公司名称, 其他的可以根据个人信息修改
+
+</ul>
+</ul>
+
+</body>
+</html>

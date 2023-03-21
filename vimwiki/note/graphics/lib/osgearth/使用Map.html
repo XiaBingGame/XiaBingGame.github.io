@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../../style.css">
+<title>ʹ��Map</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</head>
+<body>
+
+<div id="从地图文件内加载一个map"><h2 id="从地图文件内加载一个map">从地图文件内加载一个map</h2></div>
+<ul>
+<li>
+使用 OSG 插件加载 earth 文件
+<pre c++>
+osg::Node* globe = osgDB::readNodeFile("myglobe.earth");
+</pre>
+
+<ul>
+<li>
+一般都需要使用该函数调用, 除非你通过代码创建 Map
+
+</ul>
+</ul>
+
+<div id="通过代码创建 Map"><h2 id="通过代码创建 Map">通过代码创建 Map</h2></div>
+<ul>
+<li>
+步骤如下:
+
+<ul>
+<li>
+创建一个 Map 对象
+
+<li>
+给 Map 添加图像和 elevation 层
+
+<li>
+创建一个 MapNode 用于渲染 Map 对象
+
+<li>
+你的场景图添加 MapNode
+
+</ul>
+<li>
+实现如下
+<pre c++>
+using namespace osgEarth;
+using namespace osgEarth::Drivers;
+
+#include &lt;osgEarth/Map&gt;
+#include &lt;osgEarth/MapNode&gt;
+#include &lt;osgEarthDrivers/tms/TMSOptions&gt;
+#include &lt;osgEarthDrivers/gdal/GDALOptions&gt;
+
+using namespace osgEarth;
+using namespace osgEarth::Drivers;
+...
+
+// Create a Map and set it to Geocentric to display a globe
+Map* map = new Map();
+
+// Add an imagery layer (blue marble from a TMS source)
+{
+    TMSOptions tms;
+    tms.url() = "http://labs.metacarta.com/wms-c/Basic.py/1.0.0/satellite/";
+    ImageLayer* layer = new ImageLayer( "NASA", tms );
+    map-&gt;addImageLayer( layer );
+}
+
+// Add an elevationlayer (SRTM from a local GeoTiff file)
+{
+    GDALOptions gdal;
+    gdal.url() = "c:/data/srtm.tif";
+    ElevationLayer* layer = new ElevationLayer( "SRTM", gdal );
+    map-&gt;addElevationLayer( layer );
+}
+
+// Create a MapNode to render this map:
+MapNode* mapNode = new MapNode( map );
+...
+
+viewer-&gt;setSceneData( mapNode );
+</pre>
+
+</ul>
+<div id="运行时使用 MapNode"><h1 id="运行时使用 MapNode">运行时使用 MapNode</h1></div>
+<ul>
+<li>
+MapNode 是渲染 Map 的 scene graph node.
+
+<li>
+可以运行时访问 Map 和其 MapNode 以便改变
+
+<li>
+如果你没有显示创建 MapNode, 可能需要使用静态的 get 函数得到 MapNode 的引用
+<pre c++>
+// Load the map
+osg::Node* loadedModel = osgDB::readNodeFile("mymap.earth");
+
+// Find the MapNode
+osgEarth::MapNode* mapNode = MapNode::get( loadedModel );
+</pre>
+
+<li>
+根据 MapNode 获取 map 
+<pre c++>
+// Add an OpenStreetMap image source
+TMSOptions driverOpt;
+driverOpt.url() = "http://tile.openstreetmap.org/";
+driverOpt.tmsType() = "google";
+
+ImageLayerOptions layerOpt( "OSM", driverOpt );
+layerOpt.profile() = ProfileOptions( "global-mercator" );
+
+ImageLayer* osmLayer = new ImageLayer( layerOpt );
+mapNode-&gt;getMap()-&gt;addImageLayer( osmLayer );
+</pre>
+
+<li>
+移除或重排序 layers
+<pre c++>
+// Remove a layer from the map.  All other layers are repositioned accordingly
+mapNode-&gt;getMap()-&gt;removeImageLayer( layer );
+
+// Move a layer to position 1 in the image stack
+mapNode-&gt;getMap()-&gt;moveImageLayer( layer, 1 );}}}
+</pre>
+
+<li>
+可以修改 layer 的属性
+<pre c++>
+ImageLayer* layer;
+...
+layer-&gt;setOpacity( 0.5 );  // makes the layer partially transparent
+</pre>
+
+</ul>
+
+</body>
+</html>

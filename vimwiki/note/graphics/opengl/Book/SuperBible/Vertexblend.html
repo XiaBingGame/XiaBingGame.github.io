@@ -1,0 +1,138 @@
+ï»¿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../../style.css" />
+    <title>Vertexblend</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/ç™¾åº¦äº‘/Vimwiki/Vimwiki_html/index.html">é¦–é¡µ</a>
+		</li>
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/ç™¾åº¦äº‘/Vimwiki/Vimwiki_html/diary/diary.html">æ—¥è®°</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<ul>
+<li>
+×ÅÉ«Æ÷·ÖÎö:
+
+<li>
+ÄÚÖÃµÄ±äÁ¿:
+
+<ul>
+<li>
+gl_ModelViewMatrix
+
+<li>
+gl_Vertex: ´«µÝµÄÓÃ»§Ä£ÐÍ¿Õ¼ä¶¥µã×ø±ê
+
+<li>
+gl_ProjectionMatrix
+
+<li>
+gl_Normal: ´«µÝµÄÓÃ»§Ä£ÐÍ¿Õ¼ä·¨ÏßÏòÁ¿
+
+<li>
+gl_NormalMatrix
+
+<li>
+gl_Color
+
+</ul>
+<li>
+ÓÃÓÚÊä³öµÄ±äÁ¿:
+
+<ul>
+<li>
+gl_TexCoord[0]
+
+<li>
+gl_Position: Í¨³£Îª gl_ProjcetionMatrix * gl_ModelViewMatrix * glVertex
+
+<li>
+gl_FrontColor
+
+</ul>
+<li>
+Ëã·¨:
+
+<ul>
+<li>
+¸ù¾Ýµ±Ç°¶¥µãºÍµ±Ç°Ä£ÐÍÊÓÍ¼¾ØÕóµÃµ½ÊÓ¾õ¿Õ¼äµÄ×ø±ê, ¶øºó¸ù¾ÝÁíÒ»¸öÄ£ÐÍÊÓÍ¼¾ØÕóµÃµ½ÁíÒ»¸öÊÓ¾õ¿Õ¼ä×ø±ê, ¶øºó¸ù¾ÝÈ¨ÖØÖµ»ìºÏ
+
+<li>
+¸ù¾Ý·¨Ïß¼ÆËãÑÕÉ«Öµ, Ò»Î¬ÎÆÀí¸ù¾ÝÑÛ¾¦ºÍ¹âµÄ·½ÏòµÃµ½ÎÆÀíÖµ.
+
+</ul>
+<li>
+Ò»Î»ÎÆÀíµÄÉú³É, ÊµÏÖ¾µÃæ¹âÕÕ
+
+<ul>
+<li>
+¼ÆËãÎÆÀí×î´óµÄ´óÐ¡, ¶øºóºÍ512±È½Ï
+
+<li>
+r * (float)pow(((double)x / (double)(texSize-1)) * 0.125f + 0.875f, 128.0);
+
+<li>
+texels[0] = texels[1] = texels[2] = 0.0f;
+
+<li>
+vec3 H = normalize(L + vec3(0.0, 0.0, 1.0)); // ¼ÆËã¹âÏß·½ÏòºÍÑÛ¾¦³¯ÏòµÄÖÐ¼äÏß
+
+<li>
+Èç¹û NdotL ´óÓÚ0, Ôò NdotH = max(0.0, dot(N, H) * 8.0 - 7.0);
+
+<li>
+ÎÆÀí×ø±ê gl_TexCoord[0] = vec4(NdotH, 0.0, 0.0, 1.0);
+
+</ul>
+<li>
+×ÅÉ«³ÌÐò¹âÕÕµÄ¼ÆËã
+
+<ul>
+<li>
+´«ËÍ¸ø×ÅÉ«³ÌÐòÖ®Ç°, ½«¹âÔ´Î»ÖÃ×ª»»ÎªÊÓ¾õ¿Õ¼ä×ø±ê(×¢Òâ·ÇÊÀ½ç×ø±ê), uniform vec3 lightPos;
+
+<li>
+glUniform3fv(lightPosLoc, 1, lightPosEye);  // ´«ËÍÊÓ¾õ¹âÔ´×ø±ê
+
+<li>
+Çó³öÊÀ½ç¿Õ¼äµÄ·¨Ïß vec3 N = normalize(gl_NormalMatrix * gl_Normal);
+
+<li>
+ÊÀ½ç¿Õ¼äÖÐ¶¥µãµ½¹âÔ´µÄ·½Ïò vec3 L = normalize(lightPos - Vertex.xyz);
+
+<li>
+µã³Ë float NdotL = max(0.0, dot(N, L));
+
+<li>
+Ëã³ö×îÖÕÑÕÉ« gl_FrontColor = 0.1 + gl_Color * vec4(NdotL);
+
+</ul>
+<li>
+ÁíÒ»¸ö¾ØÕóµÄÇó·¨
+
+<ul>
+<li>
+±íÊ¾ÔÚÁíÒ»¸öÄ£ÐÍÖÐÑÓÉìµÄ¾ØÕó. ¼´¸Ã¶¥µãÎ»ÓÚÁíÒ»¸öÄ£ÐÍÑÓÉìµÄÐéÄâÄ£ÐÍÖÐ.
+
+<li>
+´«µÝ·¨Ïß¾ØÕóÊ±µÚÈý¸ö²ÎÊýÒªÎª GL_TRUE, ±íÊ¾ÎªÄæ¾ØÕó: glUniformMatrix3fv(shader("mv2IT"), 1, GL_TRUE, mv2IT_3x3);
+
+</ul>
+<li>
+ÎªÁË»æÖÆÔ²×¶ÌåÄÚµÄÏßÌõ, ¿ÉÒÔ½ûÖ¹Éî¶È²âÊÔ
+
+</ul>
+
+    </div>
+</body>
+</html>

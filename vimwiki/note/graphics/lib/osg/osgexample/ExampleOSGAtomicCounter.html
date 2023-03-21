@@ -1,0 +1,135 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../../style.css" />
+    <title>ExampleOSGAtomicCounter</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="../index.html">首页</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<ul>
+<li>
+学会如何统计一个场景有多少个像素被绘制
+
+<li>
+学会如何在GL里面设置原子计数器, 读取其内容
+
+<li>
+获取一个 Geode 的 Drawable 的 StateSet
+<pre>
+osg::StateSet * ss = loadedModel-&gt;asGeode()-&gt;getDrawable(0)-&gt;getOrCreateStateSet();
+</pre>
+
+<li>
+带原子计数器的片段着色器
+<pre>
+  std::stringstream fp;
+  fp &lt;&lt; "#version 420 compatibility\n"
+     &lt;&lt; "\n"
+     &lt;&lt; "layout(binding = 0) uniform atomic_uint acRed;\n"
+     &lt;&lt; "layout(binding = 0, offset = 4) uniform atomic_uint acGreen;\n"
+     &lt;&lt; "layout(binding = 2) uniform atomic_uint acBlue;\n"
+     &lt;&lt; "\n"
+     &lt;&lt; "uniform float invNumPixel;\n"
+     &lt;&lt; "\n"
+     &lt;&lt; "void main(void)\n"
+     &lt;&lt; "{\n"
+     &lt;&lt; "    float r = float(atomicCounterIncrement(acRed)) * invNumPixel;\n"
+     &lt;&lt; "    float g = float(atomicCounterIncrement(acGreen)) * invNumPixel;\n"
+     &lt;&lt; "    float b = float(atomicCounterIncrement(acBlue)) * invNumPixel;\n"
+     &lt;&lt; "    gl_FragColor = vec4(r, g, b, 1.0);\n"
+     &lt;&lt; "}\n"
+     &lt;&lt; "\n";
+</pre>
+
+<ul>
+<li>
+第0个绑定点有两个原子计数器, 第2个绑定点有一个计数器
+
+<li>
+atomicCounterIncrement 原子计数器递增函数
+
+</ul>
+<li>
+如何设置原子计数器的StateSet
+
+<ul>
+<li>
+创建 unsigned int array, 保存每个计数器的初值
+<pre>
+    ss = loadedModel-&gt;getOrCreateStateSet();
+    osg::ref_ptr&lt;osg::UIntArray&gt; atomicCounterArrayRedAndGreen = new osg::UIntArray;
+    atomicCounterArrayRedAndGreen-&gt;push_back(0);
+    atomicCounterArrayRedAndGreen-&gt;push_back(0);
+
+    osg::ref_ptr&lt;osg::UIntArray&gt; atomicCounterArrayBlue = new osg::UIntArray;
+    atomicCounterArrayBlue-&gt;push_back(0);
+</pre>
+
+<li>
+创建 osg::AtomicCounterBufferObject 的缓存对象, 将无符号整数数组的缓存对象与其绑定
+<pre>
+    osg::ref_ptr&lt;osg::AtomicCounterBufferObject&gt; acboRedAndGreen = new osg::AtomicCounterBufferObject;
+    acboRedAndGreen-&gt;setUsage(GL_STREAM_COPY);
+    atomicCounterArrayRedAndGreen-&gt;setBufferObject(acboRedAndGreen.get());
+
+    osg::ref_ptr&lt;osg::AtomicCounterBufferObject&gt; acboBlue = new osg::AtomicCounterBufferObject;
+    acboBlue-&gt;setUsage(GL_STREAM_COPY);
+    atomicCounterArrayBlue-&gt;setBufferObject(acboBlue.get());
+</pre>
+
+<li>
+创建 osg::AtomicCounterBufferBinding 绑定, 绑定至特定绑定点
+<pre>
+    osg::ref_ptr&lt;osg::AtomicCounterBufferBinding&gt; acbbRedAndGreen = new osg::AtomicCounterBufferBinding(0, atomicCounterArrayRedAndGreen.get(), 0, sizeof(GLuint)*3);
+    ss-&gt;setAttributeAndModes(acbbRedAndGreen.get());
+
+    osg::ref_ptr&lt;osg::AtomicCounterBufferBinding&gt; acbbBlue = new osg::AtomicCounterBufferBinding(2, atomicCounterArrayBlue.get(), 0, sizeof(GLuint));
+    ss-&gt;setAttributeAndModes(acbbBlue.get());
+</pre>
+
+<li>
+在更新回调里面重置计数, dirty() 如何更新未知
+<pre>
+class ResetAtomicCounter : public osg::StateAttributeCallback
+{
+    public:
+        virtual void operator () (osg::StateAttribute* sa, osg::NodeVisitor*)
+        {
+            osg::AtomicCounterBufferBinding * acbb = dynamic_cast&lt;osg::AtomicCounterBufferBinding *&gt;(sa);
+            if (acbb)
+            {
+                osg::BufferData * acbd = acbb-&gt;getBufferData();
+                if (acbd)
+                {
+                    acbd-&gt;dirty();
+                }
+            }
+        }
+};
+</pre>
+
+</ul>
+<li>
+从 OpenGL 的渲染上下文中读取缓存对象
+<pre c++>
+	_acbb-&gt;readData(*renderInfo.getState(), *_atomicCounterArray);
+</pre>
+
+<li>
+AdaptNumPixelUniform 统计有多少个像素被绘制, 用于调整颜色.
+
+</ul>
+
+    </div>
+</body>
+</html>

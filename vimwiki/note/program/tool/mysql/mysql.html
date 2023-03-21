@@ -1,0 +1,457 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../style.css" />
+    <title>mysql</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<h2 id="toc_0.1">3.1 连接和断开服务器 </h2>
+<ul>
+<li>
+连接服务器
+<pre>
+mysql -h host -u user -p
+</pre>
+
+<ul>
+<li>
+连接相同机器可以忽略 host
+
+<li>
+如果允许匿名登录, 则可以忽略user和password
+
+<li>
+QUIT 断开连接.
+
+</ul>
+</ul>
+
+<h2 id="toc_0.2">3.2 输入查询</h2>
+<ul>
+<li>
+查询
+<pre>
+SELECT VERSION(), CURRENT_DATE;
+</pre>
+
+<li>
+一个命令由 SQL 语句跟一个分号实现. 除了QUIT
+
+<li>
+不区分大小写
+<pre>
+SELECT SIN(PI()/4), (4+1)*5;
+</pre>
+
+<li>
+可以一行多个命令语句.
+
+<li>
+如果你不想执行正在输入的语句, 可以输入 \c
+
+<li>
+提示符
+
+<ul>
+<li>
+mysql&gt; 准备新的命令
+
+<li>
+-&gt; 等待多行命令的下一行
+
+<li>
+'&gt; 等待下一行, 等待一个以(')开始的字符串的结束.
+
+<li>
+"&gt; 同上, 只是字符串以(")开始
+
+<li>
+`&gt; 等待下一行, 等待以该符号开始的标识符的结束.
+
+<li>
+/*&gt; 等待下一行, 等待以这个符号开始的注释的结束.
+
+</ul>
+<li>
+显示数据库, 其中 mysql 为用户特权数据库, test 为测试数据库
+<pre>
+SHOW DATABASES;
+</pre>
+
+<li>
+使用数据库, 这个命令不需要分号. 这个语句必须单行.
+<pre>
+USE test
+</pre>
+
+<li>
+允许某人访问数据库 menagerie
+<pre>
+mysql&gt; GRANT ALL ON menagerie.* TO 'your_mysql_name'@'your_client_host';
+</pre>
+
+</ul>
+
+<h2 id="toc_0.3">3.3 创建和使用数据库</h2>
+<ul>
+<li>
+创建数据库
+<pre>
+CREATE DATABASE menagerie;
+</pre>
+
+<li>
+可以在启动MYSQL时选择数据库, -p命令不带空格则可以输入密码, 如 -pmypassword
+<pre>
+mysql -h host -u user -p menagerie
+</pre>
+
+<li>
+当前选择的数据库
+<pre>
+SELECT DATABASE();
+</pre>
+
+<li>
+显示有哪些表格
+<pre>
+SHOW TABLES;
+</pre>
+
+<li>
+创建表格, 修改表格使用 ALTER TABLE 命令.
+<pre>
+CREATE TABLE pet (name VARCHAR(20), owner VARCHAR(20), species VARCHAR(20), sex CHAR(1), birth DATE, death DATE);
+</pre>
+
+<li>
+显示表格内容
+<pre>
+DESCRIBE pet;
+</pre>
+
+<li>
+添加数据, LOAD DATA 或 INSERT 语句.
+
+<ul>
+<li>
+导入文本方式, 值之间用tab字符分隔, 可以使用NULL表示空白, 可使用 \N 表示.
+<pre>
+LOAD DATA LOCAL INFILE 'H:/Code/pet.txt' INTO TABLE pet;
+</pre>
+
+<li>
+如果使用Windows, 则可能需要使用语句 LINES TERMINATED BY '\r\n' 表示以 "\r\n" 作为行尾结束符.
+
+<li>
+INSERT 语句. 
+<pre>
+INSERT INTO pet VALUE ('Puffball','Diane','hamster','f','1999-03-30',NULL);
+</pre>
+
+</ul>
+<li>
+SELECT 语句
+<pre>
+SELECT what_to_select
+FROM which_table
+WHERE conditions_to_satisfy;
+</pre>
+
+<li>
+修改表格, 两种方法
+
+<ul>
+<li>
+编辑pet.txt文件, 将错误的地方改成正确的, 而后使用 DELETE 和 LOAD DATA;
+<pre>
+DELETE FROM pet;
+LOAD DATA LOCAL INFILE 'pet.txt' INTO TABLE pet;
+</pre>
+
+<li>
+使用 UPDATE 语句
+<pre>
+UPDATE pet SET birth = '1989-08-31' WHERE name = 'Bowser';
+</pre>
+
+</ul>
+<li>
+选择特定行, 字符串比较是大小写不敏感的.
+<pre>
+SELECT * FROM pet WHERE name = 'Bowser';
+SELECT * FROM pet WHERE birth &gt;= '1998-1-1';
+SELECT * FROM pet WHERE species = 'dog' AND sex = 'f';
+SELECT * FROM pet WHERE species = 'snake' OR species = 'bird';
+SELECT * FROM pet WHERE (species = 'cat' AND sex = 'm') OR (species = 'dog' AND sex = 'f');
+</pre>
+
+<li>
+选择特定列, DISTINCT 使得输出结果唯一不会重复.
+<pre>
+SELECT name, birth FROM pet;
+SELECT owner FROM pet;
+SELECT DISTINCT owner FROM pet;
+SELECT name, species, birth FROM pet WHERE species = 'dog' OR species = 'cat';
+</pre>
+
+<li>
+排序行, 使用 ORDER, 默认比较大小写不敏感, 如果需要敏感则使用 BINARY, 如 ORDER BY BINARY col_name. 默认排序为升序. 使用 DESC 则为降序. 可以多个列进行排序, 每个列可以不同的排序方向.
+<pre>
+SELECT name, birth FROM pet ORDER BY birth;
+SELECT name, birth FROM pet ORDER BY birth DESC;
+SELECT name, species, birth FROM pet ORDER BY species, birth DESC;
+</pre>
+
+<li>
+日期计算,  TIMESTAMPDIFF() 函数计算年龄. 第一个参数为结果表达的单位, 后面两个参数为比较的两个日期. alias 可用作列别名.
+<pre>
+SELECT name, birth, CURDATE(), TIMESTAMPDIFF(YEAR,birth,CURDATE()) AS age FROM pet;
+SELECT name, birth, CURDATE(), TIMESTAMPDIFF(YEAR,birth,CURDATE()) AS age FROM pet ORDER BY name;
+SELECT name, birth, CURDATE(), TIMESTAMPDIFF(YEAR,birth,CURDATE()) AS age FROM pet ORDER BY age;
+SELECT name, birth, death, TIMESTAMPDIFF(YEAR,birth,death) AS age FROM pet WHERE death IS NOT NULL ORDER BY age;
+</pre>
+
+<ul>
+<li>
+NULL 最好使用 IS NOT NULL 比较, 而非使用 &lt;&gt; NULL 来进行比较.
+
+<li>
+MYSQL 提供了函数用于从日期中提取部分, 如 YEAR(), MONTH(), DAYOFMONTH().
+<pre>
+SELECT name, birth, MONTH(birth) FROM pet;
+</pre>
+
+<li>
+DATE_ADD() 允许你添加一个时间间隔.
+<pre>
+SELECT name, birth FROM pet WHERE MONTH(birth) = MONTH(DATE_ADD(CURDATE(),INTERVAL 1 MONTH));
+</pre>
+
+<li>
+还可以使用 MOD() 来实现上面语句的功能.
+<pre>
+SELECT name, birth FROM pet WHERE MONTH(birth) = MOD(MONTH(CURDATE()), 12) + 1;
+</pre>
+
+</ul>
+<li>
+NULL 值
+
+<ul>
+<li>
+使用 IS NULL 和 IS NOT NULL 测试 NULL.
+<pre>
+SELECT 1 IS NULL, 1 IS NOT NULL;
+</pre>
+
+<li>
+不能对NULL使用 =, &lt;, 或 &lt;&gt; 比较操作符.
+
+<li>
+0和NULL为假, 其他为真, 默认布尔真值为1.
+
+<li>
+进行排序时, 如果是升序则NULL的值最先出现.
+
+<li>
+0 IS NOT NULL 为真, '' IS NUOT NULL 为真.
+
+</ul>
+<li>
+模式匹配
+
+<ul>
+<li>
+MYSQL 提供了基本的 SQL 模式匹配以及基于扩展正则表达式形式的模式匹配.
+
+<li>
+SQL 模式匹配使用"_"匹配任意单个字符, "%"匹配任意数量的字符(包括0个字符). MYSQL中, SQL模式默认为大小写不敏感的. 当你使用SQL模式时, 不使用=或者<&gt;, 而使用 LIKE 或 NOT LIKE 比较操作符.
+
+<li>
+发现以"b"开始的名称, 以"fy"结尾的名称, 含有一个"w"的名称, 五个字符的名称
+<pre>
+SELECT * FROM pet WHERE name LIKE 'b%';
+SELECT * FROM pet WHERE name LIKE '%fy';
+SELECT * FROM pet WHERE name LIKE '%w%';
+SELECT * FROM pet WHERE name LIKE '_____';
+</pre>
+
+<li>
+当使用扩展正则表达式进行模式匹配时, 使用 REGEXP 和 NOT REGEXP(或者 RLIKE 和 NOT RLIKE)
+
+<ol>
+<li>
+'.' 匹配任意单个字符.
+
+<li>
+"[...]" 匹配方括号内任意字符. 里面可以用 "-" 表示字符范围.
+
+<li>
+'*' 匹配前面一项零次或多次.
+
+<li>
+只要在值中任意部分匹配则该 REGEXP 匹配成功.
+
+<li>
+'^' 和 '$' 表示匹配模式的头和尾.
+
+<li>
+使用 BINARY 关键词可以使得匹配大小写敏感.
+
+<li>
+可以使用 {n} 表示重复次数.
+<pre>
+SELECT * FROM pet WHERE name REGEXP '^b';
+SELECT * FROM pet WHERE name REGEXP BINARY '^b';
+SELECT * FROM pet WHERE name REGEXP 'fy$';
+SELECT * FROM pet WHERE name REGEXP 'w'; // 包含w
+SELECT * FROM pet WHERE name REGEXP '^.....$'; // ^ 和 $ 确保刚好五个字符.
+SELECT * FROM pet WHERE name REGEXP '^.{5}$';
+</pre>
+
+</ol>
+</ul>
+<li>
+统计列
+
+<ul>
+<li>
+有多少的宠物
+<pre>
+SELECT COUNT(*) FROM pet;
+</pre>
+
+<li>
+每个拥有者有多少的宠物, 使用 GROUP BY 进行分组.
+<pre>
+SELECT owner, COUNT(*) FROM pet GROUP BY owner;
+SELECT species, COUNT(*) FROM pet GROUP BY species;
+SELECT sex, COUNT(*) FROM pet GROUP BY sex;
+SELECT species, sex, COUNT(*) FROM pet GROUP BY species, sex;
+SELECT species, sex, COUNT(*) FROM pet WHERE species = 'dog' OR species = 'cat' GROUP BY species, sex;
+SELECT species, sex, COUNT(*) FROM pet WHERE sex IS NOT NULL GROUP BY species, sex;
+</pre>
+
+<li>
+如果允许 ONLY_FULL_GROUP_BY SQL 模式, 则会有错误发生.
+
+<li>
+如果使用 COUNT(*) 且不使用 GROUP BY, 则结果的值可能未知.
+
+</ul>
+<li>
+使用多个表格
+<pre>
+CREATE TABLE event (name VARCHAR(20), date DATE, type VARCHAR(15), remark VARCHAR(255));
+LOAD DATA LOCAL INFILE 'H:/Code/event.txt' INTO TABLE event LINES TERMINATED BY '\r\n';
+</pre>
+
+<ul>
+<li>
+查询多个表
+<pre>
+SELECT pet.name, (YEAR(date)-YEAR(birth)) - (RIGHT(date,5)&lt;RIGHT(birth,5)) AS age, remark FROM pet INNER JOIN event ON pet.name = event.name WHERE event.type = 'litter';
+</pre>
+
+<li>
+内连接表示当且仅当来自两个表的行都满足ON语句的条件时才显示其结果.
+
+<li>
+由于两个表都有 name 列, 你必须指定显示哪个表的name, 如上 pet.name.
+
+<li>
+一个表可以连接自己. 如比较表中不同的记录.
+<pre>
+SELECT p1.name, p1.sex, p2.name, p2.sex, p1.species FROM pet AS p1 INNER JOIN pet AS p2 ON p1.species = p2.species AND p1.sex = 'f' AND p2.sex = 'm';
+</pre>
+
+</ul>
+</ul>
+
+<h2 id="toc_0.4">3.4 得到关于数据库和表的信息</h2>
+<ul>
+<li>
+当前使用的数据库 DATABASE()
+<pre>
+SELECT DATABASE();
+</pre>
+
+<li>
+显示表格 SHOW TABLES;  表格结构 DESCRIBE table_name; DESC 是 DESCRIBE 的缩写.
+
+<li>
+SHOW CREATE TABLE table_name --- 查看已创建的表格.
+
+<li>
+SHOW INDEX FROM tbl_name 显示表格上的索引.
+
+</ul>
+
+<h2 id="toc_0.5">3.5 批模式使用 MySQL</h2>
+<ul>
+<li>
+从文件中读取输入
+<pre>
+shell&gt; mysql &lt; batch-file
+</pre>
+
+<li>
+如果在windows下运行, 有一些特殊字符.
+<pre>
+mysql -e "source batch-file'
+</pre>
+
+<li>
+如果你需要在命令行中指定连接参数
+<pre>
+shell&gt; mysql -h host -u user -p &lt; batch-file
+Enter password: ********
+</pre>
+
+<li>
+如果你希望脚本出现错误仍继续, 则使用 --force 命令行选项.
+
+<li>
+如果生成的输出内容很多, 可以使用pager分页观察
+<pre>
+shell&gt; mysql &lt; batch-file | more
+</pre>
+
+<li>
+你可以将输出放在一个文件中以便进一步处理
+<pre>
+shell&gt; mysql &lt; batch-file &gt; mysql.out
+</pre>
+
+<li>
+批模式的输出很简洁, 如果你希望原来的输出格式, 则可使用 mysql -t 来实现. 对于输出的执行命令的echo, 可以使用 mysql -vvv.
+
+<li>
+还可以在mysql提示符中使用source命令或 \. 命令来使用脚本.
+<pre>
+mysql&gt; source filename;
+mysql&gt; \. filename
+</pre>
+
+</ul>
+
+<h2 id="toc_0.6">3.6 查询例子</h2>
+
+    </div>
+</body>
+</html>

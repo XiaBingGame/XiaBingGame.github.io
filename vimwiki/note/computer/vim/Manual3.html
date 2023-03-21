@@ -1,0 +1,461 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../style.css" />
+    <title>Manual3</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<h1 id="toc_1">第11章 从冲突中恢复过来</h1>
+<h2 id="toc_1.1">11.1 基本恢复</h2>
+<ul>
+<li>
+假设知道正编辑的文件名, 用"-r"参数启动vim: vim -r help.txt
+
+<ul>
+<li>
+则会读取swap文件, 如果Vim恢复你的变化, 你可能看到如下信息
+<pre>
+	Using swap file ".help.txt.swp" ~
+	Original file "~/vim/runtime/doc/help.txt" ~
+	Recovery completed. You should check if everything is OK. ~
+	(You might want to write out this file under another name ~
+	and run diff with the original file to check for changes) ~
+	You may want to delete the .swp file now. ~
+</pre>
+
+<li>
+为了安全, 写入另一文件中 :write help.txt.recovered
+
+<li>
+和原文件比较, 检查文件是否按照所期望的关闭
+<pre>
+:write help.txt.recovered
+:edit #
+:diffsp help.txtss
+</pre>
+
+<li>
+如果恢复的结果和文件内容一致, 则会收到如下信息:
+<pre>
+	Using swap file ".help.txt.swp" ~
+	Original file "~/vim/runtime/doc/help.txt" ~
+	Recovery completed. Buffer contents equals file contents. ~
+	You may want to delete the .swp file now. ~
+</pre>
+
+<li>
+上面通常发生于你恢复了变化, 或者你在变化之后写入文件. 此时可以安全删除交换文件.
+
+</ul>
+<li>
+如果你四秒内不输入则会将改变写入磁盘, 或者输入200个字符后会将改变写入磁盘. 这可以通过选项 'updatetime' 和 'updatecount' 来设置. 在之前系统崩溃时可能没机会保存数据. 这样在最后一次保存之后的改变可能无法恢复.
+
+<li>
+如果使用空字符串, 则必须在正确的目录中, 否则不会发现交换文件, 命令: vim -r ""
+
+</ul>
+
+<h2 id="toc_1.2">11.2 交换文件位于何处?</h2>
+<ul>
+<li>
+vim -r 可以查看所有可以找到的交换文件
+
+<li>
+使用一个特定的交换文件
+
+<li>
+如果你知道需要使用哪个文件, 你可以通过给定交换文件名来恢复它. vim 可以从交换文件中发现原始文件
+
+<ul>
+<li>
+vim -r .help.txt.swo
+
+<li>
+如果不工作, 则查看Vim报告了什么文件名, 并依此重命名文件. 
+
+<li>
+检查 'directory' 选项查看 Vim 可能将交换文件放在哪里.
+
+<li>
+vim 试图在 'dir' 选项中的目录查找交换文件, 查找匹配 "filename.sw?" 的文件. 如果通配符 expansion 不工作. 则Vim试图查找文件 "filename.swp", 如果还失败, 你则需要给出交换文件自身的文件名以便能够恢复文件.
+
+</ul>
+</ul>
+
+<h2 id="toc_1.3">11.3 是否崩溃</h2>
+<ul>
+<li>
+发现 E325 警告信息, 因为当开始编辑文件时, Vim 检查是否已有一个交换文件, 如果有, 则肯定有错. 原因有二:
+
+<ul>
+<li>
+该文件的另一个编辑session正在运行. 查看信息里面的 "process ID", 可能格式为 
+
+<ul>
+<li>
+process ID: 12559 (still running)
+
+<li>
+当两个vim同时编辑一个文件时, 一个文件最后写的内容可能会覆盖另一个文件写的内容.
+
+</ul>
+<li>
+该 swap 文件可能有之前 vim 或电脑的崩溃而产生的结果. 检查信息关联的日期,  
+
+<ul>
+<li>
+如果日期比你所编辑文件的日期更新, 且出现一行 --- modified: YES. 则你可能有一个崩溃的编辑session, 这值得恢复.
+
+<li>
+如果日期比你所编辑文件的日期更旧, 则变化可能发生在崩溃之后(也许你之前恢复了文件, 但没有删除交换文件?), 或者文件在崩溃之前保存, 但这个保存动作在交换文件的最后写入之后(幸运, 不再需要旧的交换文件). Vim 提醒如下: NEWER than swap file!
+
+</ul>
+</ul>
+<li>
+不可读的交换文件
+
+<ul>
+<li>
+有时候在交换文件名称之下出现这一行: [cannot be read], 根据情况是好事还是坏事.
+
+<ol>
+<li>
+如果之前的编辑session没有对文件做出任何改变却崩溃, 则是好事. 你可以直接删除交换文件
+
+<li>
+使用其他的登录名登录退出系统可能解决这个"read error"问题. 或者想要知道是谁最后修改文件, 而后告知他.
+
+<li>
+最坏的情况是包含交换文件袋磁盘发生物理读取错误.
+
+</ol>
+</ul>
+<li>
+怎么做: 如果支持对话框, 则会询问五个选择:
+<pre>
+  Swap file ".main.c.swp" already exists! ~
+  [O]pen Read-Only, (E)dit anyway, (R)ecover, (Q)uit, (A)bort, (D)elete it: ~
+</pre>
+
+<ul>
+<li>
+只读
+
+<li>
+任意编辑文件, 这可能产生文件的两个版本
+
+<li>
+从交换文件恢复文件
+
+<li>
+退出
+
+<li>
+忽略, 同上, 只是忽略进一步的命令
+
+<li>
+删除交换文件
+
+</ul>
+<li>
+如果不支持对话框, 则使用命令 :recover
+
+<li>
+如果你不想看到这些信息, 你可以在 'shortmess' 选项上设置 'A' 标志
+
+</ul>
+
+<h2 id="toc_1.4">11.4 进一步阅读 </h2>
+
+<h1 id="toc_2">第12章 聪明的技巧 </h1>
+<h2 id="toc_2.1">12.1 替换单词</h2>
+<ul>
+<li>
+可以替换文件中一个单词的所有位置 :%s/four/4/g
+
+<ul>
+<li>
+% 表示所有行, g 表示替换一行中该单词的所有地方.
+
+<li>
+为了避免将 "thirtyfour" 替换为 "thirty4", 使用命令 :%s/\&lt;four/4/g
+
+<li>
+为了避免单词 "fourteen" 的替换, 使用命令 :%s/\&lt;four\&gt;/4/g
+
+<li>
+如果想替换程序注释中的 "four", 使用 "c" flag 来实现 :%s/\&lt;four\&gt;/4/gc
+
+</ul>
+<li>
+在一些文件中进行替换
+
+<ul>
+<li>
+假设你有一个 c++ 文件的目录, 后缀为 ".cpp". 这里有名为 "GetResp" 的函数你想重命名为 "GetAnswer"
+
+<ol>
+<li>
+vim *.cpp --- 使用参数列表启动了vim
+
+<li>
+qq --- 开始记录 q 寄存器命令
+
+<li>
+:%s/\&lt;GetResp\&gt;/GetAnswer/g
+
+<li>
+:wnext --- 写入文件并移动到下个文件中
+
+<li>
+q
+
+<li>
+@q
+
+<li>
+999@q --- 在剩下的文件中执行 q 寄存器命令
+
+</ol>
+<li>
+因为如果一个文件不含 "GetResp" 的话, 则不能替换产生错误, 则会停止命令, 我们可以使用 "e" flag 来避免这个问题
+
+<ul>
+<li>
+:%s/\&lt;GetResp\&gt;/GetAnswer/ge
+
+<li>
+"e" flag 用于告知 ":substitute" 没有发现匹配时不是一个错误.
+
+</ul>
+</ul>
+</ul>
+
+<h2 id="toc_2.2">12.2 改变 "Last, First" 为 "First Last"</h2>
+<ul>
+<li>
+如果你有一个名称列表如下:
+<pre>
+	Doe, John
+	Smith, Peter
+</pre>
+
+<ul>
+<li>
+想要修改为如下的格式:
+<pre>
+	John Doe
+	Peter Smith
+</pre>
+
+<li>
+可使用命令 :%s/\([^,]<strong>\), \(.</strong>\)/\2 \1/
+
+<li>
+\1, \2 都是 backrefereces, 你可使用九个 backreferences. \0 表示整个匹配模式
+
+</ul>
+</ul>
+
+<h2 id="toc_2.3">12.3 排序一个列表 </h2>
+<ul>
+<li>
+一个 Makefile 常有一个文件的列表
+<pre>
+	OBJS = \
+		version.o \
+		pch.o \
+		getopt.o \
+		util.o \
+		getopt1.o \
+		inp.o \
+		patch.o \
+		backup.o
+</pre>
+
+<li>
+为了排序这个列表, 通过外部排序命令过滤文本
+<pre>
+	/^OBJS
+	j
+	:.,/^$/-1!sort
+</pre>
+
+<ul>
+<li>
+这到第一行, "OBJS" 为行中首先出现的内容, 而后到下一行, 开始过滤这些行, 直到空行为止.
+
+<li>
+你可以在视觉模式中选择这些行, 而后使用 "!sort"
+
+</ul>
+</ul>
+
+<h2 id="toc_2.4">12.4 倒转行序</h2>
+<ul>
+<li>
+:global 命令配合 :move 可以将所有行移动到第一行之前, 命令 :global/^/m 0  
+
+<ul>
+<li>
+简化该命令 :g/^/m 0
+
+<li>
+"^" 匹配行头(即便是空行)
+
+<li>
+:move 命令移动匹配的行移动至零行之后, 所以匹配的行变成了文件的第一行
+
+<li>
+:global 命令处理剩下的行作为文件的第一行.
+
+</ul>
+<li>
+还可作用与一个范围内的行, 首先移动到第一行做上标记 "mt", 而后移动至最后一行输入 :'t+1,.g/^/m 't
+
+</ul>
+
+<h2 id="toc_2.5">12.4 统计字数</h2>
+<ul>
+<li>
+g CTRL-G --- 整个文件的字数
+
+<li>
+部分文本统计 --- visual 模式选择文本, 而后 Ctrl-G 统计.
+
+</ul>
+
+<h2 id="toc_2.6">查找一个 man 页面</h2>
+<ul>
+<li>
+只能用于 Unix 系统, 略过
+
+</ul>
+
+<h2 id="toc_2.7">修剪空格</h2>
+<ul>
+<li>
+移除每行末尾的空格 :%s/\s\+&amp;//
+
+<ul>
+<li>
+\s 表示查找一个空白符, \+表示一个或多个空白符, $ 表示在行尾之前.
+
+</ul>
+<li>
+另一种常见的浪费是在 tab 之前放置空格, 最好手动删除.
+
+</ul>
+
+<h2 id="toc_2.8">查找单词何处被使用 </h2>
+<ul>
+<li>
+只能用于 Unix 系统, 略过
+
+</ul>
+
+
+<h1 id="toc_3">第20章 快速输入命令行令 </h1>
+<h2 id="toc_3.1">20.1 命令行的编辑</h2>
+<ul>
+<li>
+冒号命令和查找命令都为命令行
+
+<li>
+在命令行中移动光标:
+
+<ul>
+<li>
+&lt;Left&gt; --- 向左移动一个字符
+
+<li>
+&lt;Right&gt; --- 向右移动一个字符 
+
+<li>
+&lt;S-Left&gt; / &lt;C-Left&gt; --- 向左移动一个单词
+
+<li>
+&lt;S-Right&gt; / &lt;C-Right&gt; --- 向右移动一个单词
+
+<li>
+CTRL-B / &lt;Home&gt; --- 移动至命令行开头
+
+<li>
+CTRL-E / &lt;End&gt; --- 移动至命令行尾部
+
+</ul>
+<li>
+命令行删除整个单词: CTRL-W, 命令行删除所有文本: CTRL-U
+
+<li>
+&lt;Insert&gt; 键切换插入字符和替换已有字符的模式
+
+<li>
+CTRL-C 或 &lt;Esc&gt; 取消已有的命令行.
+
+<ul>
+<li>
+Vi 下 &lt;Esc&gt; 则非取消命令, 而是执行命令.
+
+</ul>
+</ul>
+
+<h2 id="toc_3.2">20.2 命令行缩写 </h2>
+<ul>
+<li>
+所有的 ":" 命令都是可以缩写的
+
+<li>
+":set" 命令只能缩写为 ":se". 另有缩写命令 :s[ubstitute], 其简称 :s, :su, :sub 都可以工作.
+
+<li>
+在用户手册里, 我们使用命令的全称, 或可读的缩写版本, 例如, ":function", 可以缩写为 ":fu", 但我们常用 ":fun" 以便于有可读性
+
+<li>
+在脚本中建议使用命令的全称.
+
+<li>
+常见令人糊涂的命令为 ":end", 其可表示 ":endif", ":endwhile", ":endfunction"
+
+<li>
+缩写的选项名, 许多选项都有缩写, 但仅有一个缩写. 例如 'autoindent' 缩写为 'ai'
+
+</ul>
+
+<h2 id="toc_3.3">20.3 命令行补全 </h2>
+<ul>
+<li>
+假设有一个目录文件如下:
+<pre>
+	info.txt
+	intro.txt
+	bodyofthepaper.txt
+</pre>
+
+<li>
+编辑最后一个文件, 使用命令 :edit bodyofthepaper.txt
+
+<ul>
+<li>
+更快的方法是 :edit b&lt;Tab&gt;
+
+</ul>
+</ul>
+
+    </div>
+</body>
+</html>

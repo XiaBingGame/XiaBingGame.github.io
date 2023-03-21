@@ -1,0 +1,76 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../../style.css">
+<title>Algorithmss</title>
+<meta http-equiv="Content-Type" content="text/html; charset=cp936">
+</head>
+<body>
+
+<h1 id="toc_1">第二章 算法入门</h1>
+<ul>
+<li>
+插入排序
+
+<li>
+循环不变式用来帮助我们理解算法的正确性
+
+<ul>
+<li>
+初始化
+
+<li>
+保持
+
+<li>
+终止
+
+</ul>
+<li>
+算法分析: 对一个算法所需要的资源进行预测
+
+<ul>
+<li>
+计算模型: 通用的单处理器, 随机存取机(RAM). 指令一条条执行, 没有并发操作. 
+
+<li>
+输入规模, 运行时间
+
+</ul>
+<li>
+一般考察算法的最坏情况运行时间
+
+<li>
+分治法, 三个步骤: 分解, 解决, 合并
+
+</ul>
+
+<h1 id="toc_2">第三章 函数的增长</h1>
+<ul>
+<li>
+渐进符号
+
+<ul>
+<li>
+圆H记号: OH(g(n)) = {f(n): 存在正整数c1, c2和n0, 使对所有的n&gt;=n0, 有 0&lt;= c1*g(n) &lt;= f(n) &lt;= c2*g(n)}
+
+<li>
+大O记号: O(g(n)) = {f(n): 存在正整数c和n0, 使对所有的n&gt;=n0, 有 0&lt;= f(n) &lt;= c*g(n)}, 表示最坏情况下的运行时间
+
+<li>
+欧姆记号: Ω(g(n)) = {f(n): 存在正整数c和n0, 使对所有的n&gt;=n0, 有 0&lt;= c*g(n)} &lt;= f(n), 表示最坏情况下的运行时间
+
+</ul>
+<li>
+定义3.1: 任意两个函数 f(n), g(n), 如f(n)=OH(g(n)), 则f(n)和g(n)存在大O和欧姆关系
+
+<li>
+o记号
+
+<li>
+w记号
+
+</ul>
+
+</body>
+</html>

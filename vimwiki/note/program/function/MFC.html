@@ -1,0 +1,420 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../style.css">
+<title>MFC</title>
+<meta http-equiv="Content-Type" content="text/html; charset=cp936">
+</head>
+<body>
+
+<h1 id="toc_1">控件</h1>
+<ul>
+<li>
+CAnimateCtrl	--- 播放AVI, open方法和animate方法
+
+<li>
+CStatusBar --- 状态栏
+
+<ul>
+<li>
+一行用于文字输出的面板.
+
+<li>
+其实现是用 CStatusBarCtrl. 
+
+<li>
+CStatusBar 的方法提供了大部分功能, 但 CStatusBar::GetStatusBarCtrl() 则允许实现更多的功能.
+
+<li>
+大部分状态栏显示 CAPS_LOCK, NUM_LOCK 信息.
+
+<li>
+MFC默认情况下并不允许CStatusBar面板进行操作, 如果要激活该面板, 则在状态栏的每个面板上使用 ON_UPDATE_COMMAND_UI 宏, 而后更新这些面板
+
+<li>
+创建一个面板
+
+<ol>
+<li>
+定义面板的Command ID. 资源符号--&gt;新建--&gt;输入ID--&gt;指定值
+
+<li>
+定义用于显示于面板的字符串, String Table--&gt;新字符串--&gt;选择Command ID--&gt;输入字符串
+
+<li>
+添加 indicators 数组, 存储命令ID
+
+</ol>
+<li>
+建议使用类CCmdUI的SetText方法来设置面板的字符串, 在更新处理函数调用该方法.
+
+<li>
+如何更新一个面板的文字字符串
+
+<ol>
+<li>
+添加一个用于该命令的命令更新处理函数 
+
+<ul>
+<li>
+手工添加该处理函数的原型: afx_msg void OnUpdatePage(CCmdUI *pCmdUI);
+
+<li>
+在 cpp 文件中, 添加该处理函数的定义. 例如
+<pre c++>
+void CMainFrame::OnUpdatePage(CCmdUI *pCmdUI)
+{
+    pCmdUI-&gt;Enable(); 
+    CString strPage;
+    strPage.Format(_T("Page %d"), m_nPage); 
+    pCmdUI-&gt;SetText(strPage); 
+}
+</pre>
+
+<li>
+在message map中, 添加一个 ON_UPDATE_COMMAND_UI宏. 例如: ON_UPDATE_COMMAND_UI(ID_INDICATOR_PAGE, &amp;CMainFrame::OnUpdatePage)
+
+</ul>
+</ol>
+<li>
+创建状态栏
+
+<ul>
+<li>
+构建一个CStatusBar 对象
+
+<li>
+调用 Create(CreateEx)函数创建
+
+<li>
+调用 SetIndicator 关联indicator ID
+
+</ul>
+<li>
+三种方法更新其面板文字;  CWnd::SetWindowText, CCmdUI::SetText (ON_UPDATE_COMMAND_UI), SetPaneText
+
+<li>
+SetPaneStyle 更新字体
+
+<li>
+可以使用  CStatusBar::GetStatusBarCtrl() 调用方法 SetMinHeight
+
+<li>
+设置该状态栏新的ID, 风格, 和宽度
+
+<li>
+GetItemRect() 可以获取矩形信息
+
+</ul>
+<li>
+CToolBar
+
+<ul>
+<li>
+SetButtons --- 将工具条按钮的命令ID设置为参数数组里面的值
+
+<li>
+SetButtonText --- 设置工具条按钮上的文本值
+
+<li>
+SetButtonStyle --- 设置按钮风格. TBBS_BUTTON, TBS_SEPARATOR(分隔条), TBBS_CHECKBOX, TBBS_GROUP, TBBS_CHECKGROUP, TBBS_DROPDOWN, TBBS_AUTOSIZE, TBBS_NOPREFIX, BTNS_DROPDOWN
+
+<li>
+GetToolBarCtrl --- 获取 CToolBarCtrl
+
+<li>
+GetItemRect --- 得到某特定项的矩形
+
+<li>
+SetButtonInfo --- 设置该位置按钮的资源ID, 风格, 图像索引
+
+<li>
+SetButtonText --- 设置按钮的文本
+
+</ul>
+</ul>
+	
+<ul>
+<li>
+CToolBarCtrl
+
+<ul>
+<li>
+GetButtonCount --- 得到工具条按钮数目
+
+<li>
+SetBitmapSize --- 设置图标大小
+
+<li>
+SetButtonSize --- 设置按钮大小
+
+<li>
+SetImageList --- 设置其图标列表
+
+<li>
+GetItemRect --- 得到某个按钮的矩形
+
+<li>
+SetExtendStyle --- 可以设置额外风格, 比如下拉菜单
+
+<li>
+AddButtons, DeleteButtons --- 添加和删除按钮
+
+<li>
+AutoSize --- 重置整个工具条, 当父窗口大小变化时或者工具条大小变化时要调用该函数(例如设置按钮和位图大小, 或添加字符串)
+
+</ul>
+</ul>
+
+<ul>
+<li>
+CListCtrl - 包装"列表视图控件"的功能, 显示一系列项目的集合, 每个项目包含一个图标和一个标签
+
+<ul>
+<li>
+列表视图控件的包装类, 显示一系列包含图标和标签的项目
+
+<li>
+四种显示该控件的方式: Icon View(32x32的大图标以及下面的标签); Small icon view(16x16的小图标以及右边的标签); List View(列表方式显示图标和标签); Report View(每项显示于一行, 额外的信息显示于右边), 包含额外的包装头控件(CHeadCtrl)
+
+<li>
+扩展风格: Hover selection, Virtual list views, One- and two- click activation, Drag and drop column ordering	
+
+<li>
+用于插入, 删除, 查找, 修改项目的函数; CListCtrl::GetItem, CListCtrl::InsertItem, CListCtrl::FindItem 等
+
+<li>
+支持 callback items, 用于存储项目的图标, 文本
+
+<li>
+四种不同的图像列表: Large icon, Samll icon, Application-defined state, Header item
+
+</ul>
+</ul>
+
+<h1 id="toc_2">系统</h1>
+<ul>
+<li>
+CTime --- 表示绝对时间和日期
+
+<ul>
+<li>
+GetCurrentTime --- 返回当前时间的 CTime
+
+<li>
+FOrmat --- 格式化而后返回 CString
+
+</ul>
+<li>
+定时器, SetTimer 和 KillTimer 为设置定时器和取消定时器的函数
+
+<li>
+CMenu: 控制菜单
+
+<ul>
+<li>
+AppenMenu
+
+<li>
+Attach --- 将一个系统菜单句柄挂接至CMenu对象
+
+<li>
+GetMenuItemCount --- 得到菜单一层的菜单项个数
+
+<li>
+GetMenuString --- 得到字符串
+
+<li>
+GetMenuItemID --- 得到ID, -1 表示弹出菜单, 0 表示分隔条
+
+<li>
+ModifyMenu --- 修改菜单, 比如改成自绘菜单
+
+<li>
+Detach, DestroyMenu --- 销毁一个菜单
+
+<li>
+TrackPopupMenu --- 右键弹出菜单
+
+</ul>
+</ul>
+	
+<h1 id="toc_3">窗口</h1>
+<ul>
+<li>
+CWnd --- 窗口类
+
+<ul>
+<li>
+GetSystemMenu --- 获取系统菜单
+
+<li>
+OnSysCommand --- 处理系统菜单
+
+<li>
+GetClientRect
+
+<li>
+ShowWindow --- SW_SHOW 显示, SW_RESTORE 还原
+
+<li>
+RedrawWindow --- 重绘给定窗口的区域
+
+<li>
+GetWindowRect --- 得到窗口在桌面的位置矩形信息
+
+</ul>
+<li>
+CFrameWnd
+
+<ul>
+<li>
+FloatControlBar --- 设置浮动控制条(工具栏)
+
+</ul>
+<li>
+CDC
+
+<ul>
+<li>
+FromHandle  --- 根据窗口句柄的到他的DC
+
+<li>
+SetBkMode --- 设置背景模式, 透明和非透明
+
+<li>
+Rectangle --- 绘制矩形
+
+<li>
+SelectStockObject --- 选择存储对象
+
+<li>
+FillSolidRect --- 用颜色填充矩形
+
+<li>
+Draw3dRect --- 绘制3D矩形
+
+<li>
+SelectObject --- 选择对象
+
+<li>
+MoveTo
+
+<li>
+LineTo
+
+<li>
+CreateCompatibleDC --- 一般用于创建内存CDC
+
+<li>
+StretchBlt --- CDC之间的操作
+
+</ul>
+<li>
+CBitmap
+
+<ul>
+<li>
+LoadBitmap --- 加载一个位图
+
+<li>
+GetBitmap --- 得到位图信息(如高宽)
+
+<li>
+DeleteObject
+
+</ul>
+<li>
+CFont
+
+<ul>
+<li>
+CreateFont --- 可以设置字体旋转, 加粗, 大小, 下划线, 删除线 斜体, 何种字体等等
+
+</ul>
+<li>
+CReBar --- 可以自定义工具栏, 编辑框, 列表框等信息. 一个rebar可包含多个bands, 每个bands可包含一个grippe bar, 位图, 文本标签, 子窗口等, 注意 bands 不能有多个子窗口
+
+<ul>
+<li>
+Create 创建
+
+<li>
+RedrawWindow 重绘
+
+</ul>
+<li>
+CReBarCtrl --- 包装一个rebar控件的功能
+
+<ul>
+<li>
+使用REBARBANDINFO 设置band信息
+
+<li>
+SetBandInfo 设置属性
+
+</ul>
+</ul>
+		
+<h1 id="toc_4">元素</h1>
+<ul>
+<li>
+CImageList --- 用于图像列表
+
+<ul>
+<li>
+Create
+
+<li>
+Add
+
+<li>
+DeleteImageList
+
+<li>
+Draw 在某处绘制
+
+</ul>
+<li>
+CString
+
+<ul>
+<li>
+得到内部字符串的指针, 返回LPSTR, 也就是CHAR*
+
+</ul>
+<li>
+CRect
+
+<ul>
+<li>
+DeflateRect
+
+<li>
+PtInRect --- 判断点是否在矩形中
+
+</ul>
+</ul>
+
+<h1 id="toc_5">全局方法</h1>
+<ul>
+<li>
+GetRValue -- 得到COLORREF中的红色成分值
+
+<li>
+AfxGetMainWnd() --- 得到MFC的主窗口
+
+</ul>
+
+<h1 id="toc_6">宏</h1>
+<ul>
+<li>
+COLORREF --- 表示颜色, 实质为DWORD, 使用 RGB(r,g,b) 可以直接返回一个DWORD
+
+<li>
+MAKERESOURCE --- 将一个整数资源ID转换成字符串ID, 用于那些允许参数为该宏返回值的函数. 例如参数类型为 lpType 或者 lpName 的函数
+
+</ul>
+
+</body>
+</html>

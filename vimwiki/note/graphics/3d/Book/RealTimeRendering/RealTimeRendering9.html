@@ -1,0 +1,631 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../../../style.css">
+<title>RealTimeRendering9</title>
+<meta http-equiv="Content-Type" content="text/html; charset=cp936">
+</head>
+<body>
+
+<p>
+Chapter 12 Polygonal Techniques
+</p>
+<ul>
+<li>
+本章的主要主题有 tessellation, consolidation, optimization, simplification. 多边形可达到许多不同的形式, 且可分割成更易处理的图元, 例如三角形或四边形; 这种处理称之为 triangulation 或更通用的 tessellation. Consolidation 为encompass(包含)合并和链接多边形数据及推导出新数据, 如法线. Optimization 以意为分组和排序多边形数据. Simplification 则为取出类似的链接数据, 并试图移除其内不必要或无价值的feature.
+
+<li>
+Triangulation 确保数据可显示且正确地显示, consolidation则进一步改进数据的现实和增加速度(通过允许共享计算). Optimization技术则更进一步增加速度. Simplification则通过移除不需要的多边形提供更多速度.
+
+</ul>
+
+<p>
+12.1 Sources of Three-Dimensional Data
+</p>
+<ul>
+<li>
+这里有创建或生成模型的一些方法:
+
+<ul>
+<li>
+直接在几何描述中手打输入
+
+<li>
+写程序创建类似的数据(称之为 procedural modeling)
+
+<li>
+变换其他形式的数据为surface或volume. 例如, 得到蛋白质数据, 并转换为球体, 圆柱体, 等.
+
+<li>
+使用建模(modeling)程序
+
+<li>
+在不同的点上采样真实的模型, 使用一个三维数字器(digitizer)
+
+<li>
+从相同物体的一个或多个照片重构(称之为photogrammetry, 使用一对照片则称之为stereophotogrammetry)
+
+<li>
+使用三维扫描技术
+
+<li>
+使用一些技术的组合.
+
+</ul>
+<li>
+知道用在应用程序的是何种数据源有助于确定可以预计的数据类型, 并可知道可应用何种技术.
+
+<li>
+在建模的世界里, 有两个主要的modeler类型: solid-based和surface-based. solid-based modeler可见于computer aided design(CAD)领域. 为了显示和分析, 类似的modeler有faceters. 一个 faceter 为转换内部模型表达到可用于显示的多边形的软件. 例如一个模型可用一个中心点和半径内部表示一个球体, 而该 faceter 可以将其转换成任意数目的三角形和四边形以表示它. 
+
+<li>
+关于CAD运作的一个重要考虑就是其使用的faceter是否设计用于图形渲染. 例如, 有 faceters 用于 finite element analysis(FEM), 其目标为分割surface近乎相同面积的三角形; 这种类型的 tessellation为consolidation and simplification的备选, 这是由于它们包含太多的图形无用数据. 也不提供顶点法线. 类似的, 一些facetors生成三角形集, 其通过使用stereolithography(立体平版印刷)创建实际的物理物体, 但缺少顶点发现并不适合快速图形显示.
+
+<li>
+surface-based modeler 其使用内部表达和faceters显示物体(如spline, subdivision surfaces)
+
+<li>
+还有其他类型的 modelers, 如 implicit surface creation system[117], 其概念有blends, weights, fields. 这些modelers可通过生成surfaces来创建一个印象深刻的organic effects. 该surface由一些到f(x, y, z) = 0函数的解决方案所定义. Polygonalization技术可用于创建用于显示的多边形集. 见章节 13.3
+
+<li>
+可以从卫星图, 激光扫描空气传播LIDAR, 或其他的三维扫描仪, 不同的医学扫描设备, 摄影测绘和摄影技术来生成数据. 产生的Meshes需要simplification技术, 其数据常在相同间隔间采样, 且许多样本对于数据的视觉效果有很小的影响. 其中一些技术只产生点云, 在点之间没有内在联系, 从这些样本重构meshes将会很困难. 所以如点渲染的交替(alternate)渲染技术可用于代替.
+
+</ul>
+
+<p>
+12.2 Tessellation and Triangulation
+</p>
+<ul>
+<li>
+tessellation 为分割一表面为一个多边形集合的处理过程, 这里只关注 tessellating 多边形surface; 转为复杂多边形为三角形称之为 triangulation. 渲染器也许只能处理凸多边形(类似的tessellation称之为convex partitioning). 图12.1显示了tessellation不同类型的例子. 还有其他的非图形原因, 如没有多边形大于某给定的面积, 所有多边形其角度都大于某个最小值.
+
+<li>
+通常需要执行的surface tessellator第一步处理为确定如何最好的投影一个三维多边形至两维. 可简化问题和所需的算法. 一个方法为确定丢弃xyz坐标的哪一个, 这等于投影多边形至三个平面(xy, yz, xz)中的一个. 最好的平面为多边形有最大投影面积的平面(该相同的技术也可用于章节16.9的point-in-polygon测试). 可通过计算每个投影平面的面积来确定平面. 或者简单地丢弃多边形法线最大绝对值(magnitude)对应的坐标. 例如多边形法线(-5, 2, 4), 我们则丢弃x坐标.
+
+<li>
+投影面积的测试并不一定等同于多边形法线的测试, 这依赖于以何种方式计算出法线, 以及多边形是否flat. 有些modeler创建的多边形面会被扭曲.  图12.2 显示了一个领结四边形(bowtie quadrilateral). 可以通过简单地创建一个对角线边来 triangulated 该四边形. 更复杂的warped多边形不能如此简单地管理, 将其投影至xy, yz, xz平面给出最大投影面积可以消除大部分问题. 还有 self-interaction 问题, 如果平面会导致self-intersection(多边形的边穿过其自身), 我们可以考虑投射多边形的平均平面(average plane). 可通过计算三个投影面积得到平均平面的法线, yz平面的面积形成x坐标, xz形成y坐标, xy形成z坐标. 这种计算称之为 Newell;s formula. 如果可能有self-intersection, 则会在多边形边之间进行繁重的比较, 以及需要分割多边形. 如果多边形有大量的边, 则可用一个plane sweep(扫, 拂, 掠过)限制边/边测试的数量. 见章节16.16的执行自身交叉测试的有效方法.
+
+<li>
+Schneider and Eberly [1131], O' Rourke[975], de Berg[82]给出不同的triangulation方法. 最基本的triangulation算法为检查多边形上任意给定两点间的每条线段, 查看其是否交叉或重叠多边形其他的边(等同于边). 如果有, 则该线段不能用于分割该多边形, 所以检查下一个可能的一对点. 否则通过该线段分割该多边形为两部分, 并用相同的方法triangulate这些新的多边形. 这种方法非常的无效率. 其为O(n的立方), 更有效的方法为 ear clipping. 其当作两个process, 算法效率为O(n的平方). 第一步, 在多边形上查找ear, 根据顶点索引 i, (i+1), (i+2)(module n)形成的三角形, 并检查线段 i, (i+2)是否没有和任何边相交, 如果没有相交, 则该三角形形成一个ear. 见图12.3. 所有的ear可以从多边形上移除, 便重新检查顶点i和(i+2)查看它们是否为ear, 最终所有的ear被移除, 多边形被triangulated. 更复杂的triangulation方法效率为O(nlogn), 以及一些典型情况可为O(n). 在Scheneider and Eberly[1131]中有ear clipping和其他方法的伪代码, 还有更快的 triangulation 方法.
+
+<li>
+划分一个多边形为convex region, 其比triangulation多边形, 在存储和进一步计算方面更有效率. 凸多边形可由triangle fans或triangle strips表示, 见章节12.4的讨论. Schorn and Fisher[1133]给出健壮的convexity test代码. 一些凹多边形可看成fans(例如称之为星形[star-shaped]的多边形). 但是检测这些需要更多的工作[975, 1033]. Schneider and Eberly[1131]给出两个convex partitioning方法. 一个quick and dirty方法和一个最佳的方法.
+
+<li>
+多边形未必只有一个轮廓(outline), 图12.4显示了一个多边形有三个轮廓(也可称之为loop或contours). 类似的描述可通过小心地生成join edge(也可称为keyholed or bridge edge)转换为单个轮廓的多边形. 还可反向该转换过程以得到各自的loops.
+
+<li>
+tessellation and triangulation算法可见[82, 920, 975, 1131].
+
+<li>
+一种解决triangulation问题的方法为使用图形加速器自身直接渲染复杂多边形, 多边形当作triangle fan渲染至stencil buffer. 这样真正应当填充的区域则被绘制奇数次数, 而凹处和洞处则被绘制偶数次数. 通过使用invert mode用于stencil buffer, 在第一个pass结束时只有标注出填充区域. 在第二个pass中, 再次渲染triangle, stencil buffer则只允许那些填充区域被绘制[969]. 
+
+</ul>
+
+<p>
+12.2.1 Shading Problems
+</p>
+<ul>
+<li>
+四边形mesh通常要转换成三角形用于显示, 如果为凹四边形, 则只有一种方式三角化该四边形. 否则, 我们需要检查两个对角线, 那个更好的分割该四边形为三角形(更好的视觉结果).
+
+<li>
+不同的其他方式分割四边形, 基本思路为最小化差异, 对于一个flat四边形, 其在顶点上无其他额外的数据, 最好的方式为选择最短的对角线. 对于radiosity solution或者prelit四边形, 其顶点有diffuse color, 则选择两个顶点颜色差异最小的对角线. 
+
+<li>
+当warped四边形应用了一个纹理之时, triangulation不会保存纹理在四边形上的扭曲程度, 具体可见图12.6. 因为三角形之间不会进行插值. 三角形只有三个纹理坐标. 一个基本的(u, v)纹理在一三角形可以切变(sheared)它, 而不是warped. Woo[1375]进一步讨论了该问题. 下面为一些可能的解决方案:
+
+<ul>
+<li>
+事先warp(扭曲)该纹理, 并重映射该图像
+
+<li>
+tessellate该surface为更好地 mesh
+
+<li>
+即时地使用投影纹理(projective texturing)扭曲该纹理[518]. 其会有undesirable的表面上纹理不一致间隔的效果.
+
+<li>
+使用 bilinear mapping scheme[518], 每个顶点使用额外的数据来实现.
+
+</ul>
+<li>
+纹理扭曲发生于纹理数据应用在和底下四边形匹配不均衡时, 例如圆锥体.
+
+<li>
+图12.6 显示了为何渲染使用三角形, 其可保证旋转不变性(rotation-invariant).  在三角形上插值等同于使用三角形重心坐标穿过surface插值.(见章节16.8)
+
+</ul>
+
+<p>
+12.2.2 Edge Cracking and T-Vertices
+</p>
+<ul>
+<li>
+章节13所详细讨论的曲面, 也要tessellated为meshes用于渲染, 其沿着定义surface的样条曲线步进来完成tessellation, 并计算顶点位置和法线. 当我们使用简单地步进(stepping)方法, 则在样条surface相交的地方产生问题. 在共享的边上, 其上用于两个surface的点需要coincide(重叠). 但是一个样条曲线生成的点必然不匹配相邻样条, 这产生的效果称之为 edge cracking. 缝的可见是由于着色插值的差异而产生.
+
+<li>
+修补这些cracks的处理称之为 edge stitching. 其目的为确保所有沿着共享边的所有顶点被两个样条surface共享.  以至没有crack出现. 见图12.7. 章节13.6.4 讨论使用适应性tessellation来避免cracking用于样条surface.
+
+<li>
+当连接flat平面时其面对的问题为T-vertices. 这种问题当两个模型其边相交时出现, 其并不共享边缘上的所有顶点. 如果渲染器在屏幕上顶点位置有足够的精度, 则会出现cracks, 现代的图形硬件使用 subpixel addressing[736], 其几乎解决了该问题. 虽然gaps仍然出现. 更明显的是该着色artifacts会出现[73]. Figure 12.8 显示了该问题. 查找该边修正这个问题. Lengyel[760]讨论了如何发现类似顶点, 且提供代码正确的retriangulate凸多边形. 例如, 在该图中, 四边形 abcd, 其triangulated为abc和acd, 则解决了该T-vertex问题. Cignoni[178]描述了一方法在知道T-vertices位置已知时避免创建退化三角形(零面积). 他们的算法效率为O(n), 且确保生成最多一个三角形 stripe和fan.
+
+</ul>
+
+<p>
+12.3 Consolidation
+</p>
+<ul>
+<li>
+在 tessellation 算法之后, 留下要渲染的多边形集合, 检查多边形其自身是否正确, 其没有相同的顶点在顶点列表中相邻, 且其至少有三个不同的顶点. 更详细的操作为合并(merging), 查找faces之间共享的顶点, 另一个更通用的操作为orientation, 即所有的多边形形成一个surface使得其面向相同的方向. 一旦执行orientation, 检查一个mesh是否形成一个solid surface, 对于若干不同算法的使用很重要. 其可通过查找图形的significant edge增强数据来完成 feature edge(形体边缘)的检测, 和这个操作有关的操作为顶点法线的生成, 使得surface看起来smooth, 我们称这些类型的技术为 consolidation algorithm.
+
+</ul>
+
+<p>
+12.3.1 Merging
+</p>
+<ul>
+<li>
+一些数据形成不连接多边形的形式, 常术语为 a polygon soup, 存储单独的多边形浪费内存, 显示单独的多边形为极端地无效率. 故合并成多边形mesh. 最简单的形式为顶点列表和索引. 
+
+<li>
+最简单的方法为使用hashing合并多边形, 初始化当前的索引为0, 对于每个多边形, 尝试添加添加其每个顶点依次添加至一个hash table中. 如果一个顶点还没在table中, 则存储它, 以及当前的顶点索引. 而后增加顶点索引. 而且还存储该顶点至最终的顶点列表中. 如果顶点已在hash table中, 则返回其存储的索引, 存储该多边形及指向顶点的索引. 一旦所有的多边形被处理, 顶点和索引列表则完成了.
+
+<li>
+模型数据有时其有顶点靠得非常近, 合并这样的顶点称之为 welding(焊接). 见 Glassner的文章[407], 其有welding 顶点的一个方法
+
+<li>
+其可能有许多更详细的多边形mesh数据结构. 例如, 一个cube 有8个顶点位置和6个面法线. 如果单独存储每个顶点的位置/法线, 则需要24个单独的顶点. 另一个可选的方式为存储两个单独的列表, 分别为顶点和法线, 每个顶点则存储其索引. Hoppe[562]讨论了一内存有效率的方式使得其在保持surface-surface连通性的时候如何共享vertex-face信息.
+
+</ul>
+
+<p>
+12.3.2 Orientation
+</p>
+<ul>
+<li>
+在CAD中, 其标准为当多边形其顶点逆时针方向时, 其为正面可见. 这称之为 right-handed orientation. 右手手指逆时针绕着多边形顶点, 你的拇指则指向多边形法线的方向
+
+<li>
+这里有若干需要的条件确保一个surface正确的oriented, 每个多边形的边最多被mesh中的两个多边形共享. 例如, 两个cube沿着一条边接触在一起, 则改变被四个多边形共享, 使得简单的orientation计算更复杂. 当然, one-sides物体例如Mobius strip (麦比乌斯带)不可能被 oriented.
+
+<li>
+给出一个合理的模型, 这里有方法orient一个多边形的mesh:
+	1. 形成一个 edge-face 结构用于所有的多边形. 
+	2. 排序或hash边以发现那条边匹配.
+	3. 查找互相接触的多边形组.
+	4. 对于每个分组, flip(翻动)其面以得到一致性.
+
+<li>
+第一步为创建一个 half-edge(半边)物体, 一个half-edge为一个多边形的一条边, 带一个指针(pointer)指向其关联的面, 由于一条边通常被两个多边形共享, 因此这个数据结构称之为 half-edge. 创建每个 half-edge 时, 存储其第一个顶点在第二个顶点之前. 顶点的排序有一种是根据x, y, z坐标的大小而排, 
+
+<li>
+其目标为查找那条边相同, 由于每条边其第一个顶点小于第二个顶点, 所以只需要比较两条边对应的第一个顶点和对应的第二个顶点. 一个 hash table 可用于查找匹配的边[8, 407]. 如果所有的顶点在之前已经合并过, half-edges使用相同的顶点索引, 可通过将half-edge放在一个和half-edge第一个顶点索引关联的临时lists上, 来匹配每个half-edge. 一个顶点有6条关联至它的边的平均, 使得边的匹配非常地快速.
+
+<li>
+一旦边匹配, 则其连接的相邻多边形已知, 形成一个 adjacency graph. 对于一个三角形mesh, 一个adjacency graph可以表示为(多达)三个三角形索引的列表, 每个索引关联至一个三角形(相邻三角形). 可以从相邻性(adjacency)确定边界边(boundary edges); 任何没有两个相邻多边形的边都为边界边. 相互接触的多边形集合形成一个连续组. 单个数据集可以有多于一个的连续组. 例如, 茶壶(teapot)则有两个连续组: 壶(pot)和盖(lid).
+
+<li>
+接下来的步骤就是给出orientation的一致性, 例如, 我们也许想要所有的多边形有一个逆时针的外形(outline). 对于每个多边形连续组, 选出任意一个起始多边形, 检查它的每个相邻多边形并确定orientation是否一致. orientation的检查很简单: 如果相邻两个多边形其共享边的遍历方向相同, 则相邻多边形必须翻转(flip). 见图12.9. 递归检查相邻多边形, 直到连续组中所有多边形被测试过一次.
+
+<li>
+虽然此时正确地orient所有的面, 虽然它们都可以都当orient内部. 大多数情况我们希望它们朝向外部. 测试所有的面是否应当翻转, 其可通过取得该组有符号符号的体(signed volume), 如果为负数, 则翻转整个loops和法线.
+
+<li>
+如何得到该signed volume, 步骤如下: 首先, 得到该组围绕盒(bounding box)的中心点. 而后连接中心点与各个多边形形成一个个volume, 而后计算这些voluem的signed volume.  例如, 三角形和一个点形成四面体. 体系等于点到多边形的距离与多边形面积之乘积的三分之一, 我们只需要累加体积的符号.
+
+<li>
+如果物体不是solid, 仅为简单地surface描述, 则其orientation仍可能不正确. 例如一些特殊情况, 当物体为一个房间时, 用户希望其法线面向内部朝向相机.
+
+</ul>
+
+<p>
+12.3.3 Solidity
+</p>
+<ul>
+<li>
+当只有mesh的一面可见时, 类似的多边形mesh被称为closed或watertight.
+
+<li>
+知道一个物体为solid, 则意味着可以使用backface culling(背面剔除)来提升显示效率. 见章节14.2所讨论. solidity也是物体投射阴影体的关键属性(见章节9.1.3), 以及一些其他算法的关键属性. Stereolithography(立体印刷工艺)其为取计算机生成的模型和创建物理原型的处理, 以及模型如果没有solidity, 则不可使用的(unusable).
+
+<li>
+最简单的solidity测试为检查mesh中每个多边形边是否恰好被两个多边形共享. 这个测试对于大多数数据集足够了. 类似的一个平面看成being manifold, 尤其是 two-manifold. 一个manifold surface 表示为没有任何拓扑不一致性的surface. 例如有三个或更多多边形共享一个边. 或者有两个或多个角(corners)相互接触. 一个连续面(continuous surface)形成一个solid即表示一个不带边界的 manifold.
+
+</ul>
+
+<p>
+12.3.4 Normal Smoothing and Crease Edges
+</p>
+<ul>
+<li>
+一些多边形meshes形成一个曲面, 但是多边形顶点没有法线向量, 所以渲染不出曲面效果. 见图12.10.
+
+<li>
+许多模型格式不提供surface edge的信息. 见章节11.2中不同类型的edge. 因为这些边提供了重要的视觉信号, 类似的边通过progressive mesh 算法(章节12.5)倾向于避免被simplified. 图12.10显示了带折缝边显示的surface.
+
+<li>
+合理的折痕边和顶点法线可以从一个 oriented mesh 某种程度成功地派生. 一旦orientation为一致的且a派生出djacency graph, 可通过smoothing technique生成顶点法线. 通过明确说明用于多边形的soothing groups或通过提供一个crease angle(折痕角度)来提供模型的格式(format) 而smoothing 信息则用于smooth该模型的格式. smooth group values 被用来显式地定义那些多边形处于用于组成曲面的组中. crease angle则为当没有smooth group information时使用. 在这种情况下, 当两个多边形的二面角度在某特定角度之内, 则两个多边形沿着它们共同的边共享顶点法线. 如果二面角大于crease angle, 则两个多边形间的边组成一个crease edge.这种技术有时称之为 edge preservation.
+
+<li>
+一旦发现一个smoothing group, 则可计算出顶点法线. 标准的教科书解决方案为查找顶点法线, 平均共享该顶点多边形的面法线[406, 407]. 然后该方法导致不连续和贫瘠的权重结果. Thurmer and Wuthrich[1266]则提出了每个多边形法线的贡献由在该顶点其形成的角度所权重. 该方法无论一共享顶点的多边形被triangulated与否, 其都给出相同的结果, 具体可见图12.11
+
+<li>
+Max[828] 则给出了不同的权重方法, 其基于假设形成多边形的长边应当更少的影响法线. 当使用 simplification技术时, 这种类型的smoothing可能为优良的, 算法见公式 12.1
+
+</ul>
+<p>
+公式12.1
+</p>
+
+<ul>
+<li>
+n个逆时针方位多边形共享一个顶点, 由边形成的向量其从中心顶点位置v开始, 例如 e2等于 v2 - v. 求摸算术用于边顶点. 例如如果 i+1 等于n, 则使用0. 分子计算用于每对边的法线, 在分母中平方其边长度, 使得长边对法线的影响更小. 而后单元化结果法线n.
+
+<li>
+对于 heightfield, Shankel [1155] 显示了如何沿着每个轴取出相邻高度的差异, 而后使用angle-weighted方法快速地近似模拟smoothing.对于一个给定的点P以及四个相邻点, P(x-1) 和P(x+1)为x轴上的heightfield, P(y-1)和P(y+1为沿着Y轴上的heightfield. 则在P上法线的接近地近似模拟如下:
+
+</ul>
+<p>
+公式12.2
+</p>
+
+<ul>
+<li>
+使用 一个smoothing angle可能给出一个错误的smoothing量, 比如应当creased的边成为rounding edge, 或者相反. 例如由多边形组成的圆锥, 圆锥尖端实际上在单个顶点上有许多的法线, 简化smoothing可以给出独特的结果, 将尖端的法线设为沿着圆锥的轴. 
+
+</ul>
+
+<p>
+12.4 Triangle Fans, Strips, and Meshes
+</p>
+<ul>
+<li>
+一个标准的方式增加图形性能为发送共享顶点的三角形组至图形管线, 优点是更少的顶点和法线需要被变换, 更少的line clips需要被执行, 更少的lighting需要被计算, 等等. 种种共享数据的方法名为 triangle fans, strips 和 meshes.
+
+</ul>
+
+<p>
+12.4.1 Fans
+</p>
+<ul>
+<li>
+图 12.12 显示了一个 triangle fan, 这种类型的数据结构显示了我们如何形成三角形, 以及平均每个三角形使用少于三个顶点来表示.
+
+<li>
+被所有三角形共享的顶点称之为中心顶点, 即图中的顶点0. 
+
+<li>
+一个n个顶点的triangle fan被定义为一个有序的顶点列表:
+
+</ul>
+<p>
+公式12.3 {V0, V1, ..., Vn-1}
+</p>
+<ul>
+<li>
+V0为中心顶点, 则三角形i为 △V0V(i+1)V(i+2), 其中 0 &lt;= i &lt; n-2
+
+<li>
+如果一个triangle fan由m个三角形组成, 除了第一个三角形用3个顶点表示, 后面的m-1个三角形都是用一个三角形表示, 则平均每个三角形的顶点Va数量如下:
+
+</ul>
+<p>
+公式 12.5
+</p>
+
+<ul>
+<li>
+可见当m趋于无穷之时, Va趋于1. 
+
+<li>
+Fans为若干地形渲染算法的基本图元[1074, 1132]. 一个通用的凸多边形可表示成一个triangle fan. 任意的triangle fan可以转换成 triangle strip, 但是相反则不能.
+
+</ul>
+
+<p>
+12.4.2 Strips
+</p>
+<ul>
+<li>
+见图12.13, V0, V1, V2组成三角形T0, 而后V1, V2, V3组成三角形T1, 以此类推.
+
+<li>
+n个顶点的triangle strip定义如下:
+
+</ul>
+<p>
+公式12.6: {V0, V1, ..., V(n-1)}
+</p>
+<ul>
+<li>
+则三角形i为 △ViV(i+1)V(i+2), 其中 0 &lt;= i &lt; n-2
+
+<li>
+n个顶点的triangle strip有(n-2)个三角形, 我们称之为长度为(n-2)的triangle strip.
+
+<li>
+平均顶点数同 triangle fans, 见公式 12.5
+
+<li>
+generalized triangle strips[242] 创建更长更有效率的strips, 为了能够使用这样的strips, 在图形卡上必须有某种类型的 vertex cache, 以便能够变换和照明顶点. 这成为 post-transform cache. 可通过发送 short bit codes 来访问和替换 cache 中的顶点. 这些在下个章节可见.
+
+<li>
+swap operation, 交换最近两个顶点的次序. 在 Iris GL 中有一个实际的命令用于swap. 但在OpenGL[969]和DirectX中, 必须通过重新发送顶点来实现一个swap命令. 以及每个swap有个一个顶点的惩罚. 一个swap的实现其结果有一个没有面积的三角形, 这是由于开始一个新的 triangle strip 花费两个额外的顶点, 接受一个swap的惩罚比重新开始仍要好些. 一个triangle 想要发送顶点 (v0, V1, V2, V3,swap, V4, V5, V6) 可实现为 (V0, V1, V2, V3, V2, V4, V5, V6). 通过重新发送顶点V2实现该swap. 可见图 12.14. 在DX10中就开始, 一个特殊的"-1"重启索引可以利用. 其效果和重新发送两个顶点的效果一样, 但代价只有一个顶点.
+
+<li>
+避免小的batch问题[1054], 具体见15.4.2. 基本思路为每个单独API绘制调用(draw call)的过度联系. 所以应当最小化整个调用的次数. 在单个buffer中放置尽可能多的三角形[261]. 通常不可能使用一个triangle strip保存所有的三角形, 所以我们可以双倍一个strip最后的顶点和下一个strip的第一个顶点来连接两个strips, 其会产生4个退化三角形. 见图 12.15. 硬件可以有效的检测和删除这些退化三角形[351].
+
+</ul>
+
+<p>
+12.4.3 Creating Strips
+</p>
+<ul>
+<li>
+给出一任意的三角形mesh, 将其分解成triangle strips会很有用. 可见图12.16所示的模型triangle strips的视觉化. 有免费的软件包执行该任务, 例如 OpenSG[972]和NvTriStrip.
+
+<li>
+获取最理想的triangle strips为一个 NP-complete 问题[33], 本章节介绍一个 greedy method(贪婪法)够将一个连续的 triangles strips. 首先, 一些背景信息为有序的
+
+<li>
+每个 triangle strip 创建算法都开始于创建一个 adjacency graph, 使得每个三角形知道其邻居. 一多边形邻居的数目为该多边形的数, 为0和多边形顶点数目之间的一个整数. 一个 dual graph(对偶图)为一个adjacency graph的视觉化, 每个三角形看成一个节点, 每个共享的边定义成连接两个节点的一个线段. 见图12.17. 使用 dural graph 允许 stripification 被看成图的遍历.
+
+<li>
+stripification算法的目标是最小化生成strips的总数量, 不去形成一个最长的strips. 例如一个mesh由100个三角形组成, 一个strip有95个三角形, 且还有单独的5个三角形, 则总共有 95+2+5*3=112个顶点 需要传输. 而5个分别有20个三角形的strips则总共有 22*5=110 个顶点. 因为这个原因, 一个有用的战术为开始一个 low-degree triangle 和在 lower-degree 之间增加该 strip[8, 1063]. SGI 算法为一个首选的strip creation 算法, 我们在这里介绍它是因为它相对简单.
+
+</ul>
+
+<p>
+Improved SGI Stripping Algorithm
+</p>
+<ul>
+<li>
+Greedy algorithm 为使最佳化方法使得选择局部最优, 他们选择目前看起来最好的[201]. SGI算法[8]为贪婪的, 起始三角形永远选择最低度数的三角形. 经过一些改进[176], SGI算法工作类似如下:
+	1. 选择起始三角形.
+	2. 构建三个不同的triangle strips, 每个用于三角形的一个边.
+	3. 在相反的方向中扩展这些 triangle strips.
+	4. 选择这三个strips中最长的那个, 丢弃其他的strips.
+	5. 重复步骤1直至所有的三角形包含在一个strip中.
+
+<li>
+在第一步中, 原先的SGI算法拾取最小度数的任意三角形(度数大于0), 如果有多于一个三角形有相同的最小度数, 此时算法查看邻居的邻居用于它们的度数, 如果此时还不能明确的做出选择, 则任意选择一个三角形. 最终, 该strip尽可能的扩展包含其起始和终点方向.  使得每个strip尽可能的长. 该方法背后的思想为抓住任意的低度数的三角形, 使得它们不会变得孤立.
+
+<li>
+一个线性时间算法可以使用优先队列以查找每个新strip的起始三角形[8], Chow 报告选择任意的三角形其作用一样[176]. Gumhold and StraBer 报告了他们关联的几何压缩算法一样[468]. 步骤2到步骤4确保了最长的strip在当前的mesh中包含发现的起始三角形. 
+
+<li>
+Xiang[1393]发飙了 dual graph 的查找算法, 其使用 dynamic programming. Reuter[1063]发表了种种 STRIPE 算法[321], 通过小心关注data locality(地区, 地点)和邻居的查找, 他们的结果可以和来自Xiang[1393]的软件在质量上相比较, 且其计算要三倍快于它. Lord and Brown[794]提供了数据研究上好的概述, 以及浏览了遗传算法用于解决该问题.
+
+</ul>
+
+<p>
+12.4.4 Triangle Meshes
+</p>
+<ul>
+<li>
+现在的趋势是尽可能地使用 triangle meshes, strips和fans允许一些数据的共享, 但是meshes允许全共享.
+
+<li>
+Euler-Poincare 公式用于 connected planar graph [82]. 可见公式12.8. 帮助确定形成一个封闭mesh的顶点平均数量:
+	v - e + f + 2g = 2.		(公式12.8)
+
+<li>
+这里 v 为顶点数, e 为边的数目, f为面的数目, g为genus(类, 属). genus 为物体上洞的数量. 由于每个边必然有两个面相连, 每个面至少有三个边, 所以 2e &gt;= 3f. 引入这个到公式可以简化万 f &lt;= 2v -4, 如果所有的面为三角形, 则 2e = 3f =&gt; f = 2v-4.
+
+<li>
+对于巨大的封闭三角形mesh, 其经验法则为三角形的数量等同于两倍的顶点数量. 类似的, 每个顶点平均连接接近6个三角形. (六条边). 由于strip中每个三角形顶点的平均数量接近于一个, 如果使用连续的triangle strips表示一个large mesh, 其每个顶点必须发送两次(平均). 此外, 其意味着 triangle meshes在效率上两倍于连续的triangle strips. 在这种限制下, triangle meshes 可以每个三角形存储0.5个顶点.
+
+<li>
+注意这个分析只用于封闭的mesh, 只要有边界边(不被两个多边形共享的边), 三角形到顶点的比率会下降, Euler-Poincare 公式仍保持, 但是mesh外面的边界必须看成单独(unused)的面, 其靠近所有外面的(exterior)边.
+
+<li>
+这是理论上的, 实际上, 顶点由GPU变换, 其放入先入先出(FIFO)cache中. 该FIFO cache 大小有限制. 其通常在12和24个顶点之间, 虽然它的范围可以从4到32. 例如, PLAYSTATION 3系统控制大概24个顶点. 其依赖于每个顶点的字节数(见章节18.4.2). 如果进入的顶点已在这个cache中, 该cache的结果可以使用, 其提供了性能的重点提升. 然而, 如果三角形中的三角形以随机顺序向下发送, 该cache则看起来不有用. 基本的triangle strip算法本质上其优化用于两个的cache大小.   Deering and Nelson[243]探究了在larger FIFO cache中存储顶点数据的思路, 其通过使用额外的数据确定哪个顶点添加进cache中.
+
+<li>
+Hoppe[564] 给出了一个方法优化三角形的次序以用于给定的cache大小. 思路为创建triangle strips链接在一起且因此优化cache重用, 而后探测该结果次序的扰动用于更高的效率.
+
+<li>
+引入一个cache重用的测量, the average cache miss ratio(ACMR), 其为每个三角形需要处理的顶点数量, 范围为3到0.5. 如果cache大小和mesh自身一样大, 则ACMR等同于之前描述的每个三角形计算的顶点. 对于给定cache大小和mesh次序, 可以精确地计算出ACMR, 所以描述用于那个cache大小的任意给定方法的效率
+
+<li>
+Hoppe方法的限制为cache的大小需要预先已知, 如果假设的cache大小大于实际的cache大小, 则会影响到mesh的益处.
+
+<li>
+Sander [1109]使用最小的cache大小. 一个顶点平均有六个相邻的顶点. 现代GPU可以同时在cache中拥有7个顶点. 换句话说, 六个三角形的群可以以任意顺序渲染. 这是由于所有的顶点可装配进(fit in)该cache中. 当该fan attach至一个顶点且为输出时, 这种选择次序的自由允许他们探测附近的三角形. 这个算法可以相当直接地实现, 且执行时间为线性的. 
+
+</ul>
+
+<p>
+Cache-Oblivious(忘却的, 不注意的) Mesh Layouts
+</p>
+<ul>
+<li>
+mesh中三角形的理想次序为最大化顶点的cache使用. 解决不同大小的cache也许会产生不同最优化的次序. 对于当目标cache size未知时, 开发cache-oblivious mesh layout 算法, 其生成的次序运作得很好, 无需考虑大小. 类似的一个次序有时称为 universal index sequence.
+
+<li>
+这种类型的算法以及其他相关的算法其背后的一个重要思想为, space-filling curve的概念. a space-filling curve为单个连续的曲线, 其自身不相交. 通过访问每个网格一次, 填充有一致网格的正方形和矩形. 一个例子为 Hilbert curve, 可见图12.18. 另外的例子为 Peano curve. 一个 space-filling curve 有很好的空间一致性. 具体可见 Sagan的书[1095], 或Voorhies的文章[1309].
+
+<li>
+如果一个 space-filling curve 用于在一个 triangle mesh 上访问三角形, 可以预计在 vertex cache 中有更高的击中命中率. Bogomjakov and Gotsman[125]发飙了两个算法, recursive cuts and minimum linear arrangement, 用于生成好的索引次序(index sequences)用于三角形meshes. 对于十以及之上的cache 大小, 该算法优于 Xiang 的 triangle strip 法.
+
+<li>
+Yoon开发了一个快速近似的度量(metric), 其无论三角形次序的局部排列都会减少cache misses的数量. 因此在这个公式下, 他们使用多层(multilevel)算法优化该mesh. 通过集中五个附近顶点的组为一旦个顶点, 他们coarsen(是更粗)该mesh. 而后再次集中该 coarsened adjacency graph, 不断地递归进行, 直到五个或更少顶点的产生. 则他们计算出这些顶点上所有可能的次序, 选择其找哦国内最好的, 而后反之前的coarsen操作, 其中有详细地搜索每个五顶点的子集用于最好的局部排列. 这个算法很好的作用于巨大的, 数百至数亿三角形的mesh上. 其有开源包 OpenCCL 用Yoon的该算法计算 cache-oblivious mesh layout.
+
+<li>
+Forsyth[356]和Lin/Yu[777]则提供了极端地快速贪婪算法, 其使用了类似的原则. 在Forsyth的方法中, 自始自终使用一个 vertex-triangle connectivity(连通性) map. 可以比 edge-based adjacency graph 更快速简单的生成. 基于cache中它们的位置以及挂接在(attach to)它们上未处理的三角形数量, 给顶点一个分数. 这样下一个处理的三角形为最高combined vertex score的那个三角形. 通过给最近三个使用的顶点更低的分数, 来避免简单的制作triangle strips, 而是替换成类似 hilbert curve 的模式. 给更少三角形仍挂接的顶点更高的分数, 这个算法趋向于避免遗留孤立三角形在后面. Lin和Yu的方法则有点更复杂但是使用了相似的思路. 如果一个cache大小为12时, 平均的ACMR在30个未优化模型的集上为1.522, 优化之后, 其平均值低于0.64. 
+
+<li>
+给出用于一个无限长的triangle strip, 其最好可能的ACMR为1.0. 当有vertex cache reuse时, 普遍的渲染次序可总是优于纯triagnle strip创建算法. 还有其他的因素, 比如何种数据结构的使用.
+
+</ul>
+
+<p>
+12.4.5 Vertex and Index Buffers/Arrays
+</p>
+<ul>
+<li>
+使用现在图形加速器的模型数据一个效率方式为在OpenGL中调用vertex buffer objects, DX中调用 vertex buffers.
+
+<li>
+vertex buffer的思路为将模型数据存储在连续的内存块中. 一个vertex buffer 为特定格式的顶点数据数组. 该格式指定一个顶点是否包含散射或镜面颜色, 法线, 纹理坐标等. 一个顶点字节的大小称之为stride. 另外, 还可以使用顶点流(stream)集, 比如一个stream保存位置p0, p1, p2的数组, 另一个stream保存发现n0, n1, n2的数组. - 实际上, 单个buffer包含每个顶点的所有数据对于现代GPU更有效率. 而多个stream可以帮助节省内存和传输时间. 例如, 六个房子模型根据它们周边所形成的不同光照可以通过其每个mesh顶点上照明颜色不同集合的六个mesh表示. 与单个带有位置, 法线和纹理坐标的mesh合并.
+
+<li>
+如何访问vertex buffer 取决于设备的DrawPrimitive方法. 数据可看成:
+	1.	单独点的列表.
+	2.	不连接的线段列表, 例如, 顶点对.
+	3.	单个 polylinei
+	4.	三角形列表, 没三个顶点一组形成一个三角形, 例如顶点[0, 1, 2]形成第一个三角形, [3, 4, 5]形成下一个三角形, 等等.
+	5.	triangle fan, 第一个顶点和之后的每对顶点形成一个三角形, 例如: [0, 1, 2], [0, 2, 3], [0, 3, 4].
+	6.	triangle strip, 每连续的三个顶点(包括之前的两个顶点)形成一个三角形. 例如 [0, 1, 2], [1, 2, 3], [2, 3, 4].
+
+<li>
+在DX10中, 三角形和triangle strips也可包含相邻三角形的顶点, 可以通过几何着色器使用. (见章节3.5)
+
+<li>
+index buffer中的索引指向vertex buffer中的顶点, 这种组合只需要在vertex buffer中存储顶点一次.
+
+<li>
+使用哪种结构由图元和程序命令. 例如显示一个简单的矩形, 由一个vertex buffer使用四个顶点作为两个三角形 tristrip. index buffer的优点是数据共享. 章节18.4.2可见更多的细节关于 vertex cache.
+
+<li>
+Index buffer 还避免小的batch问题. 处理单个mesh的API overhead 少于处理许多 triangle strips的 overhead. 然而可以通过复制顶点可将单个 triangle strips 缝合至更大的缓存中. 可见章节 12.4 的讨论.
+
+<li>
+index buffer 可以包含单独的三角形或tristrips, 通过复制顶点来连在一起. 节省空间的一个策略是发现关于三角形集的cache-efficient次序. 而后通过检查该次序形成多少的tristrips来确定哪个结构更有空间效率. 其规则为有两个三角形或以上平均的tristrips集比使用indexed triangle list占用更少的存储量. 随着 DX10 重新开始 index form, 该平均降至每个tristrip 1.5个三角形.
+
+<li>
+index 和 vertex buffer 提供了一种方式描述多边形mesh, 然而数据存储的目标通常是为了有效率地渲染, 而不是紧密地存储. 例如, 存储立方体的一种方式在一个数组中存储8个角的位置, 以及在另一个数组中存储六个不同的发现, 其用六个4索引的loops定义它的面. 这种紧密地表示用于许多模型文件格式, 例如GPU上的Wavefront OBJ 和 VRML. 而在GPU上, 则vertex buffer应当扩展存储24个不同的顶点, 每个角的位置根据面有3个不同的法线, 而index buffer则存储索引定义12个三角形形成surface. 通过存储mesh在texture map中和使用顶点着色器的texture fetch mechanism, 可能有更紧密的方案(scheme), 单类似的使用并不通用.
+
+<li>
+有更高level的方法用于分配和使用 vertex 和 index buffers 以达到更高的效率. 一个 buffer 可以存储在GPU上用于使用每个帧, 以及可以通过相同的缓存生成一个物体的多个instances和variatations. 章节15.4.2深度地介绍类似技术.
+
+<li>
+Shader Model 4.0 和它可以输出处理的顶点至新的缓存的新功能可以允许更延展的方式对待vertex buffers. 例如, 一个 vertex buffer 描述一个 triangle mesh, 其可以看成在初始pass中点的简单集合. 可根据需求地使用顶点着色器执行每个顶点的计算, 其结果使用stream out发送给新的vertex buffer. 在后面的pass中, 新的vertex buffer 可以和原先描述mesh连通性的 index buffer一起进一步的处理和显示结果mesh.
+
+</ul>
+
+<p>
+12.5 Simplification
+</p>
+<ul>
+<li>
+有算法转换 surface feature 为 bump maps[182, 1104]. Sander[1103]使用bump maps和一个coarse mesh用于模型, 但是创建一个更高精度的轮廓. 章节10.7.1描述的Impostors[886]则为相同模型其alternater rendering的另外形式. Sprite 和 Layered depth images 可以替换场景中的几何. (见章节 10.5 和 10.7.1)
+
+<li>
+mesh simplification 在实时方面的书籍中, 通常减少顶点的数量以存储和在管线中向下发送. 
+
+<li>
+Luebke[800, 801]提出三种类型的多边形 simplicification: static, dynamic, 和 view-dependent. static simplification 其思路为在渲染开始之前创建单独的LOD模型, 而后渲染器在它们之间选择. 具体可见章节14.7. Batch simplicification对于其他任务也有用. 例如提供 coars meshes 用于再划分的surface去提炼(refine)[745, 746]. Dynamic simplicification 给出了LOD模型的连续系列(spectrum)来替换几个不连续(discrete)的模型. 类似的方法可当作连续的LOD算法. view-dependent技术表示LOD在模型中变化. 特别, 地形渲染中, view中附近的区域需要详细的描述, 而远处地形则为较低的LOD.
+
+</ul>
+
+<p>
+12.5.1 Dynamic Simplification
+</p>
+<ul>
+<li>
+使用edge collapse(边塌缩)操作减少多边形的数量. 在这种操作中, 通过移动两个顶点至一个点来移除一条边. 可见图12.21的例子, 一个边塌缩移除了总共两个三角形, 三条边和一个顶点. 经验上来说, 一个封闭的三角形mesh, 如有v个顶点, 则大概有2v个面, 3V个边. 可以使用 Euler-Poincare 公式推导出该规则: f - e + v = 2. 具体可见章节12.4.4
+
+<li>
+边塌缩处理是可逆的, 通过按顺序存储边塌缩, 我们可以从简化的模型开始重构复杂的模型. 这个特点对于模型的网络传输有用. 数据库的边塌缩版本可以以有效率地压缩形式发送, 当模型接收之后逐渐构建和显示出来[560, 1253]. 因为这个, 这种 simplicification process 常被当作 view-independent progressive meshing (VIPM).
+
+<li>
+在图形12.21中, u塌缩进位置v, 但v也可以塌缩进u. 使用subset placement 策略限制simplicification system仅仅两个可能性. 但其产生的质量比较低, 这是由于进行了较小的解决方案空间检查.
+
+<li>
+通过使用一个最理想的 placement strategy. 我们检查一个较广范围的可能性. 不再塌缩一个顶点至另一个顶点, 一条边上的两个顶点都缩至一个新的位置. Hoppe[560]通过将u和v移动到边的某个位置检查. 他提出为了改进最终数据表达的压缩, 该查找可被限制于中点. 另一个策略为限制新的位置点在边的任意位置上. Garland and Heckbert[380]解一个二次方程来发现最优位置(位置有可能在边之外). 这种方法优点是给出一个更高质量的mesh&gt; 缺点是有额外的处理, 代码和内存用于记录更广范围的可能位置.
+
+<li>
+为了确定最好的位置点, 我们在局部的邻近区域执行分析. 如果边塌缩的代价仅仅依赖于几个局部变量(例如, 边长度和边附近的面法线), 则该代价函数易于计算, 以及每个塌缩仅仅影响几个邻居. 例如, 一个模型在开始之时计算出有3000个可能的边塌缩, 执行有最低 cost-function 值的边塌缩. 由于其仅影响几个附近的三角形和它们的边, 所以只有这些边塌缩可能性其代价函数被影响, 需要进行重计算(10个). 且该列表需要较小位的重排序(a minor bit of resorting). 因为一个边塌缩影响仅仅几个其他的边塌缩值, 一个用于维持cost value列表好的选择为heap或者其他优先队列.[1183] .
+
+<li>
+该塌缩操作为在模型数据库上的编辑. 用于存储这些塌缩的数据结构其被很好的文档记录(well-documented)[112, 351, 852, 1232]. 每个边塌缩其由 cost function 分析, 且其最小的cost值在下一步中执行. 一个开放的研究问题为在不同的条件下发现最好的cost function[801]. cost funtion 为速度, 质量, 健壮和简单的权衡结果. 还要能维持surface的边界, 材质的位置, 光照效果, 纹理位置, volume, 以及其他限制.
+
+<li>
+Garland and Heckbert[379]介绍了一种思路使用任何一对顶点, 而不仅仅为边上的一对顶点., 这一对顶点可收缩至一个顶点. 为了限制测试对的数量, 只有那些在距离t之内的顶点才形成一对. 这个概念有助于连接两个单独且靠近的surface.
+
+<li>
+不管代价如何, 有些塌缩需要避免, 见图12.22中的例子, 可通过检查相邻多边形是否因为塌缩翻转其法线方向探测.
+
+<li>
+Garland and Heckberfs cost function[379, 380], 由于它的效率和合理的结果, 该cost function用于DirectX utility library和其他的simplification libraries. 对于一个给定的顶点, 有几个三角形共享它, 且每个三角形有个平面方程, 移除该顶点的cost function 为每个平面到新位置的距离的平房和. 具体可见P564上的公式
+
+</ul>
+<p>
+公式
+</p>
+<ul>
+<li>
+该公式为新位置v和m个平面的cost function. n为平面的发现, d为其到原点的偏移
+
+<li>
+一个例子, 相同边的两个可能塌缩见图12.23. 假设立方体的长度为2个单元, e塌缩至c的cost function为0, 这是由于e没有在其所共享的平面移除. c塌缩至e的cost function为1, 这是由于c从右边的面中移除. 由于更少的代价, 所以使用e塌缩至c.
+
+<li>
+可以以不同方式修改 cost function, 想象两个三角形共享一个边形成一个尖锐的边, 例如鱼鳍或者涡轮机叶片. 在该边上顶点的塌缩其cost function会很低, 这是由于改点沿着三角形滑动, 且不是远离另一个三角形的平面. 基本函数的cost值和体积变化有关. 如果要维持该边仍有尖锐的折痕, 则添加一个额外的边包含该边, 且其发现为两个三角形法线的平均. 则顶点远离该边时会有更高的cost function. 另一个变种为三角形面积的变化来权重cost function.
+
+<li>
+其他类型的扩展为基于维持其他的surface feature使用一个cost function. 例如, 模型的crease和边界边在描绘模型方面很重要. 所以这些很少可能被修改. 其他的如材质变化的地方, texture map edges, color-per-vertex 变化的地方都值得保留.[565]  见图12.25中内部的meshes. 图 12.26中结果的一个对比.
+
+<li>
+最好的用于塌缩的边为结果图像中其变化最少感知到. Lindstrom and Turk[780] 使用该思路产生一个 image-driven collapse function. 从不同的view direction集中创建原始模型的images. 例如20个. 尝试所有可能的边塌缩, 每个生成图像集和原始图像比较. 则有最少视觉差异的边被塌缩. 这个cost function计算昂贵, 不能即时完成. 然而, simplification本身就是可预计算的处理以便后面使用. 这个方案的优点就是直接计算每个塌缩的视觉效果相对于更简单函数提供的近似结果.
+
+<li>
+大多数simplification算法的问题为纹理扭曲问题. Sander[1104]讨论了该领域之前的作品且提供了一个解决方案, 分割mesh为合理的submeshes, 每个提供一个局部的纹理参数化(parameterization), 目标为根据颜色和bump信息单独对待surface的位置
+
+<li>
+边塌缩 simplification 可以从单个复杂模型产生大量数目的LOD模型(见章节14.7). 当一个模型从一个帧到下一个帧时替换为另一个LOD模型时有可能看见这个变化[371]. 这个问题可称为"popping". 一个解决方案为使用 geomorphs[560]增加或减少这个LOD. 由于我们知道更复杂模型中的顶点映射至简单模型中的顶点, 则可能去创建一个更平滑的transistion. 见章节14.7.1的更多细节.
+
+<li>
+使用VIPM的一个优点就是可以单个vertex buffer一次, 且在不同LOD的相同模型的拷贝中共享[1232]. 然后, 在这些基本的方案之下, 需要有一个单独的index buffer用于每个拷贝. 另一个问题就是效率, 静态LOD模型可以通过经历stripification来改进它们的显示速度. 对于动态模型, 基本的VIPM不考虑底下的加速器硬件. 由于塌缩的次序决定了三角形显示的次序, vertex cache coherency 非常贫瘠(poor). 当形成和共享index buffers时, Bloom[113]和Forsyth[351]讨论了一些实际的解决方案改进效率.
+
+<li>
+DeCoro and Tatarchuk [239] 发表了使用GPU管线执行simplification的方法, 包含一个GPU上性能 15-22x的增加.
+
+<li>
+多边形的减少技术很有用, 但是它们不是万灵药. 一个talented modle maker可以创建 low-polygon-count 物体, 其在质量上更好. 胜过自动化步骤生成的物体. 一个原因为大多数减少技术不知道什么是视觉重要的或对称性. 例如, 眼睛和嘴巴是面部最重要的部分[852]. 维持对称性的问题可见图12.27.
+
+</ul>
+
+<p>
+12.5.2 View-Dependent Simplification
+</p>
+<ul>
+<li>
+带有唯一属性的一类模型为terrain(地形). 其数据由一致的heightfield grids表示. view-independent methods of simplification可用于该数据中. 可见页面561的图12.20上. 简化该模型直至达到某些限制标准[378]. 可通过颜色或bump map texture捕捉小的suface细节.作为结果的静态mesh, 常被称为triangulated irregular netword[TIN], 当在不同区域中地形区域为小且相对平坦时, TIN为有用的表达法.
+
+<li>
+对于其他的户外场景, 连续的level of detail技术可用于最小化必须处理的顶点数量. 其思路为view中的地形在其靠近viewer的地方应当显示更大的level of detail. 一种类型的算法为使用之前章节所描述的边塌缩和geomorphing, 但是需要一个基于view的cost function[561, 563]. 整个地形不能表示成为一单个mesh, 而是为更小的tiles. 这允许使用类似frustum culling和potential visible sets的技术 , 以便能快速的从进一步考虑中移除tiles.
+
+<li>
+算法的另一个类为基于 heightfield grid 自身内部的结构. 具体可见 Lindstrom[779],  Duchaineau[278, 1278]的ROAM方案. 这些方案在现代GPU上相对没有效率, 发表的许多概念和大多数地形渲染系统有关.
+
+<li>
+将分层结构(hierarchical)强加给数据上, 而后求解该hierarchy和只渲染足够满足渲染地形需要的复杂度level. hierarchical structure一个通常的使用在ROAM中有介绍, 其为 triangle binary tree(bintree). 开始于一个大的正确的(large right)三角形, 其顶点在heightfield tile角落上, 可通过沿着对角线连接它的中点至对面的角进一步划分三角形. 可完成这个splitting处理直到降至heightfield的限制上. 见图12.28. 在ROAM算法中, 每个三角形都创建一个error bound. 该error bound表示该三角形所形成的平面其所关联的terrain heightfiedld的变化. 换句话说, heightfield上的三个点定义了一个三角形, 所有该三角形覆盖的heightfield样本和三角形平面的比较绝对值的最大差异为该error bound. vertical error bound 和该三角形一起定义了空间的一个pie-shaped wedge, 其包含了所有该三角形所关联的地形.
+
+<li>
+在实时中, 这些error bounds投影至view plane上, 且求解其用于在渲染上的效果. 例如, 通过一个wedge查看edge-on意味着通过该wedge地形的轮廓可见, 所以需要地形的高tessellated版本. 通过wedge的三角部分上下查看则意味着几何体自身并不关键的(critical). 由于投影, 一个远的wedge会有一个较小的projected error, 所以其会较少的tessellated. Blow[119]讨论了用于ROAM的改进error metrics.
+
+<li>
+一旦计算出每个可见三角形的subdivision level, 则会发生tessellation. 裂缝(crack)避免和修补为任意地形渲染算法的一个主要部分.  如果一个三角形被高度子划分, 而它的邻居没有, 则在levels之间会产生或发展裂缝或T-vertices. bintree结构提供其自身用于避免类似的split. 见图12.29
+
+<li>
+这里有一些使用ROAM算法的有点, 每个三角形wedge的效果可用于将哪个三角形列入优先首先split. 这使得可设置渲染三角形的数目限制. 如果view缓慢和平滑地变化, 前一帧的tessellation可用于作为起始点创建当前帧. 因此节省traversal(遍历)时间. 由于使用优先队列和可以指定三角形的最大数量, 所以可以保证帧率. 章节14.7.3有更多关于保证帧率的概念.
+
+<li>
+ROAM的一个问题就是它趋向于在创建用于渲染的三角形小型集上工作. Hwa[579]描述了"ROAM 2.0"的部分内容. 一个算法为纯CLOD方案和ROAM混合一个分离LOD系统的混合. 其优点可在现代GPU上在单个API调用中快速地处理大量数目的三角形. 见章节15.4.2. 一些方案着重于创建tiles和渲染这些tiles. 一个方法为打碎该heightfield array为tiles, 每个为17x17个顶点. 对于高细节的view, 可以渲染单个tile替代发送单独的三角形或小的fans至GPU. 一个tile可以有多个levels of detail. 通过在每个方向上每隔一个使用其顶点, 一个9x9 tile就形成了.  每隔4个使用一个顶点给出5x5 tile, 每隔8个则有2x2tile. 最后4个角为两个三角形的1x1 tile. 注意在GPU上存储原始的17x17 vertex buffer, 且重用该buffer. 只需要不同的index buffer用来提供渲染的三角形数量的变化.
+
+<li>
+那些用于ROAM中确定每个tile的LOD的技术类似于Heuristics(直观推断). tiling方案的主要挑战为缝隙弥补. 例如, 如果一个tile为33x33, 它的邻居为9x9, 在它们交接处会有缝隙. 一种修正为沿着该边移除高细节的三角形, 且形成三角形集正确地桥接两个tiles间的缺口[227, 1201]. Bloom[112]给出若干通用技术用于焊接terrain tiles间的裂缝.
+
+<li>
+Andersson[23]使用一个限制的quadtree(四叉树)来桥接缺口间隔, 以及更少大型地形所需的绘制调用数目. 不再使用在不同分辨率下渲染的一致网格(uniform grid)的tiles. 他使用一个quadtree of tiles. 每个tile有相同的基本分辨率 33x33, 但是每个可以覆盖不同的区域量. 限制的quadtree思路为每个tile的邻居没有超过一个LOD的差异. 见图12.30. 其意味着相邻tile的分辨率差异的状态为有限数量. 存储所有可能的index buffer排列, 其创建一个tile也包含了缺口间隔过渡三角形. 卖给index buffer 由全分辨率edge形成(33个顶点在一条边上), 以及更少的LOD边(只有17个顶点). 由于quadtree受限, 只有最多两个相邻边为一个更低的LOD. 这个限制导致总共九个不同的index buffer表示所有需要的tiles类型. 现代地形渲染例子可见图12.31
+
+<li>
+Vitrual Terrain Project[1302]胜过其他CLOD算法. Bloom[112]使用VIPM技术及tiles. Schneider and Westermann[1132]使用压缩格式, 当最大化cache coherency时, 其由顶点着色器解码, 探察LOD之间的geomorphing. Losasso and Hoppe[796]发表了几何clipmaps用于大型地形的快速渲染, Asirvatham and Hoppe[47]使用集合clipmap技术和GPU顶点纹理支持去创建rings of level of detail 用于terrain meshes. Pangerl[987] and Torchelsen[1296]给出相关的方法用于geometry clipmap以适合GPU的性能.
+
+</ul>
+
+</body>
+</html>

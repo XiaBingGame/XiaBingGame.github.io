@@ -1,0 +1,56 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../style.css" />
+    <title>OgreSource</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="../index.html">首页</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<p>
+Ogre::Root
+	描述: 客户端程序的起点, 管理已保存的配置, logging, 已经访问系统中的其他类. 可通过 Root::getSingleton来访问
+	基类: Singleton&lt;Root&gt;, RootAlloc
+</p>
+
+<ul>
+<li>
+这里使用的内存分配器为nedmalloc
+<pre c++>
+	typedef AllocatedObject&lt;GeneralAllocPolicy&gt; GeneralAllocatedObject
+</pre>
+
+<ul>
+<li>
+其中类 AllocatedObjec 使用 GeneralAllocPolicy的allocateBytes方法和deallocateBytes方式重新实现操作符operator new和delete
+<pre c++>
+	typedef CategorisedAllocPolicy&lt;Ogre::MEMCATEGORY_GENERAL&gt; GeneralAllocPolicy;
+</pre>
+
+<li>
+其中 Ogre::MEMCATEGORY_GENERAL 表示类别, 在源码里并没有用到该参数, 预留
+
+<li>
+CategorisedAllocPolicy 的基类为 NedPoolingPolicy
+
+<li>
+类 NedPoolingPolicy 构造函数为私有, 实现了三个静态方法 allocateBytes, deallocateBytes, getMaxAllocationSize
+
+<li>
+这三个方法都调用了 NedPoolingImpl的对应函数, 具体实现见源码文件 OgreMemoryNedPooling.h, OgreMemoryNedPooling.cpp
+
+</ul>
+</ul>
+
+    </div>
+</body>
+</html>

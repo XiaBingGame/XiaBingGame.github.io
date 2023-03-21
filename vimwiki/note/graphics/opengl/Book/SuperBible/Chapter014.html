@@ -1,0 +1,884 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../../style.css" />
+    <title>Chapter014</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="../index.html">首页</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<div id="Chapter 14 Platform Speci?cs"><h1 id="Chapter 14 Platform Speci?cs">Chapter 14 Platform Speci?cs</h1></div>
+<div id="Chapter 14 Platform Speci?cs-14.1 Using Extensions in OpenGL"><h2 id="14.1 Using Extensions in OpenGL">14.1 Using Extensions in OpenGL</h2></div>
+<ul>
+<li>
+OpenGL 可以由硬件厂商, 操作系统厂商, 工具和调试器的发布者扩展和增强.
+
+<li>
+扩展见 OpenGL 官方网站的 OpenGL extension registry.
+
+<li>
+三个主要类别: vendor, EXT, ARB. vendor 扩展有硬件厂商所写. 有名称"AMD"或"NV".  EXT 扩展集合两个或多个vendors. ARB 扩展为 OpenGL 的官方部分.  the Architecture Review Board. 
+
+<li>
+检查支持哪些扩展, 见 Realtech VR 的 OpenGL Extension Viewer.
+
+</ul>
+
+<div id="Chapter 14 Platform Speci?cs-14.1 Using Extensions in OpenGL-14.1.1 Enhancing OpenGL with Extensions"><h3 id="14.1.1 Enhancing OpenGL with Extensions">14.1.1 Enhancing OpenGL with Extensions</h3></div>
+<ul>
+<li>
+两个函数确保 OpenGL 支持哪些扩展
+
+<ul>
+<li>
+glGetIntegerv() 和 GL_NUM_EXTENSIONS 参数
+
+<li>
+得到每个支持扩展的名称
+<pre class="brush: c++">
+const GLubyte* glGetStringi(GLenum name,
+	GLuint index);
+</pre>
+
+<li>
+name 参数传递 GL_EXTENSIONS 参数
+
+<li>
+index 参数为0到扩展最大数量减一之间的值.
+
+</ul>
+<li>
+本书的简单测试函数 sb6IsExtensionSupported() 
+<pre class="brush: c++">
+int sb6IsExtensionSupported(const char * extname);
+</pre>
+
+<li>
+扩展通常以四种不同方式的组合来加入 OpenGL
+
+<ul>
+<li>
+使得某事合法, 移除 OpenGL 的限制
+
+<li>
+对于已有函数的参数, 可以添加 tokens, 或者扩展值的范围.
+
+<li>
+扩展 GLSL, 添加功能, 内置函数, 变量, 或数据类型
+
+<li>
+添加完整的新函数给 OpenGL.
+
+</ul>
+<li>
+为了允许 GLSL 中的扩展, 你必须在着色器的开头添加一行告知编译器你需要扩展的功能. 例如允许假想的 GL_ABC_foobar_feature 扩展. 着色器如下所写.
+<pre class="brush: glsl">
+#extension GL_ABC_foobar_feature : enable
+</pre>
+
+<ul>
+<li>
+如果扩展不支持, 则编译器会警告.
+
+</ul>
+<li>
+GLSL 的扩展会添加预处理器 token 表示该扩展, 例如 GL_ARB_foobar_feature 隐式包含
+<pre class="brush: glsl">
+#define GL_ABC_foobar_feature 1
+</pre>
+
+<ul>
+<li>
+表示你可以写成如下代码
+<pre class="brush: glsl">
+#if GL_ABC_foobar_feature
+// Use functions from the foobar extension
+#else
+// Emulate or otherwise work around the missing functionality
+#endif
+</pre>
+
+</ul>
+<li>
+如果你绝对要求要支持某个扩展, 如果没有就不工作, 则包含如下代码
+<pre class="brush: glsl">
+#extension GL_ABC_foobar_feature : require
+</pre>
+
+<li>
+不能直接访问 OpenGL 驱动, 扩展函数不能显式可用. 需要请求函数指针. 函数指针通常声明为两个部分: 第一个为函数指针类型的定义, 第二个为函数指针变量自身. 
+<pre class="brush: c++">
+typedef void
+(APIENTRYP PFNGLDRAWTRANSFORMFEEDBACKPROC) (GLenum mode,
+	GLuint id);
+PFNGLDRAWTRANSFORMFEEDBACKPROC glDrawTransformFeedback = NULL;
+</pre>
+
+<li>
+下面的头文件包含了所有注册的OpenGL扩展的函数原型, 函数指针类型, 以及token值的声明.
+<pre class="brush: c++">
+#include &lt;glext.h&gt;
+#include &lt;glxext.h&gt;
+#include &lt;wglext.h&gt;
+</pre>
+
+<li>
+这邪恶头文件可以在 OpenGL extension registry web site 法线. glext.h 包含标准扩展和许多厂商特有的扩展. wglext.h 包含大量 windows 特有的扩展. glxext.h 包含 X 特有的定义(X为用于Linux和许多其他 Unix 源生和实现的窗口系统). 
+
+<li>
+本书包装了查询扩展函数地址的方法 sb6GetProcAddress() 
+<pre class="brush: c++">
+void * sb6GetProcAddress(const char * funcname);
+</pre>
+
+<ul>
+<li>
+funcname --- 函数名称
+
+<li>
+返回函数地址指针.
+
+</ul>
+</ul>
+
+<div id="Chapter 14 Platform Speci?cs-14.2 OpenGL on Windows"><h2 id="14.2 OpenGL on Windows">14.2 OpenGL on Windows</h2></div>
+<ul>
+<li>
+windows中, 一系列函数前缀 wgl_, token 前缀 WGL_. 表示 Windows 和 OpenGL 之间的接口.
+
+</ul>
+
+<div id="Chapter 14 Platform Speci?cs-14.2 OpenGL on Windows-14.2.1 OpenGL Implementations on Windows"><h3 id="14.2.1 OpenGL Implementations on Windows">14.2.1 OpenGL Implementations on Windows</h3></div>
+<ul>
+<li>
+OpenGL 为 windows 平台的原生API, 通过 opengl32.dll 库导出函数, 以及 user32.dll 内的支持组成. 
+
+</ul>
+<div id="Chapter 14 Platform Speci?cs-14.2 OpenGL on Windows-14.2.1 OpenGL Implementations on Windows-14.2.1.1 Microsoft’s OpenGL"><h4 id="14.2.1.1 Microsoft’s OpenGL">14.2.1.1 Microsoft’s OpenGL</h4></div>
+<ul>
+<li>
+Microsoft 装备了 OpenGL 的一般实现. 如果没有 3D 硬件或者没有合适的驱动, 则使用该版本的 opengl 实现. 微软操作系统支持的 OpenGL 版本是 1.1. 
+
+</ul>
+
+<div id="Chapter 14 Platform Speci?cs-14.2 OpenGL on Windows-14.2.1 OpenGL Implementations on Windows-14.2.1.2 Modern Graphics Drivers"><h4 id="14.2.1.2 Modern Graphics Drivers">14.2.1.2 Modern Graphics Drivers</h4></div>
+<ul>
+<li>
+The Installable Client Driver(ICD) 用于 Windows NT 的源生硬件驱动. 用软件和专有硬件的组合实现整个管线. 厂商提供的 ICDs 和微软的 OpenGL 一起实现. 当应用链接至 opengl32.dll 试图创建一个 context, 则该哭检查是否有一个厂商提供的驱动, 如果有, 则加载驱动, 而后传递 OpenGL 调用给它.
+
+<li>
+AMD opengl 驱动为 atioglxx.dll, Nvidia 驱动为 nvoglv32.dll
+
+<li>
+实现 opengl 1.1 之外的功能, 通过扩展机制, 以及允许应用得到支持接口的函数地址.
+
+</ul>
+
+<div id="Chapter 14 Platform Speci?cs-14.2 OpenGL on Windows-14.2.1 OpenGL Implementations on Windows-14.2.1.3 OpenGL on Windows Vista and Beyond"><h4 id="14.2.1.3 OpenGL on Windows Vista and Beyond">14.2.1.3 OpenGL on Windows Vista and Beyond</h4></div>
+<ul>
+<li>
+每个渲染的窗口受 DWM(desktop window manager) 管理. 其负责显示 Aero 用户接口. 窗口的边变得半透明. DWM 负责运行2D和3D的应用和GPU组合起来创建用户看到的最终图像.
+
+<li>
+opengl32.dll 仅支持 opengl 1.4.
+
+</ul>
+
+<div id="Chapter 14 Platform Speci?cs-14.2 OpenGL on Windows-14.2.2 Basic Window Setup"><h3 id="14.2.2 Basic Window Setup">14.2.2 Basic Window Setup</h3></div>
+<div id="Chapter 14 Platform Speci?cs-14.2 OpenGL on Windows-14.2.2 Basic Window Setup-14.2.2.1 GDI Device Contexts"><h4 id="14.2.2.1 GDI Device Contexts">14.2.2.1 GDI Device Contexts</h4></div>
+<ul>
+<li>
+GDI 不再以相同的方式进行硬件加速了. 现在使用 WPF(windows presentation foundation).
+
+<li>
+Windows vista, 新的底层渲染接口为 Windows Graphics Foundation(WGF), 本质上就是 Direct3D 10.
+
+<li>
+当使用 GDI 时, 每个窗口有一个 device context(DC), 其用来接收图形输出, 每个 GDI 函数将一个 device context 作为参数, 表示该函数影响的是哪个 context. 你可有多个 device context, 但每个 context 只能用于一个窗口. OpenGL 则以相同的方式工作. 
+
+<li>
+OpenGL 也有一个 context identifier, 称之为 rendering context(RC). rendering context 记住其当前的绑定, state seetings 等.
+
+</ul>
+
+<div id="Chapter 14 Platform Speci?cs-14.2 OpenGL on Windows-14.2.2 Basic Window Setup-14.2.2.2 Creating a Window"><h4 id="14.2.2.2 Creating a Window">14.2.2.2 Creating a Window</h4></div>
+<ul>
+<li>
+如果你需要一个 OpenGL Context, 则你首先需要有一个 GDI context, 如果你需要有一个 GDI context, 则你首先需要有一个窗口. 使用 CreateWindowEx 函数. 创建一个用于窗口的类class. RegisterClass 注册窗口类
+<pre class="brush: c++">
+ATOM WINAPI RegisterClass(const WNDCLASS *lpWndClass);
+</pre>
+
+<li>
+WNDCLASS 结构
+<pre class="brush: c++">
+WNDCLASS cls;
+
+::ZeroMemory(&amp;cls, sizeof(cls));
+cls.style = CS_HREDRAW | CS_VREDRAW | CS_OWNDC;
+cls.lpfnWndProc = &amp;WindowProc;
+cls.hInstance = ::GetModuleHandle(NULL);
+cls.lpszClassName = TEXT("OPENGL");
+::RegisterClass(&amp;cls);
+</pre>
+
+<ul>
+<li>
+::ZeroMemory 类似于 memset, 但不依赖于 C 运行时.
+
+</ul>
+<li>
+创建窗口
+<pre class="brush: c++">
+HWND WINAPI CreateWindowEx(DWORD dwExStyle,
+	LPCTSTR lpClassName,
+	LPCTSTR lpWindowName,
+	DWORD dwStyle,
+	int x,
+	int y,
+	int nWidth,
+	int nHeight,
+	HWND hWndParent,
+	HMENU hMenu,
+	HINSTANCE hInstance,
+	LPVOID lpParam);
+</pre>
+
+<li>
+创建窗口, 得到其DC
+<pre class="brush: c++">
+HWND hWnd = ::CreateWindowEx(WS_EX_APPWINDOW | WS_EX_WINDOWEDGE,
+	TEXT("OPENGL"),
+	TEXT("OpenGL Window"),
+	WS_CLIPSIBLINGS | WS_CLIPCHILDREN |
+	WS_OVERLAPPEDWINDOW | WS_VISIBLE,
+	0, 0,
+	800, 600,
+	NULL,
+	NULL,
+	hInstance,
+	NULL);
+HDC dc = ::GetDC(hWnd);
+</pre>
+
+</ul>
+
+<div id="Chapter 14 Platform Speci?cs-14.2 OpenGL on Windows-14.2.2 Basic Window Setup-14.2.2.3 Pixel Formats"><h4 id="14.2.2.3 Pixel Formats">14.2.2.3 Pixel Formats</h4></div>
+<ul>
+<li>
+配置窗口以满足渲染需要, 例如单缓存还是双缓存, stencil 或者目标的 alpha. 窗口设置了这些参数之后就不能改变, 只能通过销毁窗口而后重新创建新窗口来应用改变.
+
+<li>
+OpenGL 在窗口上使用 pixel formats 来份封装所有这些信息. 而后用该 pixel format 创建 rendering context.
+
+</ul>
+
+<div id="Chapter 14 Platform Speci?cs-14.2 OpenGL on Windows-14.2.2 Basic Window Setup-14.2.2.4 Choosing a Pixel Format"><h4 id="14.2.2.4 Choosing a Pixel Format">14.2.2.4 Choosing a Pixel Format</h4></div>
+<ul>
+<li>
+无法通过旧的 pixel format selectioni 方法访问多重采样 buffers.
+
+<li>
+PIXELFORMATDESCRIPTOR 结构描述 pixel format
+<pre class="brush: c++">
+typedef struct tagPIXELFORMATDESCRIPTOR
+{
+	WORD nSize; // Size of this structure
+	WORD nVersion; // Version of structure (should be 1)
+	DWORD dwFlags; // Pixel buffer properties
+	BYTE iPixelType; // Type of pixel data (RGBA or Color Index)
+	BYTE cColorBits; // Number of color bit planes in color buffer
+	BYTE cRedBits; // How many bits for red
+	BYTE cRedShift; // Shift count for red bits
+	BYTE cGreenBits; // How many bits for green
+	BYTE cGreenShift; // Shift count for green bits
+	BYTE cBlueBits; // How many bits for blue
+	BYTE cBlueShift; // Shift count for blue
+	BYTE cAlphaBits; // How many bits for destination alpha
+	BYTE cAlphaShift; // Shift count for destination alpha
+	BYTE cAccumBits; // How many bits for accumulation buffer
+	BYTE cAccumRedBits; // How many red bits for accumulation buffer
+	BYTE cAccumGreenBits; // How many green bits for accumulation buffer
+	BYTE cAccumBlueBits; // How many blue bits for accumulation buffer
+	BYTE cAccumAlphaBits; // How many alpha bits for accumulation buffer
+	BYTE cDepthBits; // How many bits for depth buffer
+	BYTE cStencilBits; // How many bits for stencil buffer
+	BYTE cAuxBuffers; // How many auxiliary buffers
+	BYTE iLayerType; // Obsolete - ignored
+	BYTE bReserved; // Number of overlay and underlay planes
+	DWORD dwLayerMask; // Obsolete - ignored
+	DWORD dwVisibleMask; // Transparent color of underlay plane
+	DWORD dwDamageMask; // Obsolete - ignored
+} PIXELFORMATDESCRIPTOR;
+</pre>
+
+<li>
+对于具体的窗口, 只有有限的 pixel formats 可用.
+
+<li>
+填充域, 而后使用该结构的实例调用 ChoosePixelFormat 函数
+<pre class="brush: c++">
+int ChoosePixelFormat(HDC hdc,
+	const PIXELFORMATDESCRIPTOR *ppfd);
+</pre>
+
+<ul>
+<li>
+返回最匹配的格式的索引.
+
+</ul>
+<li>
+使用该索引调用 SetPixelFormat() 函数.
+<pre class="brush: c++">
+PIXELFORMATDESCRIPTOR pfd;
+
+::ZeroMemory(&amp;pfd, sizeof(pfd));
+
+pfd.nSize = sizeof(pfd);
+pfd.nVersion = 1;
+pfd.dwFlags = PFD_DRAW_TO_WINDOW |
+	PFD_SUPPORT_OPENGL |
+	PFD_GENERIC_ACCELERATED |
+	PFD_DOUBLEBUFFER;
+pfd.iPixelType = PFD_TYPE_RGBA;
+pfd.cColorBits = 24;
+pfd.cRedBits = 8;
+pfd.cGreenBits = 8;
+pfd.cBlueBits = 8;
+pfd.cDepthBits = 32;
+
+int iPixelFormat = ::ChoosePixelFormat(dc, &amp;pfd);
+::SetPixelFormat(dc, iPixelFormat, &amp;pfd);
+</pre>
+
+</ul>
+
+<div id="Chapter 14 Platform Speci?cs-14.2 OpenGL on Windows-14.2.3 The OpenGL Rendering Context"><h3 id="14.2.3 The OpenGL Rendering Context">14.2.3 The OpenGL Rendering Context</h3></div>
+<ul>
+<li>
+OpenGL 环境在 Rendering Context 中. 其内有OpenGL settings 和 state.
+
+<li>
+在 Windows context 上的一个OpenGL rendering数据类型是 HGLRC, 可以通过 wglCreateContext() 创建, 如果成功, 则返回一个新的 context handle, 你可以通过 wglMakeCurrent() 设置该 context 为 current context.
+<pre class="brush: c++">
+HGLRC rc = wglCreateContext(dc);
+wglMakeCurrent(dc, rc);
+</pre>
+
+<li>
+消息分发
+<pre class="brush: c++">
+for (;;)
+{
+	if (::PeekMessage(&amp;msg, hWnd, 0, 0, PM_REMOVE))
+	{
+		if (msg.message == WM_QUIT)
+		{
+			break;
+		}
+		::TranslateMessage(&amp;msg);
+		::DispatchMessage(&amp;msg);
+	}
+	DrawScene();
+	::SwapBuffers(dc);
+}
+</pre>
+
+</ul>
+
+<div id="Chapter 14 Platform Speci?cs-14.2 OpenGL on Windows-14.2.3 The OpenGL Rendering Context-14.2.3.1 Double Buffering"><h4 id="14.2.3.1 Double Buffering">14.2.3.1 Double Buffering</h4></div>
+<ul>
+<li>
+像素格式请求 PFD_DOUBLEBUFFER.
+
+<li>
+可以使用 glDrawBuffers() 以及 GL_FRONT 或 GL_BACK 绘制前后缓存.
+
+<li>
+SwapBuffers() 交换前后缓存.
+<pre class="brush: c++">
+// Do the buffer swap
+SwapBuffers(dc);
+</pre>
+
+</ul>
+
+<div id="Chapter 14 Platform Speci?cs-14.2 OpenGL on Windows-14.2.3 The OpenGL Rendering Context-14.2.3.2 Extending WGL"><h4 id="14.2.3.2 Extending WGL">14.2.3.2 Extending WGL</h4></div>
+<ul>
+<li>
+可用的扩展添加函数至 OpenGL, 同样也可以添加至 WGL.
+
+<li>
+函数 wglGetProcAddress() 返回驱动支持的函数指针
+<pre class="brush: c++">
+PROC wglGetProcAddress(LPSTR lpszProc);
+</pre>
+
+<li>
+首先确定 OpenGL 驱动支持哪些扩展, 首先我们通过一个扩展函数来确定: wglGetExtensionsStringARB(), 返回所有驱动支持的WGL扩展的名称. 如果 wglGetProcAddress() 函数返回了 wglGetExtensionsStringARB() 函数的有效指针, 则表示支持 WGL_ARB_extensions_string 扩展, 使用如下
+<pre class="brush: c++">
+PFNWGLGETEXTENSIONSSTRINGARBPROC wglGetExtensionsStringARB;
+
+wglGetExtensionsStringARB = (PFNWGLGETEXTENSIONSSTRINGARBPROC)
+	wglGetProcAddress("wglGetExtensionsStringARB");
+
+const char * extension_string = wglGetExtensionsStringARB();
+</pre>
+
+<ul>
+<li>
+返回空格分隔的扩展列表的字符串.
+
+<li>
+看是否支持 WGL_ARB_create_context, 这是高级context创建函数, 可以代替默认的 wglCreateContext() 函数. WGL_ARB_pixel_format 高级像素格式, WGL_ARB_pixel_format 有多重采样格式.
+
+<li>
+该扩展定义了关联至一个context的属性的列表. 
+
+<li>
+Pixel Format Attributes 表格
+
+<ul>
+<li>
+NUMBER_PIXEL_FORMATS_ARB - The number of pixel formats for this device.
+
+<li>
+DRAW_TO_WINDOW_ARB - Non-zero if the pixel format can be used with a window.
+
+<li>
+DRAW_TO_BITMAP_ARB - Non-zero if the pixel format can be used with a memory Device Independent Bitmap (DIB).
+
+<li>
+DEPTH_BITS_ARB - The number of bits in the depth buffer.
+
+<li>
+STENCIL_BITS_ARB - The number of bits in the stencil buffer.
+
+<li>
+ACCELERATION_ARB - Should be set to WGL_FULL_ACCELERATION_ARB to specify that hardware acceleration is required.
+
+<li>
+NEED_PALETTE_ARB - Non-zero if a palette is required.
+
+<li>
+NEED_SYSTEM_PALETTE_ARB - Non-zero if the hardware supports one palette only in 256-color mode.
+
+<li>
+SWAP_LAYER_BUFFERS_ARB - Non-zero if the hardware supports swapping layer planes.
+
+<li>
+SWAP_METHOD_ARB - The method by which the buffer swap is accomplished for double-buffered pixel formats. It is one of the values listed in Table 14.2.
+
+<li>
+NUMBER_OVERLAYS_ARB - The number of overlay planes.
+
+<li>
+NUMBER_UNDERLAYS_ARB - The number of underlay planes.
+
+<li>
+SAMPLES_ARB - The number of multi-sample samples per pixel. Default is 1.
+
+<li>
+TRANSPARENT_ARB - Non-zero if transparency is supported.
+
+<li>
+TRANSPARENT_RED_VALUE_ARB - Transparent red color.
+
+<li>
+TRANSPARENT_GREEN_VALUE_ARB - Transparent green color.
+
+<li>
+TRANSPARENT_BLUE_VALUE_ARB - Transparent blue color.
+
+<li>
+TRANSPARENT_ALPHA_VALUE_ARB - Transparent alpha color.
+
+<li>
+SHARE_DEPTH_ARB - Non-zero if layer planes share a depth buffer with the main plane.
+
+<li>
+SHARE_STENCIL_ARB - Non-zero if layer planes share a stencil buffer with the main plane.
+
+<li>
+SHARE_ACCUM_ARB - Non-zero if layer planes share an accumulation buffer with the main plane.
+
+<li>
+SUPPORT_GDI_ARB - Non-zero if GDI rendering is supported (front buffer only).
+
+<li>
+SUPPORT_OPENGL_ARB - Non-zero if OpenGL is supported.
+
+<li>
+DOUBLE_BUFFER_ARB - Non-zero if double buffered.
+
+<li>
+STEREO_ARB - Non-zero if left and right buffers are supported.
+
+<li>
+PIXEL_TYPE_ARB - TYPE_RGBA_ARB for RGBA color modes; TYPE_COLORINDEX_ARB for color index mode.
+
+<li>
+COLOR_BITS_ARB - Number of bit planes in the color buffer.
+
+<li>
+RED_BITS_ARB - Number of red bit planes in the color buffer.
+
+<li>
+RED_SHIFT_ARB - Shift count for red bit planes.
+
+<li>
+GREEN_BITS_ARB - Number of green bit planes in the color buffer.
+
+<li>
+GREEN_SHIFT_ARB - Shift count for green bit planes.
+
+<li>
+BLUE_BITS_ARB - Number of blue bit planes in the color buffer.
+
+<li>
+BLUE_SHIFT_ARB - Shift count for blue bit planes.
+
+<li>
+ALPHA_BITS_ARB - Number of alpha bit planes in the color buffer.
+
+<li>
+ALPHA_SHIFT_ARB - Shift count for alpha bit planes.
+
+</ul>
+<li>
+用于  WGL_SWAP_METHOD_ARB 的 Buffer swap 值
+
+<ul>
+<li>
+SWAP_EXCHANGE_ARB - Swapping exchanges the front and back buffers.
+
+<li>
+SWAP_COPY_ARB - The back buffer is copied to the front buffer.
+
+<li>
+SWAP_UNDEFINED_ARB - The back buffer is copied to the front buffer, but the back buffer contents remain unde?ned after the buffer swap.
+
+</ul>
+</ul>
+<li>
+wglChoosePixelFormatARB() 是比 ChoosePixelFormat() 更高级的版本. 可查找上面表格属性所匹配要求的像素格式.
+<pre class="brush: c++">
+BOOL wglChoosePixelFormatARB(HDC hdc,
+	const int *piAttribIList,
+	const float *pfAttribFList,
+	UINT nMaxFormats,
+	const int *piFormats,
+	UINT *nNumFormats);
+</pre>
+
+<ul>
+<li>
+注意到需要在设置扩展和调用 wglChoosePixelFormatARB() 之前创建 OpenGL context, 因此你可以创建一个 dummy context, 当你发现所需要的像素格式后删除掉它.
+
+<li>
+上面的函数第二个和三个参数都是属性列表和值对. piAttribIList 为整数值的列表, pfAttribIList 则为浮点值的列表. 一些属性值定义为浮点值比整数值更好. 为了使用这些属性, 创建一个类型的一个数组, 而后设置第一个索引的值为你想要设置的第一个属性, 二个索引的值为你需求的最小要求. 对第二个属性则在第三个和第四个索引中进行, 如此反复. 一旦你添加了所有的属性, 在数组尾部加上0.
+
+<li>
+如 WGL_DRAW_TO_WINDOW_ARB 和 WGL_SWAP_METHOD 的属性要求精确匹配, 其他类似 WGL_COLOR_BITS_ARB 和 WGL_ALPHA_BITS_ARB 只设置最小可接受的值.
+
+<li>
+分配第二个数组保存查着色结果, 结果数组的大小位于 nMaxFormats 中, 整数数组的指针位于 piFormats 内. 写回结果数组内的实际数量的格式传递回 nNumFormats 参数内.
+
+<li>
+如果你传递 NULL 给 piAttribIList 或 pfAttribIList, 则得到所有支持的格式.
+
+<li>
+wglChoosePixelFormatARB() 的返回结果在piFormats内的属性以"最佳"匹配的格式排序.
+
+</ul>
+<li>
+大多数程序要求 WGL_SUPPORT_OPENGL_ARB, WGL_DRAW_TO_WINDOW_ARB, WGL_ACCELLERATION_ARB 属性.
+<pre class="brush: c++">
+int nPixCount = 0;
+// Specify the important attributes we care about
+int pixAttribs[] = {
+	WGL_SUPPORT_OPENGL_ARB, 1, // Must support OGL rendering
+	WGL_DRAW_TO_WINDOW_ARB, 1, // pf that can run a window
+	WGL_RED_BITS_ARB, 8, // At least 8 bits of red
+	WGL_GREEN_BITS_ARB, 8, // At least 8 bits of green
+	WGL_BLUE_BITS_ARB, 8, // At least 8 bits of blue
+	WGL_DEPTH_BITS_ARB, 16, // At least 16 bits of depth
+	WGL_ACCELERATION_ARB,
+	WGL_FULL_ACCELERATION_ARB, // Must be HW accelerated
+	WGL_PIXEL_TYPE_ARB,
+	WGL_TYPE_RGBA_ARB, // pf should be RGBA type
+	0} ; // Zero termination
+// Ask \GL to find the most relevant format matching our attribs
+// Only get one format back.
+wglChoosePixelFormatARB(dc,
+	&amp;pixAttribs[0],
+	NULL,
+	1,
+	&amp;nPixelFormat,
+	(UINT*)&amp;nPixCount);
+if (nPixelFormat == -1)
+{
+	// Couldn’t find a format, perhaps no 3D HW or drivers are installed
+	g_hDC = 0;
+	g_hDC = 0;
+	bRetVal = false;
+	printf("!!! An error occurred trying to find a pixel format with "
+		"the requested attributes.\ n");
+}
+</pre>
+
+</ul>
+
+<div id="Chapter 14 Platform Speci?cs-14.2 OpenGL on Windows-14.2.3 The OpenGL Rendering Context-14.2.3.3 Enumerating Pixel Formats"><h4 id="14.2.3.3 Enumerating Pixel Formats">14.2.3.3 Enumerating Pixel Formats</h4></div>
+<ul>
+<li>
+wglGetPixelFormatAttribivARB() 和 wglGetPixelFormatAttribfvARB() 查询支持的格式列表以及其属性.
+<pre class="brush: c++">
+BOOL wglGetPixelFormatAttribivARB(HDC hdc, int iPixelFormat,
+	int iLayerPlane, UINT nAttributes,
+
+const int *piAttributes, int *piValues);
+	BOOL wglGetPixelFormatAttribfvARB(HDC hdc, int iPixelFormat,
+	int iLayerPlane, UINT nAttributes,
+	const int *piAttributes, float *pfValues);
+</pre>
+
+<ul>
+<li>
+iLayerPlane --- Windows Vista 及之后版本使用0.
+
+<li>
+nAttributes --- 设置查询多少的属性用于该像素格式.
+
+<li>
+一个可以查询的值是 WGL_NUMBER_PIXEL_FORMATS_ARB.
+<pre class="brush: c++">
+GLint pfAttribCount[]= { WGL_NUMBER_PIXEL_FORMATS_ARB };
+GLint pfAttribList[] = { WGL_DRAW_TO_WINDOW_ARB,
+	WGL_ACCELERATION_ARB,
+	WGL_SUPPORT_OPENGL_ARB,
+	WGL_DOUBLE_BUFFER_ARB,
+	WGL_DEPTH_BITS_ARB,	
+	WGL_STENCIL_BITS_ARB,
+	WGL_RED_BITS_ARB,
+	WGL_GREEN_BITS_ARB,
+	WGL_BLUE_BITS_ARB,
+	WGL_ALPHA_BITS_ARB };
+int nPixelFormatCount = 0;
+	wglGetPixelFormatAttribivARB(g_hDC, 1, 0, 1, pfAttribCount,
+&amp;nPixelFormatCount);
+for (int i=0; i&lt;nPixelFormatCount; i++)
+{
+	GLint results[10];
+	printf("Pixel format %d details:\n", i);
+	wglGetPixelFormatAttribivARB(g_hDC, i, 0, 10, pfAttribList, results);
+	printf(" Draw to Window = %d:\n", results[0]);
+	printf(" HW Accelerated = %d:\n", results[1]);
+	printf(" Supports \GL = %d:\n", results[2]);
+	printf(" Double Buffered = %d:\n", results[3]);
+	printf(" Depth Bits = %d:\n", results[4]);
+	printf(" Stencil Bits = %d:\n", results[5]);
+	printf(" Red Bits = %d:\n", results[6]);
+	printf(" Green Bits = %d:\n", results[7]);
+	printf(" Blue Bits = %d:\n", results[8]);
+	printf(" Alpha Bits = %d:\n", results[9]);
+</pre>
+
+<li>
+你可以用相同的方法选择你自己的像素格式, 而不是使用更自动地方法 wglChoosePixelFormatARB().
+
+</ul>
+</ul>
+
+<div id="Chapter 14 Platform Speci?cs-14.2 OpenGL on Windows-14.2.3 The OpenGL Rendering Context-14.2.3.4 Advanced Context Creation"><h4 id="14.2.3.4 Advanced Context Creation">14.2.3.4 Advanced Context Creation</h4></div>
+<ul>
+<li>
+一些 OpenGL 版本并不与其他版本相投兼容. wglCreateContext() 函数, 得到一个 context, 其向后兼容于 OpenGL 1.0.
+
+<li>
+wglCreateContextAttribsARB(), 扩展 WGL_ARB_create_context. 原型为
+<pre class="brush: c++">
+HGLRC wglCreateContextAttribsARB(HDC hDC,
+	HGLRC hShareContext,
+	const int *attribList);
+</pre>
+
+<ul>
+<li>
+attribList 参数是一个属性的值对列表.
+
+<li>
+WGL_CONTEXT_MAJOR_VERSION_ARB 和 WGL_CONTEXT_MINOR_VERSION_ARB 用于显示请求 OpenGL 的具体 context 版本.
+
+<li>
+其他可以请求的属性类型, WGL_CONTEXT_PROFILE_MASK_ARB 后跟一个 bitfield 其包含 WGL_CONTEXT_CORE_PROFILE_BIT_ARB 或 WGL_CONTEXT_COMPATIBILITY_PROFILE_BIT_ARB. 最好只用前者的 core profile 版本
+
+<li>
+WGL_CONTEXT_FLAGS_ARB 可以设置其他的 flags 用于 context 的创建. 唯一支持的 flag 是 WGL_CONTEXT_DEBUG_BIT. 用于开发, 如何访问由厂商确定.
+
+<li>
+如果某属性不支持, 则该函数返回 NULL. 如果版本属性不是有效的属性则抛出 WGL_ERROR_INVALID_VERSION_ARB 错误. 如果 WGL_CONTEXT_PROFILE_MASK_ARB 属性不支持, 则抛出 WGL_ERROR_INVALID_PROFILE_ARB 错误.
+
+</ul>
+<li>
+如果想要在多个 context 之间共享 objects. 创建第一个 context, 将其 handle 传递给 wglCreateContextAttribsARB(). 如果传递 NULL 给新的 context, 则不会有已存在context共享数据给新的context.
+<pre class="brush: c++">
+GLint attribs[] =
+{
+	WGL_CONTEXT_MAJOR_VERSION_ARB, 4,
+	WGL_CONTEXT_MINOR_VERSION_ARB, 2,
+	WGL_CONTEXT_PROFILE_MASK_ARB, WGL_CONTEXT_CORE_PROFILE_BIT_ARB,
+	0
+};
+HGLRC oglRC1 = wglCreateContextAttribsARB(g_hDC, 0, attribs);
+HGLRC oglRC2 = wglCreateContextAttribsARB(g_hDC, oglRC1, attribs);
+</pre>
+
+</ul>
+
+<div id="Chapter 14 Platform Speci?cs-14.2 OpenGL on Windows-14.2.3 The OpenGL Rendering Context-14.2.3.5 Advanced Pixel Formats"><h4 id="14.2.3.5 Advanced Pixel Formats">14.2.3.5 Advanced Pixel Formats</h4></div>
+<ul>
+<li>
+WGL_ARB_pixel_format 扩展. 允许你检查和选择的像素格式功能, 其可以不是windows提供访问的像素格式功能. 例如多重采样渲染.
+
+</ul>
+
+<div id="Chapter 14 Platform Speci?cs-14.2 OpenGL on Windows-14.2.3 The OpenGL Rendering Context-14.2.3.6 Pixel Format Attributes"><h4 id="14.2.3.6 Pixel Format Attributes">14.2.3.6 Pixel Format Attributes</h4></div>
+<ul>
+<li>
+wglGetPixelFormatAttribivARB() 得到一个像素格式的任意特殊信息.
+
+<li>
+在调用 glGetString() 或 wglGetProcAddress() 得到大多数 OpenGL 函数之前, 你必须有一个有效的 OpenGL rendering context. 这意味着你必须首先创建一个暂时的查ungkou设置一个像素格式, 而后得到指向一个wglGetPixelFormatAttribARB()函数的指针. 最好在 splash 或者初始选项对话框做这个. 
+
+<li>
+支持的像素格式的数量
+<pre class="brush: c++">
+int attrib[] = { WGL_NUMBER_PIXEL_FORMATS_ARB } ;
+int nResults[1] = { 0} ;
+int pixFmt = 1;
+wglGetPixelFormatAttribivARB (hDC, pixFmt, 0, 1, attrib, nResults);
+// nResults[0] now contains the number of exported pixelformats
+</pre>
+
+<li>
+扩展的入口地址只对当前 OpenGL context 有效. 如果删除一个context而后创建另一个, 你需要重新填充这些入口地址.
+
+</ul>
+
+<div id="Chapter 14 Platform Speci?cs-14.2 OpenGL on Windows-14.2.4 Full-Screen Rendering"><h3 id="14.2.4 Full-Screen Rendering">14.2.4 Full-Screen Rendering</h3></div>
+<pre class="brush: c++">
+if(bUseFS)
+{
+	// Prepare for a mode set to the requested resolution
+	DEVMODE dm;
+	memset(&amp;dm,0,sizeof(dm));
+	dm.dmSize=sizeof(dm);
+	dm.dmPelsWidth = nWidth;
+	dm.dmPelsHeight = nHeight;
+	dm.dmBitsPerPel = 32;
+	dm.dmFields=DM_BITSPERPEL|DM_PELSWIDTH|DM_PELSHEIGHT;
+	long error = ChangeDisplaySettings(&amp;dm, CDS_FULLSCREEN);
+	if (error != DISP_CHANGE_SUCCESSFUL)
+	{
+		// Oops, something went wrong, let the user know.
+		if (MessageBox(NULL, "Could not set full-screen mode.\ n"
+				"Your video card may not support the requested mode.\ n"
+				"Use windowed mode instead?", g_szAppName,
+				MB_YESNO|MB_ICONEXCLAMATION)==IDYES)
+		{
+			g_InFullScreen = false;
+			dwExtStyle = WS_EX_APPWINDOW | WS_EX_WINDOWEDGE;
+			dwWindStyle = WS_OVERLAPPEDWINDOW;
+		}
+		else
+		{
+			MessageBox(NULL, "Program will exit.",
+				"ERROR", MB_OK|MB_ICONSTOP);
+			return false;
+		}
+	}
+	else
+	{
+		// Mode set passed, set up the styles for full screen
+		g_InFullScreen = true;
+		dwExtStyle = WS_EX_APPWINDOW;
+		dwWindStyle = WS_POPUP;
+		ShowCursor(FALSE);
+	}
+}
+AdjustWindowRectEx(&amp;g_windowRect, dwWindStyle, FALSE, dwExtStyle);
+// Create the window again
+. . .
+</pre>
+<div id="Chapter 14 Platform Speci?cs-14.2 OpenGL on Windows-14.2.4 Full-Screen Rendering-14.2.4.1 Eliminating Visual Tearing"><h4 id="14.2.4.1 Eliminating Visual Tearing">14.2.4.1 Eliminating Visual Tearing</h4></div>
+<ul>
+<li>
+如果 SwapBuffers() 比刷新率更快, 则产生撕裂的丑陋效果, 如果你在前一帧完成scanned out 就 SwapBuffers, 则会看到一阵的部分出现, 下一帧出现另一部分.
+
+<li>
+WGL_EXT_swap_contro 扩展解决该问题, 可以告知在 swap call 之间允许出现的最小的 video frames, V-syncs 数量.
+<pre class="brush: c++">
+BOOL wglSwapIntervalEXT(GLint interval);
+</pre>
+
+<ul>
+<li>
+该函数设置间隔.
+
+<li>
+0 表示不受限, 1则表示每个垂直刷新之间只有一个 Swapbuffers.
+
+<li>
+还可以传递更大的值, 表示swap之间等待更多的帧, 但是这容易产生可见的stutter.
+
+</ul>
+</ul>
+
+<div id="Chapter 14 Platform Speci?cs-14.2 OpenGL on Windows-14.2.5 Cleaning Up"><h3 id="14.2.5 Cleaning Up">14.2.5 Cleaning Up</h3></div>
+<ul>
+<li>
+首先删除所有你创建的 objects(例如纹理, buffers, 等). 而后删除所有窗口系统的objects.
+
+<li>
+首先, 我们删除 opengl context
+<pre class="brush: c++">
+BOOL wglDeleteContext(HGLRC hglrc);
+</pre>
+
+<li>
+释放 DC
+<pre class="brush: c++">
+int ReleaseDC(HWND hWnd, HDC hDC);
+</pre>
+
+<li>
+删除窗口
+<pre class="brush: c++">
+BOOL DestroyWindow(HWND hWnd);
+</pre>
+
+<li>
+取消窗口注册
+<pre class="brush: c++">
+BOOL UnregisterClass(LPCTSTR lpClassName, HINSTANCE hInstance);
+</pre>
+
+</ul>
+
+<div id="Chapter 14 Platform Speci?cs-14.3 OpenGL on Mac OS X"><h2 id="14.3 OpenGL on Mac OS X">14.3 OpenGL on Mac OS X</h2></div>
+<div id="Chapter 14 Platform Speci?cs-14.4 OpenGL on Linux"><h2 id="14.4 OpenGL on Linux">14.4 OpenGL on Linux</h2></div>
+<div id="Chapter 14 Platform Speci?cs-14.5 OpenGL on Mobile Platforms"><h2 id="14.5 OpenGL on Mobile Platforms">14.5 OpenGL on Mobile Platforms</h2></div>
+
+    </div>
+</body>
+</html>

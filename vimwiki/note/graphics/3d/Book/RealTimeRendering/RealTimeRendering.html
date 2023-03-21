@@ -1,0 +1,1073 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../../../style.css">
+<title>RealTimeRendering</title>
+<meta http-equiv="Content-Type" content="text/html; charset=cp936">
+</head>
+<body>
+
+<h1 id="toc_1">Chapter 1 Introduction</h1>
+<ul>
+<li>
+实时渲染---图像在计算机上快速的显示, 以及和用户交互
+
+<li>
+15fps --- 实时渲染的基本fps.  72fps以及更大的fps观察者无法发现其中的差别, 高于60fps则可以优化程序的反应时间
+
+<li>
+图形硬件加速器的介绍
+
+<li>
+本书目的: 提供方法增加图形程序速度和改进图形质量
+
+</ul>
+<h2 id="toc_1.1">1.1 Contents Overview</h2>
+<ul>
+<li>
+各章节介绍
+
+<ul>
+<li>
+Chapter 2 The Graphics Rendering Pipeline: 实时渲染的核心概念
+
+<li>
+Chapter 3 The Graphics Processing Unit: 现代GPU使用固定功能单元和可编程单元实现渲染管线的各个阶段
+
+<li>
+Chapter 4 Transform
+
+<li>
+Chapter 5 Visual Appearance: 材质和光照, 反锯齿, gamma修正
+
+<li>
+Chapter 6 Texturing
+
+<li>
+Chapter 7 Advanced Shading 正确表现材质和点光源的理论和实践
+
+<li>
+Chapter 8 Area and Environmental Lighting 
+
+<li>
+Chapter 9 Global Illumination 阴影, 反射, 折射算法, 辐射, 光线追踪, 预处理光照, 环境封闭
+
+<li>
+Chapter 10 Image-Based Effect: lens flares, fire, motion blu, ....
+
+<li>
+Chapter 11 Non-Photorealistic Rendering: cartoon shading
+
+<li>
+Chapter 12 Polygonal Techniques: 讨论多边形数据, 并优化和简化其数据
+
+<li>
+Chapter 13 Curves and Curved Surfaces
+
+<li>
+Chapter 14 Acceleration Algorithms: culling 和 LOD渲染的不同形式
+
+<li>
+Chapter 15 Pipeline Optimization 发现和解决瓶颈
+
+<li>
+Chapter 16 Intersection Test Methods 相交检测
+
+<li>
+Chapter 17 Collision Detection 碰撞检测
+
+<li>
+Chapter 18 Graphics Hardware 颜色深度, 帧缓存, 基本结构体类型, 一些有代表性的图形加速器研究
+
+<li>
+Chapter 19 The Future
+
+</ul>
+</ul>
+
+<h2 id="toc_1.2">1.2 Notation and Definitions (记号和定义)</h2>
+<ul>
+<li>
+向量使用列向量格式
+
+<li>
+v = {x, y, z, 0} 表示向量, v = {x, y, z, 1} 表示一个点
+
+</ul>
+	
+<h1 id="toc_2">Chapter 2 The Graphics Rendering Pipeline</h1>
+<ul>
+<li>
+Bresenham's line-drawing algorithm[142], symmetric double-step algorithm[1391]
+
+<li>
+渲染管线的速度取决于管线中最慢的环节, 无论其他的环节速度多快
+
+<li>
+粗略的将实时渲染管线划分为三个环节: application, geometry, rasterizer
+
+<li>
+概念环节(application, geometry, rasterizer) conceptual stages, 功能环节 functional stages, 管线环节 pipeline stages的区别
+
+<ul>
+<li>
+功能环节 ---- 执行特定的task, 不管如何在管线中实现
+
+<li>
+管线环节 ---- 和其他的管线环节同步
+
+<li>
+也许多个功能环节合并成一个管线环节, 也许一个功能环节分割成多个管线环节
+
+</ul>
+<li>
+两个用来表示渲染速度的方式: fps 和 Hertz(Hz)
+
+<ul>
+<li>
+例子: 计算渲染速度
+
+<ul>
+<li>
+假设输出设备的最大更新频率为 60 Hz, 渲染管线的瓶颈环节已经发现, 为62.5ms.
+
+<ul>
+<li>
+渲染速度的最大值为 1/0.0625 = 16fps
+
+<li>
+60/1 = 60Hz, 60/2 = 30Hz, 60/3 = 20Hz, 60/4 = 15Hz, 60/5 = 12Hz
+
+<li>
+15Hz 是小于16fps之下的最大值, 所以最后预计渲染速度为15fps.
+
+</ul>
+</ul>
+</ul>
+<li>
+application stage --- 运行于 CPU, 常处理 碰撞检测, global acceleration algorithm, 动画, 物理模拟以及其他
+
+<li>
+geometry stage --- 通常使用GPU, 常处理 transforms, projections
+
+<li>
+rasterizer stage --- 渲染前面生成的图像, 完全在GPU上处理.
+
+</ul>
+<p>
+2.2 The Application Stage
+</p>
+<ul>
+<li>
+开发者可完全控制该阶段
+
+<li>
+为了提供性能, 在多核处理器上平行运算, superscalar construction. 见15.5介绍的利用多核处理器的方法
+
+<li>
+该阶段常处理碰撞检测. 处理输入(键盘, 鼠标, ...), 纹理动画. 以及其他阶段不会执行的计算.例如 Chapter 14 介绍的 hierarchical view frustum culling.
+
+</ul>
+
+<p>
+2.3 The Geometry Stage
+</p>
+<ul>
+<li>
+处理大部分的顶点和多边形操作.分为以下几个功能环节: model and view transform, vertex shading, projection, clipping, screen mapping
+
+<li>
+模型转换后, 模型处于世界空间/世界坐标系中.
+
+<li>
+视图转换, 让相机处于原点, 且朝向为z负轴, 向上的方向为y轴, x轴为向右. 
+
+<li>
+确定材质上光照效果的操作为 shading. 其包含在对象的顶点上计算 shading equation. 该计算有一部分在geometry环节执行, 另一部分在每个像素的光栅化(rasterization)执行, 存储在每个顶点上的一系列材质数据如位置, 发现, 颜色以及其他用于计算shading equation的信息. Vertex shading的结果发送给rasterization环节进行插值. (结果可为颜色, 向量, 纹理坐标以及其他类型的shading数据)
+
+<li>
+Shading 计算通常在世界空间中进行, 实际上, 为了方便有时转换相关实体(如相机和光源)到其他的空间(模型或视觉空间), 并在该空间进行计算.`
+
+<ul>
+<li>
+这是由于光源, 相机和模型的相对关系在转换至其他空间时仍会保持相同的相对关系.
+
+</ul>
+<li>
+shading之后就是执行 projection, 主要将视图锥转换至一个单元立方体, 范围为[-1, -1, -1]到[1, 1, 1]. 该单元立方体称为 canonical view volume.
+
+<li>
+两种projection方法: 正交和透视投影
+
+<li>
+投影之后, 模型位于 normalized device coordinates.投影之后, z坐标春处于 z缓存(深度缓存)中.
+
+<li>
+对部分在视图锥之内, 部分在视图锥之外的图元进行裁剪, 
+
+<li>
+用户可以定义额外的裁剪平面. 在可编程处理单元(programmable processing units)进行
+
+<li>
+裁剪环节和屏幕映射环节(screen mapping stage)通常有固定操作硬件处理.
+
+<li>
+screen mapping环节, 将裁剪坐标x,y转换成屏幕坐标.
+
+<li>
+像素整数值和浮点值之间的关系: 一个像素的中心坐标为(0.5, 0.5), 所以像素范围[0, 9]可取值[0.0, 10.0)
+
+<li>
+Opengl将左下角的坐标作为最小值, DX将左上角的坐标作为最小值
+
+<li>
+
+
+</ul>
+<p>
+2.4 The Rasterizer Stage
+</p>
+<ul>
+<li>
+光栅化 --- 计算和设置绘制对象的像素颜色. 将屏幕空间中的二维顶点(带z值)以及每个顶点关联的各种shading信息转换至屏幕上的像素.
+
+<li>
+Rasterizer stage 划分为几个功能环节: triangle setup, triangle traversal, pixel shading, merging
+
+<li>
+triangle setup --- 计算三角形表面的差异和其他数据. 这些数据用于 scan conversion和各种各样shading数据的插值, 由固定操作硬件完成该功能.
+
+<li>
+triangle traversal --- 检查一些像素, 这些像素的中心点被三角形所覆盖. 并生成用于三角形上像素的片段.
+
+<li>
+查找在三角形之内的样本(sample)或像素的操作成为 triangle traversal 或 scan conversion.
+
+<li>
+通过三角形三个顶点的数据插值生成三角形片段(fragment)的性质. 这些性质包括片段的深度以及有geometry环节生成的shading 数据
+
+<li>
+Pixel shading --- 每个像素的shading计算, 输入数据为shading数据的插值结果, 输出数据为一个或多个颜色.该环节由可编程GPU来执行.
+
+<li>
+pixel shading环节可运用许多技术, 其中最重要的为texturing, 即将图片粘贴至模型上
+
+<li>
+Merging环节 --- 将shading环节产生的片段颜色和存储在color buffer里的颜色组合起来, 执行该环节的GPU子单元并非可完全编程的. 但其可进行各种配置, 实现各种效果.
+
+<li>
+Merging 环节还解决对象是否可视问题, 当渲染整个场景之后, 颜色缓存应当存储相机视图在该点可见图元的颜色. 对大多数图形硬件来说, 这点是由  Z-buffer 算法完成. 每个像素存储距离相机最近图元的z值, 
+
+<li>
+Z-buffer算法可以以任意顺序渲染大多数图元, 然而对于半透明图元则不能够任意顺序绘制, 必须绘制所有不透明图元之后, 以back-to-front顺序绘制.
+
+<li>
+除了 Z-buffer, color buffer缓存, 还有 alpha channel, 可进行 alpha test.在 depth test之前进行. 该测试的典型用法是确保完全透明的fragment不会影响到 Z-buffer.
+
+<li>
+stencil buffer --- 记录渲染图元的位置, 每个像素八位数据.使用不同的函数图元渲染至stencil buffer.并且buffer的内容可用于控制是否渲染至color buffer 和 Z-buffer.
+
+<li>
+accumulation buffer -- 累积缓存.使用一系列操作对图像进行累积. 例如通过平均和累积图像可以生成 motion blur., 其他效果如 depth of field, antialiasing, soft shadow, etc.
+
+<li>
+double buffer --- 在 back buffer 进行渲染, 而后和 front buffer进行交换, 在 vertical retrace(真扫描)时进行交换.
+
+</ul>
+
+<p>
+2.5 Through the Pipeline
+</p>
+<ul>
+<li>
+想象一个互动的CAD应用程序, 用户检查一个移动手机的设计, 透视投影. 手机模型有线条(边缘), 有三角形(表面), 有纹理(显示键盘和屏幕). 在 geometry 环节计算 shading, 除了纹理部分, 该部分在 rasterization 环节发生.
+
+<li>
+Application 环节: 设置旋转矩阵进行手机翻盖操作, 设置相机以不同的位置和视角来浏览手机, 形成一个动画.
+
+<li>
+Geometry 环节 --- 模型矩阵和视图矩阵结合成模型视图矩阵, 将对象所有的顶点和法线转换至视图空间, 计算顶点的shading, 使用材质和光源属性.执行投影, 转换对象之单元立方体空间. 而后进行裁剪. 将顶点映射至屏幕上的窗口. 最后进行光栅化
+
+<li>
+Rasterizer 环节 --- 所有的图元进行光栅化, 转换成为窗口上的像素.进行纹理操作, 通过Z-buffer算法查看对象的可视性, 还有alpha测试, stencil 测试等. 
+
+</ul>
+
+<p>
+Conclusion
+</p>
+<ul>
+<li>
+offline rendering pipelines 也有不同的发展, 用于电影产品的渲染常使用 micropolygon pipelines,
+
+<li>
+本书默认使用可编程功能管线,
+
+</ul>
+
+<p>
+Further Reading and Resources
+</p>
+<ul>
+<li>
+A Trip Down the Graphics Pipeline.
+
+</ul>
+
+
+<h1 id="toc_3">Chapter 3 The Graphics Processing Unit</h1>
+<ul>
+<li>
+硬件加速的优势所在就是其速度.
+
+<li>
+渲染管线的GPU实现: Vertex Shader(<strong>)-&gt;Geometry Shader(</strong>)--&gt;Clipping(*<strong>)--&gt;Screen Mapping(&amp;)--&gt;Trangle Setup(&amp;)--&gt;Triangle Traversal(&amp;)--&gt;Pixel Shader(</strong>)--&gt;Merger(**)
+
+<ul>
+<li>
+(*) 表示可完全编程的环节
+
+<li>
+(**) 表示可配置但不可编程的环节
+
+<li>
+(&amp;) 表示完全固定功能的环节
+
+</ul>
+</ul>
+
+<p>
+3.1 GPU Pipeline Overview
+</p>
+<ul>
+<li>
+vertex shader是完全可编程环节, 处理"Model and View Transform", "Vertex Shading" 和 "Projection" 功能环节.
+
+<li>
+geometry shader 是可选的, 完全可编程的环节, 操作图元上的顶点(点, 线, 三角形), 用于执行图元shading操作, 销毁图元, 创建图元
+
+<li>
+clipping, screen mapping, triangle setup, triangle traversal 环节都是固定功能环节.
+
+<li>
+pixel shader为可编程环节, 执行"Pixel shading".
+
+<li>
+merger 环节则为可编程和固定功能之间, 可进行很多配置来完成各种操作. color buffer, Z-buffer, blend, stencil和其他相关缓存.
+
+</ul>
+
+<p>
+3.2 The Programmable Shader Stage
+</p>
+<ul>
+<li>
+现代shader环节(支持Shader Model 4.0)使用 common-shader core. 这表示 vertex, pixel, geometry shader 共享一个程序模型(programming model)
+
+<li>
+早期的 GPUs 在顶点和像素 shaders 有很少的共同点, 并且没有 geometry shader.
+
+<li>
+类C语法的着色语言: HLSL, Cg, GLSL, 这些语言编译至无关机器的汇编语言, 即 intermediate language(IL), 该汇编语言通常在驱动中转换至机器语言. 该汇编语言可看成虚拟机. 该虚拟机是一处理器, 可处理不同的register类型和数据类型, 通过一系列的指令编程. 有 4路 SIMD(single-instruction multiple-data)能力. 每个register也有四个独立的值. 基本数据类型为32位单精度浮点数和向量. 支持32位整数.
+
+<li>
+一个 draw call 请求图形API绘制一组图元. 引起图形管线的执行. 每个可编程shader环节有两个类型的输入: uniform input 和 varying input.
+
+<ul>
+<li>
+uniform inputs 在整个 draw call中保持不变. (但在 draw calls之间可以变化)
+
+<li>
+varying inputs 则不同
+
+<li>
+纹理可看成 uniform input, 但是其也可以作为其他纹理的索引数组数据.
+
+<li>
+可通过只读的constant register 或 constant buffers来访问 Uniform inputs.
+
+</ul>
+<li>
+虚拟机还有通用的 temporary registers, 用于 scratch space. 所有registers的类型都可以用temporary registers中的整数值来进行数组下标.  
+
+<li>
+最快的操作时标量和向量乘法, 加法, 以及之间的组合, 如点乘. 其他的操作如求倒数(reciprocal), 平方根, sin, cos, 指数和对数都相对耗时.
+
+<li>
+shader支持两种类型的流控制: static流控制用于uniform输入. dynamic流控制用于 varying 输入
+
+<li>
+shader程序可以在程序加载之前或者运行期进行离线编译, 可通过设置选项来生成不同的输出文件, 以及使用不同的优化等级.
+
+<li>
+一个编译的shader存储为一文本字符串. 通过驱动传送给GPU
+
+</ul>
+
+<p>
+3.3 The Evolution of Programmable Shading
+</p>
+<ul>
+<li>
+用于shader设计的 visual shader graph system: mental mill
+
+<li>
+2007年发展出Shader Model 4.0, 主要特性有 geometry shader 和 stream output.
+
+<li>
+新的程序模型如NVIDIA的CUDA和AMD的CTM用于non-graphics applications
+
+</ul>
+
+<p>
+3.3.1 Comparison of Shader Models
+</p>
+<ul>
+<li>
+表3.1 Shader Model 2.0, 3.0, 4.0的区别
+
+</ul>
+
+<p>
+3.4 The Vertex Shader
+</p>
+<ul>
+<li>
+在DX中, Vertex Shader环节之前的数据操作成为 input assembler. 将一些数据流组织成一系列顶点和图元发送给管线.
+
+<li>
+在 input assembler 中支持 使用instancing, 即一个对象使用不同的数据可以通过复制来绘制多次.
+
+<li>
+在DX10中, input assembler 会给每个instance(实例), 图元, 顶点一个唯一的数字作为标记, 以便后来的shader可以访问.
+
+<li>
+对于 triangle mesh而言, 在vertex shader中不关心哪些顶点形成哪些三角形, 只处理那些输入的顶点.
+
+<li>
+vertex shader, 每个传送进来的顶点, 输出所在三角形或线条的一系列插值, 不能创建和销毁顶点, 一个顶点的结果不能影响到另外一个顶点. 所以每个顶点都是独立处理的, 多个shader processors在GPU里可以平行处理输入的顶点数据流.
+
+<li>
+vertex shader 可以实现的效果: shadow volume, 活动关节的顶点混合(见超级宝典), silhouette rendering
+
+<ul>
+<li>
+Lens effect, 屏幕显示鱼眼效果, 水下, 以及其他的扭曲效果
+
+<li>
+Object definition, 创建mesh一次, 并通过 vertex shader变形
+
+<li>
+Object twist, bend, taper operation
+
+<li>
+Primitive creation, 通过发送退化(degenerate)mesh给后面的管线, 并在需要的时候给予这些mesh空间. 这个功能在更新的GPU中被geometry shader替代.
+
+<li>
+Page curls, heat haze, water ripples, 通过将整个帧缓存的内容作为纹理贴在屏幕对齐的mesh上, 而后进行程序变形操作.
+
+<li>
+Vertex texture fetch. 用于将纹理作用于顶点mesh, 这样可以让海洋表面, 地形高度图的渲染耗费更小.
+
+</ul>
+<li>
+Vertex shader的输出有几个用法, 常用的方法是生成和光栅化每个实例(instance)的三角形, 产生的各自像素片段发送给像素着色器程序. Shader Model 4.0则可将vertex shader的输出发送给geometry shader.
+
+</ul>
+
+<p>
+3.5 The Geometry Shader
+</p>
+<ul>
+<li>
+geometry shader 位于 vertex shader之后, 可选的. 
+
+<li>
+geometry shader 的输入是 单个对象和它的顶点. 对象通常为一个网格内的一个三角形, 一个线段或者一个点. 另外, 可以额外传送三个三角形外的三个顶点, 在一个多边形可用2个相邻的点.
+
+<li>
+geometry shader 的输出是另个或多个图元, 形式为点, polylines, 三角形带, 多个三角形带. 一个mesh可以被有选择的修改. 方法是编辑顶点, 添加新的图元或者移除其他的图元.
+
+<li>
+geometry shader 对象的输入输出类型不一定需要匹配, 比如输入一个三角形, 而后以点的形式输出三角形的重心, 即使类型符合, 也可以忽略或者扩展每个顶点上的数据. 例如给每个输出后的顶点添加上其所在三角形平面的法线, 
+
+<li>
+同 vertex shader, geometry shader 输得的每个顶点都位于裁剪空间位置上.
+
+<li>
+geometry shader 确保图元的输出次序和输入的次序一样. 这个会影响到性能. 为了性能和效率之间的平衡, 每次执行的限制总数为1024 32位值.所以不推荐大量拷贝一个模型, 或者将tesselation表面转换成详细的三角形mesh. geometry shader 环节更多用于修改输入的数据或者进行有限的拷贝. 而不要用于大量的拷贝或扩充.
+
+<li>
+geometry shader 算法: 根据点的数据创建不同大小的粒子, extruding fins along silhouettes, 阴影算法中的查找对象边缘
+
+<li>
+Shader Model 4.0 提出一个专用词 stream output, 在顶点被vertex shader(和 geometry shader)处理之后, 可以输出至流(stream)中, 例如, 一个有序数组, 除了可以发送至光栅化环节, 还可以完全关掉光栅化, 管线使用non-graphical stream processor. 数据通过这样的方法发送回管线, 这样就可以进行迭代重复处理. 这类型的操作对于模拟流水或者其他粒子效果很有用.
+
+</ul>
+
+<p>
+3.6 The Pixel Shader
+</p>
+<ul>
+<li>
+在 vertex 和 geometry shader 之后, 图元被裁减并开始光栅化, 这部分在管线中相对固定了功能, 而不是可编程部分. 每个三角形处理其内的区域, 该区域内进行插值得到顶点数据. 下一步是进行pixel shader环节, OpenGL也称之为 fragment shader. 这是由于每个三角形完全或者部分覆盖了pixel's cell. 并且材质为不透明或者透明的. 在merging环节中, fragment的数据用于修改存储与像素中的内容.
+
+<li>
+vertex shader程序的输出为pixel shader程序的输入, 总共16个vector(每个有4个值)从vertex shader发送给pixel shader, 如果是 geometry shader, 则输出16个vector发送给pixel shader.还可以输出额外的内容给pixel shader, 例如用输入flag表示三角形的那一面可见, 片段的屏幕位置.
+
+<li>
+pixel shader程序执行后, 它不能将它的结果直接发送给相邻的pixel, 它使用来自顶点的插值数据和存储的常量和纹理数据, 计算只影响单个像素的结果. 不过这个限制并非非常严格, 可使用图像处理技术来影响相邻像素, 见10.9
+
+<li>
+pixel shader 可以访问用于相邻像素的信息, 该信息是 gradient 或 derivative信息的计算.通过沿屏幕的x轴和y轴改变每个像素, 就可以得到任意值以及计算其总量. 对于不同的计算和纹理寻址非常有用. 这些 gradients 对于一些操作非常重要, 例如 filtering. 大多数GPU通过处理2x2一组像素来实现这个功能. 当 pixel shader 请求一个 gradient 值时, 返回相邻像素的差异值. 这个实现的一个结果是不能够被动态流控制(dynamic flow control)影响的部分访问 gradient 信息---一组中的所有像素必须由相同的指令(instructions)处理. 即使在离线(offline)渲染系统, 也有着这基本限制. 只有 pixel shader 能够访问 gradient 信息.
+
+<li>
+Pixel shader 程序设置用于在merging环节中merging(融合)的片段颜色. 在pixel shader中可以修改光栅化环节生成的深度值, 但不能修改stencil缓存的值, 但stencil值可以传递给merge环节. 在pixel shader 执行雾计算和alpha测试.
+
+<li>
+multiple render targes(MRT), 每个片段可以生成多个向量, 并将其保存至不同的缓存中. 这些缓存必须有相同的尺寸大小, 一些结构(architectures)要求这些缓存有相同的位深度(bit depth), 与颜色缓存不同, 对于这些额外的内容会有一些限制. 例如不能执行反锯齿. 
+
+</ul>
+
+<p>
+3.7 The Merging Stage
+</p>
+<ul>
+<li>
+merging 环节 --- 各个片段的颜色和深度值与帧缓存组合在一起. 该环节可进行 stencil-buffer 和 z-buffer 操作, 颜色混合操作. 该环节可以进行高度配置, 例如颜色混合的方式, DX10增加了一个功能, 两个来自pixel shader的颜色可以和帧缓存颜色混合, 称之为 dual-color blending.
+
+<li>
+如果MRT功能可使用, 则混合可以发生在多个缓存中. DX10.1 可以对每个MRT缓存实行不同的混合操作.
+
+</ul>
+
+<p>
+3.8 Effects
+</p>
+<ul>
+<li>
+shader都不是孤立使用的, 要配合其他shader和固定功能管线部分.
+
+<li>
+一些组织开发了不同的effects language, 例如 HLSL FX, CgFX, COLLADA FX, 每个effect file包装了所有需要的相关信息用于执行特定的渲染算法. 其定义了可供应用程序使用的全局参数. 
+
+<li>
+Figure3.8 Gooch shading.
+
+<li>
+NVIDIA's FX Composer 2 effects system
+
+<li>
+DirectX 9 HLSL effect file
+
+<li>
+一个 Gooch shading 的简单实现
+
+<ul>
+<li>
+Gooch shading 的一部分是用表面法线和光源的位置进行比较. 如果法线朝向光源, 则使用 warm tone 着色, 否则使用 cool tone.
+
+<li>
+在两个用户定义的颜色进行插值. 这是non-photorealistic 渲染的一种形式.
+
+<li>
+Effect 变量定义于文件的开头部分, 关于相机位置的参数会自动跟踪.
+		float4x4 WorldXf	: World;
+		float4x4 WorldITXf	: WorldInverseTranspose;
+		float4x4 WvpXf		: WorldViewProjection;
+
+<li>
+语法形式为 type id : semantic
+
+<li>
+float4x4为用户定义, 用于矩阵. id 则是内置名称. WorldXf 是模型至世界转换矩阵, WorldITXf 则是前者矩阵的逆矩阵. WvpXf 为模型空间至相机裁剪空间的矩阵, 这些值由应用程序提供, 不显示于用户接口
+
+<li>
+用户定义变量
+		float3 Lamp0Pos : Position &lt;
+			string Object = "PointLight0";
+			string UIName = "Lamp 0 Position";
+			string Space = "World";
+		&gt; = {-0.5f, 2.0f, 1.25f};
+		float3 WarmColor &lt;
+			string UIName = "Gooch Warm Tone";
+			string UIWidget = "Color";
+		&gt; = {1.3f, 0.9f, 0.15f}
+		float3 CoolColor &lt;
+			string UIName = "Gooch Cool Tone";
+			string UIWidget = "Color";
+		&gt; = {0.05f, 0.05f, 0.6f}
+
+<li>
+尖括号内为注释. 大括号内为缺省值, 注释对于effect或shader编译器无效果, 但可被应用程序查询. 描述如何在用户接口内显示这些变量	
+
+<li>
+用于shader输入和输出的数据结构定义
+		struct appdata {
+			float3 Position	: POSITION;
+			float3 Normal	: NORMAL;
+		};
+		struct vertexOutput {
+			float4 HPosition	: POSITION;
+			float3 LightVec		: TEXCOORD1;
+			float3 WorldNormal	: TEXCOORD2;
+		};
+
+<li>
+appdata定义模型上每个顶点上的数据, 用于vetex shader的输入. vertexOutput 则是vertex shader的输出和pixel shader的输入.
+
+<li>
+vertex shader 程序如下:
+		vertexOutput std_VS(appdata IN){
+			vertexOutput OUT;
+			float4 No = float4(IN.Normal, 0);
+			OUT.WorldNormal = mul(No, WorldITXf).xyz;
+			float4 Po = float4(IN.Position, 1);
+			float4 pW = mul(Po, WorldXf);
+			OUT.LightVec = (Lamp0Pos - Pw.xyz);
+			OUT HPosition = mul(Po, WvpXf);
+			return OUT;
+		}
+
+<li>
+pixel shader 程序如下
+		float4 gooch_PS(vertexOutput IN) : COLOR
+		{
+			float3 Ln = normalize(IN.LightVec);
+			float3 Nn = normalize(IN.WorldNormal);
+			float ldn = dot(Ln, Nn);
+			float mixer = 0.5 * (ldn + 1.0);
+			float4 result = lerp(CoolColor, WarmColor, mixer);
+			return result;
+		}
+
+<li>
+一个 effect 文件可以有一些函数组成, 也可包括其他 effects 文件的函数
+
+<li>
+一个通道pass由一个vertex和一个pixel shader 组成, 以及一些用于该通道的状态设置. 一个技术technique则有一个或多个passes产生想要的效果.下面的文件则有一个technique, 该technique有一个pass
+		technique Gooch &lt;string Script = "Pass=p0;";&gt;{
+			pass p0 &lt;string Script = "Draw=geometry;";&gt;{
+				VertexShader = compile vs_2_0 std_VS();
+				PixelShader = compile ps_2_a gooch_PS();
+				ZEnable = true;
+				ZWriteEnable = true;
+				ZFunc = LessEqual;
+				AlphaBlendEnable = false;
+			}
+		}
+
+<li>
+多个 technique 可存储于相同的effect文件.用于不同的shader model(SM2.0, SM3.0等)
+
+<li>
+一个effect包装了相关的techniques, 一系列的方法已发展出来用于管理一系列shaders.
+
+</ul>
+</ul>
+
+<p>
+Further Reading and Resources
+</p>
+<ul>
+<li>
+David Blythe在DirectX 10上的论文, 关于现代GPU官仙和它们的设计背后的关联
+
+<li>
+访问 ATI和NVIDIA开发者网站访问最新技术的信息, 免费的 FX Composer 2 和 RenderMonkey interactive shader 设计工具来试验我们的shader
+
+<li>
+GLSL, HLSL
+
+<li>
+O'Rorke的文章提供可读的introduction有效的管理shaders.
+
+<li>
+Cg语言提供了一个抽象层, 到处许多主要APIs 和平台. 也提供插件工具用于主要模型和动画包. Sh metaprogramming language更抽象. 为C++库用于映射相关的图形代码至GPU中.
+
+<li>
+如果想要高级 shader techniques, 阅读 GPU Gems 和 ShaderX 系列书籍作为开始. Game Programming Gems 书籍也有一些相关的文章.
+
+<li>
+DirectX SDK 有许多重要的 shader 和算法例子.
+
+</ul>
+
+<p>
+Chapter 4 Transform
+What if angry vectors veer Round your sleeping head, and form. There's never need to fear Violence of the poor world's abstract storm.
+	--- Rober Penn Warren
+</p>
+<ul>
+<li>
+线性变换是向量加法和标量惩罚
+	f(x) + f(y) = f(x+y)
+	kf(x) = f(kx)
+	f(x) = 5x; 是一个线性变换, 为缩放变换
+
+<li>
+旋转变换是另一种线性变换. 所有用于3元素向量的线性变换, 可以用 3x3 矩阵表示
+
+<li>
+将一个固定的向量加到另一个向量上是执行一个移动变换
+
+<li>
+仿射变换(affine transform) --- 组合线性变换和移动. 存储与4x4矩阵中.
+
+<li>
+Homogeneous Notation (齐次表示法), p = {x, y, z, w}; w = 1时表示点, w = 0时表示为向量. 如果w!=1且w!=0, 则需要进行齐次化才能得到该点, 即所有的元素除以w. (x/w, y/w, z/w, 1) 矩阵为 4x4形式. 具体内容见 P905 A.4 Homogeneous Notation
+
+<li>
+仿射矩阵 translation, rotation, scalling ,reflection, shearing(切变矩阵), 在变换前后平行的线条依然保持平行. 至于大小和之间角度可能有所变化.
+
+<li>
+本章主要内容: 基本的仿射变换, 更加特殊的矩阵, 四元组, 顶点混合和变形, 投影矩阵.
+
+<li>
+表 4.1
+	T(t)	移动矩阵
+	Rx(p)	旋转矩阵	绕x轴旋转
+	R		旋转矩阵
+	S(s)	缩放矩阵
+	Hij(s)	切变矩阵
+	E(h, p, r)	欧拉变换
+	Po(s)	正交投影	平行投影至一平面或一锥体
+	Pp(s)	透视投影
+	slerp(q, r, t)	slerp transform		建立一四元数的插值函数
+
+</ul>
+	
+<p>
+4.1 Basic Transform
+</p>
+<ul>
+<li>
+基本变换 translation, 旋转, 缩放, 切边, 转换链接(transform concatenation), 缸体变换, normal transform, 逆变换.
+
+<li>
+orientation matrix 是一个旋转矩阵.
+
+<li>
+trace 定义 p898
+
+<ul>
+<li>
+一个矩阵M的trace, 表示为 tr(M), 为一个矩阵对角线元素的和.
+
+<li>
+旋转矩阵3x3中, tr(R) = 1 + 2cos(a)
+
+</ul>
+<li>
+旋转矩阵的行列式为1, 且相互正交.
+
+<li>
+uniform(isotropic) scaling, nonuniform(anisotropic) scaling.
+
+<li>
+实现 uniform scaling方法, 除了修改m11, m22, m33元素, 还可以通过修改m44元素来实现. 只需要是缩放的倒数放在该处即可实现uniform scaling. 不过如果后面有 homogenization 操作, 由于产生除法所以很没有效率
+
+<li>
+缩放矩阵, 如果s为辅助, 则表示为反射矩阵或者镜像矩阵. 注意反射矩阵会导致一个三角形的顶点顺序由逆方向变为正方向从而导致错误的光照和 backface culling. 检查一个矩阵是否有反射, 只需要检查 3x3矩阵的行列式是否小于0.
+
+<li>
+沿任意基本坐标系进行缩放的变换, 有三个轴fx, fy, fz表示进行缩放的标准轴, 具体方式见 P59
+
+<li>
+Shearing(切边)用于扭曲整个场景产生一个迷幻(psychedelic)的效果或者根据jittering创建一个 fuzzy reflection.
+
+<li>
+有六个基本切变矩阵: Hxy(s), Hxz(s), Hyx(s), Hyz(s), Hzx(s), Hzy(s), 第一个下标表示那个坐标被改变,第二个下标表示用于改变其他坐标的坐标
+
+<li>
+这个切变矩阵和3D数学图形基础的切边不同, 3D数学图形基础是一个坐标改变两个坐标.
+
+<li>
+Hij(s)的逆操作为 Hij(-s)
+
+<li>
+注意切变矩阵的行列式 |H| = 1, 便是模型在切边前后的体积不变
+
+<li>
+变换矩阵的乘法, 次序很重要.
+
+<li>
+刚体变换(rigid-body transform), 变换前后保持长度, 角度, 和旋向性(handedness)
+
+<li>
+与其他的转换不同, 法线的转换需要乘以伴随矩阵的转置矩阵. 伴随矩阵能够保证存在, 但是法线不能保证在之后仍然为单元长度, 所以需要单元化!
+
+<li>
+法线的转换是乘以变换矩阵逆矩阵的转置矩阵. 由于法线是向量, 所以平移矩阵不影响法线. 需要关心的是左上3x3的矩阵. 均匀缩放只影响法线的长度. 剩下的就是旋转矩阵, 由于旋转矩阵的逆矩阵就是转置矩阵, 转置矩阵的转置矩阵就是原矩阵. 所以直接使用原来的旋转矩阵进行变换. 如果只有平移和旋转矩阵, 则法线不需要进行单元化. 如果是均匀缩放, 则最后的法线直接除以该缩放因子, 可以将除以缩放因子的操作直接在法线变换矩阵中进行.
+
+<li>
+计算逆矩阵:
+
+<ul>
+<li>
+如果矩阵只是一些简单变换的相连, 则通过转换参数和改变矩阵次序来求出逆矩阵. 例如M=T(t)R(a), 则M' =R(-a)T(-t)
+
+<li>
+如果矩阵是正交的, 则逆矩阵为其转置矩阵
+
+<li>
+如果不知道具体情况, 则使用伴随矩阵. 可用Cramer'rule(常用), LU decomposition, Gaussian elimination 来计算逆矩阵
+
+</ul>
+<li>
+如果只是对向量进行变换, 则逆矩阵的计算仅仅考虑左上的3x3矩阵.
+
+</ul>
+
+<p>
+4.2 Special Matrix Transforms and Operations
+</p>
+<ul>
+<li>
+Euler Transform: head(沿着y正轴), pitch(沿着x正轴), roll(沿着z负轴). 欧拉变换是三个矩阵的长发. E(h,p,r)=Rz(r),Rx(p)Ry(h)
+
+<li>
+万向锁问题, 旋转一定的角度造成一个自由度缺失. 例如E(h, p, r) 中的p为Pi/2 大小, 则其中的 h, r则会合并为一个, r为多余的度.
+
+<li>
+hairy ball theorem
+
+<li>
+Euler角可以使用其他的次序进行旋转, 例如 x/y/z次序, z/x/y次序用于动画, z/x/z次序用于动画和物理. 对于z/x/z, 当绕x轴旋转Pi角度时就会产生万向锁.
+
+<li>
+两个 欧拉角的插值很难实现
+
+<li>
+从一个正交矩阵中得到欧拉参数 h, p, r.
+
+<li>
+matrix decomposition --- 返回一个连续矩阵(concatenated matrix`)中里面不同的变换矩阵.
+
+<li>
+matrix decomposition 返回一系列变换的原因:
+
+<ul>
+<li>
+提取一个对象的缩放因子
+
+<li>
+返回特定系统需要的变换.
+
+<li>
+决定一个模型是否仅仅需要刚体变换
+
+<li>
+动画中关键帧的插值
+
+<li>
+从一个旋转矩阵中移除切变.
+
+</ul>
+<li>
+我们已经有了连个 matrix decomposition, 从一个刚体变换中得到平移矩阵和旋转矩阵, 从一个正交矩阵中得到欧拉角. 从4x4矩阵的最后一列得到平移矩阵, 从矩阵的行列式是否小于0得到其是否含有镜面变换. 从矩阵中分离出旋转矩阵, 缩放矩阵, 切变矩阵需要更多的工作. 
+
+<li>
+Thomas 和 Goldman 提出了方法用于变换的各种类来解决matrix decomposition问题. Shoemake 改进了他们的方法用于放射矩阵. 且他的算法独立于相关的框架, 并分解(decompose)一个矩阵得到刚体变换.
+
+<li>
+围任意轴旋转, 假设有旋转轴 r(rx, ry, rz), 旋转角度a. 首先球基本坐标系r, s, t, 第二个轴s, 方法为取出r中最小的坐标设为0, 另外两个坐标交换, 并将第一个符号取反. 这样s点乘t 等于0, 第三个轴t由这两个轴叉乘得到. 三个轴作为行向量组成矩阵M, 表示从基本轴r, s, t旋转至标准基本轴. 三个轴作为列向量组成矩阵M', 表示从标准基本轴旋转至基本轴r, s, t. 这样得到矩阵 M'Rx(a)M, 就可以进行任意轴的旋转
+
+<li>
+求任意轴的旋转矩阵还有Goldman创建的方法, 具体见3D数学基本这本书.
+
+</ul>
+
+<p>
+4.3 Quaternions
+</p>
+<ul>
+<li>
+四元数主要用于旋转和方位. 一个旋转轴和旋转角度的表示方法很容易转换至一四元数. 且四元数可用于方位间的插值.
+
+<li>
+四元数的定义:
+
+<ul>
+<li>
+q = (qv, qw) = iqx + jqy + kqz + qw = qv + qw
+
+<li>
+qv = iqx + jqy + kqz = (qz, qy, qz)
+
+<li>
+i<sup><small>2 = j</small></sup>2 = k^2 = -1, jk = -kj = i; ki = -ik = j; ij = -ji = k;
+
+<li>
+qw成为实部, qv称为虚部
+
+<li>
+q和i的乘法: qi = (qv X rv + rwqv + qwrv, qwrw - qv*rv), X表示叉乘, *表示点乘
+
+<li>
+q和i的加法: q+r = (qv+rv, qw+rw)
+
+<li>
+q的共轭: q^* = (-qv, qw)
+
+<li>
+值: n(q) = (qx<sup><small>2 + qy</small></sup>2 + qz<sup><small>2 + qw</small></sup>2)^(1/2) (平方根)
+
+<li>
+单元四元数: i = (0向量, 1)
+
+<li>
+四元数的逆: q<sup><small>-1 = q</small></sup>*/n(q)^2; --- q的共轭除以q模的平方
+
+<li>
+共轭规则 (q<sup><small><strong>)</small></sup></strong> = q; (q + r)<sup><small>* = q</small></sup>* + r<sup><small><strong>; (qr)</small></sup></strong> = r<sup><small><strong>q</small></sup></strong>
+
+<li>
+模规则: n(q^*) = n(q); n(qr) = n(q)n(r)
+
+<li>
+乘法的线性 p(sq + tr) = spq + tpr;  (sp + tq)r = spr + tqr;  p,q, r为四元数, s,t为标量.
+
+<li>
+乘法的结合律: p(qr) = (pq)r
+
+<li>
+单元四元数 q表示 n(q) = 1, 表示方法为 q = (sin(a)uq, cos(a)); 其中uq为单元三元素向量, 单元四元数可用于创建旋转和方位.
+
+<li>
+对数: log(q) = (a)uq
+
+<li>
+指数: q^t = sin(at)uq + cos(at)
+
+</ul>
+<li>
+单元四元数q, 四元数p表示进行的旋转.qp(q^-1) 表示可以进行任意轴的旋转.
+
+<li>
+-q和q的区别, 旋转相同的量, 但是轴的方向相反
+
+<li>
+两个单元四元数q,r, 用q'表示q的共轭, 则, r(qpq')r' = (rq)p(rq)/ = cpc', c = rq, 为单元四元数, 表示单元四元数q和r的连接
+
+<li>
+四元数转换至矩阵的公式和矩阵转换至四元数的公式见3D数学基础和笔记.
+
+<li>
+四元数的插值工具 s(q, r, t) = (rq<sup><small>-1)</small></sup>tq, 其中r,q为四元数. 更好的方法 slerp(q,r,t)=sin(a(1-t))*q/sin(a)+sin(at)*r/sin(a), 其中cos(a)=qxrx+qyry+qzrz+qwrw
+
+<li>
+由于插值算法包含三角函数运算, 效率不高, 可使用Li[771,772]来进行更快的计算方法.
+
+<li>
+一个曲线, 拥有恒定的速度和加速度为0, 则成为 geodesic 曲线.
+
+<li>
+对于多个四元数进行插值, 每一次使用下一个四元数时, 图形可能会产生巨大的变换, 造成很陡的曲线. 解决方法可以使用某种类型的spline(样条), 具体实现可见3D数学基础p159
+
+<li>
+求方向s至方向t的旋转路径, 1) 单元化s和t, 求出u, u=sxt/|sxu| (叉乘)  2) e = s*t = cos(2a), |sxt|=sin(2a), 而后得到四元组q=(sinauq, cosa), 2a为向量s至向量t的旋转角度, 具体公式见笔记
+
+</ul>
+
+<p>
+4.4 Vertex Blending
+</p>
+<ul>
+<li>
+前肢和上臂之间的关节模拟, 使用Vertex blending, 注意缺点在关节的内侧会有折叠部分, OpenGL Superbible有这部分代码的实现.
+
+<li>
+vertex blending 还有其他的名字, skinning, enveloping 和 skeleton-subspace 变形. 最简单的形式, 前肢和上臂各自完成自己的运动. 在关节处则通过塑性"皮肤"来连接, 该处皮肤的顶点分成两部分, 分别由前肢和上臂的转换所影响. 这个技术有时也称为 stitching. 更复杂的形式中, 关节处的顶点同时被多个转换矩阵进行转换, 然后将结果通过权重值混合. 对于这样骨骼上的mesh, 成为skin(over the bones).
+
+<li>
+图4.11: 一个顶点混合的真实例子. 左上角图像显示了一个伸展手臂的两个骨头. 右上角显示了mesh. 图上的颜色显示该顶点被哪个骨头控制. 下面的图像显示了手臂上着色的mesh. (shaded mesh)
+
+<li>
+Mohr和Gleicher[889]提出了一个想法, 通过添加额外的关节实现类似 muscle bulge的效果. James 和 Twigg[599]则讨论animation skinning using bones that can squash and strtch.
+
+<li>
+Vertex Blending使用的公式见笔记
+
+<li>
+mesh中的顶点可以存储于静态缓存, 而后一次发送给GPU并重复使用. 在每一帧中, 只有bone matrices发生变化, vertex shader则计算它们作用于mesh上顶点的效果. 这种方式, 可以最小化GPU中处理和传输的数据, 并有效率的渲染这些mesh. 当整个模型的bone matrics可以统一使用时很简单. 否则整个默病必须进行分割并写复制某些bones.
+
+<li>
+使用 vertex shader时, 可以设置权重值在[0, 1]范围之外, 或者不需要权重总和为1. 这只能用于一些混合算法, 如 morph targets.
+
+<li>
+vertex blend 的缺点是会产生折叠, twisting 和 self-intersection, 一个最好的解决方法是使用 [dual quaternions]. 该方法保持原有转换的rigidity效果, 并避免"糖果纸"的扭曲形状出现在肢体上. 代价是linear skin blending的1.5倍以下, 但产生了极好的效果. 有兴趣者可查看其论文.
+
+</ul>
+
+<p>
+4.5 Morphing
+</p>
+<ul>
+<li>
+用于动画, 一个t0时刻的3维模型和t1时刻的模型, 在t0和t1时间内, 使用一些算法能够得到其之间的"混合"模型用于过渡. 例子见图4.13
+
+<li>
+Morphing 有两个主要问题: vertex correspondence(顶点对应) 问题和 interpolation 问题.
+
+<li>
+假设两个模型之间是点点对应的, 计算morph vertex则很简单, t属于[t0, t1], p0和p1则是两个模型对应的点, 则 s = (t-t0)/(t1-t0), m = (1-s)p0 + sp1. 关于面部表情的动画, 两个表情之间有不同的顶点. 则使用 neutral face, 对不同的顶点使用"加法"操作, 加正数权重值得到一个表情, 加负数权重值得到另一个一个表情.
+
+<li>
+对于面部表情动画, 假设使用一个neutral模型, 标记为N, 使用一系列的表情姿势, 记为Pi i=1, 2, ... k. 有k个表情姿势. 在预处理的过程中, 计算"difference faces"(差异表情) Di = Pi - N. 而后我们可以通过公式得到morphed model M. 见笔记本.
+
+<li>
+morph target 是一个非常有用的技术, 使得动画制作者对动画可进行更多的控制. Lewis et al.[770] 介绍了 pose-space deformation, 组合了 vertex blending 和 morph targets 技术. 硬件支持DX10使用stream-out和其他提升的功能来允许更多的target用于单个模型和单独在GPU中计算effects.
+
+</ul>
+
+<p>
+4.6 Projections
+</p>
+<ul>
+<li>
+在渲染之前, 所有场景中的objects都必须投影至某种类型的平面或者某种类型的锥体(volume)内, 而后执行裁剪和渲染.
+
+<li>
+向量的w成分用于区分方向和点, 之前的转换矩阵最下面一行通常为(0, 0, 0, 1), 透视投影矩阵的最下面一行包含操作数字和进行齐次处理. 正交投影中w成分没有任何作用.
+
+<li>
+正交投影公式 见笔记, 仅仅抛弃z坐标.
+
+<li>
+正交化更常用的矩阵记为 six-tuple (l, r, b, t, n, f) 分别为, 左, 右, 底, 顶, 近, 远平面, 该矩阵通过缩放和平移AABB(由这六个平面组成)得到一围绕原点且轴对齐的立方体. 该AABB的最小角坐标为(l, b, n), 最大角坐标为(r, t, f).注意其中 n &gt; f. 不过在Opengl的glOrtho函数中, n &lt; f, 可以看成其内部进行了求负操作, 或者看成视觉坐标系中距离原点(眼)的距离. 在OpenGL中, 该轴对齐立方体的最小坐标为(-1, -1, -1), 最大坐标为(1, 1, , 1), 而DX为(-1, -1, 0)至(1, 1, 1). 该立方体称为canonical view volume. 其中的坐标称为 normalized device coordinates(单元化设备坐标), 转换成 canonical view volume 使得裁剪更有效率. 最后的转换矩阵见笔记 公式 4.60.
+
+<li>
+透视投影, 笔记有透视投影矩阵详细的求解
+
+<li>
+透视投影Z坐标和近平面远平面以及深度值变化的关系, 见笔记. 深度值的变化并不是线性变化.
+
+</ul>
+
+<p>
+Further Reading and Resources
+</p>
+<ul>
+<li>
+Farin and Hansford's &lt;The Geometry Toolbox&gt;[333], Lengyel's &lt;Mathematrics for 3D Game Programming and Computer Graphics&gt;[761] 用于建立关于矩阵的直觉了解.
+
+<li>
+透视投影则有 Hearn and Baker[516], Shirley[1172], Watt and Watt[1330]. Foley et al.[348, 349], 矩阵的基础, Graphics Gems系列[36, 405, 552, 667, 982]则有不同转换的相关算法. Golub and Van Loan's &lt;Matrix Computations&gt;[419] 则是用来开始矩阵技术的系列学习.
+
+<li>
+<a href="http://www.realtimerendering.com">http://www.realtimerendering.com</a> 有许多转换的代码, 包括四元数.
+
+<li>
+要了解更多 skeleton-subspace deformation/vertex blending and shape interpolation 阅读 Lewis et al's SIGGRAPH paper.
+
+<li>
+Hart et al.[507]and Hanson[498] 提供了四元数的可视化, Vlachos and Isidoro 提供了四元数的插值. Dougan[276]则是关于在一坐标系统沿着一曲线计算四元数插值的问题.
+
+<li>
+Alexa[16] and Lazarus &amp; Verroust[743] 则有许多morphing技术的介绍
+
+</ul>
+
+</body>
+</html>

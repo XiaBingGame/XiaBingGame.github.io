@@ -1,0 +1,82 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../style.css" />
+    <title>DataFileStruct</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="../index.html">首页</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<p>
+一. 纹理
+</p>
+<ul>
+<li>
+DirectX 和 OpenGL 中创建纹理所需的数据都是未经过压缩的, 所以需要解压 JPG, TGA, PNG. 利用第三方库来解压数据
+
+<li>
+类 Codec --&gt; ImageCodec --&gt; (TGACodec, PNOCodec, JPEGCodec)
+
+<li>
+外部文件通过各类Decode, 把数据输出到Data Chunk中, 然后Image通过Load函数把Data Chunk作为参数创建Image类, Direct和OpenG再通过Image创建纹理
+
+</ul>
+<p>
+二. 模型
+</p>
+<ul>
+<li>
+Counter Strike中的模型文件MDL, MDL是真正的骨骼动画. 其顶点数据只有一帧, 其余帧通过骨骼动画来确定
+
+<li>
+骨骼定义:
+		struct sBone
+		{
+			char name[32];
+			struct sBone *parent;
+			float matrix[3][4];
+		};
+		MDL中动作成为 sequence, 每个动作又有许多关键帧组成, 关键帧通过 skeleton 来表示, 记录skeleton中每块bone的transform
+		struct sTransform
+		{
+			float pos[3];
+			float rot[3];
+		};
+		struct sSequence
+		{
+			char name[32];
+			float fps;
+			int numframes;
+			sTransform *frames;
+		};
+		transform 的数目 = 动作里帧的数目 X 骨骼里骨头都数目
+		模型数据的数据结构
+		struct sModel
+		{
+			int currentseq;		// 当前动作
+			float currentframe;		// 当前所在的关键帧
+			int numbones;	// 在真个骨架中骨头的数目
+			sBone *bones;	// 指向bone的数据
+			sSequence *seqs;	// 指向动作数据
+			int numverts;		// 定点的个数
+			sVertex *verts;		// 指向顶点数据
+			int numtriangles;	// 三角形的个数
+			sTriangle *triangles;
+			int numtexture;
+			sTexture *textures[MAX_TEXTURES];
+		};
+
+</ul>
+
+    </div>
+</body>
+</html>

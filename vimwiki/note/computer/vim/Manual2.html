@@ -1,0 +1,1146 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../style.css" />
+    <title>Manual2</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<h1 id="toc_1">第6章 使用语法高亮</h1>
+<ul>
+<li>
+打开色彩
+
+<ul>
+<li>
+:syntax enable
+
+</ul>
+<li>
+没有色彩或颜色错误
+
+<ul>
+<li>
+确保 TERM变量设置正确
+
+<ul>
+<li>
+setenv TERM %term-color
+
+</ul>
+<li>
+:set filetype        查看当前文件类型
+
+<li>
+:set filetype=fortran        手工设置文件类型
+
+<ul>
+<li>
+要知道哪些文件类型可用, 查看 $VIMRUNTIME/syntax目录, GUI版本可查看Syntax菜单, 可通过|modeline|设置文件类型.
+
+</ul>
+<li>
+自己写一个语法高亮文件, 参考|mysyntaxfile|
+
+<li>
+'background'选项 改变对比度
+
+<ul>
+<li>
+:set background=dark        :set background=light        放在":syntax enable"命令选项之前或使用":syntax reset"命令
+
+</ul>
+</ul>
+<li>
+不同的颜色
+
+<ul>
+<li>
+colors目录有颜色方案
+
+<li>
+:runtime syntax/colortest.vim
+
+<ul>
+<li>
+查看季终不同的颜色组合
+
+</ul>
+</ul>
+<li>
+有色或无色
+
+<ul>
+<li>
+:syntax clear        关闭语法高亮
+
+<li>
+:syntax off            彻底关闭语法高亮
+
+<li>
+:syntax manual        只对某些文件施以语法高亮
+
+<li>
+:set syntax=ON        为当前缓冲区打开语法高亮功能
+
+</ul>
+<li>
+彩色打印
+
+<ul>
+<li>
+:hardcopy            打印文件
+
+<li>
+影响打印的选项 'printdevice'  'printheader'  'printfont'  'printoptions'
+
+<li>
+v100j:hardcopy        打印部分行
+
+<li>
+:source $VIMRUNTIME/syntax/2html.vim        当前文件转到HTML格式
+
+</ul>
+<li>
+进一步的学习
+
+<ul>
+<li>
+|usr44.txt|
+
+</ul>
+</ul>
+
+
+<h1 id="toc_2">第7章 编辑多个文件</h1>
+<ul>
+<li>
+编辑另一个文件
+
+<ul>
+<li>
+:edit 命令 --- 关闭当前文件, 打开新的文件
+
+<li>
+错误提示可以查询帮助, 例如: :help E37
+
+<li>
+:write 命令 --- 保存该文件
+
+<li>
+:edit! 命令 --- 强行丢弃当前未保存文件, 编辑另一个文件
+
+<li>
+:hide edit foo.txt --- 如果你想要编辑另一个文件, 但暂时不想将当前文件已有的变化写入磁盘中, 可以隐藏它.
+
+<li>
+隐藏文件的细节见 22.4
+
+</ul>
+<li>
+文件列表
+
+<ul>
+<li>
+可以编辑一系列文件, 例如: vim one.c two.c three.c
+
+<ul>
+<li>
+用该命令启动 vim, 则只有第一个文件可见.
+
+</ul>
+<li>
+:next --- 查看下一个文件, 可跟命令计数, 例如 :2next
+
+<li>
+:next! 强行进入下一个文件
+
+<li>
+:wnext --- 保存并进入下一个文件
+
+<li>
+标题可以显示你使用的是哪一个文件, 例如 (2 of 3) 这样的提示.
+
+<li>
+:args --- 当前列表有哪些文件, arguments 的缩写.
+
+<li>
+:previous --- 回到前一个文件, 可跟命令计数
+
+<li>
+:wprevious --- 保存并回到前一个文件
+
+<li>
+:last --- 移动至最后一个文件
+
+<li>
+:first --- 移动至第一个文件
+
+<li>
+:set autowrite --- 自动存盘, 在文件列表间跳转时自动保存. :set noautowrite 关闭自动保存.
+
+<li>
+:args five.c six.c seven.h --- 不用重新启动vim, 重新打开一个新的文件列表. :args! 直接打开新的文件列表而不保存.
+
+<li>
+:args *.txt --- 使用通配符
+
+<li>
+当你使用文件列表时, 默认你要编辑所有的文件, 当你没有编辑列表中最后一个文件而退出时, 会得到错误 E173 提示.
+
+<li>
+CTRL-^ --- 两个文件间快速切换
+
+<li>
+`" --- 带你到上次离开该文件时光标所在的位置
+
+<li>
+`. --- 带到最后一次对文件作出改动的位置
+
+<li>
+使用大写字母做标记时则该标记为全局标记, 可以用于多个文件之间. 小写字母的标记仅用于单个文件. '+标记 则会跳转到该标记所在位置.
+
+<li>
+:marks M --- 查看该标记所代表的位置, :marks MCP --- 查看几个标记的位置.
+
+<li>
+"CTRL-O, CTRL-I --- 跳到较早的位置和较新的位置, 如果没有放置标志的话.
+
+</ul>
+<li>
+备份
+
+<ul>
+<li>
+:set backup        设置备份文件
+
+<li>
+:set backupext=.bak        设置备份文件后缀, 默认后缀为~.
+
+<li>
+'backupdir' 选项        备份文件目录, 默认和文件相同路劲.
+
+<li>
+如果没有设置 backup, 而设置了 writebackup, 则当文件写入完全成功后立刻删除备份.
+
+<li>
+:set patchmode=.orig    保存原始文件, 为空的话, 不会被额外保存, 保存文件的最初版本, 因为写入操作则会自动保存备份文件, 而非最初的文件版本.
+
+</ul>
+<li>
+在文件间复制粘贴
+
+<ul>
+<li>
+"v" 进入visual模式, 光标移动到复制文件的末尾, "y" 复制, "p" 粘贴
+
+<li>
+"V"    进入visual模式整行整行地选择文本.
+
+<li>
+"CTRL-V"/Win下使用"C-Q" 选择矩形块的内容
+
+<li>
+"Y" 选择当前行单行的内容
+
+<li>
+"p" 键则是在光标后粘贴, "P"键则是在光标前粘贴
+
+</ul>
+</ul>
+    
+<ul>
+<li>
+寄存器是Vim用来存放文本的地方, 用a到z 26个字母作为寄存器名字.
+
+<ul>
+<li>
+"fyas --- 复制到名为f的寄存器中, "f 表示复制内容到寄存器"f, yas用于复制一行的内容.
+
+<li>
+放置寄存器的命令必须刚好在yank命令之前.
+
+<li>
+"l3Y --- 复制3行内容至l寄存器.
+
+<li>
+"CTRL-Vjjww"by --- 复制一块内容给寄存器b.
+
+<li>
+"fp --- 粘贴 p 寄存器内容.
+
+<li>
+"wdaw --- 删除一个单词, 并保存该单词到w寄存器, 删除同样也可用于寄存器, 注意 w 刚好位于 d 之前.
+
+<li>
+:write &gt;&gt; logfile  --- 当前文件的内容追加到文件"logfile"
+
+<ul>
+<li>
+如果想只是追加几行内容, 在命令":write"之前进入Visual模式选定要写入的内容
+
+</ul>
+</ul>
+</ul>
+
+<ul>
+<li>
+查看文件
+
+<ul>
+<li>
+只读方式运行Vim: vim -R file
+
+<li>
+! 命令对上面的只读文件仍有效
+
+<li>
+强制性避免对文件进行修改: vim -M file
+
+<li>
+使用命令去掉保护
+
+<ul>
+<li>
+:set modifiable
+
+<li>
+:set write
+
+</ul>
+</ul>
+<li>
+更改文件名
+
+<ol>
+<li>
+:edit copy.c  编辑
+
+<li>
+:saveas move.c  修改后另存为其他文件
+
+<li>
+:file move.c 标记该文件"not edited(非编辑的)", 告知这个文件非你开始编辑的文件
+
+</ol>
+</ul>
+
+<h1 id="toc_3">第8章 分割窗口</h1>
+<h2 id="toc_3.1">分割窗口</h2>
+<ul>
+<li>
+打开一个新的窗口 --- :split, 分割两个窗口, 光标位于上面的窗口, 允许你两个窗口查看相同的文件
+
+<li>
+C-W w 跳转窗口, C-w C-w 做同样的事情.
+
+<li>
+关闭一个窗口 --- :close, 该命令不同于其他退出命令, 可以避免关闭 Vim.
+
+<li>
+关闭其他的窗口 --- :only
+
+</ul>
+<h2 id="toc_3.2">分割其他文件的窗口 </h2>
+<ul>
+<li>
+:split two.c --- 分割窗口打开其他文件
+
+<li>
+:new --- 分割一个空白窗口
+
+</ul>
+<h2 id="toc_3.3">窗口大小</h2>
+<ul>
+<li>
+":split" 命令可以有数字参数, 表示新窗口的高度. 例如 :3split alpha.c 新窗口高度为3行
+
+<li>
+鼠标移动分割栏可以改变窗口大小
+
+<li>
+C-W + 增加窗口的大小, C-W - 减少窗口的大小. 可以使用数字计数, 例如 "4 C-W +"增加窗口4行高度.
+
+<li>
+设置窗口高度为一具体行数: {height}CTRL-W _
+
+<li>
+'winheight' 选项设置一个窗口的想要的最小高度, 'winminheight' 为硬编码的最小宽度. 同理 'winwidth', 'winminwidth'
+
+<li>
+'equalalways' 使得窗口大小相等.
+
+</ul>
+<h2 id="toc_3.4">垂直分割</h2>
+<ul>
+<li>
+:vsplit --- 相同文件的垂直分割窗口
+
+<li>
+:vnew --- 垂直分割新窗口
+
+<li>
+:vertical --- 垂直分割窗口命令
+
+<li>
+窗口之间移动: C-W h/j/k/l 各方向切换窗口, C-W t/b 顶部和底部窗口
+
+</ul>
+<h2 id="toc_3.5">移动窗口</h2>
+<ul>
+<li>
+C-W K(大写) --- 移动窗口至顶部, 如果是垂直分割的窗口, 则会移动到顶部且宽度等于VIM窗口宽度.
+
+<li>
+C-W H 最左边, C-W J 最底部, C-W L 最右边
+
+</ul>
+<h2 id="toc_3.6">用于所有窗口的命令</h2>
+<ul>
+<li>
+:qall --- 退出所有窗口
+
+<li>
+:wall --- 保存所有窗口
+
+<li>
+:wqall --- 保存且退出
+
+<li>
+:qall! --- 强行退出
+
+<li>
+vim 打开多个文件, 每个文件一个子窗口, 例如: vim -o one.txt two.txt three.txt
+
+<ul>
+<li>
+-O 则是垂直打开窗口.
+
+</ul>
+<li>
+当 vim 已经运行, :all 命令打开参数列表中的每个文件在子窗口中. :vertical all 则是垂直分割.
+
+</ul>
+<h2 id="toc_3.7">使用vimdiff查看不同</h2>
+<ul>
+<li>
+在shell中使用命令: vimdiff main.c~ main.c
+
+<li>
+在折叠的那些行里, 使用 "zo" 和 "zc" 打开和关闭折叠行
+
+<li>
+在 vim 中显示不同:
+<pre>
+:edit main.c
+:vertical diffsplit main.c~
+</pre>
+
+<ul>
+<li>
+如果忽略 vertical 部分, 则会水平分割窗口
+
+</ul>
+<li>
+如果你有一个 patch 或 diff 文件, 你可以使用第三种方式开启 diff 模式, 首先编辑要应用 patch 的文件, 而后告知 vim patch 的文件名
+<pre>
+:edit main.c
+:vertical diffpatch main.c.diffss
+</pre>
+
+<ul>
+<li>
+patch 文件只能有一个 patch 用于你正编辑的文件
+
+<li>
+patching 只会用于vim中文件的拷贝. 而你硬盘的文件则会保持未修改(直到你决定写入文件)
+
+</ul>
+<li>
+默认窗口绑定, 滚动时会同步滚动, 如果不想要这个功能, 可以使用命令 :set noscrollbind
+
+<li>
+如果你禁止了文本的折叠, 则可以使用 ]c/[c 来跳转文本的不同之处, 前面可以添加数字.
+
+<li>
+你可以将一个窗口的文本移动至另一个窗口中 --- :diffupdate
+
+<li>
+将当前窗口所在光标的不同处移动至另外一个窗口中 --- dp(diff put)
+
+<ul>
+<li>
+相反的操作则是 --- do(diff obtain)
+
+</ul>
+</ul>
+<h2 id="toc_3.8">Various</h2>
+<ul>
+<li>
+'laststatus' 选项可用于设置最后一个窗口何时有一个状态行
+
+<ul>
+<li>
+0 --- 从不
+
+<li>
+1 --- 只有当有分割窗口时(从不)
+
+<li>
+2 --- 永远
+
+</ul>
+<li>
+许多编辑其他文件的命令都有一个分割窗口的变形. 对于命令行命令则通过前缀"s"实现.
+
+<ul>
+<li>
+例如: ":tag" 表示跳转至一个 tag, ":stag" 则分割一个窗口且跳转至一个tag. 例子如下:
+
+</ul>
+<li>
+对于普通命令, 则在之前使用 C-W 命令. 
+
+<ul>
+<li>
+C-^ 跳转至另外一个轮换文件.
+
+<li>
+C-W C-^ 分割窗口且编辑轮换文件
+
+</ul>
+<li>
+'splitbelow' 选项可用于设置新的窗口出现在当前窗口之下, 'splitright' 则垂直的新窗口出现在右边
+
+<li>
+当分割窗口时, 可在之前加上一个 modifier 命令告知窗口在何处出现:
+
+<ul>
+<li>
+:leftabove {cmd} --- 当前窗口的左方右上方
+
+<li>
+:aboveleft {cmd} --- 同上
+
+<li>
+:rightbelow {cmd} --- 当前窗口的右方或下方
+
+<li>
+:belowright {cmd} --- 同上
+
+<li>
+:topleft {cmd} --- vim窗口的顶部或左部
+
+<li>
+:botright {cmd} --- vim窗口的底部或右部
+
+</ul>
+</ul>
+<h2 id="toc_3.9">Tab 页面</h2>
+<ul>
+<li>
+创建一个新的tab页编辑一个文件 --- :tabedit thatfile
+
+<li>
+"gt" 命令 --- tab 之间移动
+
+<li>
+:tab split --- 创建一个tab 页面, 其有一个窗口编辑之前所在窗口相同的 buffer
+
+<li>
+我们可以将 ":tab" 放在任意 Ex 命令之前打开一个窗口. 例如 :tab help gt --- 则会在新的tab页面中显示用于"gt"的帮助文本
+
+<li>
+tabonly 命令 --- 关闭当前tab之外的所有tab页面.
+
+</ul>
+
+<h1 id="toc_4">第9章 使用 GUI</h1>
+<h2 id="toc_4.1">GUI各部分 </h2>
+<ul>
+<li>
+窗口标题的含义
+
+<ul>
+<li>
+- 文件不能被修改
+
+<li>
++ 文件含修改内容
+
+<li>
+= 文件只读
+
+<li>
+=+ 文件只读, 含修改内容.
+
+</ul>
+<li>
+:set guioptions-=T 关闭工具栏
+
+<li>
+:set guioptions+=l 在左边添加滚动条
+
+</ul>
+<h2 id="toc_4.2">使用鼠标</h2>
+<ul>
+<li>
+:behave xterm --- 鼠标工作类似于X Window的鼠标; :behave mswin --- 鼠标工作类似于微软系统的鼠标.
+
+<li>
+微软系统鼠标工作方式:
+
+<ul>
+<li>
+左键点击 --- 放置光标
+
+<li>
+左键拖曳 --- 选择模式选择文本
+
+<li>
+按下shift键且左键点击 --- 延伸选择的文本
+
+<li>
+中键点击 --- 粘贴剪贴板的文本
+
+<li>
+右键点击 --- 弹出菜单
+
+</ul>
+<li>
+相关选项
+
+<ul>
+<li>
+'mouse' --- Vim使用何种模式的鼠标
+
+<li>
+'mousemodel' ---- 鼠标点击有什么效果
+
+<li>
+'mousetime' ---- 双击的时间间隔
+
+<li>
+'mousehide' --- 当输入时隐藏鼠标
+
+<li>
+'selectmode' --- 鼠标是否开始可视化或选择模式
+
+</ul>
+</ul>
+<h2 id="toc_4.3">剪贴板 </h2>
+<ul>
+<li>
+两个地方用于保存, 一个是current selection, 一个是 real clipboard. 寄存器 "* 对应于 current selection.
+
+<li>
+例如粘贴current selection的内容: "*P
+
+<li>
+"+ 寄存器则用于剪贴板, 例如: "+y$ --- 复制当前光标直至行尾的内容到剪贴板内.
+
+</ul>
+<h2 id="toc_4.4">选择模式</h2>
+<ul>
+<li>
+选择模式和可视化模式的区别: 选择模式中, 当输入文字时, 会替换选择的文本.
+
+<li>
+允许选择模式 --- :set selectmode+=mouse
+
+<li>
+选择模式不能使用hjkl移动光标, 但可以使用 &lt;S-Left&gt; 等键代替. 还可使用 &lt;S-End&gt;, &lt;S-Home&gt;.
+
+<li>
+设置 'selectionmode' 选项来设置选择模式的工作方式.
+
+</ul>
+
+
+<h1 id="toc_5">第10章 大刀阔斧</h1>
+<h2 id="toc_5.1">10.1 记录和回放命令 </h2>
+<ul>
+<li>
+"."命令会重复之前的改变(change)
+
+<li>
+记录命令:
+
+<ol>
+<li>
+"q{register}" 命令开始记录键盘输入至寄存器{register}中. 寄存器名必须在 a-z 之间.
+
+<li>
+输入你的命令
+
+<li>
+键入 q 退出记录.
+
+</ol>
+<li>
+"@{register}" --- 执行刚才记录的宏命令, 其前可以加上数字表示执行次数.
+
+<li>
+如果一个寄存器的命令刚执行了一次, 可以用 "@@" 再执行一次.
+
+<li>
+和"."的不同: (1) "." 只能记录一个变化. (2) "." 只能记录最后的变化. (3) 你可使用26个寄存器记录命令.
+
+<li>
+用于记录的寄存器与yank和删除命令一起工作, 这允许你和其他的命令混合记录以操作寄存器.
+
+<li>
+假设有寄存器 n 记录命令, 想修改该寄存器:
+
+<ul>
+<li>
+G	--- 文件尾
+
+<li>
+o&lt;Esc&gt; --- 创建空行
+
+<li>
+"np --- 将寄存器n的文本放置在光标处.
+
+<li>
+{edits} --- 改变想要改变的命令.
+
+<li>
+0 --- 回到行首
+
+<li>
+"ny$ --- 将修改后的命令放回寄存器n中
+
+<li>
+dd --- 删除掉该行.
+
+</ul>
+<li>
+如果想要扩充一个寄存器的命令, 使用大写字母, 例如原先 c 寄存器里面含修改一个单词的命令, 现要扩充, 如下:
+<pre>
+qC/word&lt;Enter&gt;q
+</pre>
+
+<ul>
+<li>
+增加了一个单词查找.
+
+</ul>
+<li>
+扩充寄存器可以与yank和删除命令一起. 例如:
+<pre>
+"aY
+"AY
+...
+</pre>
+
+<ul>
+<li>
+第一行将一行的命令文本保存在寄存器a中
+
+<li>
+之后行的命令都将一行的命令扩充在寄存器a中
+
+</ul>
+</ul>
+
+<h2 id="toc_5.2">10.2 替换</h2>
+<ul>
+<li>
+":substitute" 命令允许你在所有行内执行字符串替换, 格式有 
+
+<ul>
+<li>
+:[range]substitute/from/to/[flag]
+
+<li>
+:substitute 可缩写为 :s
+
+<li>
+例如有命令 :%substitute/Professor/Teacher
+
+<li>
+% 命令表示应用于所有行上, :s 则只作用于当前行.
+
+<li>
+默认, ":substitute" 命令改变每行字符串的第一个出现处.
+<pre>
+Professor Smith criticized Professor Johnson today. 
+修改为:
+Teacher Smith criticized Professor Johnson today. 
+</pre>
+
+<li>
+为了改变每行所有字符串出现的地方, 加上 g(global)标签.
+
+<li>
+标签 p(print) 打印前该命令改变的最后一行
+
+<li>
+标签 c(confirm) 在执行每个替换之前确认, 确认符的含义如下:
+
+<ul>
+<li>
+y --- 改变
+
+<li>
+n --- 不改变
+
+<li>
+a --- All, 改变当前替换, 所有剩下的改变不需要进一步确认.
+
+<li>
+q --- 退出不再改变
+
+<li>
+l --- last, 改变当前替换而后退出.
+
+<li>
+C-E --- 向上滚动一行文本
+
+<li>
+C-Y --- 向下滚动一行文本
+
+</ul>
+</ul>
+<li>
+from 部分可以使用查找一样的模式, 例如替换行首的the
+
+<ul>
+<li>
+:s/^the/these/
+
+</ul>
+</ul>
+
+<h2 id="toc_5.3">10.3 命令范围</h2>
+<ul>
+<li>
+范围的最简单形式为 {number},{number}, 例如:
+<pre>
+:1,5s/this/that/g
+</pre>
+
+<ul>
+<li>
+行1到行5间做替换.
+
+</ul>
+<li>
+单个数字用于特定行
+<pre>
+:54s/President/Fool/
+</pre>
+
+<li>
+有些命令可以用于所有行, 可以让这些命令用于当前行, 只要用"."来执行. 例如 ":write"命令
+<pre>
+:.write otherfiless
+</pre>
+
+<li>
+第一行的行号永远是数字1, 如果想要最后一行, 可以使用 "$" 字符表示.
+<pre>
+:.,$s/yes/no/
+</pre>
+
+<li>
+"%" 等同于 "1,$"
+
+<li>
+在一个范围中使用一个模式, 例如只编辑一本书的一个章节.
+<pre>
+:?^Chapter?,/^Chapter/s=grey=gray=g
+</pre>
+
+<ul>
+<li>
+第一个 "?Chapter?" 查找当前位置之前匹配该模式的行. "/^Chapter/" 则是向后查找匹配的行
+
+<li>
+这里使用 "=" 代替斜号, 你也可以用斜号或者其他字符
+
+</ul>
+<li>
+可以给查找出来的行号加上偏移值, 例如上面的例子查找到后面的 Chapter 所在行再减去1, /Chapter/-1
+
+<ul>
+<li>
+你可以用任意的数字代替.
+
+<li>
+偏移值还可用于其他符号, 如 :.+3, $-5
+
+</ul>
+<li>
+可以使用记号代替行号. 例如 "mt" 和 "mb" 分别设置了两个标记表示两行, 则可用 :'t, 'b 
+
+<li>
+你可以选择 visual 模式下的文本, 命令 :'&lt;,'&gt; --- 则会选择被选择的那些行.
+
+<ul>
+<li>
+'&lt;, '&gt; 这两个mark是视觉化模式选择的起始和结束位置. 所以可以有如下命令 :'&gt;,$
+
+</ul>
+<li>
+如果你知道要改变的行数, 你可以输入一个数字加上":", 例如 "5:", 其等价于 :.,.+4
+
+</ul>
+
+<h2 id="toc_5.4">10.4 global命令</h2>
+<ul>
+<li>
+":global" 命令允许你发现一个模式的匹配, 而后在此处执行一个命令, 格式如下:
+
+<ul>
+<li>
+:[range]global/{pattern}/{command}
+
+<li>
+类似于替换, 只是用 {command} 代替替换
+
+<li>
+此处的命令只能是以冒号为开始的命令, 如果想要用普通模式的命令, 你可用 :normal 来实现.
+
+</ul>
+<li>
+举例, 修改C++风格注释内的"foobar"为"barfoo", 命令 :g+//+s/foobar/barfoo/g
+
+<ul>
+<li>
+":g" 是 ":global" 的缩写, 接下来两个+号封装了第一个模式"//", 而后使用 s 命令替换
+
+</ul>
+<li>
+默认 global 命令用于整个文件
+
+</ul>
+
+<h2 id="toc_5.5">10.5 Visual block 模式</h2>
+<ul>
+<li>
+C-V/C-Q(win)开始文本矩形区域的选择.
+
+<li>
+特殊的命令 "$", 则选择块的所有行都选择到行尾部分.
+
+<li>
+"I{string}&lt;Esc&gt;" 在块每行的前面插入元素
+
+<ul>
+<li>
+如果有些行比较短, 块选择时没有选择该行的文本, 则插入操作不会对该行起作用.
+
+<li>
+如果插入操作中包含新行符(newline), 则"I"则堪称普通的插入操作, 仅影响块的第一行
+
+</ul>
+<li>
+"A" 命令则是在块的后面添加文本, 且对比较短的行, 如果没有文本选择, 仍会在后面添加文本.
+
+<ul>
+<li>
+如果块模式使用了 "$" 命令选择至行尾, 则"A"命令在每行的行尾添加文本.
+
+</ul>
+<li>
+"c" 命令则是删除块文本, 且进入插入模式在每行加入相同的文本, 最后 &lt;Esc&gt; 退出, 其和"I"一样不影响比较短的行.
+
+<li>
+"C" 命令则是从块的左边开始删除至行尾, 而后进入插入模式加入相同的文本, 最后 &lt;Esc&gt; 退出, 同样不影响比较短的行.
+
+<li>
+其他命令:
+
+<ul>
+<li>
+~ --- 转换大小写
+
+<li>
+U --- 转换为大写
+
+<li>
+u --- 转换为小写
+
+</ul>
+<li>
+使用一个单词替换块内所有的单词为该单词, 使用 "r" 命令.
+
+<li>
+"&gt;" 命令右移块, 左边增加的位置插入空格.
+
+<ul>
+<li>
+设置 'shiftwidth' 选项, 可以设置一次移动的大小.
+
+</ul>
+<li>
+"&lt;" 命令左移块.
+
+<li>
+"J" 命令可以将所有选择的行合并为一行, 可以修改 'joinspaces' 选项控制行的合并.
+
+<ul>
+<li>
+该命令不需要块模式, "v" 和 "V" 选择一样.
+
+<li>
+如果想合并的时候不在每行尾部增加空格, 可是使用 "gJ" 命令.
+
+</ul>
+</ul>
+
+<h2 id="toc_5.6">10.6 读取和写入文件的一部分</h2>
+<ul>
+<li>
+当你写一个 e-mail 信息, 你可能想包含其他的文件, 使用命令 ":read {filename}", 则文件文本插入在当前光标所在行之下
+
+<li>
+":read" 命令可以接受一个范围, 文件则会放在该范围最后一行之下. ":$r patch" 放在文件尾. 如果想放在文件首, 可用命令 ":0read patch"
+
+<li>
+":write" 则写入其他文件中, 如果不加范围则写入文件所有内容, ":.,$write tempo", 如果 tempo 文件已存在则会收到警告. 如果想覆盖已有文件, 可加上 "!" 命令.
+
+<li>
+在另外文件的文件尾部添加内容, 使用 "&gt;&gt;" 命令, 如 :.write &gt;&gt;collection
+
+</ul>
+
+<h2 id="toc_5.7">10.7 格式化文本 </h2>
+<ul>
+<li>
+'textwidth' 选项--- 自动修剪每行文本使得其适应窗口长度. 如 :set textwidth = 72. 查看当前的 textwidth 值, :set textwidth
+
+<li>
+注意, 当一行文本自动修剪后, 该行如果删除或者添加文本, vim不会自动重新格式化文本
+
+<li>
+告知 vim 格式化当前段落: gqap
+
+<ul>
+<li>
+gq 这是一个操作符, ap 表示 "a paragraph"
+
+</ul>
+<li>
+如果文件的段落都分段好, 你可以使用这个命令格式化整个文件: gggqG
+
+<li>
+如果你的段落没有很好定义, 你可以手动格式化每行, 光标移动至第一行, 输入命令"gqj", 而后格式化当前行, 如果太短, 则会将下一行扩充至该行后, 如果太长, 则分割至下一行. 而后光标移动至下一行. 而后使用命令 "." 反复进行.
+
+</ul>
+
+<h2 id="toc_5.8">10.8 改变大小写 </h2>
+<ul>
+<li>
+"gU" --- 转换至大写, 例如 "gUw" 将一个单词转换为大写.
+
+<li>
+"gu" --- 转换至小写.
+
+<li>
+"g~" --- 大小写相互转换
+
+<li>
+这些操作符可以和移动命令, 文本对象, Visual 模式一起工作.
+
+<li>
+gUU/gUgU, guu/gugu, g~~/g~g~ 这三个命令作用于一行.
+
+</ul>
+
+<h2 id="toc_5.9">10.9 使用外部程序</h2>
+<ul>
+<li>
+"!{motion}{program}" 得到一块文本, 并通过一个外部程序过滤它. 换句话, 通过{program}表示的系统命令, 将得到的块文本作为输入, 而后该命令的输出替换选择的文本.
+
+<li>
+Unix中, 排序文本input.txt, 输出到 output.txt: sort &lt;input.txt &gt;output.txt
+
+<li>
+Vim中, 移动到第一行, 输入命令 !5G
+
+<ul>
+<li>
+"!" 告知Vim要执行 filter 操作, 而后后面有个移动操作. "5G" 表示第五行. 表示过滤第一行到第五行的文本.
+
+<li>
+完整命令 !5Gsort&lt;Enter&gt;
+
+</ul>
+<li>
+"!!" 命令则 filter 当前行, 例如 "!!date&lt;Enter&gt;" 替换当前行为"date"程序的输出.
+
+<li>
+Vim 要知道 shell 如何工作, 当你有 filtering 方面的问题时, 检查下面选项的值:
+
+<ul>
+<li>
+'shell' --- vim 执行的外部程序
+
+<li>
+'shellcmdflag' --- 传递给shell一个命令的参数
+
+<li>
+'shellquote' --- 围绕命令使用的quote
+
+<li>
+'shellxquote' --- 围绕命令和重定向使用的 quota
+
+<li>
+'shelltype'
+
+<li>
+'shellslash' --- 在命令中使用 forward slashes 正斜杠(仅用于windows)
+
+<li>
+'shellredir' --- 用于将命令输出写入文件的字符串
+
+</ul>
+<li>
+读取当前的目录至文件中 :read !dir, 在光标下则会出现结果. 同样还可用于读取文件, "!" 用于告知其后有一个命令.
+
+<li>
+命令可以有参数, 范围可以告知vim哪里放置这些行
+
+<ul>
+<li>
+:0read !date -u
+
+<li>
+在文件头部插入UTC格式的当前时间和日期.
+
+</ul>
+<li>
+Unix 中 "wc" 命令统计单词, 统计当前文件的单词:
+
+<ul>
+<li>
+:write !wc
+
+<li>
+这个命令被写入Unix命令中.
+
+</ul>
+<li>
+告知 Vim 重绘屏幕: CTRL-L
+
+</ul>
+
+    </div>
+</body>
+</html>

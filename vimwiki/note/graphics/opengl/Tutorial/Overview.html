@@ -1,0 +1,625 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../../style.css">
+<title>Overview</title>
+<meta http-equiv="Content-Type" content="text/html; charset=cp936">
+</head>
+<body>
+
+<h2 id="toc_0.1">状态机</h2>
+<ul>
+<li>
+glEnable(), glDisEnable() 启动/禁止某些状态. glIsEnabled() 判断是否启动
+
+<li>
+glPushAttrib(), glPopAttrib() 状态变量集合. GL_ALL_ATTRIB_BITS 所有状态的保存/恢复
+
+<li>
+同计算机IO缓存, OpenGL的命令不是立刻执行, 而是将所有的命令先存储在缓存中, 包括网络缓存和图形加速器中. 知道缓存满了才开始执行
+
+<li>
+glFlush() --- 强制所有缓存内的命令立刻执行, 其保证OpenGL在调用该函数之后的一段时间内完成这些命令的执行, 然后立刻返回结果
+
+<li>
+glFinish() --- 同 glFlush(), 但是 glFinish() 会阻塞其他 OpenGL 命令, 直到所有的命令执行完毕之后, 常用语同步任务
+
+</ul>
+	
+<h2 id="toc_0.2">OpenGL Rendering Pipeline</h2>
+<h3 id="toc_0.2.1" class="justcenter">显示列表</h3>
+<ul>
+<li>
+一组已存储的OpenGL命令用于之后的执行, 所有的数据, 几何(顶点)和像素数据都可存储在显示列表中
+	=== 顶点操作 ===
+
+<li>
+由 GL_MODELVIEW 矩阵转换每个顶点和发现坐标(从对象坐标转换到视觉坐标), 如果有光照, 还要进行光照计算, 更新顶点的颜色, 转换顶点和法线数据
+	=== 图元装配 ===
+		根据投影矩阵, 对图元(点, 线, 多边形)进行再次转换, 得到视觉的立方体. 根据眼坐标裁剪平面. 而后除以w和视图转换将3D场景转换到世界空间坐标
+		最后实现 Culling 测试
+	=== 像素传送操作 ===
+		当客户端内存的像素被解压(读取), 对这些数据进行缩放, bias, 映射和裁剪操作
+		这些传送(Transfer)的数据也可存储在纹理内存或者直接光栅化至片段
+	=== 纹理内存 ===
+		纹理图像加载至纹理内存, 以用于几何对象
+	=== 光栅化 ===
+		光栅化表示几何和像素数据转换至片段
+		片段为一个包含颜色, 深度, 线宽, 点大小和反锯齿计算的矩形阵列
+		如果 Shading Mode 为 GL_FILL, 则多边形的内部像素则会被填充, 每个片段对应帧缓存的一个像素
+	=== 片段操作 ===
+		转换片段为帧缓存上的像素. 首先生成纹素, 从纹理内存生成纹理元素而后应用于每个片段
+		再进行雾计算.  而后计算一些片段测试(Scissor, Alpha, Stencil, Depth), 最后进行混合, dithering, 逻辑操作和通过bitmask进行遮蔽.
+		最终将像素存储至帧缓存
+	=== 反馈 ===
+		通过 glGet*() 和 glIsEnabled() 得到当前状态和信息, glReadPixels() 从帧缓存读取像素数据的矩形区域
+		glRenderMode(GL_FEEDBACK)得到完全转换后的顶点数据
+		glCopyPixels() 不讲数据返回至特定系统内存, 而是拷贝至另一个帧缓存, 如从前端缓存拷贝至后端缓存
+
+</ul>
+<h2 id="toc_0.3">OpenGL Transformation</h2>
+<p>
+	Vertex Data --(对象坐标)--&gt; ModelView Matrix --(视觉坐标)--&gt; Projection Matrix --(裁剪坐标)--&gt; 
+		Divide by w --(单元化的设备坐标)--&gt; Viewport Transfor --(窗口坐标)--&gt;
+</p>
+<h2 id="toc_0.4" class="justcenter">对象坐标</h2>
+<p>
+		Object Coordinates --- 对象的本地坐标系统, 在未被应用任何转换之前的初始位置和方向.
+</p>
+<h2 id="toc_0.5" class="justcenter">视觉坐标</h2>
+<p>
+		Eye Coordinates --- 由 GL_MODELVIEW 矩阵和对象坐标相乘得到的结果 Model转换表示从对象空间转换至世界空间, View转换表示转换至视觉空间
+			Veye = Mmv * Vobj = Mv * Mm * Vobj
+		这里没有专门的相机矩阵, 如果要实现相机的移动, 可以使用相反的转换视图转换
+		这意味着 OpenGL 定义相机永远位于视觉空间坐标的(0, 0, 0), 且面向-Z轴
+		法线向量和对象坐标的转换不同, 它是乘以 GL_MODELVIEW 矩阵的逆矩阵的倒置矩阵来实现转换
+			Neye = (Mmv<sup><small>-1)</small></sup>T*Nobj
+</p>
+<h2 id="toc_0.6" class="justcenter">裁剪坐标</h2>
+<p>
+		应用了 GL_PROJECTION 矩阵后的结果, 得到一个视图锥, 决定哪些对象或对象的哪些部分被裁减出去.
+			Vclip = Mprj * Veye
+</p>
+<h2 id="toc_0.7" class="justcenter">单元化的设备坐标</h2>
+<p>
+		NDC --- Normalized Device Coordinates
+		由裁剪坐标除以w得到, 称之为 透视除法, 类似窗口(屏幕)坐标, 但是还未转换和缩放之屏幕像素, 在三个轴方向将其范围限制于[-1, 1]之间
+			Vndc = Vclip / w
+</p>
+<h2 id="toc_0.8" class="justcenter">窗口坐标(屏幕坐标)</h2>
+<p>
+		通过对NDC坐标进行视图转换得到
+		窗口坐标最终传送到OpenGL管线的光栅化部分
+		glViewport() 命令用于定义渲染区域的矩形大小.
+		glDepthRange() 用于窗口坐标的z值.
+			glViewport(x, y, w, h);
+			glDepthRange(n, f)
+		转换
+			-1 --&gt; x
+			1  --&gt; x + w
+			-1 --&gt; y
+			1  --&gt; y + h
+			-1 --&gt; n
+			1  --&gt; f
+</p>
+<h2 id="toc_0.9">OpenGL 的转换矩阵</h2>
+<ul>
+<li>
+4个不同的矩阵 GL_MODELVIEW, GL_PROJECTION, GL_TEXTURE, GL_COLOR
+	=== Model-View 矩阵 ===
+
+<ul>
+<li>
+得到视图矩阵, 表示反向移动整个场景. gluLookAt() 用于设置视图转换
+
+<li>
+对于矩阵 m12, m13, m14 表示移动转换, m15表示其次坐标, 用于进行投影转换
+
+<li>
+(m0, m1, m2), (m4, m5, m6), (m8, m9, 10) 用于旋转和缩放转换, 这三者可以表示三个正交轴
+
+<ul>
+<li>
+(m0, m1, m2) --- X轴, 向左的向量
+
+<li>
+(m4, m5, m6) --- Y轴, 向上的向量
+
+<li>
+(m8, m9, m10) --- Z轴, 向前的向量
+
+</ul>
+<li>
+矩阵的执行顺序, 如果先进行转换MA, 后进行转换MB, 则 V' = MA * MB * V
+	=== GL_PROJECTION 投影矩阵 ===
+
+<li>
+两个函数实现 glFrustum(), glOrtho(), 用六个参数表示该视觉椎体: 左, 右, 底, 顶, 近, 远
+
+<li>
+也可以使用函数 gluPerspective() 和 gluOrtho2D() 函数, 这两个函数可以使用更少的参数, gluPerspective的第一个参数表示整个视觉锥前端的角度
+	=== GL_TEXTURE 纹理矩阵 ===
+
+<li>
+纹理坐标 (s, t, r, q), 在进行任何纹理映射之前, 使用 GL_TEXTURE 矩阵乘以该坐标, 缺省矩阵为单元矩阵
+
+<li>
+通过修改矩阵, 你可以使得纹理滚动, 旋转, 拉伸, 以及收缩
+	=== GL_COLOR 纹理矩阵 ===
+		用于颜色空间的转换和颜色组成的交换, 需要 GL_ARB_imaging 扩展
+	=== 其他矩阵函数 ===
+		glPushMatrix()
+		glPopMatrix()
+		glLoadIdentity()
+		glLoadMatrix{fd}(m)
+		glLoadTransposeMatrix{fd}(m) --- 以行为主顺序的矩阵来替换当前矩阵
+		glMultMatrix{fd}(m)
+		glMultTransposeMatrix{fd}(m)
+		glGetFloatv(GL_MODELVIEW_MATRIX, m)
+
+</ul>
+</ul>
+		
+<h2 id="toc_0.10">OpenGL Vertex Array</h2>
+<ul>
+<li>
+存储顶点数据于数据中, 可包括顶点坐标, 法线, 纹理坐标, 颜色信息
+
+<li>
+用于顶点数组的函数: glDrawArrays(), glDrawElements(), glDrawRangeElements(). 更好的方法则是使用 VBO或display lists
+	=== 初始化 ===
+
+<ul>
+<li>
+使用 glEnableClientState() 和 glDisableClientState() 激活和禁止六个不同类型的数组
+
+<li>
+六个函数用于指定数组中的详细位置
+
+<ul>
+<li>
+glVertexPointer()
+
+<li>
+glNormalPointer()
+
+<li>
+glColorPointer()
+
+<li>
+glIndexPointer() --- 指定颜色数组索引值的指针(和RGB格式相对应的颜色格式)
+
+<li>
+glTexCoordPointer()
+
+<li>
+glEdgeFlagPointer() --- Edge flag array
+
+</ul>
+<li>
+Edge Flag 用于标识该顶点是否为边缘, 当 glPolygonMode() 为 GL_LINE 时, 仅仅边缘可见
+
+<li>
+注意 顶点数组存放于应用程序系统内存中, 即客户端. 位于服务端的OpenGL则可以访问它们
+	=== glDrawArrays() ===
+
+<li>
+通过在数组中直接匹配来读取顶点数据, 不能跳过顶点读取
+
+<li>
+glDrawArrays() 有三个参数, 第一个为绘制的图元类型, 第二个为开始的偏移位置. 最后一个为顶点数目
+
+<li>
+在数组中, 可能还是会存在顶点重复的问题, 可使用 glDrawElements() 来改善
+	=== glDrawElements() ===
+
+<li>
+通过顶点索引读取数组中的顶点数据
+
+<li>
+需要4个参数, 第一个表示图元类型, 第二个为索引数目, 第三个为索引数组的类型, 第四个为索引数组的位置
+
+<li>
+另一个需要考虑的问题是共享顶点的法线, 如果几个面的法线都不同, 则可能仍然需要重复写入该顶点
+	=== glDrawRangeElements() ===
+
+<li>
+同 glDrawElements, 但是其多两个参数(起始和结束索引)用于指定预取的顶点范围 
+
+<li>
+通过范围限制, OpenGL可以优先得到优先范围内的顶点数组来渲染, 可提升程序性能
+
+<li>
+通过参数 GL_MAX_ELEMENTS_VERTICES 和 GL_MAX_ELEMENTS_INDICES 调用函数 glGetIntegerv() 得到可预取的最大顶点数目和可引用的最大顶点索引数目
+
+</ul>
+</ul>
+<h2 id="toc_0.11">OpenGL DisplayList</h2>
+<ul>
+<li>
+一旦 display list 创建, 所有的顶点和像素数据会被计算出来以及拷贝至服务器的 display list 内存
+
+<li>
+显示列表的另一个好处就是其可被多个客户端共享
+
+<li>
+缺点, 不能修改, 如果要经常修改数据, 可使用VBO或者Vertex Array
+
+<li>
+显示列表是服务器状态的一部分, 任何客户端相关的命令都不能放入显示列表中
+
+<ul>
+<li>
+例如 glFlush(), glFinish(), glRenderMode(), glEnableClientState(), glVertexPointer() 等等都不能放入显示列表中
+
+</ul>
+<li>
+任何能返回值的命令的返回值都不能存储在显示列表中, 例如
+
+<ul>
+<li>
+glIsEnabled(), glGet*(), glReadPixels(), glFeedbackBuffer()等等, 如果这些命令在显示列表中调用, 则会立刻执行这些命令
+	=== 实现 ===
+
+<li>
+glGenList() 生成显示列表对象, glDeleteLists() 删除列表
+
+<li>
+glNewList(), glEndList() 只见存放 OpenGL 命令
+
+<li>
+glCallList() 调用显示列表, glCallLists() 调用多个显示列表, 使用 glCallLists() 需要事先准备数组存放索引列表
+
+<li>
+你也可以不需要指定具体的显示列表索引, 而是指定偏移, 通过函数 glListBase() 指定位移
+
+<li>
+显示列表对于绘制 ASCII 字符非常有用
+
+</ul>
+</ul>
+
+<h2 id="toc_0.12">OpenGL Vertex Buffer Object (VBO)</h2>
+<ul>
+<li>
+GL_ARB_vertex_buffer_object 扩展拥有 vertex array 和 display list 的优点
+
+<li>
+VBO 允许顶点数组数据存储于服务端的高性能图形内存以及提升有效的数据转换, 如果 buffer object 存储的是像素数据, 则为 PBO
+
+<li>
+Vertex array的缺点是 vertex array 函数都在客户端状态中, 其数据每次都必须重新发送给服务端
+
+<li>
+显示列表的命令和数据都在服务端, 但一旦编译后, 不能修改
+
+<li>
+VBO在服务端的 high-performance 内存中创建 buffer object, 提供相同的访问函数引用这些数组. 如 glVertexPointer(), glNormalPointer() 等等
+
+<li>
+VBO的内存管理器根据用户的提示:"target"和"usage"模式, 将buffer object 放在内存中最合适的位置
+
+<li>
+内存管理器通过平衡三种类型的内存: system, AGP, video memory, 来优化 buffers
+
+<li>
+VBO不但可以读取, 而且通过映射 buffer 至客户端内存空间来更新
+
+<li>
+VBO的另一个优点就是可以由总舵客户端共享
+	=== 创建 VBO ===
+		1. glGenBuffersARB() 生成新的缓存对象
+		2. glBindBufferARB() 绑定缓存对象
+		3. glBufferDataARB() 拷贝顶点数据至缓存对象
+		==== glGenBuffersARB() ====
+			生成缓存对象的标志符
+		==== glBindBufferARB() ====
+			第一个参数告知VBO缓存对象是存储顶点数组数据还是索引数组数据, GL_ARRAY_BUFFER_ARB, GL_ELEMENT_ARRAY_BUFFER_ARB
+			GL_ARRAY_BUFFER_ARB: 用于顶点属性, 如坐标, 纹理坐标, 法线, 颜色数组
+			GL_ELEMENT_ARRAY_BUFFER_ARB: 用于 glDraw[Range]Elements() 函数的索引数组
+		==== glBufferDataARB() ====
+			void glBufferDataARB(GLenum target, GLsizei size, const void* data, GLenum usage)
+				target: GL_ARRAY_BUFFER_ARB 或 GL_ELEMENT_ARRAY_BUFFER_ARB
+				size: 传输的数据的字节大小
+				data: 源数据的指针
+				usage: 告知VBO如何使用 buffer object, static, dynamic 或 stream, read, copy, draw. VBO提供了九个枚举值
+					static: VBO中的数据不再改变
+					dynamic: 会频繁改变数据
+					stream: 每帧都会改变数据
+					draw: 表示数据会发送至 GPU 用于 绘制
+					read: 由客户端的应用程序读取
+					copy: 数据用于 drawing 和 reading
+					draw 对于 VBO 很有用, copy 和 read 对于 PBO 和 FBO 有意义
+				VBO会根据 usage 来分配 buffer object 的内存位置
+		==== glBufferSubDataARB() ====
+			同 glBufferDataARB, 只是其用于拷贝数据至VBO, 仅仅替换已存在的缓存一部分范围的数据, 有 offset 决定开始位置
+		==== glDeleteBuffersARB() ====
+			删除
+	=== Drawing VBO ===
+
+<ul>
+<li>
+由于 VBO 基于顶点数组的实现, 所以渲染 VBO 也就很类似使用 vertex array. 区别就是指向顶点数组的指针现在使用当前buffer object的偏移
+	=== Updating VBO ===
+
+<li>
+使用 glBufferDataARB() 或 glBufferSubDataARB() 拷贝新的数据至 VBO
+
+<li>
+另一种更改 buffer object 的方法是映射 buffer object 至客户端内存
+
+<ul>
+<li>
+glMapBufferARB() --- 映射 buffer object 至客户端内存
+				void* glMapBufferARB(GLenum target, GLenum access)
+					target: 同 glBindBufferARB()
+					access: GL_READ_ONLY_ARB, GL_WRITE_ONLY_ARB, GL_READ_WRITE_ARB
+
+<li>
+该函数会导致一个同步的问题, 如果GPU仍然使用 buffer object, glMapBufferARB() 则不会返回, 除非GPU完成它在 buffer object 的工作
+
+<li>
+要避免该问题, 可用函数 glBufferDataARB() 传参数NULL指针, 然后再调用 glMapBufferARB().这样就会忽略前面的数据, 以及返回一个新分配的指针.
+
+<li>
+这种解决方法只有在更新整个数据时有用, 如果只是更新部分数据或者读取数据, 最好不要释放前面的数据
+	=== glUnmapBufferARB() ===
+		GLboolean glUnmapBufferARB(GLenum target)
+			在修改VBO的数据之后, 必须从客户端内存中 unmapped 这个 buffer object
+
+</ul>
+</ul>
+</ul>
+
+<h2 id="toc_0.13">OpenGL Pixel Buffer Object(PBO)</h2>
+<ul>
+<li>
+GL_ARB_pixel_buffer 扩展, 借鉴了 VBO 的框架和APIs, 只需额外的增加了两个 "target" 标记
+
+<ul>
+<li>
+GL_PIXEL_PACK_BUFFER_ARB: pixel data 传送至 PBO, 从 OpenGL 传送至你的应用程序
+
+<li>
+GL_PIXEL_UNPACK_BUFFER_ARB: 从 PBO 中得到 pixel data, 从应用程序传送至 OpenGL
+
+<li>
+这两个标志可决定PBO最好的内存位置, 例如 显卡内存用于上传(unpack)纹理, 系统内存用于读取(pack)帧缓存
+
+</ul>
+<li>
+glReadPixels() 和 glGetTexImage() "pack" 像素操作, glDrawPixels(), glTexImage2D(), glTexSubImage2D() "unpack" 操作
+
+<li>
+当 PBO 绑定至 GL_PIXEL_PACK_BUFFER_ARB 标记时, glReadPixels() 从 OpenGL framebuffer 读取像素数据, 并将数据写入(pack)进PBO
+
+<li>
+当 PBO 绑定至 GL_PIXEL_UNPACK_BUFFER_ARB 标记时, glDrawPixels() 从PBO中读取(unpack)像素数据, 并拷贝至 OpenGL framebuffer
+
+<li>
+PBO的优点: 1. 通过DMA, 可以快速的将像素数据与图形卡进行传输, 不需CPU进行操作, 节省CPU周期 2. 异步DMA传输
+
+<li>
+由于异步DMA传输操作, glTexImage2D() 可以立即返回, 留给 DMA 自动进行传输, 而CPU则可以无需等待像素传输的完成, 直接进行其他的运算
+	=== 创建 PBO ===
+		1. glGenBufferARB() --- 生成新的缓存对象
+		2. glBindBufferARB() --- 绑定缓存对象
+		3. glBufferDataARB() --- 拷贝像素数据至缓存对象
+
+<ul>
+<li>
+如果在glBufferDataARB() 中用NULL指针指向源数组, PBO则仅仅分配给定数据大小的内存空间
+
+<li>
+glBufferDataARB() 的最后一个参数为PBO的另一个性能提示, 用于提示缓存对象如何使用
+
+<li>
+GL_STREAM_DRAW_ARB 用于streaming texture upload, GL_STREAM_READ_ARB 用于帧缓存的异步回馈
+	=== Mapping PBO ===
+
+<li>
+映射OpenGL控制的缓存对象至客户端的地址空间
+
+<li>
+客户端可使用函数 glMapBufferARB() 和 glUnmapBufferARB() 修改一部分获整个缓存对象
+			void* glMapBufferARB(GLenum target, GLenum access)
+			GLboolean glUnmapBufferARB(GLenum target)
+			target则为 GL_PIXEL_BUFFER_ARB 和 GL_PIXEL_UNPACK_BUFFER_ARB
+
+<li>
+GPU读写冲突的问题同VBO
+
+</ul>
+</ul>
+
+<h2 id="toc_0.14">OpenGL Frame Buffer Object(FBO)</h2>
+<h3 id="toc_0.14.1" class="justcenter">OverView</h3>
+<ul>
+<li>
+有颜色缓冲, 深度缓冲, stencil 缓冲, 积累缓冲
+
+<li>
+扩展 GL_EXT_framebuffer_object 提供了接口创建额外的非显示帧缓存对象(FBO), 对应于缺省的窗口系统提供的帧缓存
+
+<li>
+同窗口系统的帧缓存, FBO包含渲染目标的集合: 颜色, 深度和stencil buffer(注: accumulation buffer不在FBO中定义)
+
+<li>
+这些 FBO 中的逻辑缓存被称为 framebuffer-attachable images 表示一可以挂接至framebuffer object的像素二维数组
+
+<li>
+这里有两种类型 framebuffer-attachable images:纹理图像和renderbuffer图像, 前者执行"render to texture"操作, 后者执行"offscreen rendering"操作
+
+<li>
+renderbuffer object 是一种新类型的存储对象, 定义与 GL_EXT_framebuffer_object扩展中, 用于渲染进程中单个2D图像的渲染目标
+
+<li>
+多个颜色挂接点: GL_COLOR_ATTACHMENT0_EXT,...,GL_COLOR_ATTACHMENTn_EXT, 通过 GL_MAX_COLOR_ATTACHMENTS_EXT查询最多可挂接的数目
+
+<li>
+多个颜色挂接点表示允许同时将颜色缓存渲染到多个目标, "multiple render targets"(MRT)可由 GL_ARB_draw_buffers 扩展完成
+
+<li>
+一个深度挂接点: GL_DEPTH_ATTACHMENT_EXT, GL_STENCIL_ATTACHMENT_EXT
+
+<li>
+注意, FBO自身并没有任何图像存储在其中, 其仅仅拥有多个挂接点
+
+<li>
+切换FBO的 framebuffer-attachable 图像的挂接比切换FBO快捷得多. 
+
+<li>
+glFramebufferTexture2DEXT() 切换2D纹理对象, glFramebufferRenderbufferEXT()切换 renderbuffer 对象
+	=== 创建 FBO ===
+		==== glGenFramebuffersEXT() ====
+			void glGenFramebuffersEXT(GLsizei n, GLuint* ids)
+			void glDeleteFramebuffersEXT(GLsizei n, const GLuint* ids)
+		==== glBindFramebufferEXT() ====	
+			void glBindFramebufferEXT(GLenum target, GLuint id)
+				target: GL_FRAMEBUFFER_EXT
+				一旦FBO被绑定, 则所有的 OpenGL 操作都会影响至当前的 framebuffer object
+				当 object 的ID为0时, 则表示缺省的窗口系统 framebuffer
+				传递id为0的参数, glBindFramebufferExt() 可以取消前面的绑定
+	=== Renderbuffer Object ===
+
+<li>
+用于 offscreen 渲染, 直接将场景渲染至 renderbuffer 对象, 允许直接渲染一个场景至一个 renderbuffer object, 而不是渲染一个纹理对象
+
+<li>
+Renderbuffer为一简单的存储对象,可含一个可渲染的内部格式的单个图像, 可用于存储OpenGL逻辑缓存而无需对应的纹理格式, 例如stencil和深度缓存
+		==== glGenRenderbuffersEXT() ====
+			void glGenRenderbuffersEXT(GLsizei n, GLuint* idx)
+			void glDeleteRenderbuffersEXT(GLsizei n, const GLuint* idx)
+		==== glBindRenderbufferEXT() ====
+			void glBindRenderbufferEXT(GLenum target, GLuint id)
+			在引用 renderbuffer 对象之前绑定它, target 必须为 GL_RENDERBUFFER_EXT
+		==== glRenderbufferStorageEXT() ====
+			void glRenderbufferStorageEXT(GLenum target, GLenum internalFormat, GLsizei width, GLsizei height)
+			Renderbuffer 对象村建之后, 并没有任何数据存储, 所以通过该函数进行分配内存
+				target: GL_RENDERBUFFER_EXT
+				internalFormat: 颜色(GL_RGB, GL_RGBA, 等等), 深度渲染(GL_DEPTH_COMPONENT), stencil(GL_STENCIL_INDEX)
+				width, height: 为 renderbuffer 图像的大小(单位为像素), 应当小于 GL_MAX_RENDERBUFFER_SIZE_EXT
+		==== glGetRenderbufferParameterivEXT() ====
+			void glGetRenderbufferParameterivEXT(GLenum target, GLenum param, GLint* value)
+				target: GL_RENDERBUFFER_EXT
+				param: WIDTH, HEIGHT, INTERNAL_FORMAT, RED_SIZE, GREEN_SIZE, BLUE_SIZE, ALPHA_SIZE, DEPTH_SIZE, STENCIL_SIZE
+	=== Attaching images to FBO ===
+
+<li>
+FBO 并不存储任何图像, 只挂接 framebuffer-attachable 图像(纹理和 renderbuffer 对象)
+
+<li>
+这个机制可以使得在FBO中attach和detach这些图像都非常快捷. 切换这些图像也非常的方便. 省去了不必要的数据拷贝和内存消耗
+		==== Attaching a 2D texture image to FBO ====
+
+<ul>
+<li>
+glFramebufferTexture2DEXT(GLenum target, GLenum attachmentPoint, GLenum textureTarget, GLuint textureId, GLint level)
+				target: GL_FRAMEBUFFER_EXT
+				attachmentPoint: 选择哪个挂接点
+				textureTarget: GL_TEXTURE_2D
+				textureId: 纹理对象的id
+				level: 表示 mipmap 的等级
+
+<li>
+如果 textureId 为0, 表示从 FBO detach 纹理图像. 如果一个纹理对象被删除, 如其仍被 attach FBO, 则该纹理绑定的FBO 则会自动 detach 该纹理
+
+<li>
+如果纹理 attach 多个 FBO, 当删除该纹理时, 只有其绑定的FBO自动 dettach 该纹理, 对于其他未绑定的FBO, 则不会自动 detach
+		==== Attaching a Renderbuffer image to FBO ====
+			void glFramebufferRenderbufferEXT(GLenum target, GLenum attachmentPoint, GLenum renderbufferTarget, GLuint renderbufferId)
+				renderbufferTarget: GL_RENDERBUFFER_EXT
+				renderbufferId: renderbuffer 对象的 id, 如果该参数为0, 表示从 FBO 中 detach, 如果删除该对象, 其 detach 情况同上面的纹理图像
+		==== Checking FBO Status ====
+			如果一个 attachable 图像挂接至FBO, 在执行 FBO 操作之前需验证其 FBO 状态是否完成
+				GLenum glCheckFramebufferStatusEXT(GLenum target)
+					不能在 glBegin()/glEnd() 内部调用该函数, target 为 GL_FRAMEBUFFER_EXT
+					成功则返回 GL_FRAMEBUFFER_COMPLETE_EXT
+				需要满足的规则:
+					1. framebuffer-attachable 图爱心那个的高宽不能为0
+					2. 如果图像挂接至 color attachment point, 其必须有内部格式
+					3. 如果挂接至 GL_DEPTH_ATTACHMENT_EXT, 其必须有深度渲染格式(GL_DEPTH_COMPONENT, GL_DEPTH_COMPONENT24_EXT, etc)
+					4. GL_STENCIL_ATTACHMENT_EXT, 则格式为GL_STENCILE_INDEX, GL_STENCIL_INDEX8_EXT
+					5. FBO 至少得有一个图像挂接
+					6. 所有挂接至 FBO 的图像要有相同的高宽
+
+</ul>
+</ul>
+
+<h2 id="toc_0.15">Tessellation(多边形分格化)</h2>
+<h3 id="toc_0.15.1" class="justcenter">概述</h3>
+<p>
+		分格化的基本流程: 
+</p>
+<ul>
+<li>
+将非凸多边形的顶点坐标发送给 tessellator
+
+<li>
+tesselator 对多边形进行分格化操作
+
+<li>
+* 完成之后通过用户定义的回调函数调用具体的OpenGL命令渲染该非凸多边形
+		函数集合
+			GLUtessellator* gluNewTess();
+			void gluDeleteTess(GLUtessellator* tess)
+			void gluTessBeginPolygon(GLUtessellator* tess, void *userData)
+			void gluTessEndPolygon(GLUtessellator *tess)
+				用于包围分格化块代码
+			void gluTessBeginContour(GLUtessellator *tess)
+			void gluTessEndContour(GLUtessellator* tess)
+				绘制封闭的轮廓线
+			void gluTessVertex(GLUtessellator *tess, GLdouble cords[3], void *vertexData)
+				定义一个轮廓线的顶点
+			void gluTessCallback(GLUtessellator *tess, GLUenum type, void (*fn)())
+
+</ul>
+
+<h3 id="toc_0.15.2" class="justcenter">围绕规则和围绕数字</h3>
+<p>
+		如何得到围绕数字 --- 从区域内部绘制一条到外面的直线, 当直线与一逆时针轮廓线相交时加一, 与一顺时针轮廓线相交时减一
+		围绕规则:
+			GLU_TESS_WINDING_ODD
+			GLU_TESS_WINDING_NONZERO
+			GLU_TESS_WINDING_POSITIVE
+			GLU_TESS_WINDING_NEGATIVE
+			GLU_TESS_WINDING_ABS_GEQ_TWO --- 如果 ABSolute 的值大于 EQual 两个
+</p>
+
+<h2 id="toc_0.16">OpenGL Windows GUI Application</h2>
+<h3 id="toc_0.16.1" class="justcenter">Overview</h3>
+<p>
+		MVC --- Model, View, Controller
+		Model
+</p>
+<ul>
+<li>
+应用程序的大脑, 包含所有应用程序的数据和实现, 这些实现可以告知应用程序如何运作
+
+<li>
+与 View 和 Controller 无关, 完全独立, 可接受任何 View 和 Controller 的请求
+		View
+
+<li>
+在屏幕上渲染内容, 不关联至任何 Controller
+
+<li>
+在任意 Controller 发出请求之后进行渲染操作
+
+<li>
+View 应当关联至某个 Model, 因为其必须知道在哪里获取数据
+		Controller
+
+<li>
+用户和应用程序之间的桥. 通过接收和处理所有的用户事件来实现
+
+<li>
+Controller 应当知道访问哪个 View 和 Model
+
+<li>
+为了处理用户数据, 请求 Model 处理新的数据, 更新 View
+
+</ul>
+
+</body>
+</html>

@@ -1,0 +1,701 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../../style.css">
+<title>FSM</title>
+<meta http-equiv="Content-Type" content="text/html; charset=cp936">
+</head>
+<body>
+
+<p>
+章节2 State-Driven Agent Design
+</p>
+<ul>
+<li>
+使用FSM的原因
+
+<ul>
+<li>
+很容易编码(quick and simple):
+
+<li>
+易于调试
+
+<li>
+很少的计算开销
+
+<li>
+直观的
+
+<li>
+弹性的
+
+</ul>
+</ul>
+
+<ul>
+<li>
+FSM为一个设备, 或一个设备的模型, 有限的状态数量, 处理输入使得从一个状态转换到另一个状态. 任何时刻只能处于一个状态. 
+
+<li>
+将一个对象的行为分解成可管理的"chunks"或状态
+
+<li>
+灯的开关是一个最简单的FSM
+
+<li>
+Pac-Man的鬼魂有两个状态, 逃避状态---所有的鬼魂都一样, 追捕状态---各个鬼魂不一样; 玩家吃能量片为触发条件, 鬼魂从追捕状态转换到逃避状态; 时间减少为另一个触发条件, 鬼魂从逃避状态转换到捕捉状态.
+
+<li>
+Quake风格的机器人有状态查看盔甲, 查看生命值, 查找外套, 逃跑. 武器也有其自己的微FSM, 例如火箭有状态: 移动, 接触物体, 爆炸消亡
+
+</ul>
+
+<ul>
+<li>
+实现FSM
+
+<li>
+每个状态应该有进入的操作和离开的操作(Enter, Exit), 例如一个怪物进入逃跑状态时, 挥舞手臂并叫喊
+
+<li>
+状态转换表
+
+<li>
+switch 和 if-else 格式
+<pre c++>
+enum StateType{RunAway, Patrol, Attack};
+
+void Agent::UpdateState(StateType CurrentState)
+{
+  switch(CurrentState)
+  {
+  case state_RunAway:
+    EvadeEnemy();
+    if (Safe())
+    {
+      ChangeState(state_Patrol);
+    }
+    break;
+  case state_Patrol:
+    FollowPatrolPath();
+    if (Threatened())
+    {
+      if (StrongerThanEnemy())
+      {
+        ChangeState(state_Attack);
+      }
+      else
+      {
+        ChangeState(state_RunAway);
+      }
+    }
+    break;
+  case state_Attack:
+    if (WeakerThanEnemy())
+    {
+      ChangeState(state_RunAway);
+    }
+    else
+    {
+      BashEnemyOverHead();
+    }
+    break;
+  }//end switch
+}
+</pre>
+
+<ul>
+<li>
+抽象 State 类
+<pre c++>
+class State
+{
+public:
+  virtual void Execute (Troll* troll) = 0;
+};
+</pre>
+
+<li>
+更新和更改状态, 更新中会调用当前状态的Excute函数, 参数为Troll对象, 可以修改 Troll 对象的属性, 比如调用 Troll 对象的 ChangeState 方法
+<pre c++>
+class Troll
+{
+  /* ATTRIBUTES OMITTED */
+
+  State* m_pCurrentState;
+
+public:
+
+  /* INTERFACE TO ATTRIBUTES OMITTED */
+
+  void Update()
+  {
+    m_pCurrentState-&gt;Execute(this);
+  }
+
+  void ChangeState(const State* pNewState)
+  {
+    delete m_pCurrentState;
+    m_pCurrentState = pNewState;
+  }
+};
+</pre>
+
+<li>
+各个状态的 Execute 函数
+<pre c++>
+//----------------------------------State_RunAway
+class State_RunAway : public State
+{
+public:
+
+  void Execute(Troll* troll)
+  {
+    if (troll-&gt;isSafe())
+    {
+      troll-&gt;ChangeState(new State_Sleep());
+    }
+    else
+    {
+      troll-&gt;MoveAwayFromEnemy();
+    }
+  }
+};
+
+//----------------------------------State_Sleep
+class State_Sleep : public State
+{
+public:
+
+  void Execute(Troll* troll)
+  {
+    if (troll-&gt;isThreatened())
+    {
+      troll-&gt;ChangeState(new State_RunAway())
+    }
+
+    else
+    {
+      troll-&gt;Snore();
+    }
+  }
+};
+</pre>
+
+<li>
+添加这些函数的 Enter 和 Exit 方法
+
+<li>
+状态的基类
+<pre c++>
+class State
+{
+public:
+
+  virtual ~State(){}
+
+  //this will execute when the state is entered
+  virtual void Enter(Miner*)=0;
+
+  //this is called by the miner's update function each update step
+  virtual void Execute(Miner*)=0;
+
+  //this will execute when the state is exited
+  virtual void Exit(Miner*)=0;
+}
+
+void Miner::ChangeState(State* pNewState)
+{
+  //make sure both states are valid before attempting to
+  //call their methods
+  assert (m_pCurrentState &amp;&amp; pNewState);
+
+  //call the exit method of the existing state
+  m_pCurrentState-&gt;Exit(this);
+
+  //change state to the new state
+  m_pCurrentState = pNewState;
+
+  //call the entry method of the new state
+  m_pCurrentState-&gt;Enter(this);
+}
+</pre>
+
+<li>
+这个设计模式也可用于主程序, 例如菜单状态, 保存状态, 暂停状态, 选项状态, 运行状态鞥
+
+<li>
+具体的状态必须为 singleton 对象, 即只能有一个实例. 可以有效控制状态的分配和释放
+
+<li>
+使用 singleton 模式
+<pre c++>
+#ifndef MY_SINGLETON
+#define MY_SINGLETON
+
+class MyClass
+{
+private:
+
+  // member data
+  int m_iNum;
+
+  //constructor is private
+  MyClass(){}
+
+  //copy ctor and assignment should be private
+  MyClass(const MyClass &amp;);
+  MyClass&amp; operator=(const MyClass &amp;);
+
+public:
+
+  //strictly speaking, the destructor of a singleton should be private but some
+  //compilers have problems with this so I've left them as public in all the
+  //examples in this book
+  ~MyClass();
+
+  //methods
+  int GetVal()const{return m_iNum;}
+  static MyClass* Instance();
+};
+
+#endif
+
+/* -------------------- MyClass.cpp ------------------- */
+
+//this must reside in the cpp file; otherwise, an instance will be created
+//for every file in which the header is included
+MyClass* MyClass::Instance()
+{
+  static MyClass instance;
+
+  return &amp;instance;
+}
+</pre>
+
+<li>
+改变状态使用
+<pre c++>
+pMiner-&gt;ChangeState(VisitBankAndDepositGold::Instance());
+</pre>
+
+<li>
+使用函数模板方便多个角色创建基类
+<pre c++>
+template &lt;class entity_type&gt;
+class State
+{
+public:
+
+  virtual void Enter(entity_type*)=0;
+
+  virtual void Execute(entity_type*)=0;
+
+  virtual void Exit(entity_type*)=0;
+
+  virtual ~State(){}
+};
+</pre>
+
+<li>
+创建一个具体的状态时, 只需要分配 eneity_type 一个类型即可
+<pre c++>
+class EnterMineAndDigForNugget : public State&lt;Miner&gt;
+{
+
+public:
+
+  /* OMITTED */
+};
+</pre>
+
+<li>
+全局状态
+<pre c++>
+State&lt;Miner&gt;* m_pGlobalState;
+</pre>
+
+<li>
+为了增加全局行为, 当退出一个状态的时候进入上一个状态. 称之为 blip
+<pre c++>
+class Miner : public BaseGameEntity
+{
+private:
+
+  State&lt;Miner&gt;*   m_pCurrentState;
+  State&lt;Miner&gt;*   m_pPreviousState;
+  State&lt;Miner&gt;*   m_pGlobalState;
+  ...
+
+public:
+
+  void ChangeState(State&lt;Miner&gt;* pNewState);
+  void RevertToPreviousState();
+  ...
+};
+</pre>
+
+<li>
+创建一个状态机类, 管理当前状态, 全局状态, 和上一个状态
+<pre c++>
+template &lt;class entity_type&gt;
+class StateMachine
+{
+private:
+
+  //a pointer to the agent that owns this instance
+  entity_type*          m_pOwner;
+
+  State&lt;entity_type&gt;*   m_pCurrentState;
+
+  //a record of the last state the agent was in
+  State&lt;entity_type&gt;*   m_pPreviousState;
+
+  //this state logic is called every time the FSM is updated
+  State&lt;entity_type&gt;*   m_pGlobalState;
+
+public:
+
+  StateMachine(entity_type* owner):m_pOwner(owner),
+                                   m_pCurrentState(NULL),
+                                   m_pPreviousState(NULL),
+                                   m_pGlobalState(NULL)
+  {}
+
+  //use these methods to initialize the FSM
+  void SetCurrentState(State&lt;entity_type&gt;* s){m_pCurrentState = s;}
+  void SetGlobalState(State&lt;entity_type&gt;* s) {m_pGlobalState = s;}
+  void SetPreviousState(State&lt;entity_type&gt;* s){m_pPreviousState = s;}
+
+  //call this to update the FSM
+  void Update()const
+  {
+    //if a global state exists, call its execute method
+    if (m_pGlobalState)   m_pGlobalState-&gt;Execute(m_pOwner);
+
+    //same for the current state
+    if (m_pCurrentState) m_pCurrentState-&gt;Execute(m_pOwner);
+  }
+
+  //change to a new state
+  void  ChangeState(State&lt;entity_type&gt;* pNewState)
+  {
+    assert(pNewState &amp;&amp;
+           "&lt;StateMachine::ChangeState&gt;: trying to change to a null state");
+    //keep a record of the previous state
+    m_pPreviousState = m_pCurrentState;
+
+    //call the exit method of the existing state
+    m_pCurrentState-&gt;Exit(m_pOwner);
+
+    //change state to the new state
+    m_pCurrentState = pNewState;
+
+    //call the entry method of the new state
+    m_pCurrentState-&gt;Enter(m_pOwner);
+  }
+
+  //change state back to the previous state
+  void RevertToPreviousState()
+  {
+    ChangeState(m_pPreviousState);
+  }
+
+  //accessors
+  State&lt;entity_type&gt;*  CurrentState()  const{return m_pCurrentState;}
+  State&lt;entity_type&gt;*  GlobalState()   const{return m_pGlobalState;}
+  State&lt;entity_type&gt;*  PreviousState() const{return m_pPreviousState;}
+
+  //returns true if the current state's type is equal to the type of the
+  //class passed as a parameter.
+  bool  isInState(const State&lt;entity_type&gt;&amp; st)const;
+};
+</pre>
+
+<li>
+所有 agent 能做的就是拥有一个 State Machine 的实例, 并更新
+<pre c++>
+class Miner : public BaseGameEntity
+{
+private:
+
+  //an instance of the state machine class
+  StateMachine&lt;Miner&gt;*  m_pStateMachine;
+
+  /* EXTRANEOUS DETAIL OMITTED */
+
+public:
+
+  Miner(int id):m_Location(shack),
+                m_iGoldCarried(0),
+                m_iMoneyInBank(0),
+                m_iThirst(0),
+                m_iFatigue(0),
+                BaseGameEntity(id)
+
+  {
+    //set up state machine
+    m_pStateMachine = new StateMachine&lt;Miner&gt;(this);
+
+    m_pStateMachine-&gt;SetCurrentState(GoHomeAndSleepTilRested::Instance());
+    m_pStateMachine-&gt;SetGlobalState(MinerGlobalState::Instance());
+  }
+
+    ~Miner(){delete m_pStateMachine;}
+
+  void Update()
+  {
+    ++m_iThirst;
+    m_pStateMachine-&gt;Update();
+  }
+
+  StateMachine&lt;Miner&gt;* GetFSM()const{return m_pStateMachine;}
+
+  /* EXTRANEOUS DETAIL OMITTED */
+};
+</pre>
+
+<li>
+时间数据包格式
+<pre c++>
+struct Telegram
+{
+  //the entity that sent this telegram
+  int          Sender;
+
+  //the entity that is to receive this telegram
+  int          Receiver;
+
+  //the message itself. These are all enumerated in the file
+  //"MessageTypes.h"
+  int          Msg;
+
+  //messages can be dispatched immediately or delayed for a specified amount
+  //of time. If a delay is necessary, this field is stamped with the time
+  //the message should be dispatched.
+  double       DispatchTime;
+
+  //any additional information that may accompany the message
+  void*        ExtraInfo;
+
+  /* CONSTRUCTORS OMITTED */
+};
+</pre>
+
+<li>
+使用类 MessageDispatcher 创建, 派发和管理数据包. 调用 MessageDispatcher::DispatchMessage 发送消息
+
+<li>
+在派发消息之前, MessageDispatcher 需要得到发送者的指针, 这里需要某种类型的具体实体数据库, 这里使用一个 singleton 类 EntityManager 来设置该数据库. 声明如下:
+<pre c++>
+class EntityManager
+{
+private:
+
+  //to save the ol' fingers
+  typedef std::map&lt;int, BaseGameEntity*&gt; EntityMap;
+
+private:
+
+  //to facilitate quick lookup the entities are stored in a std::map, in
+  //which pointers to entities are cross-referenced by their identifying
+  //number
+  EntityMap           m_EntityMap;
+
+  EntityManager(){}
+
+  //copy ctor and assignment should be private
+  EntityManager(const EntityManager&amp;);
+  EntityManager&amp; operator=(const EntityManager&amp;);
+
+public:
+
+  static EntityManager* Instance();
+
+  //this method stores a pointer to the entity in the std::vector
+  //m_Entities at the index position indicated by the entity's ID
+  //(makes for faster access)
+  void            RegisterEntity(BaseGameEntity* NewEntity);
+
+  //returns a pointer to the entity with the ID given as a parameter
+  BaseGameEntity* GetEntityFromID(int id)const;
+
+  //this method removes the entity from the list
+  void            RemoveEntity(BaseGameEntity* pEntity);
+};
+
+//provide easy access to the instance of the EntityManager
+#define EntityMgr EntityManager::Instance()
+</pre>
+
+<li>
+MessageDispatcher 类的声明
+<pre c++>
+class MessageDispatcher
+{
+private:
+
+  //a std::set is used as the container for the delayed messages
+  //because of the benefit of automatic sorting and avoidance
+  //of duplicates. Messages are sorted by their dispatch time.
+  std::set&lt;Telegram&gt; PriorityQ;
+
+  //this method is utilized by DispatchMessage or DispatchDelayedMessages.
+  //This method calls the message handling member function of the receiving
+  //entity, pReceiver, with the newly created telegram
+  void Discharge(Entity* pReceiver, const Telegram&amp; msg);
+
+  MessageDispatcher(){}
+
+public:
+
+  //this class is a singleton
+  static MessageDispatcher* Instance();
+
+  //send a message to another agent.
+  void DispatchMessage(double      delay,
+                       int         sender,
+                       int         receiver,
+                       int         msg,
+                       void*       ExtraInfo);
+
+  //send out any delayed messages. This method is called each time through
+  // the main game loop.
+  void DispatchDelayedMessages();
+};
+
+//to make life easier...
+#define Dispatch MessageDispatcher::Instance()
+
+// delay 为0或负数, 则立刻发送
+void MessageDispatcher::DispatchMessage(double     delay,
+                                        int        sender,
+                                        int        receiver,
+                                        int        msg,
+                                        void*      ExtraInfo)
+{
+  Entity* pReceiver = EntityMgr-&gt;GetEntityFromID(receiver);
+
+  //create the telegram
+  Telegram telegram(0, sender, receiver, msg, ExtraInfo);
+
+  //if there is no delay, route the telegram immediately
+  if (delay &lt;= 0.0)
+  {
+    //send the telegram to the recipient
+    Discharge(pReceiver, telegram);
+  }
+  else
+  {
+    double CurrentTime = Clock-&gt;GetCurrentTime();
+
+    telegram.DispatchTime = CurrentTime + delay;
+
+    //and put it in the queue
+    PriorityQ.insert(telegram);
+  }
+{
+</pre>
+
+<li>
+在主循环的每次更新中调用DispatchDelayedMessages()检查是否有优先级数据包期满, 如有则处理
+<pre c++>
+void MessageDispatcher::DispatchDelayedMessages()
+{
+  //first get current time
+  double CurrentTime = Clock-&gt;GetCurrentTime();
+
+  //now peek at the queue to see if any telegrams need dispatching.
+  //remove all telegrams from the front of the queue that have gone
+  //past their sell-by date
+  while( (PriorityQ.begin()-&gt;DispatchTime &lt; CurrentTime) &amp;&amp;
+         (PriorityQ.begin()-&gt;DispatchTime &gt; 0) )
+  {
+    //read the telegram from the front of the queue
+    Telegram telegram = *PriorityQ.begin();
+
+    //find the recipient
+    Entity* pReceiver = EntityMgr-&gt;GetEntityFromID(telegram.Receiver);
+
+    //send the telegram to the recipient
+    Discharge(pReceiver, telegram);
+
+    //and remove it from the queue
+    PriorityQ.erase(PriorityQ.begin());
+  }
+}
+</pre>
+
+<li>
+消息处理, 实体的基类增加纯虚函数 HandleMessage
+<pre c++>
+class BaseGameEntity
+{
+private:
+
+  int         m_ID;
+
+  /* EXTRANEOUS DETAIL REMOVED FOR CLARITY*/
+
+public:
+
+  //all subclasses can communicate using messages.
+  virtual bool  HandleMessage(const Telegram&amp; msg)=0;
+
+ /* EXTRANEOUS DETAIL REMOVED FOR CLARITY*/
+};
+</pre>
+
+<li>
+状态的基类也需要修改, 使得实体能够选择其接受和处理消息
+<pre c++>
+template &lt;class entity_type&gt;
+class State
+{
+public:
+
+  //this executes if the agent receives a message from the
+  //message dispatcher
+  virtual bool OnMessage(entity_type*, const Telegram&amp;)=0;
+
+  /* EXTRANEOUS DETAIL REMOVED FOR CLARITY*/
+};
+</pre>
+
+<li>
+最后, 修改状态机类, 让其包含方法 HandleMessage, 当一个实体接收到消息时, 首先调用其当前状态的消息处理, 如果当前状态没有处理消息的代码, 则调用全局状态的消息处理函数. OnMessage 函数返回一个布尔值, 表示消息是否被成功处理
+<pre c++>
+  bool  StateMachine::HandleMessage(const Telegram&amp; msg)const
+  {
+    //first see if the current state is valid and that it can handle
+    //the message
+    if (m_pCurrentState &amp;&amp; m_pCurrentState-&gt;OnMessage(m_pOwner, msg))
+    {
+      return true;
+    }
+    //if not, and if a global state has been implemented, send
+    //the message to the global state
+    if (m_pGlobalState &amp;&amp; m_pGlobalState-&gt;OnMessage(m_pOwner, msg))
+    {
+      return true;
+    }
+
+    return false;
+  }
+</pre>
+
+<li>
+现在看矿工类如何处理消息
+<pre c++>
+bool Miner::HandleMessage(const Telegram&amp; msg)
+{
+  return m_pStateMachine-&gt;HandleMessage(msg);
+}
+</pre>
+
+</ul>
+</ul>
+
+</body>
+</html>

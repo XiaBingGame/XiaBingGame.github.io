@@ -1,0 +1,1575 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../../style.css" />
+    <title>djongo</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///D:/Documents/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<ul>
+<li>
+安装 mysqlclient <a href="http://www.lfd.uci.edu/~gohlke/pythonlibs/#mysqlclient,">http://www.lfd.uci.edu/~gohlke/pythonlibs/#mysqlclient,</a> 选择 mysqlclient-1.3.7-cp35-cp35m-win32.whl
+
+<li>
+创建: django-admin startproject mysite
+
+<li>
+manage.py内容: <a href="https://docs.djangoproject.com/en/1.9/ref/django-admin/">https://docs.djangoproject.com/en/1.9/ref/django-admin/</a>
+
+<li>
+mysite 子目录, 包名
+
+<li>
+mysite/settings.py 设置文件: <a href="https://docs.djangoproject.com/en/1.9/topics/settings/">https://docs.djangoproject.com/en/1.9/topics/settings/</a>
+
+<li>
+mysite/urls.py: URL 声明: <a href="https://docs.djangoproject.com/en/1.9/topics/http/urls/">https://docs.djangoproject.com/en/1.9/topics/http/urls/</a>
+
+<li>
+mysite/wsgi.py: WSGI兼容网站服务器的入口点: <a href="https://docs.djangoproject.com/en/1.9/howto/deployment/wsgi/">https://docs.djangoproject.com/en/1.9/howto/deployment/wsgi/</a>
+
+<li>
+进入 mysite 子目录: python manage.py runserver
+
+<ul>
+<li>
+浏览器输入 127.0.0.1:8000
+
+<li>
+修改端口: python manage.py runserver 8080
+
+<li>
+改变服务器IP: python manage.py runserver 0.0.0.0:8000
+
+<ul>
+<li>
+可在所有公共 IP 上监听.
+
+</ul>
+</ul>
+<li>
+对于每个请求 server 会自动重新加载代码, 所以改变代码后无需重新启动服务器, 除非类似添加文件这样不触发重启的动作, 你必须重启服务器.
+
+<li>
+应用表示实现某事情的部分, 项目表示网站的配置及应用集合.
+
+<li>
+创建应用, 位于 manage.py 的相同目录输入如下命令: python manage.py startapp polls
+
+<li>
+写第一个 view
+
+<ul>
+<li>
+polls/views.py
+<pre python>
+from django.http import HttpResponse
+
+def index(request):
+    return HttpResponse("Hello, world. You're at the polls index.")
+</pre>
+
+<li>
+将 view 映射至一个 URL, 这里我们需要一个 URLconf. 在 polls 目录内创建一个 urls.py, 输入如下代码:
+<pre python>
+#polls/urls.py
+from django.conf.urls import url
+
+from . import views
+
+urlpatterns = [
+    url(r'^$', views.index, name='index'),
+]
+</pre>
+
+<li>
+接下来将 root URLconf 指在 polls.urls 模块. 进入 mysite/urls.py. 添加 django.conf.urls.include 并在urlpatterns内插入 include()
+<pre python>
+mysite/urls.py
+
+from django.conf.urls import include, url
+from django.contrib import admin
+
+urlpatterns = [
+    url(r'^polls/', include('polls.urls')),
+    url(r'^admin/', admin.site.urls),
+]
+</pre>
+
+<li>
+当你包含其他 URL 模式时应当永远使用 include()
+
+<li>
+url() 要求四个参数, 分别为 regex, view. 以及可选的 kwargs, name.
+
+<ul>
+<li>
+regex: 请求的 url 和正则表达式匹配, 找到第一个匹配的模式. 注意并不搜索 GET 和 POST 参数, 以及域名. 如 <a href="https://www.example.com/myapp/?page=3,">https://www.example.com/myapp/?page=3,</a> 仅搜索 myapp/
+
+<li>
+发现匹配之后, 调用特定的 view 函数. 其将一个 HttpRequest 对象传递给该函数做第一个参数, 其他被正则表达式捕捉的值作为其他的参数, 简单捕捉, 则为传址参数, 如果是 named caputres, 则作为关键字参数.
+
+<li>
+kwargs: 可以在字典中传递任意的关键字参数给目标 view.
+
+<li>
+name: 方便在其他地方引用该 URL.
+
+</ul>
+</ul>
+<li>
+mysite/settings.py: model层次的Django的设置变量.
+
+<li>
+数据库 python 自带 SQLite.
+
+<li>
+MYSQL 使用  mysqlclient
+
+<li>
+改变  DATABASES 字典中 'default' 条目中某些 key 的值以匹配你的数据库连接设置.
+
+<ul>
+<li>
+ENGINE: django.db.backends.mysql
+
+<li>
+NAME: 如果 SQLite 则为电脑上的一个文件, 其应该为绝对路径全名. 默认值为 os.path.join(BASE_DIR, 'db.sqlite3')
+
+<li>
+其他的选项:  USER, PASSWORD, HOST
+
+<li>
+DATABASES 设置必须包含 default 数据库. 可以设置其他额外的数据库.
+
+<li>
+本例创建 POLLSDATABASE 数据库, MYSQL 命令行提示符通过 status 可查看端口号
+
+<li>
+我的设置
+<pre python>
+DATABASES = {
+    'default': {
+        # 'ENGINE': 'django.db.backends.sqlite3',
+        # 'NAME': os.path.join(BASE_DIR, 'db.sqlite3'),
+        'ENGINE': 'django.db.backends.mysql',
+        'NAME': 'POLLSDATABASE',
+        'USER': 'root',
+        'PASSWORD': 'xhyn723',
+        'HOST': 'localhost',
+        'PORT': '3306',
+    }
+}
+</pre>
+
+</ul>
+<li>
+mysite/settings.py
+
+<ul>
+<li>
+设置时区 TIME_ZONE, 改为 'Asia/Shanghai'
+
+<li>
+INSTALLED_APPS, 位于顶部, 表示当前实例激活的应用
+
+<ul>
+<li>
+django.contrib.admin  管理页面
+
+<li>
+django.contrib.auth --- 认证系统
+
+<li>
+django.contrib.contenttypes --- 内容类型的框架
+
+<li>
+django.contrib.sessions --- session 框架
+
+<li>
+django.contrib.messages --- message 框架
+
+<li>
+django.contrib.staticfiles --- 管理静态页面的框架
+
+</ul>
+</ul>
+<li>
+一些应用至少用一个数据库表. 所以我们要在使用它们之前在数据库中创建表, 运行如下命令
+<pre>
+python manage.py migrate
+</pre>
+
+<ul>
+<li>
+migrate 命令查看 INSTALLED_APPS 内的设置. 创建必要的数据表.
+
+<li>
+INSTALLED_APPS 如果有些应用不需要, 可以在migrate之前注释掉或删除.
+
+</ul>
+<li>
+模型包含你所存数据必要的域和行为.
+
+<li>
+本例, 两个模型: Question(一个问题和一个公共数据), Choice(两个域, 选择的文本和vote tally). 每个 Choice 关联至一个 Question. 这些概念用类表示.
+<pre python>
+# polls/models.py
+from django.db import models
+
+
+class Question(models.Model):
+    question_text = models.CharField(max_length=200)
+    pub_date = models.DateTimeField('date published')
+
+
+class Choice(models.Model):
+    question = models.ForeignKey(Question, on_delete=models.CASCADE)
+    choice_text = models.CharField(max_length=200)
+    votes = models.IntegerField(default=0)
+</pre>
+
+<ul>
+<li>
+每个类变量表示模型中的一个域
+
+<li>
+每个域由一个 Field 类的实例表示
+
+<li>
+域实例的名称为域名, 数据库使用其为列名.
+
+<li>
+第一个位置参数可以设置为易读的名称. 见 pub_date
+
+<li>
+CharField 需要设置 max_length 参数
+
+<li>
+votes 设置 default 值.
+
+<li>
+使用 ForeignKey 设置关系. 表示每个 Choice 关联到单个 Question. 
+
+</ul>
+<li>
+mysite/settings.py 的 INSTALLED_APPS 增加 'polls.apps.PollsConfig'.
+
+<li>
+运行命令: python manage.py makemigrations polls
+
+<ul>
+<li>
+makemigrations 告知 Django 你对模型做了变化
+
+<li>
+migration 是 Django 存储你的模型的方式. 位于文件 polls/migrations/0001_initial.py
+
+<li>
+migrate 命令可以自动运行你的migration, 以及管理你的数据库scheme.
+
+<li>
+sqlmigrate 命令采取 migration 名称, 并返回它们的 SQL, 如 python manage.py sqlmigrate polls 0001
+
+<ul>
+<li>
+通过组合 apps 的名称和模型的小写名称自动生成表格
+
+<li>
+自动添加主键
+
+<li>
+Django 扩展 "_id" 至外键名称
+
+<li>
+通过一个 FOREIGN KEY 限制显式设置外键关系.
+
+<li>
+sqlmigrate 命令仅仅是打印, 而并非运行 migration.
+
+</ul>
+<li>
+python manage.py check 可检查而无需 migration.
+
+</ul>
+<li>
+现在运行: python manage.py migrate
+
+<ul>
+<li>
+同步你的模型至数据库
+
+<li>
+三个步骤:
+
+<ol>
+<li>
+在 models.py 中改变你的模型
+
+<li>
+运行 python manage.py makemigrations 创建用于这些改变的 migration
+
+<li>
+运行 python manage.py migrate 应用对数据库的改变
+
+</ol>
+<li>
+分步有助于提交 migration 至版本控制系统.
+
+</ul>
+<li>
+启动 Python shell: python manage.py shell, 这样其有 DJANGO_SETTINGS_MODULE 环境变量
+
+<ul>
+<li>
+如果不想使用 manage.py, 设置 DJANGO_SETTINGS_MODULE 环境变量为 mysite.settings, 开始一个 Python shell, 设置 Django
+<pre>
+&gt;&gt;&gt; import django
+&gt;&gt;&gt; django.setup()
+</pre>
+
+<ul>
+<li>
+确保位于 manage.py 所在的目录.
+<pre>
+&gt;&gt;&gt; from polls.models import Question, Choice
+# 目前没有问题
+&gt;&gt;&gt; Question.objects.all()
+[]
+# 设置时间, 要用到时区.
+&gt;&gt;&gt; from django.utils import timezone
+&gt;&gt;&gt; q = Question(question_text="What's new?", pub_date=timezone.now())
+
+# 用 save() 保存至数据库
+&gt;&gt;&gt; q.save()
+
+# 现在问题有了 id 号
+&gt;&gt;&gt; q.id
+1
+
+# 通过属性访问模型的域
+&gt;&gt;&gt; q.question_text
+"What's new?"
+&gt;&gt;&gt; q.pub_date
+datetime.datetime(2012, 2, 26, 13, 0, 0, 775217, tzinfo=&lt;UTC&gt;)
+
+# 通过属性改变值, 而后调用 save()
+&gt;&gt;&gt; q.question_text = "What's up?"
+&gt;&gt;&gt; q.save()
+
+# objects.all() 显示数据库中的所有问题
+&gt;&gt;&gt; Question.objects.all()
+[&lt;Question: Question object&gt;]
+</pre>
+
+</ul>
+</ul>
+<li>
+给 Question 和 Choice 添加 str() 有助于读取.
+<pre python>
+# polls/models.py
+
+from django.db import models
+from django.utils.encoding import python_2_unicode_compatible
+
+@python_2_unicode_compatible  # only if you need to support Python 2
+class Question(models.Model):
+    # ...
+    def __str__(self):
+        return self.question_text
+
+@python_2_unicode_compatible  # only if you need to support Python 2
+class Choice(models.Model):
+    # ...
+    def __str__(self):
+        return self.choice_text
+</pre>
+
+<li>
+添加自定义方法
+<pre python>
+# polls/models.py
+
+import datetime
+
+from django.db import models
+from django.utils import timezone
+
+
+class Question(models.Model):
+    # ...
+    def was_published_recently(self):
+        return self.pub_date &gt;= timezone.now() - datetime.timedelta(days=1)
+
+
+</pre>
+
+<li>
+开始一个新的 python mange.py shell
+<pre>
+&gt;&gt;&gt; from polls.models import Question, Choice
+
+# 确保 __str__() 工作
+&gt;&gt;&gt; Question.objects.all()
+[&lt;Question: What's up?&gt;]
+
+# 根据 关键字参数使用数据库的查找API.
+&gt;&gt;&gt; Question.objects.filter(id=1)
+[&lt;Question: What's up?&gt;]
+&gt;&gt;&gt; Question.objects.filter(question_text__startswith='What')
+[&lt;Question: What's up?&gt;]
+
+# 给出今年内发表的问题.
+&gt;&gt;&gt; from django.utils import timezone
+&gt;&gt;&gt; current_year = timezone.now().year
+&gt;&gt;&gt; Question.objects.get(pub_date__year=current_year)
+&lt;Question: What's up?&gt;
+
+# 查找不存在的id, 引发异常.
+&gt;&gt;&gt; Question.objects.get(id=2)
+Traceback (most recent call last):
+    ...
+DoesNotExist: Question matching query does not exist.
+
+# 查找主键是最常用的情况. Django 提供了一个快捷方式, 下面等同于 Question.objects.get(id=1).
+&gt;&gt;&gt; Question.objects.get(pk=1)
+&lt;Question: What's up?&gt;
+
+# 确保自定义方法工作.
+&gt;&gt;&gt; q = Question.objects.get(pk=1)
+&gt;&gt;&gt; q.was_published_recently()
+True
+
+# 给 Question 一对 Choices. 该创建会构造一个新的 Choice 对象, 其执行 INSERT 语句, 添加 choice 给可用的choices集合, 而后返回一个新的 Choice 对象.
+# Django 创建一个 set 用于保存外键关系的"另一边"(例如问题的选择), 其可以通过 API 访问.
+&gt;&gt;&gt; q = Question.objects.get(pk=1)
+
+# 显示选择
+&gt;&gt;&gt; q.choice_set.all()
+[]
+
+# 创建三个选择.
+&gt;&gt;&gt; q.choice_set.create(choice_text='Not much', votes=0)
+&lt;Choice: Not much&gt;
+&gt;&gt;&gt; q.choice_set.create(choice_text='The sky', votes=0)
+&lt;Choice: The sky&gt;
+&gt;&gt;&gt; c = q.choice_set.create(choice_text='Just hacking again', votes=0)
+
+# Choice 对象可通过API访问其关联的 Question 对象
+&gt;&gt;&gt; c.question
+&lt;Question: What's up?&gt;
+
+# Question 访问其对应的 Choice
+&gt;&gt;&gt; q.choice_set.all()
+[&lt;Choice: Not much&gt;, &lt;Choice: The sky&gt;, &lt;Choice: Just hacking again&gt;]
+&gt;&gt;&gt; q.choice_set.count()
+3
+
+# API 可以根据需要自动添加关系, 使用两个下划线分隔关系, 任意层数都支持.
+&gt;&gt;&gt; Choice.objects.filter(question__pub_date__year=current_year)
+[&lt;Choice: Not much&gt;, &lt;Choice: The sky&gt;, &lt;Choice: Just hacking again&gt;]
+
+# 使用 delete() 删除一个选择
+&gt;&gt;&gt; c = q.choice_set.filter(choice_text__startswith='Just hacking')
+&gt;&gt;&gt; c.delete()
+</pre>
+
+<li>
+Django 自动创建用于模型的 admin 接口.
+
+<li>
+Django 创建了一个用于网站管理者编辑内容的统一接口
+
+<li>
+创建管理者: python manage.py createsuperuser, 而后输入用户名, 邮箱, 密码, 本例 summericeyl, cq
+
+<li>
+查看管理页面: <a href="http://127.0.0.1:8000/admin/.">http://127.0.0.1:8000/admin/.</a>
+
+<ul>
+<li>
+group 和 user 由  django.contrib.auth  提供
+
+</ul>
+<li>
+我们需要告诉 admin Question 对象有一个admin接口
+<pre python>
+# polls/admin.py
+
+from django.contrib import admin
+
+from .models import Question
+
+admin.site.register(Question)
+
+</pre>
+
+</ul>
+<h1 id="toc_1">第三部分</h1>
+<ul>
+<li>
+本例几个 view: index 页面 --- 显示最近的几个问题, detail 页面 --- 显示问题文本, 没有结果但是有个投票 form, result 页面 --- 显示特定问题的答案, 投票动作 --- 处理投票.
+
+<li>
+view 分布页面和内容. 由一个函数或方法表示view. 通过请求的URL选择 view.
+
+<li>
+URLconf 映射 URL 模式至一个 view.
+
+<li>
+接下来创建几个 views.
+<pre python>
+# polls/views.py
+
+def detail(request, question_id):
+    return HttpResponse("You're looking at question %s." % question_id)
+
+def results(request, question_id):
+    response = "You're looking at the results of question %s."
+    return HttpResponse(response % question_id)
+
+def vote(request, question_id):
+    return HttpResponse("You're voting on question %s." % question_id)
+</pre>
+
+<li>
+将视图连接到 urls
+<pre python>
+# polls/urls.py
+
+from django.conf.urls import url
+
+from . import views
+
+urlpatterns = [
+    # ex: /polls/
+    url(r'^$', views.index, name='index'),
+    # ex: /polls/5/
+    url(r'^(?P&lt;question_id&gt;[0-9]+)/$', views.detail, name='detail'),
+    # ex: /polls/5/results/
+    url(r'^(?P&lt;question_id&gt;[0-9]+)/results/$', views.results, name='results'),
+    # ex: /polls/5/vote/
+    url(r'^(?P&lt;question_id&gt;[0-9]+)/vote/$', views.vote, name='vote'),
+]
+</pre>
+
+<li>
+浏览器打开 '/polls/34/', '/polls/34/results/', '/polls/34/vote/'
+
+<li>
+include() 函数仅用来关联至另外一个 URLconfs, 注意用于include()内的正则表达式不包含$, 仅有 /. 一旦遇到匹配地址, 则去掉匹配部分, 进行下一步的 url 匹配.
+
+<li>
+detail(request=&lt;HttpRequest object&gt;, question_id='34')
+
+<ul>
+<li>
+question_id='34' 部分来自于 (?P&lt;question_id&gt;[0-9]+).
+
+<li>
+括号用于捕获匹配, 而后作为 view 函数的参数. ?P&lt;question_id&gt; 定义了用于匹配模式的参数名称.
+
+<li>
+如果你想要加上 .html, 你可用 url(r'^polls/latest\.html$', views.index),
+
+</ul>
+<li>
+每个 view 做两件事情, 一个返回 HttpResponse 对象, 一个引发 Http404 异常.
+<pre python>
+# polls/views.py
+
+from django.http import HttpResponse
+
+from .models import Question
+
+
+def index(request):
+    latest_question_list = Question.objects.order_by('-pub_date')[:5]
+    output = ', '.join([q.question_text for q in latest_question_list])
+    return HttpResponse(output)
+</pre>
+
+<li>
+你应当使用模板系统分离设计, 避免硬代码写设计.
+
+<li>
+在 polls 目录内创建 templates 目录, Django 将会在其内查找模板
+
+<li>
+默认 DjangoTemplates 后端的 APP_DIRS 设为 True. 通常 DjangoTemplates 会查找 INSTALLED_APPS 每个应用的 templates 目录.
+
+<li>
+在刚才创建的 templates 目录创建一个 polls 目录, 而后在其内创建文件 index.html. 这样 polls/index.html 可以关联至 polls/templates/polls/index.html
+
+<ul>
+<li>
+最好创建子目录, 因为模板首先找名称匹配的那个.
+
+<li>
+模板 index.html 放置的内容
+<pre html>
+&lt;!-- polls/templates/polls/index.html --&gt;
+
+{% if latest_question_list %}
+    &lt;ul&gt;
+    {% for question in latest_question_list %}
+        &lt;li&gt;&lt;a href="/polls/{{ question.id }}/"&gt;{{ question.question_text }}&lt;/a&gt;&lt;/li&gt;
+    {% endfor %}
+    &lt;/ul&gt;
+{% else %}
+    &lt;p&gt;No polls are available.&lt;/p&gt;
+{% endif %}
+</pre>
+
+</ul>
+<li>
+更新 view
+<pre python>
+# polls/views.py
+
+from django.http import HttpResponse
+from django.template import loader
+
+from .models import Question
+
+
+def index(request):
+    latest_question_list = Question.objects.order_by('-pub_date')[:5]
+    template = loader.get_template('polls/index.html')
+    context = {
+        'latest_question_list': latest_question_list,
+    }
+    return HttpResponse(template.render(context, request))
+
+
+</pre>
+
+<ul>
+<li>
+context 是一个字典, 映射模板变量至 python 对象
+
+<li>
+快捷写法
+<pre python>
+# polls/views.py
+
+from django.shortcuts import render
+
+from .models import Question
+
+
+def index(request):
+    latest_question_list = Question.objects.order_by('-pub_date')[:5]
+    context = {'latest_question_list': latest_question_list}
+    return render(request, 'polls/index.html', context)
+
+
+</pre>
+
+<li>
+render 第二个参数为模板名, 第三个为字典
+
+</ul>
+<li>
+detail view, 加上异常
+<pre python>
+# polls/views.py
+
+from django.http import Http404
+from django.shortcuts import render
+
+from .models import Question
+# ...
+def detail(request, question_id):
+    try:
+        question = Question.objects.get(pk=question_id)
+    except Question.DoesNotExist:
+        raise Http404("Question does not exist")
+    return render(request, 'polls/detail.html', {'question': question})
+
+
+</pre>
+
+<li>
+模板
+<pre html>
+&lt;!-- polls/templates/polls/detail.html --&gt;
+
+{{ question }}
+</pre>
+
+<li>
+引发异常的简写方式
+<pre python>
+# polls/views.py
+
+from django.shortcuts import get_object_or_404, render
+
+from .models import Question
+# ...
+def detail(request, question_id):
+    question = get_object_or_404(Question, pk=question_id)
+    return render(request, 'polls/detail.html', {'question': question})
+
+
+</pre>
+
+<li>
+模板
+<pre html>
+&lt;!-- polls/templates/polls/detail.html --&gt;
+
+&lt;h1&gt;{{ question.question_text }}&lt;/h1&gt;
+&lt;ul&gt;
+{% for choice in question.choice_set.all %}
+    &lt;li&gt;{{ choice.choice_text }}&lt;/li&gt;
+{% endfor %}
+&lt;/ul&gt;
+
+
+</pre>
+
+<ul>
+<li>
+e {% for %}  里面有方法调用 question.choice_set.all()
+
+</ul>
+<li>
+移除硬编码
+<pre>
+&lt;li&gt;&lt;a href="/polls/{{ question.id }}/"&gt;{{ question.question_text }}&lt;/a&gt;&lt;/li&gt;
+</pre>
+
+<ul>
+<li>
+改为 
+<pre>
+&lt;li&gt;&lt;a href="{% url 'detail' question.id %}"&gt;{{ question.question_text }}&lt;/a&gt;&lt;/li&gt;
+</pre>
+
+<li>
+使用 url() 函数解决.
+
+<li>
+见匹配的 url(r'^(?P&lt;question_id&gt;[0-9]+)/$', views.detail, name='detail'), 这样修改前面的正则地址也不需要担心了
+
+<li>
+如改为 url(r'^specifics/(?P&lt;question_id&gt;[0-9]+)/$', views.detail, name='detail'), 这样无需再模板的html内修改了
+
+</ul>
+<li>
+给 URLconf 添加名称空间以识别不同的应用的url, 在 polls/urls.py 内添加 app_name 变量来设置应用的名称空间
+<pre python>
+# polls/urls.py
+from django.conf.urls import url
+
+from . import views
+
+app_name = 'polls'
+urlpatterns = [
+    url(r'^$', views.index, name='index'),
+    url(r'^(?P&lt;question_id&gt;[0-9]+)/$', views.detail, name='detail'),
+    url(r'^(?P&lt;question_id&gt;[0-9]+)/results/$', views.results, name='results'),
+    url(r'^(?P&lt;question_id&gt;[0-9]+)/vote/$', views.vote, name='vote'),
+]
+</pre>
+
+<li>
+改变  polls/index.html 的
+<pre>
+&lt;li&gt;&lt;a href="{% url 'detail' question.id %}"&gt;{{ question.question_text }}&lt;/a&gt;&lt;/li&gt;
+</pre>
+
+<ul>
+<li>
+为 
+<pre>
+&lt;li&gt;&lt;a href="{% url 'polls:detail' question.id %}"&gt;{{ question.question_text }}&lt;/a&gt;&lt;/li&gt;
+</pre>
+
+</ul>
+</ul>
+
+<h1 id="toc_2">第四部分</h1>
+<ul>
+<li>
+更新 polls/detail.html, 以增加表单
+<pre html>
+&lt;!-- polls/templates/polls/detail.html --&gt;
+
+&lt;h1&gt;{{ question.question_text }}&lt;/h1&gt;
+
+{% if error_message %}&lt;p&gt;&lt;strong&gt;{{ error_message }}&lt;/strong&gt;&lt;/p&gt;{% endif %}
+
+&lt;form action="{% url 'polls:vote' question.id %}" method="post"&gt;
+{% csrf_token %}
+{% for choice in question.choice_set.all %}
+    &lt;input type="radio" name="choice" id="choice{{ forloop.counter }}" value="{{ choice.id }}" /&gt;
+    &lt;label for="choice{{ forloop.counter }}"&gt;{{ choice.choice_text }}&lt;/label&gt;&lt;br /&gt;
+{% endfor %}
+&lt;input type="submit" value="Vote" /&gt;
+&lt;/form&gt;
+
+</pre>
+
+<ul>
+<li>
+forloop.counter 表示第几次循环
+
+<li>
+ {% csrf_token %}  确保安全, 所有 PSOT 表单的目标都为内部 URLs
+<pre python>
+# polls/views.py
+
+from django.shortcuts import get_object_or_404, render
+from django.http import HttpResponseRedirect, HttpResponse
+from django.core.urlresolvers import reverse
+
+from .models import Choice, Question
+# ...
+def vote(request, question_id):
+    question = get_object_or_404(Question, pk=question_id)
+    try:
+        selected_choice = question.choice_set.get(pk=request.POST['choice'])
+    except (KeyError, Choice.DoesNotExist):
+        # Redisplay the question voting form.
+        return render(request, 'polls/detail.html', {
+            'question': question,
+            'error_message': "You didn't select a choice.",
+        })
+    else:
+        selected_choice.votes += 1
+        selected_choice.save()
+        # Always return an HttpResponseRedirect after successfully dealing
+        # with POST data. This prevents data from being posted twice if a
+        # user hits the Back button.
+        return HttpResponseRedirect(reverse('polls:results', args=(question.id,)))
+
+</pre>
+
+</ul>
+<li>
+request.POST 是一个字典对象, 通过键名访问提交的数据. 同样的还有 request.GET. 注意当有数据变化的时候必须用 POST.
+
+<li>
+HttpResponseRedirect 仅有一个参数, 重置的网址. 遇到 POST 数据的处理之后, 最好返回 HttpResponseRedirect, 以免数据提交两次.
+
+<li>
+reverse 函数避免硬编码 view 函数内的 URL. 参数有我们想要到达的view的名称, 以及对应于指向该view的URL模式的变量部分
+<pre python>
+# polls/views.py
+
+from django.shortcuts import get_object_or_404, render
+
+
+def results(request, question_id):
+    question = get_object_or_404(Question, pk=question_id)
+    return render(request, 'polls/results.html', {'question': question})
+
+</pre>
+
+<ul>
+<li>
+模板网页
+<pre html>
+&lt;!-- polls/templates/polls/results.html --&gt;
+
+&lt;h1&gt;{{ question.question_text }}&lt;/h1&gt;
+
+&lt;ul&gt;
+{% for choice in question.choice_set.all %}
+    &lt;li&gt;{{ choice.choice_text }} -- {{ choice.votes }} vote{{ choice.votes|pluralize }}&lt;/li&gt;
+{% endfor %}
+&lt;/ul&gt;
+
+&lt;a href="{% url 'polls:detail' question.id %}"&gt;Vote again?&lt;/a&gt;
+
+</pre>
+
+</ul>
+<li>
+Generic views 抽象了常见模式
+
+<li>
+修改
+<pre python>
+# polls/urls.py
+
+from django.conf.urls import url
+
+from . import views
+
+app_name = 'polls'
+urlpatterns = [
+    url(r'^$', views.IndexView.as_view(), name='index'),
+    url(r'^(?P&lt;pk&gt;[0-9]+)/$', views.DetailView.as_view(), name='detail'),
+    url(r'^(?P&lt;pk&gt;[0-9]+)/results/$', views.ResultsView.as_view(), name='results'),
+    url(r'^(?P&lt;question_id&gt;[0-9]+)/vote/$', views.vote, name='vote'),
+]
+</pre>
+
+<ul>
+<li>
+注意地址中第二个和第三个中的  &lt;question_id&gt; 替换为 &lt;pk&gt;
+
+</ul>
+<li>
+修改 view, 使用 generic views 代替
+<pre python>
+polls/views.py
+
+from django.shortcuts import get_object_or_404, render
+from django.http import HttpResponseRedirect
+from django.core.urlresolvers import reverse
+from django.views import generic
+
+from .models import Choice, Question
+
+
+class IndexView(generic.ListView):
+    template_name = 'polls/index.html'
+    context_object_name = 'latest_question_list'
+
+    def get_queryset(self):
+        """Return the last five published questions."""
+        return Question.objects.order_by('-pub_date')[:5]
+
+
+class DetailView(generic.DetailView):
+    model = Question
+    template_name = 'polls/detail.html'
+
+
+class ResultsView(generic.DetailView):
+    model = Question
+    template_name = 'polls/results.html'
+
+
+def vote(request, question_id):
+    ... # same as above, no changes needed.
+</pre>
+
+<li>
+ListView 和 DetailView 分别用于抽象'显示对象列表'和'显示特定类型对象的细节页面'的概念
+
+<li>
+DetailView generic view 希望从 URL 捕获到的主键值被称为"pk", 所以对于generic views, 我们改变了 question_id 为 pk
+
+<li>
+DetailView generic view 默认使用 &lt;app name&gt;/&lt;model name&gt;_detail.html 的模板, 可以用 template_name 属性修改.
+
+<li>
+ListView generic view 默认使用 &lt;app name&gt;/&lt;model name&gt;_list.html 的模板, 可以用 template_name 属性修改.
+
+<li>
+DetailView 自动提供了 question 变量, 能够决定 context 变量合适的名称. 对于 ListView, 因为其生成的context变量为 question_list, 所以要用 context_object_name 属性来覆盖该自动生成的变量.
+
+</ul>
+
+<h1 id="toc_3">第五部分</h1>
+<ul>
+<li>
+一次性创建测试集, 由系统自动测试
+
+<li>
+测试不仅仅察觉出问题, 还能预防问题
+
+<li>
+测试 Question 的 was_published_recently() 方法, 时间有可能在未来.
+
+<li>
+在 polls 文件夹内 tests.py 文件放置测试代码
+<pre python>
+# polls/tests.py
+
+import datetime
+
+from django.utils import timezone
+from django.test import TestCase
+
+from .models import Question
+
+
+class QuestionMethodTests(TestCase):
+
+    def test_was_published_recently_with_future_question(self):
+        """
+        was_published_recently() should return False for questions whose
+        pub_date is in the future.
+        """
+        time = timezone.now() + datetime.timedelta(days=30)
+        future_question = Question(pub_date=time)
+        self.assertEqual(future_question.was_published_recently(), False)
+
+
+</pre>
+
+<li>
+python manage.py test polls 可执行测试
+
+<ul>
+<li>
+其查找 polls 内的测试
+
+<li>
+找到 django.test.TestCase 类的派生类.
+
+<li>
+创建一个特殊的数据库用于该测试
+
+<li>
+查找测试方法(以 test 开头的方法)
+
+<li>
+方法内使用 assertEqual() 发现返回值 True 与 False 不同.
+
+<li>
+找到问题所在, 现在修改 models.py 的 was_published_recently() 方法
+<pre python>
+# polls/models.py
+
+def was_published_recently(self):
+    now = timezone.now()
+    return now - datetime.timedelta(days=1) &lt;= self.pub_date &lt;= now
+</pre>
+
+</ul>
+<li>
+给该类添加两个测试方法
+<pre python>
+# polls/tests.py
+def test_was_published_recently_with_old_question(self):
+    """
+    was_published_recently() should return False for questions whose
+    pub_date is older than 1 day.
+    """
+    time = timezone.now() - datetime.timedelta(days=30)
+    old_question = Question(pub_date=time)
+    self.assertEqual(old_question.was_published_recently(), False)
+
+def test_was_published_recently_with_recent_question(self):
+    """
+    was_published_recently() should return True for questions whose
+    pub_date is within the last day.
+    """
+    time = timezone.now() - datetime.timedelta(hours=1)
+    recent_question = Question(pub_date=time)
+    self.assertEqual(recent_question.was_published_recently(), True)
+</pre>
+
+<li>
+django 提供了一个测试的 client 用来模拟用户与代码的交互. 我们可以在 tests.py 或者 shell 内使用它.
+
+<li>
+在 shell 中, 首先要设置测试环境
+<pre>
+&gt;&gt;&gt; from django.test.utils import setup_test_environment
+&gt;&gt;&gt; setup_test_environment()
+</pre>
+
+<ul>
+<li>
+setup_test_environment() 安装了一个模板的 renderer.允许我们测试 responses 上的额外属性, 例如 response.context.
+
+</ul>
+<li>
+引入 client 类.
+<pre>
+&gt;&gt;&gt; from django.test import Client
+&gt;&gt;&gt; # create an instance of the client for our use
+&gt;&gt;&gt; client = Client()
+</pre>
+
+<li>
+而后要求client做某些工作
+<pre>
+&gt;&gt;&gt; # get a response from '/'
+&gt;&gt;&gt; response = client.get('/')
+&gt;&gt;&gt; # we should expect a 404 from that address
+&gt;&gt;&gt; response.status_code
+404
+&gt;&gt;&gt; # on the other hand we should expect to find something at '/polls/'
+&gt;&gt;&gt; # we'll use 'reverse()' rather than a hardcoded URL
+&gt;&gt;&gt; from django.core.urlresolvers import reverse
+&gt;&gt;&gt; response = client.get(reverse('polls:index'))
+&gt;&gt;&gt; response.status_code
+200
+&gt;&gt;&gt; response.content
+b'\n\n\n    &lt;p&gt;No polls are available.&lt;/p&gt;\n\n'
+&gt;&gt;&gt; # note - you might get unexpected results if your ``TIME_ZONE``
+&gt;&gt;&gt; # in ``settings.py`` is not correct. If you need to change it,
+&gt;&gt;&gt; # you will also need to restart your shell session
+&gt;&gt;&gt; from polls.models import Question
+&gt;&gt;&gt; from django.utils import timezone
+&gt;&gt;&gt; # create a Question and save it
+&gt;&gt;&gt; q = Question(question_text="Who is your favorite Beatle?", pub_date=timezone.now())
+&gt;&gt;&gt; q.save()
+&gt;&gt;&gt; # check the response once again
+&gt;&gt;&gt; response = client.get('/polls/')
+&gt;&gt;&gt; response.content
+b'\n\n\n    &lt;ul&gt;\n    \n        &lt;li&gt;&lt;a href="/polls/1/"&gt;Who is your favorite Beatle?&lt;/a&gt;&lt;/li&gt;\n    \n    &lt;/ul&gt;\n\n'
+&gt;&gt;&gt; # If the following doesn't work, you probably omitted the call to
+&gt;&gt;&gt; # setup_test_environment() described above
+&gt;&gt;&gt; response.context['latest_question_list']
+[&lt;Question: Who is your favorite Beatle?&gt;]
+</pre>
+
+<li>
+修改 views.py 的 IndexView 的 get_queryset() 方法, 使得其可以检查日期.
+<pre python>
+# polls/views.py
+
+from django.utils import timezone
+
+
+def get_queryset(self):
+    """
+    Return the last five published questions (not including those set to be
+    published in the future).
+    """
+    return Question.objects.filter(
+        pub_date__lte=timezone.now()
+    ).order_by('-pub_date')[:5]
+</pre>
+
+<li>
+在管理面板内创建过去和未来的问题, 即可发现在index页面内, 只有那些过去的问题才会显示出来.
+
+<li>
+自动测试
+<pre python>
+# polls/tests.py
+
+from django.core.urlresolvers import reverse
+</pre>
+
+<ul>
+<li>
+创建一个快捷函数用来创建问题和新的测试类
+<pre python>
+# polls/tests.py
+
+def create_question(question_text, days):
+    """
+    Creates a question with the given `question_text` and published the
+    given number of `days` offset to now (negative for questions published
+    in the past, positive for questions that have yet to be published).
+    """
+    time = timezone.now() + datetime.timedelta(days=days)
+    return Question.objects.create(question_text=question_text,
+                                   pub_date=time)
+
+
+class QuestionViewTests(TestCase):
+    def test_index_view_with_no_questions(self):
+        """
+        If no questions exist, an appropriate message should be displayed.
+        """
+        response = self.client.get(reverse('polls:index'))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, "No polls are available.")
+        self.assertQuerysetEqual(response.context['latest_question_list'], [])
+
+    def test_index_view_with_a_past_question(self):
+        """
+        Questions with a pub_date in the past should be displayed on the
+        index page.
+        """
+        create_question(question_text="Past question.", days=-30)
+        response = self.client.get(reverse('polls:index'))
+        self.assertQuerysetEqual(
+            response.context['latest_question_list'],
+            ['&lt;Question: Past question.&gt;']
+        )
+
+    def test_index_view_with_a_future_question(self):
+        """
+        Questions with a pub_date in the future should not be displayed on
+        the index page.
+        """
+        create_question(question_text="Future question.", days=30)
+        response = self.client.get(reverse('polls:index'))
+        self.assertContains(response, "No polls are available.",
+                            status_code=200)
+        self.assertQuerysetEqual(response.context['latest_question_list'], [])
+
+    def test_index_view_with_future_question_and_past_question(self):
+        """
+        Even if both past and future questions exist, only past questions
+        should be displayed.
+        """
+        create_question(question_text="Past question.", days=-30)
+        create_question(question_text="Future question.", days=30)
+        response = self.client.get(reverse('polls:index'))
+        self.assertQuerysetEqual(
+            response.context['latest_question_list'],
+            ['&lt;Question: Past question.&gt;']
+        )
+
+    def test_index_view_with_two_past_questions(self):
+        """
+        The questions index page may display multiple questions.
+        """
+        create_question(question_text="Past question 1.", days=-30)
+        create_question(question_text="Past question 2.", days=-5)
+        response = self.client.get(reverse('polls:index'))
+        self.assertQuerysetEqual(
+            response.context['latest_question_list'],
+            ['&lt;Question: Past question 2.&gt;', '&lt;Question: Past question 1.&gt;']
+        )
+</pre>
+
+<li>
+每个测试方法会重置数据库
+
+</ul>
+<li>
+限制 DetailView 显示未来的问题
+<pre python>
+# polls/views.py
+
+class DetailView(generic.DetailView):
+    ...
+    def get_queryset(self):
+        """
+        Excludes any questions that aren't published yet.
+        """
+        return Question.objects.filter(pub_date__lte=timezone.now())
+</pre>
+
+<li>
+添加测试
+<pre python>
+# polls/tests.py
+
+class QuestionIndexDetailTests(TestCase):
+    def test_detail_view_with_a_future_question(self):
+        """
+        The detail view of a question with a pub_date in the future should
+        return a 404 not found.
+        """
+        future_question = create_question(question_text='Future question.',
+                                          days=5)
+        response = self.client.get(reverse('polls:detail',
+                                   args=(future_question.id,)))
+        self.assertEqual(response.status_code, 404)
+
+    def test_detail_view_with_a_past_question(self):
+        """
+        The detail view of a question with a pub_date in the past should
+        display the question's text.
+        """
+        past_question = create_question(question_text='Past Question.',
+                                        days=-5)
+        response = self.client.get(reverse('polls:detail',
+                                   args=(past_question.id,)))
+        self.assertContains(response, past_question.question_text,
+                            status_code=200)
+</pre>
+
+<li>
+经验: 为每个模型或视图创建一个单独的 TestClass
+
+<li>
+为每个你想要测试的情况集创建一个方法
+
+<li>
+测试方法名称描述了它们的功能
+
+<li>
+使用一个"in-browser"框架如 Selenium测试你的HTML在浏览器内的实际渲染. Django 还包含 LiveServerTestCase 实现这类工具的集成
+
+<li>
+检查代码是否全部覆盖了测试
+
+</ul>
+
+<h1 id="toc_4">第六部分</h1>
+<ul>
+<li>
+django.contrib.staticfiles 处理静态文件.
+
+<li>
+在 polls 内创建 static 目录
+
+<li>
+Django 的 STATICFILES_FINDER 设置包含了查找器的列表, 知道在何处查找静态文件. 其中默认的一个是 AppDirecotriesFinder 则在每个 INSTALLED_APPS 的 static 子目录内查找.
+
+<li>
+在上面的 static 目录内创建 polls 目录, 而后在其内创建 style.css 文件. 在 Django 通过 polls/styles.css 关联.
+
+<li>
+css 关联
+<pre css>
+// polls/static/polls/style.css
+
+li a {
+    color: green;
+}
+</pre>
+
+<li>
+修改 html
+<pre html>
+&lt;!-- polls/templates/polls/index.html --&gt;
+
+{% load staticfiles %}
+
+&lt;link rel="stylesheet" type="text/css" href="{% static 'polls/style.css' %}" /&gt;
+
+</pre>
+
+<ul>
+<li>
+{% load staticfiles %} 从 staticfiles 模板库中加载 { % static %} 模板标签. 该标签生成了静态文件的绝对URL值.
+
+</ul>
+<li>
+在其内创建 images 文件夹, 放置图像文件, 修改 css
+<pre css>
+// polls/static/polls/style.css
+
+body {
+    background: white url("images/background.gif") no-repeat right bottom;
+}
+</pre>
+
+</ul>
+
+<h1 id="toc_5">第七部分</h1>
+<ul>
+<li>
+前面通过 admin.site.register(Question) 注册了 Question 的管理, 替换这一行为
+<pre python>
+# polls/admin.py
+
+from django.contrib import admin
+
+from .models import Question
+
+
+class QuestionAdmin(admin.ModelAdmin):
+    fields = ['pub_date', 'question_text']
+
+admin.site.register(Question, QuestionAdmin)
+</pre>
+
+<ul>
+<li>
+其做法为创建一个模型的管理类, 而后将其作为 admin.site.register() 函数的第二个参数, 这样就可以修改一个模型的管理选项了. 修改之后可以看到选项的顺序发生了变化.
+
+</ul>
+<li>
+创建一个域集
+<pre python>
+# polls/admin.py
+
+from django.contrib import admin
+
+from .models import Question
+
+
+class QuestionAdmin(admin.ModelAdmin):
+    fieldsets = [
+        (None,               {'fields': ['question_text']}),
+        ('Date information', {'fields': ['pub_date']}),
+    ]
+
+admin.site.register(Question, QuestionAdmin)
+</pre>
+
+<ul>
+<li>
+每个分组的第一个元素为标题.
+
+</ul>
+<li>
+添加 Choice 的管理部分
+<pre python>
+# polls/admin.py
+
+from django.contrib import admin
+
+from .models import Choice, Question
+# ...
+admin.site.register(Choice)
+</pre>
+
+<ul>
+<li>
+其添加 choice 页面自动给 Question 添加组合框.(因为外键关系)
+
+</ul>
+<li>
+移除掉上面注册 Choice 的部分, 修改为在 Question 内添加选项的功能. 修改 Question 的注册部分.
+<pre python>
+# polls/admin.py
+
+from django.contrib import admin
+
+from .models import Choice, Question
+
+
+class ChoiceInline(admin.StackedInline):
+    model = Choice
+    extra = 3
+
+
+class QuestionAdmin(admin.ModelAdmin):
+    fieldsets = [
+        (None,               {'fields': ['question_text']}),
+        ('Date information', {'fields': ['pub_date'], 'classes': ['collapse']}),
+    ]
+    inlines = [ChoiceInline]
+
+admin.site.register(Question, QuestionAdmin)
+</pre>
+
+<ul>
+<li>
+其意思为在 Question 管理页面中编辑 Choice, 提供额外的域用于3个 choices. 每次修改完毕后, 重新进入该页面, 仍会出现三个额外的 choice 部分.
+
+</ul>
+<li>
+以表格方式显示内联的相关对象, 修改 ChoiceInline 的声明.
+<pre python>
+# polls/admin.py
+
+class ChoiceInline(admin.TabularInline):
+    #...
+</pre>
+
+<li>
+修改change list(用于选择哪个 Question 的页面), 使用 list_display 管理选项, 设置显示的域名.
+<pre python>
+# polls/admin.py
+
+class QuestionAdmin(admin.ModelAdmin):
+    # ...
+    list_display = ('question_text', 'pub_date')
+</pre>
+
+<li>
+其还可包含 was_published_recently() 方法
+<pre python>
+# polls/admin.py
+
+class QuestionAdmin(admin.ModelAdmin):
+    # ...
+    list_display = ('question_text', 'pub_date', 'was_published_recently')
+</pre>
+
+<li>
+显示的列表可以根据列进行排序, 除了函数生成的列.
+
+<li>
+修改给定方法使得其显示的列有所不同
+<pre python>
+# polls/models.py
+
+class Question(models.Model):
+    # ...
+    def was_published_recently(self):
+        return self.pub_date &gt;= timezone.now() - datetime.timedelta(days=1)
+    was_published_recently.admin_order_field = 'pub_date'
+    was_published_recently.boolean = True
+    was_published_recently.short_description = 'Published recently?'
+</pre>
+
+<li>
+而后修改 admin.py, 使用 list_filter 过滤, 将下面的行给 QuestionAdmin
+<pre python>
+list_filter = ['pub_date']
+</pre>
+
+<ul>
+<li>
+其添加了一个 fiter 侧面条. 使得用户可以通过 pub_date 进行过滤.
+
+</ul>
+<li>
+添加搜索功能
+<pre python>
+search_fields = ['question_text']
+</pre>
+
+<ul>
+<li>
+你可以添加任意多的域, 其使用 LIKE 查询.
+
+</ul>
+<li>
+默认每页显示一百个条目.
+
+<li>
+使用 Django 的模板系统修改管理页面的外观.
+
+<li>
+在项目目录内创建 templates 目录(与 manage.py 同级目录), 模板文件可位于 Django 可以访问的任何地方.
+
+<li>
+打开 mysite/settings.py 文件, 在 TEMPLATES 设置内添加 DIRS 选项
+<pre python>
+# mysite/settings.py
+
+TEMPLATES = [
+    {
+        'BACKEND': 'django.template.backends.django.DjangoTemplates',
+        'DIRS': [os.path.join(BASE_DIR, 'templates')],
+        'APP_DIRS': True,
+        'OPTIONS': {
+            'context_processors': [
+                'django.template.context_processors.debug',
+                'django.template.context_processors.request',
+                'django.contrib.auth.context_processors.auth',
+                'django.contrib.messages.context_processors.messages',
+            ],
+        },
+    },
+]
+</pre>
+
+<li>
+每个应用最好创建单独的目录. 这里创建一个 admin 目录. 拷贝 admin/base_site.html(源码的 django/contrib/admin/templates)
+
+<li>
+可用如下命令得知 django 的位置
+<pre>
+$ python -c "import django; print(django.__pat
+</pre>
+
+<li>
+编辑 base_site.html, 替换  <img src=" site_header" alt="default:_('Django administration') " />  为你自己的网站名. 代码可能如下
+<pre>
+{% block branding %}
+&lt;h1 id="site-name"&gt;&lt;a href="{% url 'admin:index' %}"&gt;Polls Administration&lt;/a&gt;&lt;/h1&gt;
+{% endblock %}
+</pre>
+
+<li>
+实际的项目你可能会用 django.contrib.admin.AdminSite.site_header 来进行自定义
+
+<li>
+其他的 admin 模板同样可以修改, 从默认目录拷贝至你的自定义目录, 而后改变它
+
+<li>
+只要 TEMPLATES 的 APP_DIRS 设为 True, 其会自从在每个应用包里面查找 templates/ 子目录, 
+
+<li>
+如果想要修改 admin 的 index 页面, 同 base_site.html, 自定义 admin/index.html, 可修改里面的模板变量 app_list
+
+</ul>
+
+    </div>
+</body>
+</html>

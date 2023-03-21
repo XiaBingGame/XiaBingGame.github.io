@@ -1,0 +1,206 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../style.css" />
+    <title>qtbook chapter 17</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<h1 id="toc_1">Chapter 17 Providing Online Help</h1>
+<ul>
+<li>
+大多数应用程序给用户在线帮助. 一些帮助很简短, 如 tooltips, 状态栏 tips, 以及 "What's This?"帮助. 对于许多页面的帮助, 你可以使用 QTextBrowser 作为一个简单地在线帮助浏览器, 或者你启动一个 Qt Assistant 或者从你的应用程序启动一个 HTML 浏览器.
+
+</ul>
+
+<h2 id="toc_1.1">17.1 Tooltips, Status Tips, and "What's This?" Help</h2>
+<ul>
+<li>
+Tooltip 的主要用途是提供工具条按钮的文本描述.
+
+<li>
+使用 QWidget::setToolTip() 给任意的 widget 添加 tooltips.
+<pre c++>
+	findButton-&gt;setToolTip(tr("Find next"));
+</pre>
+
+<li>
+给一个 QAction 设置一个 tooltip 可以将该 tooltip 添加至对应的菜单和工具条上. 在 action 上调用 setToolTip():
+<pre c++>
+	newAction = new QAction(tr("&amp;New"), this);
+	newAction-&gt;setToolTip(tr("New document"));
+</pre>
+
+<li>
+如果我们不显式地设置 tooltip, QAction 将自动地使用 action 文本.
+
+<li>
+当鼠标在工具条按钮或菜单选项上方时, 在状态栏显示一个状态 tip, 使用 setStatusTip() 函数
+<pre c++>
+	newAction-&gt;setStatusTip(tr("Create a new document"));
+</pre>
+
+<li>
+下面是一个使用"What's This?"文本的一个例子:
+<pre c++>
+	dialog-&gt;setWhatsThis(tr("&lt;img src=\":/images/icon.png\"&gt;"
+	                        "&amp;nbsp;The meaning of the Source field depends "
+	                        "on the Type field:"
+	                        "&lt;ul&gt;"
+	                        "&lt;li&gt;&lt;b&gt;Books&lt;/b&gt; have a Publisher"
+	                        "&lt;li&gt;&lt;b&gt;Articles&lt;/b&gt; have a Journal name with "
+	                        "volume and issue number"
+	                        "&lt;li&gt;&lt;b&gt;Theses&lt;/b&gt; have an Institution name "
+	                        "and a Department name"
+	                        "&lt;/ul&gt;"));
+</pre>
+
+<li>
+我们可以使用 HTML tags 形成"What's This?"文本. Qt 支持的 tags 和属性见 <a href="http://doc.trolltech.com/4.3/richtext-html-subset.html.">http://doc.trolltech.com/4.3/richtext-html-subset.html.</a>
+
+<li>
+当我们在一个 action 上设置"What's This?"文本时, 则在"What's This?"模式中用户点击菜单条目或工具条按钮或按下快捷键时将会显示文本. 当一个应用程序主窗口的用户界面组成部分提供"What's This?"文本时, 其通常在帮助菜单和一个对应的工具条按钮中提供一个 What's This?  选项. 这可以通过静态函数 QWhatsThis::createAction() 创建一个 What's This? 的 action , 而后添加其返回至一个帮助菜单和一个工具条. QWhatsThis 类同样也提供了静态函数以能够程序上进入和离开"What's This?"模式.
+
+</ul>
+
+<h2 id="toc_1.2">17.2 Using a Web Browser to Provide Online Help</h2>
+<ul>
+<li>
+实现更多的在线帮助, 可以提供HTML格式的帮助文本, 而后在应用程序页面上启动用户的网络浏览器.
+
+<li>
+包含一个 help browser 的应用程序通常在主窗口的帮助菜单中一个帮助条目(entry), 以及在每个对话框有一个帮助按钮.
+
+<li>
+本节中我们显示如何使用 QDesktopServices 类提供用于这些按钮的功能.
+
+<li>
+主窗口有一个 help() slot, 当用户按下 F1 或点击 Help|Help 菜单选项时调用.
+<pre c++>
+	void MainWindow::help()
+	{
+	    QUrl url(directoryOf("doc").absoluteFilePath("index.html"));
+	    url.setScheme("file");
+	    QDesktopServices::openUrl(url);
+	}
+</pre>
+
+<ul>
+<li>
+这个例子我们假设我们应用程序的HTML帮助文件在"doc"子目录内, QDir::absoluteFilePath() 函数返回给定文件名的绝对地址.
+
+<li>
+QUrl::setScheme() 设置为"file, 表示在本地文件系统中查看.(<a href="file:///前缀)">file:///前缀)</a>
+
+<li>
+QUrl::openUrl() 打开浏览器.
+
+</ul>
+<li>
+QApplication::applicationDirPath() --- 获取应用程序目录路径
+
+<li>
+QDir::dirName() --- 目录名称
+
+<li>
+QDir::cdUp() --- 上一个目录.
+
+<li>
+QDir::cd() --- 进入一个子目录.
+<pre c++>
+	void EntryDialog::help()
+	{
+	    QUrl url(directoryOf("doc").absoluteFilePath("forms.html"));
+	    url.setScheme("file");
+	    url.setFragment("editing");
+	    QDesktopServices::openUrl(url);
+	}
+</pre>
+
+<ul>
+<li>
+上例中特定的页面有帮助文本用于一些不同forms, 每个都有一个 anchor references(例如, &lt;a name="editing"&gt;), 可以表示每个form帮助文本开始的地方. 这样使用 setFragment() 以及该 anchor 作为参数, 则页面会滚动到该位置.
+
+</ul>
+</ul>
+
+<h2 id="toc_1.3">17.3 Using QTextBrowser as a Simple Help Engine</h2>
+<ul>
+<li>
+提供基于 QTextBrowser 类的帮助引擎.
+
+<li>
+QTextBroswer 可以处理大量的 HTML tags.
+
+<li>
+setAttribute(Qt::WA_GroupLeader); --- 可以让我们从模型对话框中弹出该窗口, 在请求帮助之后可以与应用程序中的其他窗口交互.
+
+<li>
+使用QTextBrowser::setSearchPaths() 提供了两个查找路径, 第一个则是文件系统中包含应用程序文档的路径, 第二个则为图像资源的位置. HTML 可以包含和平常方式一样文件系统中图像的关联, 还可以包含使用 :/ 开头的路径的图像资源的关联. 
+
+<li>
+QTextBrowser::setSource() 其参数为文档文件的名称, 有个可选的 HTML anchor.
+
+<li>
+QTextBrowser::documentTitle() 返回页面中 &lt;title&gt; tag 中的文本.
+
+<li>
+我们设置属性  Qt::WA_DeleteOnClose, 当关闭时会自动删除该窗口资源. 
+
+<li>
+则使用如下:
+<pre c++>
+	void MainWindow::help()
+	{
+	    HelpBrowser::showPage("index.html");
+	}
+	
+	void EntryDialog::help()
+	{
+	    HelpBrowser::showPage("forms.html#editing");
+	}
+</pre>
+
+<li>
+我们可以使用 Qt 的资源系统嵌入帮助文件和他们关联的图像至可执行文件中. 唯一的变化是添加每个我们想要嵌入的 entry 到应用程序的 .qrc 文件, 其使用资源路径(如, :/doc/forms.html#editing).
+
+</ul>
+
+<h2 id="toc_1.4">17.4 Using Qt Assistant for Powerful Online Help</h2>
+<ul>
+<li>
+使用 Qt 的 Assistant 主要优点是其支持索引和全文查找, 以及可以处理多个文档集用于多个应用. 
+
+<li>
+Qt 应用和 Qt Assistant 之间的通讯是通过 QAssistantClient 类处理, 为了使用该类, 需要使用库 QtAssistant.
+
+<li>
+QAssistantClient 构造函数接受一个路径字符串作为第一个参数, 其用于定位 Qt Assistant 可执行文件的位置. 传递一个空白路径, 表示 QAssistantClient 应当在 PATH 环境变量中查找可执行文件.
+
+<li>
+QAssistantClient 有一个 showPage() 函数接受一个带可选HTML anchor的页面名称.
+
+<li>
+接下来的步骤是准备一个table of contents和一个用于文档的index. 这可以通过创建一个Qt 的 Assistant profile 和写一个提供关于文档信息的 .dcf 文件来完成. 
+
+<li>
+对于 Windows 应用程序, 其可能想要创建一个 Windows HTML Help 文件以及使用 Microsoft Internet Explorer 提供对它们的访问. 你可以使用 Qt 的 QProcess 类或者 ActiveQt 框架用于实现这个.
+
+</ul>
+
+    </div>
+</body>
+</html>

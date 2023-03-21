@@ -1,0 +1,1207 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../style.css" />
+    <title>thebiggestoneframe2</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="../index.html">首页</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<div id="osgUtil::SceneView::cull()"><h2 id="osgUtil::SceneView::cull()" class="header"><a href="#osgUtil::SceneView::cull()">osgUtil::SceneView::cull()</a></h2></div>
+<ul>
+<li>
+OSG 渲染后台的主体是场景视图(SceneView), 它实现了"树状结构"的管理方式, 以及多个专用于渲染工作的内部类
+
+<li>
+OSG 渲染后台的几个"重要角色"
+
+<ul>
+<li>
+osgUtil::CullViisitor: "筛选访问器", 对每一个遇到的节点执行场景筛选的工作, 判断它是否会超出视截锥体范围, 过于渺小, 或者被遮挡节点(OccluderNode)挡住, 从而将无助益于场景浏览的物体筛选并剔除, 降低场景绘制的资源消耗.
+
+<li>
+osg::RenderInfo: "渲染信息"管理器, 负责保存和管理与场景绘制息息相关的几个重要数据. 当前场景的视景器, 当前场景对应的所有摄像机, 当前所有 OpenGL 渲染状态和顶点数据. 用于在场景筛选和渲染时为OSG的工作提供重要依据
+
+<li>
+osgUtil::StateGraph: "状态节点", 类似场景树的组节点(Group), 将 StateGraph 理解为 OSG 渲染后台的组节点. 以节点的渲染状态集(StateSet)为依据, 状态节点采用映射表 std::map 来组织它的子节点, 同一层次的子节点如果渲染状态相同, 则合并到同一个"状态节点"中.
+
+<li>
+osgUtil::RenderLeaf: "渲染叶", 我们可以把 RenderLeaf 理解为 OSG 渲染后台状态树的叶节点. 其绝非等同于场景树的 Geode 节点, "渲染叶"的工作主要是记录场景树中存在的各种 Drawable 对象(以及与之相关的投影矩阵, 模型视点矩阵等信息). 每个"状态节点(osgUtil::StateGraph)"中都包含了一个渲染叶的列表(StateGraph::_leaves), 不过只有最末端的"状态节点"会负责记录场景中的"渲染叶".
+
+<li>
+osgUtil::RenderStage: "渲染台". OSG 的渲染后台除了使用"状态树"来组织和优化节点的渲染状态之外, 还有另外一种用于场景实际渲染的组织结构, 我们称之为"渲染树", "渲染树"的根节点就是"渲染台"
+
+<ul>
+<li>
+"摄像机渲染顺序"的功能, 通过 Camera::setRenderOrder 设置, PRE_RENDER 的摄像机在主相机之前执行渲染，可实现"纹理烘培(Render To Texture)"的功能, 见例子 osgprerender。POST_RENDER 的摄像机在主相机之后进行渲染, 可实现诸如 HUD 的效果。
+
+<li>
+slave cameras 主要是为了实现同一场景的分窗口以及分屏幕显示。(见例子 osgcamera)
+
+<li>
+对于 HUD显示, 简单鹰眼图等功能，则向场景图添加新的摄像机节点, 并设置与主摄像机不同的观察矩阵和投影矩阵。
+
+</ul>
+<li>
+osgUtil::RenderBin: "渲染元", OSG 渲染树的分支节点，渲染树按照遍历的顺序，把"状态节点"和"渲染叶"记录到作为根节点的"渲染台(RenderStage)"当中(std::vector成员变量 RenderBin::_stateGraphList, RenderBin::_renderLeafList), 然后就可以执行场景的绘制工作. 注意的是 RenderStage 派生自 RenderBin.
+
+<ul>
+<li>
+osg::StateSet::setRenderBinDetail 设置渲染顺序
+
+<ul>
+<li>
+第一个参数为整数，小于0的渲染状态集将排列在前, 大于0的渲染状态集则排列在后.
+
+<li>
+第二个字符串参数: "RenderBin" 表示在渲染树中新建分支进行渲染, "DepthSortedBin" 表示新建分支, 并且所有要渲染的数据按照深度值降序进行排序.
+
+<li>
+注意当字符串参数不为 "RenderBin" 或 "DepthSortedBin" 时, 本函数的设置无效.
+<pre c++>
+// 默认渲染方式，渲染顺序为0，此时状态节点直接置入"渲染台"
+stateSet-&gt;setRenderBinDetails(0, "");
+// 渲染顺序 -1(先渲染)， 渲染树新建一个"渲染元"节点
+stateSet-&gt;setRenderBinDetails(-1, "RenderBin");
+// 渲染顺序 10， 渲染树新建一个"渲染元"节点, 并按深度值降序排序各元素.
+stateSet-&gt;setRenderBinDetails(10, "DepthSortedBin");
+</pre>
+
+</ul>
+<li>
+osg::StateSet::setRenderingHint() 设置渲染的顺序, 参数可为枚举值 OPAQUE_BIN 或 TRANSPARENT_BIN
+<pre c++>
+state-&gt;setRenderingHint(OPAQUE_BIN);
+// 等价于
+state-&gt;setRenderBinDetails(0, "RenderBin")
+
+state-&gt;setRenderingHint(TRANSPARENT_BIN);
+// 等价于
+state-&gt;setRenderBinDetails(0, "DepthSortedBin")
+</pre>
+
+</ul>
+</ul>
+<li>
+举例
+
+</ul>
+<p>
+<img src="http://www.xiabingdev.com/cloudimages/images/2021/05/02/08_node_relation.png" />
+</p>
+<ul>
+<li>
+"ss"加上数字代号来标识这些 StateSet 对象, "-" 表示空字串, "R" 表示 "RenderBin", "D" 表示 "DepthSortedBin"
+<pre c++>
+ss03-&gt;setRenderBinDetails(0, "");  // 这是默认的设置.
+ss11-&gt;setRenderBinDetails(0, ""); 
+ss13-&gt;setRenderBinDetails(-1, "RenderBin"); 
+ss14-&gt;setRenderBinDetails(1, "RenderBin"); 
+ss15-&gt;setRenderBinDetails(10, "DepthSortedBin"); 
+ss16-&gt;setRenderBinDetails(10, "DepthSortedBin"); 
+</pre>
+
+<li>
+OSG中所有的 drawable 几何体对象都会自动关联一个 StateSet 对象, 无论用户是否设置了.
+
+<li>
+OSG 生成相应的"状态树", 由"状态节点"(StateGraph)和"渲染叶"(RenderLeaf)所组成
+
+</ul>
+<p>
+<img src="http://www.xiabingdev.com/cloudimages/images/2021/05/03/09_osgstatetree.png" />
+</p>
+<ul>
+<li>
+状态根节点 _rootState 和局部状态节点 _localState 由状态树自动生成, _localState 保护和维护一些渲染后台自动创建的渲染属性. 全局状态节点 _globalStateSet 的取值来自于主相机的 StateSet.
+
+<li>
+一个或多个渲染叶必然被一个状态树末端的节点(StateGraph)所拥有.
+
+<li>
+后台生成对应的"渲染树", 由一个 RenderStage 对象和多个 RenderBin 对象组成.
+
+<li>
+如不使用 setRenderBinDetails 设置 StateSet 的渲染细节, 则所有状态树中的末端节点都会按照遍历顺序保存到渲染树根节点(渲染台)中, 否则如下图
+
+</ul>
+<p>
+<img src="http://www.xiabingdev.com/cloudimages/images/2021/05/03/09_render_tree.png" />
+</p>
+<ul>
+<li>
+根据渲染顺序的不同,渲染树生出了三个分支.
+
+<li>
+上面未设置渲染细节的状态节点直接由根节点(渲染台, RenderStage)负责维护.
+
+<li>
+一个渲染元中可以有一个或多个状态节点(或渲染叶), 一个状态节点(或渲染叶)只能置入一个渲染元中.
+
+<li>
+如果改变 s03 的渲染顺序,则结果如下
+<pre c++>
+ss03-&gt;setRenderBinDetails(1, "RenderBin");
+</pre>
+
+</ul>
+<p>
+<img src="http://www.xiabingdev.com/cloudimages/images/2021/05/03/10_morecomplex_rendertree.png" />
+</p>
+<ul>
+<li>
+由上两个渲染状态(StateSet)的渲染序号相同时,它们不一定放入同一个"渲染元"中.
+
+<li>
+见例子 osghangglide.
+
+</ul>
+<li>
+归纳总结:
+
+<ul>
+<li>
+osgUtil::StateGraph: 状态节点, 负责管理场景树中的一个渲染状态(StateSet)对象, 末端的 StateGraph 节点还负责维护一个"渲染叶"(RenderLeaf)的列表.
+
+<li>
+osgUtil::RenderLeaf: 状态树的叶节点(渲染叶), 负责管理和绘制场景树末端的一个几何体(Drawable)对象.
+
+<li>
+osgUtil::RenderStage: 渲染树的根节点(渲染台), 负责管理默认渲染顺序的所有末端 StateGraph 节点(附带"渲染叶"), 并保存了"前序渲染"(pre-render)和"后续渲染"(post-render)的渲染台指针的列表.
+
+<li>
+osgUtil::RenderBin: 渲染树的分支节点(渲染元), 负责管理自定义渲染顺序的末端 StateGraph 节点(附带"渲染叶"),渲染树的根节点和分支节点最多只能有"RenderBin" 和 "DepthSortedBin"两类子节点, 但可以根据不同的渲染序号衍生出多个子节点, 它们在渲染时将按照顺序号升序的次序执行绘制.
+
+</ul>
+
+<div id="osgUtil::SceneView::cull()-osgUtil::SceneView::cull() 的工作 "><h3 id="osgUtil::SceneView::cull() 的工作 " class="header"><a href="#osgUtil::SceneView::cull()-osgUtil::SceneView::cull() 的工作 ">osgUtil::SceneView::cull() 的工作 </a></h3></div>
+<ul>
+<li>
+初始化 SceneView 的成员变量: 
+
+<ul>
+<li>
+渲染信息(_renderInfo): 设置 osg::State
+
+<li>
+筛选访问器(_cullVisitor): CullVisitor::create()
+
+<li>
+状态树根节点(_stateGraph): osgUtil::StateGraph
+
+<li>
+渲染树根节点(_renderStage): osgUtil::RenderStage
+
+<li>
+局部渲染状态(_localStateSet, 见 SceneView::updateUniforms, 一些内设的 osg::Uniform 着色器变量 osg_FrameNumber, osg_FrameTime, osg_DeltaFrameTime, osg_SimulationTime, osg_ViewMatrix, osg_ViewMatrixInverse, 这些一致变量可在GLSL程序里获取).
+
+</ul>
+<li>
+设置立体显示的选项, osg::DisplaySettings::LEFT_EYE/RIGHT_EYE, SceneView 的一些成员 computeLeftEyeProjection, computeLeftEyeView, computeRightEyeProjection, computeRightEyeView 等.
+
+<li>
+[核心函数]执行 SceneView::cullStage 函数
+
+<li>
+执行 CullVisitor::clampProjectionMatrix, 根据远/近平面的取值, 重新设定场景视图的投影矩阵. 由于远/近平面是由筛选访问器计算出来的,如果想设置自己的处理, 可以使用 setClampProjectionMatrixCallback 函数来设置 SceneView 的投影矩阵计算回调, 自己编写相关的处理函数.
+
+</ul>
+
+<div id="osgUtil::SceneView::cull()-osgUtil::SceneView::cullState"><h3 id="osgUtil::SceneView::cullState" class="header"><a href="#osgUtil::SceneView::cull()-osgUtil::SceneView::cullState">osgUtil::SceneView::cullState</a></h3></div>
+<ul>
+<li>
+该函数的主要工作:
+
+<ul>
+<li>
+统计场景中的遮挡节点(OccluderNode), 使用 CollectOccluderVisitor 访问器遍历场景中的所有节点。
+<pre c++>
+for(unsigned int i = 0; i &lt; _camera-&gt;getNumChildren(); ++i)
+	_camera-&gt;getChild(i)-&gt;accept(*_collectOccludersVisitor);
+</pre>
+
+<ul>
+<li>
+_camera 为 SceneView 的主摄像机， setSceneData() 函数会自动将场景根节点设置为各个主/从摄像机的子节点。
+
+</ul>
+<li>
+设置筛选访问器(CullVisitor)所需的数据, 这些数据有筛选设置(CullSettings), 状态树根节点(StateGraph), 渲染树根节点(RenderStage)，渲染信息(RenderInfo)。
+
+<li>
+将"全局状态节点"和"局部状态节点"追加到状态树中。通过函数 CullVisitor::pushStateSet 和 CullVisitor::popStateSet.
+
+<li>
+筛选访问器遍历场景中的节点，筛选裁剪掉用户无法看到的对象。
+<pre c++>
+for(unsigned int childNo = 0; childNo &lt; _camera-&gt;getNumChildren(); ++childNo)
+	_camera-&gt;getChild(childNo)-&gt;accept(*cullVisitor);
+</pre>
+
+<li>
+执行 RenderStage::sort 和 StateGraph::prune 函数, 对筛选后的渲染树内容进行排序和精简(构建过程可能会剔除某些空节点)
+
+<li>
+计算出场景中所有动态对象(DYNAMIC)的数量，并将其保存到 SceneView 的成员变量 _dynamicObjectCount 中。
+
+</ul>
+</ul>
+
+<div id="osgUtil::SceneView::cull()-osgUtil::CullVisitor::pushStateSet()"><h3 id="osgUtil::CullVisitor::pushStateSet()" class="header"><a href="#osgUtil::SceneView::cull()-osgUtil::CullVisitor::pushStateSet()">osgUtil::CullVisitor::pushStateSet()</a></h3></div>
+<ul>
+<li>
+pushStateSet() 和 popStateSet() 完成状态树和渲染树的构建. CullVisitor::apply 则根据不同的节点类型, 在不同的时机调用这两个函数.
+
+<li>
+pushStateSet() 的主要工作(传出 StateSet* ss 参数):
+
+<ul>
+<li>
+状态树的构建. 判断传入的渲染状态 ss 是否已经存在于某个状态节点中，如果存在则将状态树的当前位置移动至该节点上，或者新建一个包含了 ss 的状态节点
+<pre c++>
+	_currentStateGraph = _currentStateGraph-&gt;find_or_insert(ss);
+</pre>
+
+<li>
+渲染树的构建
+
+<ul>
+<li>
+创建新的渲染树节点的三个条件
+
+<ul>
+<li>
+渲染状态没有采用覆盖渲染细节的方式(OVERRID_RENDERBIN_DETAILS), 由 setRenderBinMode 函数设置.
+
+<li>
+setRenderBinDetail 设置渲染细节
+
+<li>
+渲染细节的字符串名称不为空("RenderBin"或"DepthSortedBin")
+
+</ul>
+<li>
+满足上述条件后会转到指定的节点或新建一个渲染元(RenderBin::find_or_insert), 并使用堆栈记录上一次在渲染树中的位置.
+<pre c++>
+_renderBinStack.push_back(_currentRenderBin);
+_currentRenderBin = _currentRenderBin-&gt;find_or_insert(ss-&gt;getBinNumber(), ss-&gt;getBinName());
+</pre>
+
+<li>
+渲染树的构建过程中只生成空的渲染元(RenderBin)节点,向其中插入状态节点和渲染叶的任务将在后面的工作中完成.
+
+</ul>
+</ul>
+<li>
+popStateSet 的工作
+
+<ol>
+<li>
+从堆栈中取出上一次渲染树中所处的渲染元节点, 并跳转到该位置.
+<pre c++>
+_currentRenderBin = _renderBinStack.back();
+_renderBinStack.pop_back();
+</pre>
+
+<li>
+状态树从当前位置跳转到其父节点
+<pre c++>
+_currentStateGraph = _currentStateGraph-&gt;_parent;
+</pre>
+
+</ol>
+<li>
+在筛选(CULL)过程中,我们判断某个节点(及其子树)应当被剔除掉时,只要跳过 pushStateSet 和 popStateSet 的步骤,直接返回,就不会在渲染时留下节点的任何蛛丝马迹.
+
+</ul>
+
+<div id="osgUtil::SceneView::cull()-osgUtil::CullVisitor::apply(Node&amp;)"><h3 id="osgUtil::CullVisitor::apply(Node&amp;)" class="header"><a href="#osgUtil::SceneView::cull()-osgUtil::CullVisitor::apply(Node&amp;)">osgUtil::CullVisitor::apply(Node&amp;)</a></h3></div>
+<ul>
+<li>
+NodeVisitor 的工作如下
+
+</ul>
+<p>
+<img src="http://www.xiabingdev.com/cloudimages/images/2021/06/05/NodeVisitorWork.png" />
+</p>
+
+<div id="osgUtil::SceneView::cull()-osgUtil::CullVisitor::apply(Node&amp;)-osgUtil::CullVisitor::apply(Transform&amp;)"><h4 id="osgUtil::CullVisitor::apply(Transform&amp;)" class="header"><a href="#osgUtil::SceneView::cull()-osgUtil::CullVisitor::apply(Node&amp;)-osgUtil::CullVisitor::apply(Transform&amp;)">osgUtil::CullVisitor::apply(Transform&amp;)</a></h4></div>
+<ul>
+<li>
+工作流程如下:
+
+<ul>
+<li>
+isCulled() 判断某个节点是否应该被剔除
+
+<ul>
+<li>
+最终执行 CullingSet::isCulled() 函数, 进行视锥体,细节筛选,遮挡筛选的工作.
+
+<li>
+Node::setCullingActive 设置某个节点始终不会被剔除
+
+</ul>
+<li>
+pushCurrentMask() 函数, 记录当前视锥体筛选计算的结果(视锥体的哪几个面与节点的包围盒有交集), 并将这个结果压入堆栈,以便为下一次的计算提供方便. 具体可见代码 osg::Polytope::contains 系列函数
+
+<li>
+获取节点 StateSet, 如果存在则调用 pushStateSet, 进入相应状态树和渲染树的相应节点处.
+
+<li>
+计算 Transform 节点的位置姿态矩阵.
+
+<ul>
+<li>
+通过 CullStack::createOrReuseMatrix 提供矩阵变换节点的存储矩阵.
+
+<li>
+使用 CullStack::pushModelViewMatrix 将计算得到的世界矩阵(Transform::computeLocalToWorldMatrix)压入堆栈,供后面的场景绘制和相应的用户回调使用.
+
+</ul>
+<li>
+执行 CullVisitor::handle_cull_callbacks_and_traverse 函数, 处理用户自定义的 Node::CullCallback, 通过 traverse 将 visitor 对象传递给所有的子节点.
+
+<li>
+后面的操作都是前几步的"逆操作", "弹出"模型视图矩阵(popModelViewMatrix), 渲染状态(popStateSet)和筛选结果掩码(popCurrentMask)
+
+</ul>
+</ul>
+
+<div id="osgUtil::SceneView::cull()-osgUtil::CullVisitor::apply(Node&amp;)-osgUtil::CullVisitor::apply(Geode&amp;)"><h4 id="osgUtil::CullVisitor::apply(Geode&amp;)" class="header"><a href="#osgUtil::SceneView::cull()-osgUtil::CullVisitor::apply(Node&amp;)-osgUtil::CullVisitor::apply(Geode&amp;)">osgUtil::CullVisitor::apply(Geode&amp;)</a></h4></div>
+<ul>
+<li>
+工作流程如下:
+
+<ul>
+<li>
+isCulled(), 实现叶节点的筛选
+
+<li>
+pushStateSet(), 根据 Geode 的 StateSet 构建状态树和渲染树
+
+<li>
+handle_cull_callbacks_and_traverse(), 处理筛选回调并传递到子节点
+
+<li>
+遍历 geode 内的所有 Drawable, 执行 Drawable 的筛选, 以及 Drawable 自定义的 Cull callback, 这里 osg 使用 isCulled() 和 CullVisitor::updateCalculatedNearFar() 函数执行 Drawable 的筛选工作.
+
+<li>
+pushStateSet(), 根据 Drawable 的 StateSet 构建状态树和渲染树
+
+<li>
+CullVisitor::addDrawableAndDepth(), 将几何体对象及其深度值置入状态树和渲染树, 所有 drawable 对象添加到当前状态节点 _currentStateGraph(StateGraph::addLeaf) 和 当前渲染元 _currentRenderBin(RenderBin::addStateGraph) 上, 为状态树和渲染树添加了实质性的可绘制内容.
+
+<li>
+执行多次 popStateSet, 将 _currentStateGraph 和 _currentRenderBin 跳回到原先的位置.
+
+</ul>
+</ul>
+
+<div id="osgUtil::SceneView::cull()-osgUtil::CullVisitor::apply(Node&amp;)-osgUtil::CullVisitor::apply(Camera&amp;)"><h4 id="osgUtil::CullVisitor::apply(Camera&amp;)" class="header"><a href="#osgUtil::SceneView::cull()-osgUtil::CullVisitor::apply(Node&amp;)-osgUtil::CullVisitor::apply(Camera&amp;)">osgUtil::CullVisitor::apply(Camera&amp;)</a></h4></div>
+<ul>
+<li>
+当场景树中出现一个摄像机节点时, 它以下的场景子树将按照这个摄像机的筛选,视口,观察矩阵,投影矩阵设置进行显示. 我们也可以使用此摄像机指向另一个图形设备(窗口)
+
+<li>
+工作流程:
+
+<ul>
+<li>
+加载该相机的筛选设置(setCullSetting 设置的内容), 并保存之前的设置
+
+<li>
+加载当前相机 Camera 的遍历掩码(setTraversalMask), 这里的遍历掩码是用户通过 CullSettings::setCullMask 函数设置的. 节点掩码 (setNodeMask) 与遍历掩码"与"操作之后为0的节点不会在当前相机中显示.
+
+<li>
+得到摄像机的视口,投影矩阵,模型视图矩阵,依次压入堆栈中(pushViewport, pushProjectionMatrix, pushModelViewMatrix)
+
+<li>
+针对采用 PRE_RENDER 和 POST_RENDER 方式的摄像机新建一个"渲染台"(RenderStage), 并使用相机的相关参数来初始化该渲染台.
+
+<ul>
+<li>
+Camera 节点的子树将全部追加到新建的"渲染台"当中. 使用 addPreRenderStage 或 addPostRenderStage 函数将新建的渲染台追加到当前 RenderStage 对象的相应列表中.
+
+<li>
+对于 NESTED_RENDER 的相机 Camera(默认设置), 不存在前序渲染/后序渲染这一说法, 直接执行 handle_cull_callbacks_and_traverse 函数, 继续向子节点遍历.
+
+</ul>
+<li>
+从堆栈中依次弹出模型视图矩阵,投影矩阵,相机视口的临时计算量, 恢复遍历掩码和筛选设置. 回到上级相机的控制当中, 继续场景图形的遍历工作
+
+</ul>
+</ul>
+
+<div id="osgUtil::SceneView::cull()-osgUtil::RenderStage::sort()"><h3 id="osgUtil::RenderStage::sort()" class="header"><a href="#osgUtil::SceneView::cull()-osgUtil::RenderStage::sort()">osgUtil::RenderStage::sort()</a></h3></div>
+<ul>
+<li>
+在状态树和渲染树构建完毕之后, 依次执行 RenderStage::sort 和 StateGraph::prune, 完成对渲染树中数据的排序和优化.
+
+<li>
+RenderStage::sort 依次执行前序渲染台(RenderStage::_preRenderList), 当前渲染台, 后序渲染台(RenderStage::_postRenderList)
+
+<li>
+渲染树及其各个分支中数据的排序工作事实上是通过 RenderBin::sortImplementation() 函数实现的. 根节点渲染台调用 RenderBin::setSortCallback 可以实现自定义的渲染树排序动作.
+
+<li>
+排序的对象为渲染树中各个渲染元(RenderBin)中保存的状态节点(StateGraph)或渲染叶(RenderLeaf), 渲染元之间不需要进行排序.
+
+<li>
+OSG 事实上仅针对 "DepthSortedBin" 渲染元中的各个渲染叶(RenderLeaf)进行排序, 排序函数为 RenderBin::sortBackToFront, 按照深度值降序的原则使用 std::sort 执行所有元素的排序动作. 这里的深度值是在 CullVisitor::apply(Geode&amp;)函数中计算出来.
+
+<li>
+排序方法除了 SORT_BY_STATE(不进行排序) 和 SORT_BACK_TO_FRONT 之外, RenderBin::setSortMode 还可以指定另外两种排序方式:
+
+<ul>
+<li>
+SORT_BY_STATE_THEN_FRONT_TO_BACK: 获取当前渲染元所保存的所有头状态节点(StateGraph), 将每个节点中所有的渲染叶对象按深度升序排序,然后将各个状态节点按最小深度值升序排序(保存有深度值最小的渲染叶的节点排在最前)
+
+<li>
+SORT_FRONT_TO_BACK: 采用深度值升序的原则执行所有元素的排序
+
+</ul>
+<li>
+StateGraph::prune() 函数的主要工作是查找状态树(StateGraph)中有没有无效的状态节点, 如有则将它们删除.
+
+</ul>
+
+<div id="osgUtil::SceneView::cull()-osgUtil::SceneView::cullStage()"><h3 id="osgUtil::SceneView::cullStage()" class="header"><a href="#osgUtil::SceneView::cull()-osgUtil::SceneView::cullStage()">osgUtil::SceneView::cullStage()</a></h3></div>
+<ul>
+<li>
+场景筛选的最后一步是统计动态对象(DYNAMIC)的数量, 保存在 SceneView::_dynamicObjectCount 中, 供线程同步时使用.
+
+<li>
+负责统计的函数为 RenderBin::computeNumberOfDynamicRenderLeaves, 负责统计所有 RenderLeaf::_dynamic 设置为 true 的渲染叶的数目.
+
+</ul>
+
+<div id="osgUtil::SceneView::draw()"><h2 id="osgUtil::SceneView::draw()" class="header"><a href="#osgUtil::SceneView::draw()">osgUtil::SceneView::draw()</a></h2></div>
+<ul>
+<li>
+进行场景的绘制工作
+
+<li>
+第一个工作为初始化 osg::State 类的 GL 库函数地址, State::initializeExtensionProcs
+
+<li>
+查看用户是否设置了场景视图初始化访问器(SceneView::setInitVisitor), 如设置, 则 draw 函数第一次执行时使用该访问器遍历场景树.
+
+<li>
+从场景和内存中删除所有已经标记为要删除的节点或 Drawable 对象, flushDeletedGLObjects() 函数, 由于可能多个线程同时申请使用 flushDeletedGLObjects 删除对象, 通过变量 SceneView::_requiresFlush 来控制.
+
+<li>
+场景绘制的核心工作:
+
+<ul>
+<li>
+设置渲染台(RenderStage)的读/写缓存(GL_NONE, GL_FRONT_LEFT, GL_FRONT_RIGHT, GL_BACK_LEFT, GL_BACK_RIGHT, GL_FRONT, GL_BACK, GL_LEFT, GL_RIGHT, GL_FRONT_AND_BACK, GL_AUX 辅助缓存). 通过 setDrawBuffer 和 setReadBuffer 函数来设置.
+
+<li>
+确保颜色掩码的每个颜色通道都是被激活的(osg::ColorMask)
+
+<li>
+执行"前序渲染"渲染台的绘制(RenderStage::drawPreRenderStages)
+
+<li>
+执行当前渲染台(即渲染树的根节点)的绘制(RenderStage::draw)
+
+</ul>
+<li>
+恢复所有的 OpenGL 状态(State::popAllStateSets()), 判断是否在绘制过程中出现 OpenGL 绘制命令错误, 并将错误信息打印出来.
+
+</ul>
+
+<div id="osgUtil::SceneView::draw()-osgUtil::RenderStage::draw()"><h3 id="osgUtil::RenderStage::draw()" class="header"><a href="#osgUtil::SceneView::draw()-osgUtil::RenderStage::draw()">osgUtil::RenderStage::draw()</a></h3></div>
+<ul>
+<li>
+执行流程:
+
+<ul>
+<li>
+执行相机的初始化回调(Camera::setInitialDrawCallback)
+
+<li>
+运行相机的设置(RenderStage::runCameraSetUp)
+
+<li>
+检查当前的图形设备指针(GraphicsContext), 判断正在运行的图形设备与渲染台所记录的当前设备(RenderStage::_graphicsContext)是否一致, 如果不同则转换到该设备上, 避免指定渲染上下文时出错.
+
+<li>
+执行相机的绘制前回调(Camera::setPreDrawCallback)
+
+<li>
+实际的绘制工作. 多线程模式中, 向图形设备线程(GraphicsContext::getGraphicsThread)添加一个新的Operation对象 DrawInnerOperation, 在绘制结束后才能执行线程的其他Operation对象.
+
+<li>
+对于单线程模式, 直接执行 RenderStage::drawInner() 函数.
+
+<li>
+如果设置了相机的RTT方式,则执行 RenderStage::copyTexture 函数.
+
+<li>
+执行相机的绘制后回调(Camera::setPostDrawCallback)
+
+<li>
+对于单线程, 使用 glFlush() 刷新所有 OpenGL 管道中的命令. 并释放当前渲染上下文(GraphicsContext::releaseContext)
+
+<li>
+执行"后序渲染"渲染台的绘制(RenderStage::drawPostRenderStages)
+
+<li>
+执行相机的绘制结束回调(Camera::setFinalDrawCallback)
+
+<ul>
+<li>
+可以选择在某个回调中执行 OpenGL 函数(初始化与结束回调时不能执行)或自定义代码.
+
+</ul>
+<li>
+设置渲染目标和绑定纹理
+<pre c++>
+osg::Texture2D* texture = new osg::Texture2D;
+camera-&gt;setRenderTargetImplementation(osg::Camera::FRAME_BUFFER);
+camera-&gt;attach(osg::Camera::COLOR_BUFFER, texture);
+</pre>
+
+<li>
+Camera::Attachment 结构体保存绑定到相机的实际纹理或图片. RenderStage::runCameraSetUp 则反复遍历名为 Camera::BufferAttachmentMap 的映射表, 检索并设置那些与颜色缓存(COLOR_BUFFER), 深度缓存(DEPTH_BUFFER)等等相对应的 Attachment 对象.
+
+<li>
+RenderStage::copyTexture: 负责针对 FRAME_BUFFER 渲染目标, 拷贝场景图像到 Attachment 对象中.
+
+</ul>
+</ul>
+
+<div id="osgUtil::SceneView::draw()-osgUtil::RenderStage::drawInner()"><h3 id="osgUtil::RenderStage::drawInner()" class="header"><a href="#osgUtil::SceneView::draw()-osgUtil::RenderStage::drawInner()">osgUtil::RenderStage::drawInner()</a></h3></div>
+<ul>
+<li>
+FBO 对象的初始化
+
+<ul>
+<li>
+FBOExtensions::isSupported 和 FrameBufferObject::hasMultipleRenderingTargets 函数来判断显示是否支持 FBO 以及 MRT(多重渲染目标) 扩展, 并使用 FrameBufferObject::apply 来调用实际的 FBO 执行函数. OpenGL 为多重渲染目标的支持提供了多大十六个颜色缓存, OSG 中表示为 Camera::COLOR_BUFFERi, i 的取值范围为 0 到 15.
+
+</ul>
+<li>
+如果没有启用 FBO 支持或者没有使用 MRT, 作为渲染树根节点的渲染台(RenderStage)负责使用 glDrawBuffer 和 glReadBuffer 分别设置绘制缓存和读取缓存(对于用户来说,通过Camera的setDrawBuffer和setReadBuffer实现). 如两个缓存均为 GL_BACK 时, 场景的绘制将在后台缓存完成, 用 SwapBuffer 动作交换前后双缓存的数据, 该特性为场景摄像机默认设置(指定 GraphicsContext::Traits::doubleBuffer),
+
+<li>
+RenderBin::draw 函数. 负责从根节点开始遍历渲染树, 并执行各个渲染叶(RenderLeaf)以及上层状态节点(StateGraph)所包含的内容.
+
+<ul>
+<li>
+完成场景的实际绘制工作之后, OSG 将检测并显示出场景绘制当中遇到的错误, 如"Warning: detected OpenGL error... after RenderBin::draw()" 的字样, 通常是显卡对 OpenGL 高版本的某些函数或枚举值不支持而造成的
+
+</ul>
+<li>
+FBO 有关的操作, 包括使用 glBlitFramebufferEXT 进行解算, 将结果复制到关联的纹理以及图像对象中, 并结束 FBO 的调用.
+
+<li>
+Camera 设置渲染顺序为 PRE_RENDER 可以保证该相机在主场景之前执行绘制(创建了一个"前序渲染台"),存入 RenderStage::_preRenderList 列表, 从而实现"渲染到纹理"的效果, 见 osgprerender 例子
+
+</ul>
+
+<div id="osgUtil::SceneView::draw()-osgUtil::RenderStage::drawInner()-osgUtil::RenderBin::drawImplementation()"><h4 id="osgUtil::RenderBin::drawImplementation()" class="header"><a href="#osgUtil::SceneView::draw()-osgUtil::RenderStage::drawInner()-osgUtil::RenderBin::drawImplementation()">osgUtil::RenderBin::drawImplementation()</a></h4></div>
+<ul>
+<li>
+RenderBin::draw 函数的工作就是调用 RenderBin::drawImplementation 函数. 用户可以用自定义的绘制回调(RenderBin::setDrawCallback) 代替 drawImplementation 来完成这一绘制工作.
+
+<li>
+osg::State 的几点重要功能:
+
+<ul>
+<li>
+保存 OpenGL 的所有状态, 模式, 属性参数, 顶点和索引数据
+
+<li>
+提供对 OpenGL 状态堆栈的处理机制, 对即将进入渲染管线的数据进行优化
+
+<ul>
+<li>
+对于 OpenGL 渲染状态堆栈的处理， 实际上就是对于 OSG 状态树 (StateGraph) 的遍历处理。
+
+<li>
+OpenGL 各种 Mode 的开关(glEnable/glDisable)实际上是通过 State::applyMode 函数完成。
+
+<li>
+各种顶点(位置,法线,颜色等)数组和索引数组的设置(对应于OpenGL的glVertexPointer,glNormalPointer等), 通过State的setVertexPointer等函数实现的.
+
+<li>
+State类的 applyAttribute 函数, 会调用不同渲染属性的 StateAttribute::apply(State&amp;) 函数.
+
+</ul>
+<li>
+允许用户直接查询各种 OpenGL 状态的当前值
+
+</ul>
+<li>
+osg::State 是 OSG 与 OpenGL 的主要接口; 场景状态树的遍历者和整合者, 也是各种渲染状态以及顶点值的处理途径.
+
+<li>
+渲染树的叶节点 RenderLeaf 将 Geometry 对象的顶点坐标和索引信息数据传递给 State 对象
+
+<li>
+Drawable 对象通过 Drawable::draw 函数进行绘制, Getmetry 在绘制过程中, 将自己记录的数据信息传递给 State 对象, 由 State 对象完成顶点的载入和处理.
+
+<li>
+渲染树的作用, 抽取每个渲染树节点(RenderBin)中的渲染叶(RenderLeaf)对象, 由 osg::State 整合这些渲染叶在状态树中继承的全部渲染状态, 并将几何体数据传递给 OpenGL 管线, 完成绘制的工作.
+
+</ul>
+<p>
+<img src="http://www.xiabingdev.com/cloudimages/images/2021/06/19/drawrelation.png" />
+</p>
+<ul>
+<li>
+Drawable 几何体对象的具体实现位于 drawImplementation 函数(事实上是通过 draw 函数间接调用); 而渲染属性的具体实现函数为 StateAttribute::apply(State&amp;), 所有的渲染属性都重写了该函数, 以实现自己的功能.
+
+<li>
+OSG 的渲染流程:
+
+<ul>
+<li>
+渲染树的作用是遍历各个渲染元(RenderBin), 并按照指定的顺序执行其中各个渲染叶的渲染函数(RenderLeaf::render)
+
+<li>
+状态树保存了从根节点到当前渲染叶的路径, 遍历这条路径并收集所有的渲染属性数据(StateGraph/moveStateGraph),即可获得当前渲染叶渲染所需的所有OpenGL状态数据
+
+<li>
+渲染叶的渲染函数向osg::State传递渲染状态数据,由渲染属性类StateAttribute本身完成参数在OpenGL的注册和加载工作.同时渲染叶调用几何体(Drawable)的绘制函数,加载顶点和索引数据.
+
+</ul>
+<li>
+OSG场景绘制的执行流程如下:
+
+<ul>
+<li>
+判断当前 RenderBin 在渲染树中的位置, 并在此位置临时插入一个新的渲染状态 RenderBin::_stateset. 对于透明渲染元(TRANSPARENT_BIN), 此渲染状态会自动设置一个 alpha 属性(osg::AlphaFunc), 以便自动剔除绘制结果中颜色 Alpha 分量为 0 的像素.
+
+<li>
+遍历所有的子渲染元(RenderBin::_bins), 其中渲染顺序号小于 0 的渲染元将在这里执行它们的 RenderBin::draw 函数, 由于 draw 函数内部调用了 drawImplementation, 所以产生了递归调用, 回到第一步, 直至渲染树遍历至末端节点, StateSet::setRenderBinDetails 函数可设置渲染顺序号.
+
+<li>
+遍历当前 RenderBin 所保存的所有渲染叶(RenderBin::_renderLeafList), 执行 RenderLeaf::render 函数, 实现场景的绘制. 通常只有被设置为"DepthSortedBin"的渲染元会选择保存渲染叶而非状态节点(StateGraph).
+
+<li>
+遍历当前 RenderBin 所保存的所有状态节点(RenderBin::_stateGraphList), 获取其中保存的 RenderLeaf 对象(StateGraph::_leaves), 并执行其 render 函数
+
+<li>
+遍历所有的子渲染元(RenderBin::_bins), 其中渲染顺序号大于0的渲染元此时才执行它们的RenderBin::draw函数.
+
+</ul>
+<li>
+由此可见, 由于递归, 渲染由下往上渲染. 首先被绘制的是顺序小于0的末端RenderBin节点,其次则依次是顺序号等于0的末端节点,大于0的末端节点,小于0的倒数第二级节点......,而作为渲染树根节点的RenderStage中保存的数据将最后被渲染.
+
+<li>
+渲染树中的同一层顺序号小于0(或大于0)的渲染元不止一个,则会按照顺序号从小到大的顺序依次被渲染.
+
+<li>
+渲染树同一层不可能存在渲染顺序号相同的渲染元, 因为 setRenderBinDetails 设置相同数字参量的 StateSet 对象被构建成状态节点(StateGraph)之后,将插入到同一个 RenderBin 中.
+
+</ul>
+
+<div id="osgUtil::SceneView::draw()-osgUtil::RenderStage::drawInner()-osgUtil::RenderLeaf::render()"><h4 id="osgUtil::RenderLeaf::render()" class="header"><a href="#osgUtil::SceneView::draw()-osgUtil::RenderStage::drawInner()-osgUtil::RenderLeaf::render()">osgUtil::RenderLeaf::render()</a></h4></div>
+<ul>
+<li>
+RenderLeaf 是 OSG 渲染后台中几何体(Drawable)对象的唯一管理者. render 函数主要负责获取之前保存的 Drawable 指针, 投影矩阵, 模型视图矩阵, 深度值等信息(CullVisitor::addDrawableAndDepth函数完成传递这些信息). 将这些信息传递给 State 类, 并执行 Drawable::draw 函数
+
+<li>
+工作流程如下:
+
+<ul>
+<li>
+State::applyProjectionMatrix 传递投影矩阵
+
+<li>
+State::applyModelViewMatrix 传递模型视图矩阵
+
+<li>
+如果正在渲染的渲染叶和之前处理的渲染叶父节点不同, 则遍历状态树中相应的路径, 更新 State 状态机中保存的渲染状态数据(std::map类型, 分别名为 _modeMap 和 _attributeMap), 更新状态的函数为 StateGraph::moveStateGraph, 其清除上一次使用的各种渲染状态, 再沿着状态树中的路径, 依次添加当前渲染叶所需要的数据, 最后执行函数 State::apply(const State*), 由 OSG 状态机处理并执行相应的 OpenGL 指令.
+
+<li>
+如果当前渲染叶和上一次处理的渲染叶有相同的父节点(StateGraph对象), 则不改变传入 State 状态机的状态数据, 直接执行 State::apply 函数.
+
+<li>
+执行渲染叶所保存的 Drawable 对象的 draw 函数, 完成几何体的绘制. 此时 Geometry(实际上是Drawable::drawImplementation)向 State 传递顶点和索引数据, 而后又 State 完成几何数据的绘制.
+
+</ul>
+</ul>
+
+<div id="osgUtil::SceneView::draw()-osg::State::apply(const StateSet*)"><h3 id="osg::State::apply(const StateSet*)" class="header"><a href="#osgUtil::SceneView::draw()-osg::State::apply(const StateSet*)">osg::State::apply(const StateSet*)</a></h3></div>
+<ul>
+<li>
+该函数的工作流程:
+
+<ul>
+<li>
+State::applyModelList 函数, 接受渲染状态中的模式数据(StateSet::setMode 设置的数据), 通过 applyMode 函数设置, 实际的执行代码如下:
+<pre c++>
+if (enabled) glEnable(mode); 
+else glDisable(mode);
+</pre>
+
+<li>
+State::applyAttributeList 函数, 接受渲染状态中的属性数据(StateAttribute 的派生类对象, 使用 StateSet::setAttribute 设置), 并通过 applyAttribute 函数予以执行, 实际的执行代码
+<pre c++>
+attribute-&gt;apply(*this);
+</pre>
+
+<ul>
+<li>
+attribute 为 StateAttribute 对象, this 为 State 类对象.
+
+<li>
+如果想要自己写一个新的渲染属性类(如同时完成雾效和图像融合的工作),只要将虚函数StateAttribute::apply(State&amp;)重写就可以实现它与OSG渲染后台的接口.
+
+<li>
+State 类会保存两个映射表 _modeMap 和 _attributeMap 用于上面的工作
+
+</ul>
+<li>
+以类似的方式处理纹理相关的渲染树性和模式. 之所以纹理相关的属性需要分开设置, 是因为需要设置多个纹理单元的属性, 每个纹理单元的属性有不同.
+
+<li>
+State::applyUniformList 将着色器所使用的 Uniform 变量传递下去(事实上是传递给OSG内部的GLSL预编译器 Program::PreContextProgram 处理了), 这是实现 GLSL 与 OSG 系统交互的重要途径.
+
+</ul>
+</ul>
+<p>
+<img src="http://www.xiabingdev.com/cloudimages/images/2021/06/19/renderbackend.png" />
+</p>
+<ul>
+<li>
+OSG 渲染后台与用户层的接口是摄像机类(Camera), 场景中至少有一个主摄像机 Main Camera, 其关联了一个图形设备(GraphicsContext), 以及一个渲染器(Renderer), 我们可以在场景树中(或者其他的View中,对于复合视景器而言)添加更多的摄像机.这些摄像机可以关联相同的或者其它的图形设备,但都会配有单独的渲染器,用于保存该摄像机的筛选设置,显示器设置等信息.
+
+<li>
+场景筛选和绘制的工作由渲染器完成,而图形设备 GraphicsContext 则负责根据不同时机的选择, 调用渲染器的相关函数. 例如单线程模式中, ViewerBase::renderingTraversals 函数依次执行 Renderer::cull 和 Renderer::draw 函数(后者通过 GraphicsContext::runOperations 调用).
+
+<li>
+OSG 渲染后台的调度中心是场景视图(SceneView), 它负责保存和执行筛选访问器(CullVisitor). CullVisitor 负责遍历并裁剪场景, 同时在遍历过程中构建对于场景绘制至关重要的渲染树和状态树.生成的状态树以 StateGraph 为根节点和各级子节点(其中保存场景树的渲染状态 StateSet 数据), 以 RenderLeaf 为末端节点的内容(其中保存场景树的几何体Drawable对象);渲染树则以 RednerStage 为根节点, RenderBin 为各级子节点, 根据渲染顺序和方法的设定, 状态树中的节点和渲染叶(RenderLeaf)被记录到RenderStage和各级RenderBin中,SceneView负责保存和维护状态树和渲染树.
+
+<li>
+绘制场景时,渲染树中的各级节点将取出保存的渲染叶数据,传递给OSG状态机(State),后者是OpenGL状态机制的封装和实现,也是场景绘制的核心元件.状态机取得渲染叶中的几何数据后,再向根部遍历状态树,取得该几何体绘制相关的所有渲染状态设置,并亲自或交出StateAttribute派生类完成渲染状态的实际设定,以及场景元素的实际绘制工作.
+
+</ul>
+
+<div id="osgUtil::SceneView::draw()-osgViewer::ViewerBase::startThreading()"><h3 id="osgViewer::ViewerBase::startThreading()" class="header"><a href="#osgUtil::SceneView::draw()-osgViewer::ViewerBase::startThreading()">osgViewer::ViewerBase::startThreading()</a></h3></div>
+<ul>
+<li>
+线程模型的选择可以个概括为一个决定谁来调用 SceneView::cull, 谁来调用 Scene::draw 的过程
+
+<li>
+startThreading 函数开始后的工作:
+
+<ul>
+<li>
+执行 ViewerBase::releaseContext, 首先释放渲染上下4文
+
+<li>
+如果用户没有设置线程模型,则使用 ViewerBase::suggestBestThreadingModel 自动进行判断
+
+<li>
+使用 Viewer::getContexts 函数获取当前所有的图形设备(GraphicsContext)
+
+<li>
+使用 Viewer::getCameras 函数获取当前所有的摄像机(所有的主摄像机和所有Slave相机)
+
+</ul>
+<li>
+ViewerBase::_startRenderingBarrier: 渲染启动的一个栅栏标志, 用于同步开始所有的图形设备的线程操作.
+
+<li>
+ViewerBase::_endRenderingDispatchBarier: 渲染启动的一个栅栏标志, 用于同步结束所有的图形设备的线程操作.
+
+<li>
+ViewerBase::_endDynamicDrawBlock: 用于同步结束所有的动态对象绘制操作,即那些 Object::setDataVariance 设置为 DYNAMIC 的场景对象.
+
+<li>
+OpenThreads::Barrier 栅栏关于 Block(阻塞器) 的介绍:
+
+<ul>
+<li>
+BlockCount 类: 计数阻塞器类，block() 阻塞线程， release() 释放线程. BlockCount 的构造函数可以设置一个阻塞计数值，每当阻塞器对象的 completed() 函数执行一次，计数器就减一，直至减到零就释放被阻塞的线程。
+
+<li>
+Barrier 类: 线程栅栏类, 构造函数与 BlockCount 类似, 可以设置一个整数值, 我们把这个整数值理解成栅栏的"强度". 每个执行了 Barrier::block() 函数的线程都将被阻塞; 当被阻塞在栅栏处的线程达到指定的数目时, 栅栏将被冲开, 所有的线程将被释放. 重要的是, 这些线程是几乎同时释放的,也就保证了线程执行的同步性.
+
+</ul>
+<li>
+_startRenderingBarrier 和 _endRenderingDispatchBarrier 变量虽然是 osg::BarrierOperation 类型, 其实均派生自 OpenThreads::Barrier 类; _endDynamicDrawBlock 是 osg::EndOfDynamicDrawBlock 类型, 亦即 BlockCount 的派生成员.
+
+<li>
+osg::BarrierOperation 类在定义时会传入两个参数, 整数型参数定义了这个栅栏可阻塞的线程数, 或者它的强度(达到这一数值将自动释放所有线程), 另一个则定义是否需要在阻塞前执行固定的操作(通常是不用的, 即 BarrierOperation::NO_OPERATION).
+
+<li>
+osg::EndOfDynamicDrawBlock 在定义时会传入一个参数, 表示阻塞的最大计数值, 当阻塞器对象的 completed() 函数执行次数达到这一数值时, 才会释放被阻塞的线程.
+
+<li>
+针对不同的线程模型, 使用 switch-case 条件语句给出了不同的预设参数, 如渲染开始栅栏 _startRenderingBarrier 的最大强度 numThreadsOnStartBarrier, 渲染结束栅栏 _endRenderingDispatchBarrier 的最大强度 numThreadsOfEndBarrier. 对于单线程模型之外的模型, 其他三种线程模型的设置如下:
+
+<ul>
+<li>
+CullDrawThreadPerContext: 每个图形设备(GraphicsContext)创建一个线程(GraphicsContext::createGraphicsThread), 每一帧结束前都会强制同步所有的线程, 设置如下:
+<pre c++>
+numThreadsOnStartBarrier = contexts.size() + 1;
+numThreadsOnEndBarrier = contexts.size() + 1;
+</pre>
+
+<li>
+DrawThreadPerContext: 系统将为每个图形设备创建一个线程. 并且在当前帧的所有线程完成工作之前, 开始下一帧. 栅栏的设置为:
+<pre c++>
+numThreadsOnStartBarrier = 1;
+numThreadsOnEndBarrier = 1;
+</pre>
+
+<li>
+CullThreadPerCameraDrawThreadPerContext: 系统将为每个图形设备和每个摄像机创建线程(Camera::createCameraThread). 并且在当前帧的所有线程完成工作之前,开始下一帧.栅栏的设置为:
+<pre c++>
+numThreadsOnStartBarrier = contexts.size() + 1;
+numThreadsOnEndBarrier = 1;
+</pre>
+
+</ul>
+<li>
+以 CullDrawThreadPerContext 为例, 如果为各个图形设备启动了共 n 个图形线程, "渲染启动栅栏"和"渲染结束栅栏"的强度均为 n+1, 如果每个线程完成工作后均以 block() 函数将自己阻塞.则在主线程中在执行一次 block(), 则会成功冲开栅栏, 释放所有被阻塞的线程.
+
+</ul>
+
+<div id="osgUtil::SceneView::draw()-osgViewer::ViewerBase::startThreading()-osgViewer::ViewerBase::renderingTraversals()"><h4 id="osgViewer::ViewerBase::renderingTraversals()" class="header"><a href="#osgUtil::SceneView::draw()-osgViewer::ViewerBase::startThreading()-osgViewer::ViewerBase::renderingTraversals()">osgViewer::ViewerBase::renderingTraversals()</a></h4></div>
+<ul>
+<li>
+首次同步各个图形线程
+<pre c++>
+if(_startRenderingBarrier.valid()) _startRenderingBarrier-&gt;block();
+</pre>
+
+<ul>
+<li>
+表示主进程阻塞, 后面的代码都不会执行, 蹙非栅栏被冲开.
+
+<li>
+冲开条件就是所有图形设备(GraphicsContext)的线程都执行了 _startRenderingBarrier-&gt;block().
+
+</ul>
+<li>
+后面同样有类似代码
+<pre c++>
+if(_endRenderingBarrier.valid()) _endRenderingBarrier-&gt;block();
+</pre>
+
+<li>
+两端代码之间的内容是单线程模式下的部分, 按顺序执行各个图形设备的筛选和绘制工作, 概括起来就是
+<pre c++>
+if (!renderer-&gt;getGraphicsThreadDoesCull() &amp;&amp; !(camera-&gt;getCameraThread())) 
+            renderer-&gt;cull(); 
+if (!(gc-&gt;getGraphicsThread()) &amp;&amp; gc-&gt;valid()) 
+{ 
+            makeCurrent(gc); 
+            gc-&gt;runOperations(); 
+} 
+</pre>
+
+<li>
+由于 CullDrawThreadPerContext 以及 DrawThreadPerContext 方式下, gc-&gt;getGraphicsThread() 为真, 因此不再执行 GraphicsContext::runOperations, 也就是不再从主进程的 renderingTraversals 函数中执行场景绘制; 而在更加高效也更加复杂的 CullThreadPerCameraDrawThreadPerContext 方式下, 不但场景绘制不再由主进程完成, 由于 "camera-&gt;getCameraThread()" 条件也为真, 因此筛选工作也由摄像机线程完成.
+
+<li>
+在"渲染开始栅栏"和"渲染结束栅栏"的同步代码之间, 有这样一行代码:
+<pre c++>
+if(_endDynamicDrawBlock.valid()) _endDynamicDrawBlock-&gt;block();
+</pre>
+
+<ul>
+<li>
+由于 _endDynamicDrawBlock 是一个计数阻塞器, 因此当且仅当我们执行了指定次数的 completed 函数之后, 主进程才会被释放, 后面的代码才会被继续执行.
+
+<li>
+completed 函数的执行位置. 首先是 ViewerBase::startThreading 函数:
+<pre c++>
+if(_threadingModel == DrawThreadPerContext || _threadingModel == CullThreadPerCameraDrawThreadPerContext) 
+{ 
+	... ...
+	_endDynamicDrawBlock = new osg::EndOfDynamicDrawBlock(numViewerDoubleBufferedRenderingOperation); 
+	... ...
+}
+if(numThreadsOnStartBarrier &gt; 1) 
+{
+	_startRenderingBarrier = new osg::BarrierOperation(numThreadsOnStartBarrier, osg::BarrierOperation::NO_OPERATION); 
+}
+if(numThreadsOnEndBarrier &gt; 1)
+{
+	_endRenderingDispatchBarrier = new osg::BarrierOperation(numThreadsOnEndBarrier, osg::BarrierOperation::NO_OPERATION); 
+}
+... ...
+for(citr = contexts.begin(); citr != contexts.end(); ++citr, ++processNum) 
+{
+	... ...
+	osg::GraphicsContext* gc = (*citr); 
+	gc-&gt;getState()-&gt;setDynamicObjectRenderingCompletedCallback(
+		_endDynamicDrawBlock.get()); 
+	... ... 
+}
+</pre>
+
+</ul>
+<li>
+_endDynamicDrawBlock 只有在 DrawThreadPerContext 和 CullThreadPerCameraDrawThreadPerContext 两种模式下才会被初始化. 只有这两种模式下才会被初始化, 因为只有这两种模式下才会出现上一帧渲染未结束而下一帧开始的情况.
+
+<li>
+如果一个对象需要在运行时修改,则会被设为动态对象
+<pre c++>
+object-&gt;setDataVariance(DYNAMIC);
+</pre>
+
+<ul>
+<li>
+此时需要考虑到正在渲染的数据是否会被新一帧的用户回调给修改了. 单线程和 CullDrawThreadPerContext 模型不会出现渲染过程与用户更新过程交叠的情形, 因此不会出现这种情况.
+
+</ul>
+<li>
+_endDynamicDrawBlock 就是避免 DYNAMIC 对象的运行时更改影响后台渲染的工具. 在初始化时我们需要设置它的最大计数值,当 completed 函数的执行次数达到这一数值时, 将释放被阻塞的线程, 也就是我们的主进程. 改最大计数值正是场景中摄像机渲染器(Renderer)的个数. 具体可见 RenderLeaf::render 函数
+<pre c++>
+if(_dynamic)
+	state.decrementDynamicObjectCount();
+</pre>
+
+<li>
+State::decrementDynamicObjectCount 函数的内容为:
+<pre c++>
+{
+	--_dynamicObjectCount;
+	if(_dynamicObjectCount == 0 &amp;&amp; _completeDynamicObjectRenderingCallback.valid())
+		_complteDynamicObjectRenderingCallback-&gt;completed(this);
+}
+</pre>
+
+<li>
+State::_dynamicObjectCount 通过  RenderStage::computeNumberOfDynamicRenderLeaves 计算而来.
+
+<li>
+每个设置为"动态"的渲染叶都会在渲染结束时执行动态对象计数的"减一"操作. 每当 OSG 状态机 State 的动态对象计数为0时,相应的动态对象渲染回调(这个参数实际上就指向 _endDynamicDrawBlock) 将执行 completed 操作.  由于每个摄像机的渲染器都会根据自己的实际情况重新刷新状态机 State 的内容, 并因而在全部动态对象的渲染结束时执行一次 completed 函数. 因此, 最终所有 n 个摄像机的内容都渲染完毕时, compled 函数也将被执行 n 次, 并进而解开了计数阻塞器的阻塞, 释放主进程, 使之继续后面的代码, 开始下一帧的运行.
+
+<li>
+因此, 设置场景中的节点,几何体或者渲染状态为 DYNAMIC 对象时, 将保证这些对象的渲染结束之前, 不会开始下一帧的用户更新工作.
+
+</ul>
+
+<div id="osgUtil::SceneView::draw()-osg::OperationThread::run()"><h3 id="osg::OperationThread::run()" class="header"><a href="#osgUtil::SceneView::draw()-osg::OperationThread::run()">osg::OperationThread::run()</a></h3></div>
+<ul>
+<li>
+GraphicsContext::createGraphicsThread 创建线程时, 得到的是一个 osg::GraphicsThread 线程对象, Camera::createCameraThread 创建线程时,得到的是 osg::OperationThread 对象, 它是 GraphicsThread 的父类.
+
+<ul>
+<li>
+图形设备所用的 GraphicsThread 线程只是在每次运行时（即 GraphicsThread::run 函数）保证设备的渲染上下文 RC 设置正确，即，在恰当的时机使用 GraphicsContext::makeCurrent 和 releaseContext 函数操作 RC 设备，并在 RC 设备正确关联之后执行 OperationThread::run 函数。 
+
+</ul>
+<li>
+OperationThread::run() 函数的工作流程:
+
+<ul>
+<li>
+取得任务队列(OperationQueue),这里使用 Mutex 互斥锁, 避免用户追加任务时与线程的执行产生冲突.
+
+<li>
+获取任务队列中的一个任务(OperationQueue::getNextOperation). 这个函数看似简单, 只要从 std::list 列表中取出一个 osg::Operation 对象就可以了. 但是其中还有一些注意事项:
+
+<ul>
+<li>
+首先, 如果人物列表时空的, 渲染线程将选择暂时阻塞自己(使用block函数), 直到有新的 Operation 操作加入到队列中位置.
+
+<li>
+其次, 我们有一个任务列表迭代器 _currentOperationIterator, 如果这个迭代器已经到达列表的末尾, 则自动将其转至列表首部, 这样就可以在线程中循环执行任务列表中的内容.
+
+<li>
+当迭代器取得了一个 Operation 操作任务, 那么我们需要判断这个任务是否将反复被执行, 如果 Operation::getKeep 为 true, 则任务允许反复执行(如场景筛选和绘制的任务), 否则 任务将被随即从列表中移除, 我们也不会再取得这个 Operation 对象.
+
+</ul>
+<li>
+由此可见, Operation 对象在线程中的应用时机就在此处. 线程运行中将执行 Operation::operator() 操作, 并将当前的 GC 设备或者摄像机作为传入参数传入.
+
+</ul>
+</ul>
+
+<div id="osgUtil::SceneView::draw()-osgViewer::ViewerBase::startThreading()"><h3 id="osgViewer::ViewerBase::startThreading()" class="header"><a href="#osgUtil::SceneView::draw()-osgViewer::ViewerBase::startThreading()">osgViewer::ViewerBase::startThreading()</a></h3></div>
+<ul>
+<li>
+向任务列表传入新的 Operation 任务的函数为 OperationThread::add, 如果需要的话, 我们也可以向 GC 线程或者摄像机线程传递自己定义的任务, 只是对于并不熟悉线程编程的开发者而言, 这一操作极具危险性.
+
+<li>
+DatabasePager::CompileOperation 操作任务, 它是在数据分页线程的执行过程中, 从 DatabaseThread::run 传递给对应的 GC 线程的. 它的执行函数 operator() 的内容也很简单, 无非是执行 DatabasePager::compileAllGLObjects 函数, 对当前 GC 设备中待编译的对象执行预编译(使用 compileGLObjects 函数)
+
+<ul>
+<li>
+该 CompileOperation 的 getKeep 属性为 false, 执行完一次后, 它将被剔除出 GC 线程的人物列表.
+
+</ul>
+<li>
+GC 线程的主要工作任务设置都是在 startThreading 这个函数中完成的. 这个 startThreading 将在 Viewer::realize 函数中执行, 因此我们尽量不要再执行 realize 之后再做多余的工作, 因为此时渲染线程已经启动了.
+
+<li>
+在 startThreading 函数中, 根据线程模型的不同, 以下几种任务对象将可能被添加到 GC 线程或者摄像机线程中:
+
+<ul>
+<li>
+osg::BarrierOperation: 即前文中的 _startRenderingBarrier 和 _endRenderingDispatchBarrier. 它们同时也可以作为任务对象被添加到线程中, 使得线程的同步控制变得十分方便; 只要任务队列执行到启动栅栏或者结束栅栏, 就自动使用 block 阻塞线程, 直到栅栏被冲开(也就是全部线程都被阻塞的那一刻), 才会继续执行后面的任务.
+
+<li>
+osg::RunOperations: 这个任务将负责执行 GraphicsContext::runOperation 函数, runOperations 函数将通过执行渲染器的 Renderer::operator() 操作, 完成场景的绘制(或者筛选加上绘制, Renderer::cull_draw) 工作.
+
+<li>
+osg::SwapBuffersOperation, 执行双缓存交换的动作, 以实现场景的平滑浏览, 相关函数为 GraphicsContext::swapBuffersImplementation.
+
+<li>
+osgViewer::Renderer: 根据相应的设置直接执行场景的绘制(Renderer::draw)或者筛选加绘制(Renderer::cull_draw)操作.
+
+</ul>
+<li>
+CullDrawThreadPerContext 模式的渲染开始栅栏和结束栅栏的强度都设置为 contexts() + 1, 即 GC 线程的数目加一. 任务列表中任务的顺序为:
+
+<ul>
+<li>
+_startRenderingBarrier 任务(startThreading 函数). 由于 getKeep() 设置为 true, 这个任务不会从列表中删除.
+
+<li>
+osg::RunOperations 任务, 它将同时负责场景的筛选和绘制(即最终执行 Renderer::cull_draw 函数). 该任务不会从列表中删除.
+
+<li>
+swapReadyBarrier 任务, 它实际上是一个 BarrierOperation 栅栏对象, 强度等于 GC 线程的数目. 作用为在交换双缓存之前对所有 GC 线程执行一次同步. 该任务不会从列表中删除.
+
+<li>
+swapOp 任务, 这是一个 SwapBuffersOperation 对象, 用于执行绘制后的双缓存交换操作. 该任务不会从列表中删除.
+
+<li>
+_endRenderingDispatchBarrier 任务, 这是渲染结束栅栏的位置. 该任务不会从列表中删除.
+
+</ul>
+<li>
+可见 CullDrawThreadPerContext 模式, 将三次对各个 GC 线程进行同步, 分别是场景筛选和绘制开始之前, 场景筛选和绘制完毕后, 以及双缓存交换完毕后. 
+
+<li>
+下图三个GC线程分别绘制三个不同的图形设备
+
+</ul>
+<p>
+<img src="http://www.xiabingdev.com/cloudimages/images/2021/06/23/camera_thread.png" />
+</p>
+<ul>
+<li>
+图中用到的同步栅栏, 分别是 _startRenderingBarrier, swapReadyBarrier, _endRenderingDispatchBarrier
+
+</ul>
+<li>
+DrawThreadPerContext 模式是一种默认的线程模式. 如果 ViewerBase 类的成员函数 suggestBestThreadingModel 没有找到适合当前计算机系统的线程模式的话， 将自动采用这一模式来完成渲染的工作。DrawThreadPerContext 模式没有设置渲染启动栅栏 _startRenderingBarrier 和结束栅栏 _endRenderingDispatchBarrier。因此这一渲染模式下将不会在每一帧对场景的筛选和绘制工作进行同步，且用户的更新动作将有可能在某些线程的渲染动作还未结束时即开始运行。
+
+<li>
+DrawThreadPerContext 模式下会根据场景中摄像机的数量设置 _endDynamicDrawBlock 变量的值，该阻塞器用于在每个渲染器都渲染完毕之前阻塞主进程的运行，以免用户对数据的更新动作和动态对象的渲染动作产生冲突。
+
+<li>
+DrawThreadPerContext 需要执行的人物列表如下:
+
+<ul>
+<li>
+osg::RunOperations 任务, 它将负责场景的绘制(即最终执行 Renderer::draw 函数)。 该任务不会从列表中删除
+
+<li>
+swapReadyBarrier 任务， 它实质上是一个 BarrierOperation 栅栏对象，强度等于 GC 线程的数目。它的作用是在交换双缓存之前对所有 GC 线程执行一次同步。该任务不会从列表中删除。
+
+<li>
+swapOp 任务，它是一个 SwapBuffersOperation 对象，用于执行绘制后的双缓存交换操作。该任务不会从列表中删除。
+
+</ul>
+<li>
+和单线程模式一样，场景筛选的工作是由 ViewBase::renderingTraversals 函数完成的。
+<pre c++>
+if(!renderer-&gt;getGraphicsThreadDoesCull() &amp;&amp; !(camera-&gt;getCameraThread())
+	renderer-&gt;cull();
+</pre>
+
+<ul>
+<li>
+Renderer::getGraphicsThreadDoesCull 函数只有在 CullDrawThreadPerContext 或者单线程模式下为 true，摄像机线程 getCameraThread() 只有在最后一种多线程模式中(CullThreadPerCameraDrawThread)才会被创建。因此此处 Renderer::cull 函数将被执行。
+
+</ul>
+<li>
+DrawThreadPerContext 每一帧仅执行一次场景的筛选工作，绘制工作则交给 GC 线程来完成。
+
+<ul>
+<li>
+Renderer::cull 最后将向绘制队列 _drawQueue 中添加一个已经完成筛选的场景试图对象(SceneView), 而 Renderer::draw 函数一开始就尝试从这个队列中取出一个数据(takeFront函数), 并清空它在队列中的位置。因此，如果新的线程绘制工作提前到来的话，由于场景筛选的函数还没有把 SceneView 传入到 _drawQueue 队列中， 因此这次多余的绘制动作将自动宣告结束。
+
+</ul>
+<li>
+运行如下， 主进程中某个线程的筛选一旦结束， 该线程所控制的绘制就会马上开始，由于 swapReadyBarrier 交换缓存栅栏的存在， 各个图形设备的交换缓存工作依然是统一执行的。
+
+<p>
+<img src="http://www.xiabingdev.com/cloudimages/images/2021/06/24/threadsync.png" />
+</p>
+<ul>
+<li>
+由于 DrawThreadPerContext 模式不存在渲染启动和结束栅栏，因此主进程执行完场景的筛选之后就可以继续执行，进而开始新一帧的用户数据更新工作。而此时 GC 线程的绘制工作很有可能还没有完成，如果此时场景中需要绘制的数据有了变化，将会造成无法预料的事情发生。
+
+<li>
+有动态对象阻塞器 _endDynamicDrawBlock 这个保护伞解决上面的问题。
+
+</ul>
+<li>
+如场景中的对象可变，使用 setDataVariance(Object::DYNAMIC) 设置该对象。
+
+<li>
+CullThreadPerCameraDrawThreadPerContext 模式是 OSG 目前采用的四种线程模型的最后一种， 也是实现效率最高的。
+
+<ul>
+<li>
+CullThreadPerCameraDrawThreadPerContext 建立了多个摄像机线程，用户场景的筛选；同时建立了多个 GC 线程，用于场景的绘制。该模式也提供了动态对象阻塞器 _endDynamicDrawBlock，以免用户的更新动作影响到场景的渲染工作。
+
+</ul>
+<li>
+CullThreadPerCameraDrawThreadPerContext 模式 GC 线程的任务列表:
+
+<ul>
+<li>
+osg::RunOperations 任务负责场景的绘制。 
+
+<li>
+swapReadyBarrier 任务的作用是在交换双缓存之前对所有 GC 线程执行一次同步。 
+
+<li>
+swapOp 任务用于执行绘制后的双缓存交换操作。
+
+</ul>
+<li>
+CullThreadPerCameraDrawThreadPerContext 模式相机线程的任务列表:
+
+<ul>
+<li>
+_startRenderingBarrier: 渲染启动栅栏，这里的作用为"筛选启动栅栏"。其强度是场景摄像机的数目加一。因此在 renderingTraversals 函数中将会通过阻塞主线程，对场景的筛选线程(即各个摄像机)执行一次同步。
+
+<li>
+osgViewer::Renderer, 转而执行 Renderer::operator()(osg::Object* object)函数，并在其中执行 Renderer::cull() 函数，完成场景的筛选。
+
+</ul>
+<li>
+三个GC线程和三个摄像机线程的粒子，注意这里摄像机线程的筛选工作与GC设备线程中的绘制工作同样是首尾相连的，即，摄像机线程的筛选一旦结束，GC线程的绘制就会马上开始
+
+<p>
+<img src="http://www.xiabingdev.com/cloudimages/images/2021/06/24/gcthreadcamerathread.png" />
+</p>
+<ul>
+<li>
+简单地介绍一下 OSG 分配 CPU 的策略。对于各个 GC 线程（除了单线程之外的三种模式），将使用 OpenThreads::Thread::setProcessorAffinity 函数平均地安排到每个CPU 上；如果还有摄像机线程的话，则按照与 GC 线程相同的做法，安置到最后一个 GC 线程之后的 CPU 上。 
+
+</ul>
+<p>
+<img src="http://www.xiabingdev.com/cloudimages/images/2021/06/24/cpuassign.png" />
+</p>
+
+    </div>
+</body>
+</html>

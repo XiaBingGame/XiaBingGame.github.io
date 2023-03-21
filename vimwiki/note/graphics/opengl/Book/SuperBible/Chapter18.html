@@ -1,0 +1,1000 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../../style.css" />
+    <title>Chapter18</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<h1 id="toc_1">OpenGL SuperBible Chapter 18 Advanced Buffers</h1>
+<ul>
+<li>
+使用pixel buffer objects(PBOs)提升性能
+
+<li>
+使用framebuffer objects(FBOs)渲染屏幕外内容
+
+<li>
+使用浮点纹理和颜色缓存
+
+<li>
+不再分离顶点数组, 纹理, 帧缓存, 你可以混合使用这些数据.
+
+<li>
+本章介绍新的内容: 像素缓存对象, 帧缓存对象, 纹理和渲染缓存的浮点内部格式
+
+</ul>
+
+<h1 id="toc_2">Pixel Buffer Objects</h1>
+<ul>
+<li>
+PBOs, OpenGL 2.1 可以使用的新缓存对象. PBOs包含像素而不是顶点
+
+<ul>
+<li>
+同VBOs, PBOs可看成服务器的对象. 允许OpenGL驱动器将其放在显卡内存. 同VBOs, 使用相同的提示(如何处理数据, 频度) ,一旦这些数据被写入, 且重复用于渲染, 本地显卡内存也许是最快的.
+
+<li>
+将PBO当作像素数据的源和目的地
+
+</ul>
+<li>
+如何使用PBOs
+
+<ul>
+<li>
+GL_ARB_pixel_buffer_object 扩展
+
+<ul>
+<li>
+两个新的宏记号用于缓存对象绑定目标, 两个新的宏记号用于查询当前绑定
+
+<ul>
+<li>
+绑定新的目标: GL_PIXEL_PACK_BUFFER, GL_PIXEL_UNPACK_BUFFER
+
+<li>
+用于查询当前绑定: GL_PIXEL_PACK_BUFFER_BINDING, GL_PIXEL_UNPACK_BUFFER_BINDING
+
+</ul>
+</ul>
+<li>
+缓存对象命令:
+
+<ul>
+<li>
+生成一个名称, 绑定它创建PBO, 初始化它的的数据存储. 而后实现映射, 使得可以直接使用CPU访问. 而后取消映射. 修改数据存储的子集, 绘制, 删除<br />
+<pre c++>
+	glGenBuffers(1, &amp;pboName);
+	glBindBuffer(GL_PIXEL_UNPACK_BUFFER, pboName);
+	glBufferData(GL_PIXEL_UNPACK_BUFFER, width * height, myPixelPtr, GL_STATIC_DRAW);
+	glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_WRITE_ONLY);
+	glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
+	glBufferSubData(GL_PIXEL_UNPACK_BUFFER, width * 5, width, ptrToNewRow5Data);
+	// 最后一个参数为0即偏移, 表示应当从缓存对象的数据存储的位置0开始unpacking
+	glDrawPixels(width, height, GL_LUMINANCE, GL_UNSIGNED_BYTE, (GLvoid*)0);
+	glDeleteBuffer(1, &amp;pboName);
+</pre>
+
+<li>
+Unpacking 表示从应用程序中中得到数据, 如glDrawPixels 或 glTexImage2D
+
+<li>
+Packing 用于将数据打包, 返回给应用程序, 如 glReadPixels 或 glGetTexImage.(可以理解从服务器端得到数据)
+
+<li>
+可以使用功能glBindBuffer用于切换不同的PBOs, 绑定缓存名称0至一目标可以有效的解除当前绑定PBO
+
+<li>
+绑定其他名称, 则返回客户端内存用于连接绑定点.
+
+<li>
+一个缓存对象可以同时绑定至多个目标, 可以同时是PBOs和VBOs.
+
+</ul>
+</ul>
+<li>
+PBOs的好处
+
+<ul>
+<li>
+应用程序经常从客户端的内存中将像素和纹素发送给驱动器, 以及从驱动器读取像素和纹素至客户端内存中. 频繁拷贝, 以及将数据用于不同的目的. (驱动器可看成GPU)
+
+<li>
+而PBOs则简化一些操作来提升性能:
+
+<ul>
+<li>
+将经常使用的数据放在GPU附近的缓存中. 同VBOs.
+
+<ul>
+<li>
+在重绘相同的GUI组件时, 普通的做法从客户端内存unpack, 而后不断地发送给GUI, 这是由于驱动器无法知道客户端数在调用时据是否发生变化, 只能假设每次数据都不同. 将数据放在PBOs, 则应用程序只需要通过glBufferData或glMapBuffer访问. 这确保驱动器绘制时用很低的代价重定位和重用数据.
+
+</ul>
+<li>
+避免客户端至驱动器的额外拷贝.
+
+<ul>
+<li>
+源于应用程序从硬盘加载纹理的传统使用模式.
+
+<li>
+一般来说, 应用程序首先分配客户端内存, 而后从磁盘加载纹理至客户端内存, 使用glTexImage2D将内存指针传送给驱动器, 在glTexImage2D调用返回之前, 需要从客户端内存拷贝数据至其驱动器内存. 注意, 应用程序在拷贝结束之后可以修改和使用客户端内存, 以便下次选中该纹理.
+
+<li>
+现在, 调用glMapBuffer至一缓存对象, 应用程序可以直接从磁盘拷贝数据至驱动器. 避免了客户端内存的额外拷贝.
+
+</ul>
+<li>
+允许从帧缓存中读取
+
+<ul>
+<li>
+不再着重于发送数据给驱动器, 而是从驱动器中读取数据.
+
+<li>
+调用glReadPixels一般从帧缓存中读取数据, 而后将数据pack进客户端内存.
+
+<ul>
+<li>
+对于glReadPixels的返回, 必须事先分配数据内存. 以便应用程序随时使用. 以及能够最后确定帧缓存的内容.
+
+<li>
+这意味着管线的所有渲染在返回给像素数据之前先发送给以及作用于帧缓存.
+
+</ul>
+<li>
+现在你可以将PBO绑定于GL_PIXEL_PACK_BUFFER目标, 应用程序可以使用显式命令glGetBufferSubData或glMapBuffer来访问结果
+
+</ul>
+<li>
+当数据改变用途时, 不需从客户端内存显式拷贝
+
+<ul>
+<li>
+我们可以绑定相同的缓存对象至GL_PIXEL_PACK_BUFFER和GL_PIXEL_UNPACK_BUFFER目标, 以及有效的抓取纹素数据, 以像素形式发送回去, 或相反.
+
+<li>
+更有趣的结合就是绑定PBO作为一个VBO, 渲染至一个顶点数组, 使用浮点格式, 你可以使用GPU的着色器硬件生成顶点数据以及其可以读回至一个PBO, 绑定作为一个VBO以及之后用于渲染.
+
+<li>
+这些都不需要不需从客户端内存拷进拷出
+
+</ul>
+</ul>
+</ul>
+<li>
+PBOs in Action
+
+<ul>
+<li>
+例子, 我们在绘制每帧之前, 混合三个纹理
+
+<ul>
+<li>
+一个相片 50%, 在新的每帧中逐步旋转
+
+<li>
+两帧之前的帧快照 25%
+
+<li>
+散帧之前的帧快照 25%
+
+</ul>
+<li>
+实现运动模糊
+
+<li>
+通过glReadPixels 读取旧帧的内容, 而后通过glTexImage2D将其映射为纹理
+
+<li>
+为了提升性能, 我们绑定PBO. 所以我们从已管线化的帧缓存中读取数据. 所以我们映射PBO可以减少CPU 25%的浪费.
+
+<li>
+这里还有很多的优化方法达到这个效果, 比如使用片段着色器以各种比率混合痕迹图像
+
+</ul>
+</ul>
+    
+<ul>
+<li>
+PBOs可以和glTexImage2D 和 glReadPixels 连接. GL_PIXEL_PACK_BUFFER 和 GL_PIXEL_UNPACK_BUFFER 影响的命令:
+
+<ul>
+<li>
+GL_PIXEL_PACK_BUFFER : glGetCompressedTexImage, glGetConvolutionFilter, glGetHistogram, glGetMinmax, glGetPixelmap, glGetPolygonStipple, glGetSeparableFilter, glGetTexImage, glReadPixels.  
+
+<li>
+GL_PIXEL_UNPACK_BUFFER : glBitmap, glColorSubTable, glColorTable, glCompressedTexImage*, glCompressedTexSubImage*, glConvolutionFilter*, glDrawPixels, glPixelMap, glPolygonStipple, glSeparableFilter2D, glTexImage*, glTexSubImage*.
+
+</ul>
+<li>
+本例演示<br />
+<pre c++>
+        // 从帧缓存读取数据写入客户端缓存
+        glBindBuffer(GL_PIXEL_PACK_BUFFER, currentFrame + 1);
+        glReadPixels(dataOffsetX, dataOffsetY, dataWidth, dataHeight, GL_RGB, GL_UNSIGNED_BYTE, (GLvoid*)0);
+        
+        // 从客户端缓存映射数据, 可在该数据上修改
+        glBindBuffer(GL_PIXEL_UNPACK_BUFFER, lastFrame + 1);
+        pixels[lastFrame] = (GLubyte*)glMapBuffer(GL_PIXEL_UNPACK_BUFFER, GL_READ_WRITE);
+        //... 修改数据
+        glUnmapBuffer(GL_PIXEL_UNPACK_BUFFER);
+        
+        如果不是用PBS
+        // 从帧缓存读取到内存
+        glReadPixels(dataOffsetX, dataOffsetY, dataWidth, dataHeight, GL_RGB, GL_UNSIGNED_BYTE, pixels[currentFrame]);
+        //... 修改数据
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, dataWidth, dataHeight, 0, GL_RGB, GL_UNSIGNED_BYTE, pixels[lastFrame]);
+</pre>
+
+<li>
+如果不是用运动模糊, 则<br />
+<pre c++>
+        // 拷贝纹理矩阵, 运用于第二个纹理
+        glGetFloatv(GL_TEXTURE_MATRIX, copiedMatrix);
+        glActiveTexture(GL_TEXTURE1);
+        glLoadMatrixf(copiedMatrix);
+        glBindTexture(GL_TEXTURE_2D, 1);
+</pre>
+
+</ul>
+<h1 id="toc_3">Framebuffer Objects</h1>
+<ul>
+<li>
+FBOs, 允许你将渲染转移到一个或多个创建的非窗口帧缓存中, 而不是窗口帧缓存中.
+
+<ul>
+<li>
+使用FBOs的三个原因:
+
+<ul>
+<li>
+不局限于窗口大小
+
+<li>
+纹理可以和FBOs一起使用, 可以不需glCopyTexImage就直接渲染一个纹理.
+
+<li>
+FBOs包含多个颜色缓存, 可从一个片段着色器同时写入.
+
+</ul>
+<li>
+FBOs 还未成为OpenGL API的标准, 检查扩展 GL_EXT_framebuffer_object
+
+</ul>
+<li>
+如何使用FBOs
+
+<ul>
+<li>
+首先要注意一个FBO仅仅是一个图像的容器.
+
+<li>
+创建和销毁<br />
+<pre c++>
+        glGenFramebuffersEXT(1, &amp;fboName);	// 生成
+        glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fboName); // 绑定
+        glDeleteFramebuffersEXT(1, &amp;fboName); // 删除
+</pre>
+
+<ul>
+<li>
+glBindFramebufferEXT 还可以用于在FBOs之间转换, 名称0则表示接触当前FBO的绑定, 若有的话, 则重定向你的窗口帧缓存.
+
+<li>
+该FBO容器可以填充两种类型的图像: 纹理和renderbuffer, 两者都可作为渲染的目标. 只是renderbuffer不能用于之后的纹理操作, 例如: 深度纹理, 模板纹理等
+
+<li>
+Renderbuffer接口类似与Texture<br />
+<pre c++>
+            glGenRenderbuffersEXT(1, &amp;rbName);		// 生成
+            glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, rbName);	// 绑定
+            glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_RGBA8, width, height); // 格式
+            glDeleteRenderbuffersEXT(1, &amp;rbName);	// 删除
+</pre>
+
+<li>
+glRenderbufferStorageEXT 函数
+
+<ul>
+<li>
+建立你的renderbuffer的大小和内部格式
+
+<li>
+格式: 可接受的格式和glTexImage*相同, 且加上GL_STENCILE_INDEX(1|4|8|16)_EXT格式.
+
+<li>
+大小: glGetIntegetv函数GL_MAX_RENDERBUFFER_SIZE_EXT参数的返回值范围内
+
+</ul>
+</ul>
+<li>
+FBO挂接图像
+
+<ul>
+<li>
+要求:
+
+<ul>
+<li>
+所有挂接的图像必须有相同的大小.
+
+<li>
+所有挂接的颜色缓存必须为相同的格式.
+
+</ul>
+<li>
+举例:<br />
+<pre c++>
+            glFramebufferTexture1DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_1D, my1DTexName, mipLevel);
+            glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, my2DTexName, mipLevel);
+            glFramebufferTexture3DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_3D, my3DTexName, mipLevel);
+            glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_RENDERBUFFER_EXT, rbName);
+</pre>
+
+<ul>
+<li>
+所有命令的第二个参数为挂接点的名称. 可以为 GL_DEPTH_ATTACHMENT0_EXT, GL_STENCIL_ATTACHMENT0_EXT, GL_COLOR_ATTACHMENTn_EXT, 这里n 可以为0-15范围之间的整数. 目前可支持16个可以同时颜色挂接, 可通过glGetIntegetv函数GL_MAX_COLOR_ATTACHMENTS_EXT查询
+
+<li>
+注意指定mipmap层次.
+
+<li>
+所有挂接的图像必须为2D, Renderbuffers 和 2D纹理都是归于此类. 1D纹理高度为1. 3D纹理, 必须设定3D纹理的层数, 通过zOffset参数实现
+
+</ul>
+</ul>
+<li>
+绘制缓存
+
+<ul>
+<li>
+见GLSL的输出, 片段着色器通常用内置变量gl_FragColor输出单个颜色. 但其也会用gl_FragData[n]数组代替. 通常情况同时使用两个输出会导致错误
+
+<li>
+单个或多个颜色输出可映射至FBO的颜色挂接. 缺省单个颜色输出发送给颜色挂接0(color attachment 0)
+
+<ul>
+<li>
+然而颜色挂接可以被glDrawBuffer 或 glDrawBuffers修改, 后者在OpenGL2.0中和gl_FragData[n]一起使用
+
+</ul>
+<li>
+当没有FBO绑定时, glDrawBuffer和以前一样, 单个颜色映射至窗口的一个或多个缓存, 如GL_BACK_LEFT.
+
+<li>
+如果绑定FBO, glDrawBuffer不再支持 前/后/左/右缓存. 而是GL_COLOR_ATTACHMENTn_EXT 或者 GL_NONE, 单个颜色输出给FBO指定的颜色挂接, 或者不发送.
+
+<li>
+glDrawBuffers可以处理来自片段着色器多个颜色输出的映射至FBO的多个颜色挂接.
+
+<ul>
+<li>
+如果没有任何FBO绑定, 你可以直接挂接多个颜色至原先的帧缓存的各个颜色缓存中
+
+<li>
+例如窗口支持双缓存和三缓存<br />
+<pre c++>
+                GLenum bufs[4] = {GL_FRONT_LEFT, GL_FRONT_RIGHT, GL_BACK_LEFT, GL_BACK_RIGHT};
+                glDrawBuffers(4, bufs);
+</pre>
+
+<li>
+然而, 一般情况当绑定FBO时使用多个颜色输出<br />
+<pre c++>
+                GLenum bufs[4] = {GL_COLOR_ATTACHMENT0_EXT, GL_COLOR_ATTACHMENT1_EXT,
+                    GL_COLOR_ATTACHMENT2_EXT, GL_COLOR_ATTACHMENT3_EXT};
+                glDrawBuffers(4, bufs);
+</pre>
+
+</ul>
+<li>
+不一定需要 gl_FragData[0]的颜色输出映射至 GL_COLOR_ATTACHMENT0_EXT, 你可以混合输出, 或者设置绘制缓存列表的一个条目为GL_NONE, 如果你不想输出的话
+
+<li>
+输出数据的限制: glGetIntegetv函数GL_MAX_DRAW_BUFFERS参数, 最多输出的缓存数
+
+</ul>
+<li>
+Framebuffer Completeness(帧缓存完整性)
+
+<ul>
+<li>
+Framebuffer Completeness的概念同于texture Completeness. 如果一个纹理没有所有带有恰当大小和格式的mipmap层次, 该纹理是不完整的.
+
+<li>
+下面是framebuffer Completeness的一些规则,
+
+<ul>
+<li>
+GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT_EXT: 所有的attachment点都是framebuffer attachment complete. 以及根据它连接的是颜色, 深度或者模板attachment点来决定的内部格式.
+
+<li>
+GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT_EXT: 至少一个图像attach该FBO
+
+<li>
+GL_FRAMEBUFFER_INCOMPLETE_FORMATS_EXT: 所有的颜色attachment 都有相同的内部格式
+
+<li>
+GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER_EXT: 最近调用glDrawBuffer或glDrawBuffers关联的所有非GL_NONE颜色挂接必须有对应的颜色挂接FBO
+
+<li>
+GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER_EXT: 同上
+
+<li>
+GL_FRAMEBUFFER_UNSUPPORTED_EXT: attached图像的内部格式组合不违背限制的实现依赖集.
+
+</ul>
+<li>
+现有一个命令用于确定帧缓存非完整的原因<br />
+<pre c++>
+            GLenum status = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
+            switch(status)
+            {
+                case GL_FRAMEBUFFER_COMPLETE_EXT:
+                    break;
+                case GL_FRAMEBUFFER_UNSUPPORTED_EXT:
+                    /*选择不同的格式*/
+                    break;
+                default:
+                    /*程序错误*/
+                    assert(0);
+            }
+</pre>
+
+<li>
+当绑定一个FBO以及该FBO非完整的话, 如果你想执行任何命令进行读写帧缓存. 该命令会返回且抛出一个新类型的错误, GL_INVALID_FRAMEBUFFER_OPERATION_EXT, 该错误有 glGetError 返回.
+
+</ul>
+<li>
+Mipmap Generation
+
+<ul>
+<li>
+当应用程序对纹理进行改变时, 会自动生成mipmap. 当attached一个FBO引起的纹理变化, 则不会自动进行mipmap生成, 如要生成mipmap, 现绑定当前纹理目标, 然后进行以下命令: glGenerateMipmapEXT(GL_TEXTURE_2D);
+
+</ul>
+</ul>
+<li>
+Offscreen Rendering
+
+<ul>
+<li>
+见之前的阴影纹理章节, 有窗口的帧缓存决定了阴影图的大小, 这是由于我们的深度纹理是从窗口帧缓存的深度缓存中拷贝而来. 阴影图的大小决定了结果图像的质量.
+
+<li>
+我们创建一个FBO, 将一个巨大的渲染缓存attach到一个深度attachment point.
+
+<ul>
+<li>
+FBO的设置代码(用于深度纹理)<br />
+<pre c++>
+        void SetupRC()
+        {
+            ...
+            // 设置一些渲染缓存状态
+            // 生成绑定帧缓存, 生成绑定渲染缓存(深度格式), 而后将该渲染缓存挂接到帧缓存的深度点
+            glGenFramebuffersEXT(1, &amp;framebufferID);
+            glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, framebufferID);
+            glGenRenderbuffersEXT(1, &amp;renderbufferID);
+            glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, renderbufferID);
+            glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT32, maxTexSize, maxTexSize);
+            glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, renderbufferID);
+			// 不需要任何颜色attchment
+            glDrawBuffer(GL_NONE);
+            glReadBuffer(GL_NONE);
+            GLenum fboStatus = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
+            if(fboStatus != GL_FRAMEBUFFER_COMPLETE_EXT)
+            {
+                fprintf(stderr, "FBO Error!\n");
+            }
+			// 取消帧缓存绑定
+            glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+            
+            RegenerateShadowMap();
+        }
+</pre>
+
+<li>
+这里写入缓存和读取缓存都设置为GL_NONE, 这是由于我们的FBO不需要任何颜色attachment. 我们只需要深度attachment
+
+<li>
+与前面例子其他不同的地方是在渲染阴影前绑定FBO, 在拷贝结果至深度纹理之后解除绑定
+
+</ul>
+</ul>
+<li>
+渲染到纹理
+
+<ul>
+<li>
+绑定纹理至FBO, 可以直接渲染到纹理. 否则需要在back缓存中渲染, 而后拷贝至纹理中.
+
+<li>
+设置FBO, 在环境图生成中.<br />
+<pre c++>
+        void SetupRC()
+        {
+            ...
+            // 设置一些渲染缓存状态
+            glGenFramebuffersEXT(1, &amp;framebufferID);
+            glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, framebufferID);
+            glGenRenderbuffersEXT(1, &amp;renderbufferID);
+            glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, renderbufferID);
+			// 渲染缓存存储格式为 深度模板
+            glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_STENCIL_EXT, envMapSize, envMapSize);
+            glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, renderbufferID);
+            glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_STENCIL_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, renderbufferID);
+            glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);        
+        }
+        
+        void RegenerateEnvMap(void)
+        {
+            // generate 6 views from origin of teapot (0,0,0)
+            glMatrixMode(GL_PROJECTION);
+            glLoadIdentity();
+            gluPerspective(90.0f, 1.0f, 1.0f, 125.0f);
+            glViewport(0, 0, envMapSize, envMapSize);
+
+            if (useFBO)
+                glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, framebufferID);
+
+            for (GLenum i = GL_TEXTURE_CUBE_MAP_POSITIVE_X; i &lt; GL_TEXTURE_CUBE_MAP_POSITIVE_X+6; i++)
+            {
+                glMatrixMode(GL_MODELVIEW);
+                glLoadIdentity();
+				
+				// 设置相机朝向
+                switch (i)
+                {
+                case GL_TEXTURE_CUBE_MAP_POSITIVE_X:
+                    // +X
+                    gluLookAt(0.0f, 0.0f, 0.0f,
+                              1.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f);
+                    break;
+                case GL_TEXTURE_CUBE_MAP_NEGATIVE_X:
+                    // -X
+                    gluLookAt(0.0f, 0.0f, 0.0f,
+                              -1.0f, 0.0f, 0.0f, 0.0f, -1.0f, 0.0f);
+                    break;
+                case GL_TEXTURE_CUBE_MAP_POSITIVE_Y:
+                    // +Y
+                    gluLookAt(0.0f, 0.0f, 0.0f,
+                              0.0f, 1.0f, 0.0f, 0.0f, 0.0f, 1.0f);
+                    break;
+                case GL_TEXTURE_CUBE_MAP_NEGATIVE_Y:
+                    // -Y
+                    gluLookAt(0.0f, 0.0f, 0.0f,
+                              0.0f, -1.0f, 0.0f, 0.0f, 0.0f, -1.0f);
+                    break;
+                case GL_TEXTURE_CUBE_MAP_POSITIVE_Z:
+                    // +Z
+                    gluLookAt(0.0f, 0.0f, 0.0f,
+                              0.0f, 0.0f, 1.0f, 0.0f, -1.0f, 0.0f);
+                    break;
+                case GL_TEXTURE_CUBE_MAP_NEGATIVE_Z:
+                    // -Z
+                    gluLookAt(0.0f, 0.0f, 0.0f,
+                              0.0f, 0.0f, -1.0f, 0.0f, -1.0f, 0.0f);
+                    break;
+                default:
+                    assert(0);
+                    break;
+                }
+                
+				// 设置渲染的颜色关节点
+                if (useFBO)
+                    glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, i, envMapTextureID, 0);
+
+                // Clear the window with current clearing color
+                glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+
+                // Draw objects in the scene except for the teapot
+				// 绘制模型
+                DrawModels(GL_FALSE);
+
+				// 如果不是用帧缓存, 则渲染至 Render Buffer 上
+                if (!useFBO)
+                    glCopyTexImage2D(i, 0, GL_RGBA8, 0, 0, envMapSize, envMapSize, 0);
+            }
+
+            if (useFBO)
+            {
+                glGenerateMipmapEXT(GL_TEXTURE_CUBE_MAP);
+                GLenum fboStatus = glCheckFramebufferStatusEXT(GL_FRAMEBUFFER_EXT);
+                if (fboStatus != GL_FRAMEBUFFER_COMPLETE_EXT)
+                {
+                    fprintf(stderr, "FBO Error!\n");
+                }
+
+                glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+            }
+        }
+</pre>
+
+<li>
+其中glGenerateMipmapEXT 自动生成mipmap链
+
+</ul>
+<li>
+Multiple Render Targets
+
+<ul>
+<li>
+同时渲染多个颜色缓存.
+
+<li>
+本例我们将场景渲染至一FBO-attached纹理. 纹理通过片段着色器同时进行四个不同的图像转换: 边缘检测, 颜色反转, 模糊, 灰色度<br />
+<pre glsl>
+        // multirender.fs
+        //
+        // 4 different outputs!
+		// 有四个输出
+
+        uniform sampler2D sampler0;
+        uniform vec2 tc_offset[9];
+
+        void main(void)
+        {
+            vec4 sample[9];
+
+            // enhance the blur by adding an LOD bias
+            for (int i = 0; i &lt; 9; i++)
+            {
+                sample[i] = texture2D(sampler0,
+                                      gl_TexCoord[0].st + (tc_offset[i] * 3.0), 3.0);
+            }
+
+            // output 0 is a blur
+            gl_FragData[0] = (sample[0] + (2.0*sample[1]) + sample[2] +
+                            (2.0*sample[3]) + (2.0*sample[5]) +
+                            sample[6] + (2.0*sample[7]) + sample[8]) / 12.0;
+
+            // now grab the unbiased samples again
+            for (int i = 0; i &lt; 9; i++)
+            {
+                sample[i] = texture2D(sampler0,
+                                      gl_TexCoord[0].st + tc_offset[i]);
+            }
+
+            // output 1 is a Laplacian edge-detect
+            gl_FragData[1] = (sample[4] * 8.0) -
+                            (sample[0] + sample[1] + sample[2] +
+                             sample[3] + sample[5] +
+                             sample[6] + sample[7] + sample[8]);
+
+            // output 2 is grayscale
+            gl_FragData[2] = vec4(vec3(dot(sample[4].rgb, vec3(0.3, 0.59, 0.11))), 1.0);
+
+            // output 3 is an inverse
+            gl_FragData[3] = vec4(vec3(1.0) - sample[4].rgb, 1.0);
+        }
+</pre>
+
+<li>
+四个颜色输出对应于FBO的四个颜色attachment.
+
+<li>
+设置FBO<br />
+<pre c++>
+        glGenRenderbuffersEXT(1, &amp;renderbufferID);
+        glBindRenderbufferEXT(GL_RENDERBUFFER_EXT, renderbufferID);
+        glRenderbufferStorageEXT(GL_RENDERBUFFER_EXT, GL_DEPTH_COMPONENT32, fboWidth, fboHeight);
+
+        glGenFramebuffersEXT(2, framebufferID);
+        glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, framebufferID[0]);
+        glFramebufferRenderbufferEXT(GL_FRAMEBUFFER_EXT, GL_DEPTH_ATTACHMENT_EXT, GL_RENDERBUFFER_EXT, renderbufferID);
+        glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT, GL_TEXTURE_2D, renderTextureID[0], 0);
+
+        glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, framebufferID[1]);
+        for (int i = 0; i &lt; maxDrawBuffers; i++)
+        {
+            glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, GL_COLOR_ATTACHMENT0_EXT + i, GL_TEXTURE_2D, renderTextureID[i+1], 0);
+        }
+        glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
+        
+        ...
+    
+        GLenum buf[4] = {GL_COLOR_ATTACHMENT0_EXT, GL_COLOR_ATTACHMENT1_EXT, GL_COLOR_ATTACHMENT2_EXT, GL_COLOR_ATTACHMENT3_EXT};
+        glDrawBuffers(maxDrawBuffers, buf);
+</pre>
+
+</ul>
+</ul>
+<p>
+;
+</p>
+<h1 id="toc_4">Floating-Point Textures</h1>
+<ul>
+<li>
+GL_ARB_texture_float 扩展允许12个纹理可用的内部格式, 六个基本颜色格式分为16位和32位浮点
+<pre>
+        GL_RGBA16F_ARB            GL_RGBA32F_ARB
+        GL_RGB16F_ARB            GL_RGB32F_ARB
+        GL_ALPHA16F_ARB            GL_ALPHA32F_ARB
+        GL_INTENSITY16F_ARB        GL_INTENSITY32F_ARB
+        GL_LUMINANCE16F_ARB        GL_LUMINANCE32F_ARB    
+        GL_LUMINANCE_ALPHA16F_ARB        GL_LUMINANCE_ALPHA32F_ARB
+</pre>
+
+<li>
+因为非浮点内部格式, 当调用glTexImage*使用整数数据类型(GL_UNSIGNED_BYTE)时, 其值被标准化为[0, 1]之间的值.
+
+<li>
+如传递进GL_FLOAT数据类型当使用非浮点内部格式的话, 则会裁剪至[0, 1]范围内的值.
+
+<li>
+在新的浮点内部格式里, 不会进行单元化和裁剪. 存储你想要的值, 根据选择的16位或32位浮点类型决定精度和范围.
+
+<li>
+旧式硬件可能不完全支持浮点纹理的一些功能, 如mipmapping和wrap模式(也许从边框颜色采样).
+
+<li>
+不仅仅从纹理渲染可使用这新格式, FBO的渲染至纹理也可以使用该新格式. 可以将浮点纹理attach至FBO并渲染至它们.
+
+<ul>
+<li>
+由于 implementation-dependant的限制, 注意使用glCheckFramebufferStatusEXT检查你的FBO的completeness
+
+</ul>
+<li>
+还有一个扩展 GL_ARB_color_buffer_float, 窗口坐标的系统扩展允许直接在窗口帧缓存中进行浮点渲染
+
+</ul>
+<h2 id="toc_4.1">1. High Dynamic Range</h2>
+<ul>
+<li>
+浮点纹理, 可以在0.0和1.0之间得到256色调. 也可以将任意数据放进浮点缓存.
+
+<li>
+高精度数据和着色器编程可以用于GPGPU(General-Purpose Graphics Proccessing Units)
+
+<li>
+High Dynamic Range(HDR)
+
+<li>
+取消[0, 1]范围的限制, 浮点值范围 +/-3.4x10^38
+
+</ul>
+<h2 id="toc_4.2">2. OpenEXR File Format</h2>
+<ul>
+<li>
+通过创建一个开放标准格式存储HDR图像, 论证浮点图像.
+<pre c++>
+        void SetupTextures(int whichEXR)
+        {
+            Array2D&lt;Rgba&gt; pixels;
+            char name[256];
+
+            switch (whichEXR)
+            {
+            case 0:
+                strcpy(name, "openexr-images/Blobbies.exr");
+                break;
+            case 1:
+                strcpy(name, "openexr-images/Desk.exr");
+                break;
+            case 2:
+                strcpy(name, "openexr-images/GoldenGate.exr");
+                break;
+            case 3:
+                strcpy(name, "openexr-images/MtTamWest.exr");
+                break;
+            case 4:
+                strcpy(name, "openexr-images/Ocean.exr");
+                break;
+            case 5:
+                strcpy(name, "openexr-images/Spirals.exr");
+                break;
+            case 6:
+                strcpy(name, "openexr-images/StillLife.exr");
+                break;
+            case 7:
+                strcpy(name, "openexr-images/Tree.exr");
+                break;
+            default:
+                assert(0);
+                break;
+            }
+            RgbaInputFile file(name);
+            Box2i dw = file.dataWindow();
+
+            npotTextureWidth = dw.max.x - dw.min.x + 1;
+            npotTextureHeight = dw.max.y - dw.min.y + 1;
+            pixels.resizeErase(npotTextureHeight, npotTextureWidth);
+
+            file.setFrameBuffer(&amp;pixels[0][0] - dw.min.x - dw.min.y * npotTextureWidth, 1, npotTextureWidth);
+            file.readPixels(dw.min.y, dw.max.y);
+
+            // Stick the texels into a GL formatted buffer
+            potTextureWidth = npotTextureWidth;
+            potTextureHeight = npotTextureHeight;
+
+            if (!npotTexturesAvailable)
+            {
+                while (potTextureWidth &amp; (potTextureWidth-1))
+                    potTextureWidth++;
+                while (potTextureHeight &amp; (potTextureHeight-1))
+                    potTextureHeight++;
+            }
+
+            if ((potTextureWidth &gt; maxTexSize) || (potTextureHeight &gt; maxTexSize))
+            {
+                fprintf(stderr, "Texture is too big!\n");
+                Sleep(2000);
+                exit(0);
+            }
+
+            if (fTexels)
+                free(fTexels);
+            fTexels = (GLfloat*)malloc(potTextureWidth * potTextureHeight * 3 * sizeof(GLfloat));
+            GLfloat *ptr = fTexels;
+            for (int v = 0; v &lt; potTextureHeight; v++)
+            {
+                for (int u = 0; u &lt; potTextureWidth; u++)
+                {
+                    if ((v &gt;= npotTextureHeight) || (u &gt;= npotTextureWidth))
+                    {
+                        ptr[0] = 0.0f;
+                        ptr[1] = 0.0f;
+                        ptr[2] = 0.0f;
+                    }
+                    else
+                    {
+                        Rgba texel = pixels[npotTextureHeight - v - 1][u];  // inverted vertically
+                        ptr[0] = texel.r;
+                        ptr[1] = texel.g;
+                        ptr[2] = texel.b;
+                    }
+                    ptr += 3;
+                }
+            }
+
+            // pick up new aspect ratio
+            AlterAspect();
+
+            glTexParameteri(GL_TEXTURE_2D, GL_GENERATE_MIPMAP, 1);
+            glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB16F_ARB, potTextureWidth, potTextureHeight, 0, GL_RGB, GL_FLOAT, fTexels);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR_MIPMAP_LINEAR);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+            glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+        }
+</pre>
+
+<li>
+我们创建一个RGBAInputFile实例, 传递一个EXR文件的路径字符串, 通过函数 RGBAInputFile::dataWindow检查图像的宽度和高度
+
+<li>
+而后通过Array2D::resizeErase函数建立一个合适大小RGBA像素的Array2D&lt;Rgba&gt;
+
+<li>
+通过函数RGBAInputFile::setFrameBuffer 从文件中我们数组的第一个点解压出texels. 通过函数 RGBAInputFile::readPixels 传输.
+
+<li>
+这些都是通过OpenEXR库实现.
+
+<li>
+纹理大小为2的次方.
+
+<li>
+我们的纹素存储为16为浮点数(GL_RGB16F_ARB)
+
+</ul>
+<h2 id="toc_4.3">3. Tone Mapping</h2>
+<ul>
+<li>
+将我们的动态范围浮点数据映射回[0, 1]范围.
+
+<li>
+一个简单的tone mapping方法是裁剪值.
+
+<ul>
+<li>
+clamped.fs
+
+<ul>
+<li>
+图像的光亮部分损失了大量细节, 显示为统一的白色.
+
+</ul>
+<li>
+trival.fs
+
+<ul>
+<li>
+使用方程 X = Y/(Y+1), 映射所有的正浮点数值范围[0, 1]
+
+<li>
+可以显示所有的光亮细节, 但是亮度被降低一半
+
+</ul>
+<li>
+iris.fs
+
+<ul>
+<li>
+去一个纹素中三个分量的最大值, 而后所有分量除以该分量, 最大分量映射为1.0, 其余都小于或等于1.0
+
+</ul>
+</ul>
+</ul>
+
+<h1 id="toc_5">18.4 Making Your Whites Whiter and Your Brights Brighter</h1>
+<ul>
+<li>
+bloom effect
+
+</ul>
+<h2 id="toc_5.1">1. Drawing the Scene</h2>
+<ul>
+<li>
+见 hdrball.fs
+
+<li>
+借用之前的玩具球着色器程序.原先五星使用红色材质颜色. 现在则发射红光.
+
+<li>
+例子通过uniform变量计算红色光的亮度. 以及输出gl_FragData数组的不同
+
+</ul>
+<h2 id="toc_5.2">2. Bright Pass</h2>
+<ul>
+<li>
+第一通道渲染整个玩具球, 在第二个FBO颜色attachment渲染一个修正版本. 该版本仅仅用于场景最亮的部分, 及大于1.0的颜色部分(bloomLimit uniform变量).
+
+<ul>
+<li>
+遮罩部分则绘制为黑色, 使用内置函数 smoothstep
+
+</ul>
+</ul>
+<h2 id="toc_5.3">3. Gaussion Blur with a Little help</h2>
+<ul>
+<li>
+使用 5x5 内核
+
+<li>
+在FBO-attached纹理上调用 glGenerateMipmapsEXT.
+
+<li>
+对纹理的前四个层次使用blur 过滤器: GL_TEXTURE_BASE_LEVEL, 1, 2, 3
+
+</ul>
+<h2 id="toc_5.4">4. The Sum is Greater Than Its Parts</h2>
+<ul>
+<li>
+在窗口帧缓存中增加所有东西.
+
+<li>
+// 见 combine.fs
+
+</ul>
+<h2 id="toc_5.5">5. PBOs Make a Comeback</h2>
+<ul>
+<li>
+回忆我们第一个PBO例子, 使用PBO读回窗口帧缓存内容, 并将其发送回纹理. 所有这些无需客户端内存.
+
+<li>
+渲染最后一个通道给一个PBO. 保存attached纹理用于下一个帧缓存的余影, 而后加入多个通道给窗口. 或者你仅仅调用glCopyTexImage.
+
+</ul>
+
+    </div>
+</body>
+</html>

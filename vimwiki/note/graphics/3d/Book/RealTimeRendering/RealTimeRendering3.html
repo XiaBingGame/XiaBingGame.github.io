@@ -1,0 +1,214 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../../../style.css">
+<title>RealTimeRendering3</title>
+<meta http-equiv="Content-Type" content="text/html; charset=cp936">
+</head>
+<body>
+
+<p>
+Chapter 6 Texturing
+</p>
+<ul>
+<li>
+All it takes is for the rendered image to look right.  -Jim Blinn
+
+</ul>
+<li>
+在计算机图形学中, 纹理就是用图像, 函数或者其他数据源在一个表面上的各个位置修改它们的外观
+
+<li>
+除了直接使用纹理, 为了产生更有说服力的体验, 第二个颜色纹理可以用到这个表面, 改变纹理的光泽, 该操作依赖于表面上的位置, 这样被纹理的对象表面颜色除了原来的颜色图像纹理还有光泽值.
+
+<li>
+应用了颜色图像纹理和gloos(光泽)纹理之后, 砖块看起来有光泽, 但是每个砖块看起来很平坦和单调(flat), 应用bump mapping, 则砖块的表面法线发生变化, 使得看起来不那么光滑.砖块应当有投影.视差和模型地图使用纹理显示和变形平坦的表面. Displacement mapping 移动表面, 在纹素之间创建三角形, 见图6.1
+
+<li>
+本章节的内容介绍纹理技术. 首先介绍纹理处理的框架, 然后着重于使用图像至纹理表面. 简单的介绍一下Procedural纹理, 还有一些得到纹理的方法用来影响表面.
+
+
+<p>
+6.1 The Texturing Pipeline
+</p>
+<ul>
+<li>
+表面上的散射颜色根据位置被图像相对应的颜色所替代. 纹素(texels) --- 图像纹理上的像素. gloss texture改变gloss(光滑)值, bump texture改变法线的方向.
+
+<li>
+假设空间中的一个位置是纹理处理的起点, 该位置可以是世界空间坐标, 但通常情况下为模型空间坐标. 该点通过一个projector得到一系列值, 称为parameter-space values, 这些值用于访问纹理. 这个处理过程成为mapping, 专用词 texture mapping. 在访问纹理之前, 这些 parameter-space value会使用一个或多个corresponder函数转换至纹理空间. 纹理空间的值可用于在纹理中寻址得到一个像素值, 该像素值可能还进行 value transform function的转换.  最后这些新值用于修改表面的一些属性, 例如材质和shading normal. 图6.2显示了单个纹理的处理细节. 
+
+<li>
+图6.3 例子, 假设一个多边形有砖块纹理, 其上一点(-2.3, 7.1, 88.2)进行投影为二维向量(u, v), 该投影函数等同于正交投影. 结果为(0.32, 0.29), 假设纹理大小为256x256, 最终得到值(82.92, 74.24). 丢掉小数部分(81, 74), 得到该处的颜色值(0.9, 0.8, 0.7). 由于原始的砖块图像太暗淡, 则进行 value transform function, 将颜色值乘以1.1得到(0.99, 0.88, 0.77), 而后该颜色用于表面shading equation的散射颜色.
+
+</ul>
+
+<p>
+6.1.1 The Projector Function
+</p>
+<ul>
+<li>
+图6.4 不同的纹理投影, 球面, 圆柱体(cylindrical), 平面的(planar), natural(u, v) projection. 下面一行为同一个物体应用不同的投影..建模包装(Modeling package)允许美工在每个顶点上定义坐标(u, v), 这些坐标也许被 projector function初始化或者被 mesh unwrapping algorithm初始化. 美工可以按照和编辑顶点位置相同的方式编辑(u, v)坐标. Projector functions用于转换三维坐标为纹理坐标. Projector function常用语建模程序(modeling programs), 即球面, 圆柱体, 平面投影. 其他的输入也可用于一个projector function. 例如表面的法线可用于在六个平面投影方向中选择出该表面的平面投影方向. 这些面交接的缝隙产生的纹理匹配问题, Geiss则讨论了它们之间混合的技术. Tarini et al.介绍了 polycube maps. 即一个模型映射一系列的立方体投影, 不同的体积映射至不同的立方体. 其他的projector function则完全不是投影, 而是表面结构(surface formation)的一种隐式部分. 例如: 参数曲线表面择优一系列(u, v)值作为它们定义的一部分.  见图6.4. 纹理坐标也可以有所有不同类型的参数来生成, 例如观察角度(view direction), 表面温度, 或者其他可以想象到的参数. projector function的目的就是生成纹理坐标. 
+
+<li>
+非交互的渲染器通常将调用projector作为渲染处理自身的一部分. 美工通常使用工具将模型分割成多个部分, 每个部分应用不同的projctor function. 见图6.5
+
+<li>
+实时作品中, projector 常应用于建模阶段, 投影的结果存储在顶点中. 但有时在vertex 或 pixel shader中应用 projector function, 这样可以实现不同的效果, 例如动画(章节6.4). 一些渲染方法, 例如环境映射(environment mapping, 章节8.4), 则有特殊的projector function, 以及每个像素进行求值运算.
+
+<li>
+球面投影将点投射至一个图像球体, 该投影和用于Blinn和Newell的环境映射方案(章节8.4.1)相同.  圆柱体投影计算u的纹理坐标值和球面投影相同, v纹理坐标则根据沿圆柱体轴的距离计算. 该投影对于一个拥有绕一个轴旋转的表面的物体很有用. 当表面接近垂直于该圆柱体轴时会发生变形. 平面投影就像一个x-ray slide projector, 沿着一个方向投影并将纹理应用于所有的表面. 它使用正交化投影. 该函数常用语将纹理应用于一个角色(characters), 将该模型看成一个纸面玩具, 通过将各个分离的纹理胶贴至模型前后.
+
+<li>
+图6.6, 一些小的纹理用于该雕像模型, 这些小的纹理保存在两个大的纹理中, 右边的图按显示多边形mesh的创建过程中如何解包以及纹理如何帮助其显示.
+
+<li>
+在投影方向上的边缘表面有变形. 美工经常需要手工分解模型为许多接近平面的块. 有许多工具用于帮助最小化解包mesh时产生的变形, 或者创建一个平面投影的最优化集(a near optimal set of planar projections), 或者其他的帮助. 目标是让每个多边形都有一个共享的纹理区域, 尽可能维护mesh的连通性. 连通性很重要, 在纹理的边缘会出现采样的人工痕迹(sampling artifact), 每个分离的顶点会在mesh本身产生重复的数据, 一个带有好的解包的mesh会减轻美工的工作. 章节12.2.1讨论了渲染上这个问题的效果(this problem's effect on rendering), 图6.6显示了用于创建该雕像的工作区. 该解包处理是一个很大的研究课题, mesh parameterization. 有兴趣的读者可以看看Hormann et al.等相关的 SIGGARAPH 课程笔记[567]
+
+<li>
+parameter space(参数空间)并不总是二维平面, 有时也为三维空间. 这种情况下, 纹理坐标为三维向量(u, v, w), w表示投影方向的深度值. 其他系统也许会用4个坐标(s, t, r, q), q为齐次坐标, 可用于聚光灯效果[1146]. 另外重要类型的参数空间是有向性的参数空间, 参数空间中的每个点表示一个方向, 该参数空间的一个形象化表示就是所有的点在一个单元球体上. 使用有向性参数化(directional parameterization)的纹理中最常用的类型为cube map(立方体映射). 
+
+<li>
+一维的纹理图像和函数也有其自身的用途, 例如 contour line(等高线), 有高度决定颜色值(地处为绿色, 山峰为白色). 线条也可以被纹理, 例如渲染雨丝, 通过半透明图像纹理一长线条实现. 该纹理还可用于简单的降值转换问另一个值.
+
+<li>
+一个表面可以使用多重纹理, 需要定义多个纹理坐标集. 在表面上进行插值得到纹理值. 注意在插值之前, 这些参数值需要通过corresponder function进行转换.
+
+</ul>
+
+<p>
+6.1.2 The Corresponder Function
+</p>
+<ul>
+<li>
+Corresponder functions用于将参数空间的坐标转换为纹理空间坐标. 其中一个例子是使用API选择已有纹理的一部分用于显示. corresponder的另一个类型为矩阵转换, 可应用在 vertex 或 pixel shader, 可用于在表面(surface)上平移, 旋转, 缩放, 切边, 投影纹理.
+
+<li>
+对于超过[0, 1)范围的纹理值如何处理, OpenGL中称为"wrapping mode", DirectX中称为"texture addressing mode", 常用的 corresponder functions如下:
+
+<ul>
+<li>
+wrap(DX), repeat(OpenGL), 或者tile --- 在表面上重复图像本身. 丢掉参数值的整数部分. 该模式为缺省模式.
+
+<li>
+mirror---镜像. 某种程度上可以在边缘处有连续性.
+
+<li>
+clamp(DirectX)或者clamp to edge(OpenGL), 在[0, 1)范围之外的值进行裁剪. 其值复制图像纹理的边缘. 
+
+<li>
+boarder(DirectX) 或者 clamp to board(OpenGL) --- [0, 1)范围之外的值用单独定义的边框颜色值渲染.
+
+</ul>
+<li>
+图6.7 图像纹理的处理: 重复, 镜像, clamp, border, 不同的纹理轴可应用不同的corresponder functions, 例如 u轴使用repeat, 而v轴使用clamp.
+
+<li>
+Repeat tiling(重复贴砖)可以以不昂贵的代价增加很多场景细节. 但是如果重复一个纹理三次以上则很容易发现纹理的图案. 该周期问题常用的解决方法为将该纹理值和另外的non-tiled纹理进行混合. 该方法可扩展, 见Andersson的商业地形渲染系统. 在该系统中, 组合多重纹理, 其内基于地形类型, 海拔高度, 斜度, 以及其他因子. 纹理数据则依赖于几何模型, 例如场景中的灌木和岩石. 
+
+<li>
+另一个避免周期性的选择是使用着色程序实现特定的corresponder function, 该function随机重组纹理图案(texture pattern)或tiles. Wang tiles为其中的一个方法. 一个Wang tile 集为一个正方形tile的集合, 其中边缘匹配. 在纹理过程中随机选择tiles[1337]. Lefebvre 和 Neyret[748]使用了类似的corresponder function, 其使用依赖性的纹理读取和表格来避免图案的重复.
+
+<li>
+还有一个隐式的corresponder function&lt; 范围[0, 1)之内的纹理坐标值乘以图像的分辨率大小得到像素位置. 使用[0, 1)范围内的(u,v)值的好处就是随着图像分辨率的变化, 不需要修改存储在模型中的顶点纹理坐标值.
+
+</ul>
+
+<p>
+6.1.3 Texture Values
+</p>
+<ul>
+<li>
+对于图像纹理, 可通过坐标值得到其上的纹素信息. 其具体介绍见章节6.2. 该纹理是实时作品中最主要的纹理. 但有时也用程序性函数(procedural function), 不是在内存查找中根据纹理坐标得到纹理值, 而是通过一个函数计算出纹理值. 具体介绍见章节6.3
+
+<li>
+最直接的纹理是使用RGB三元组替换和修改表面的颜色. 同样, 也可返回单个灰度值. 另外一个数据类型为RGBA, 图像纹理中可以存储许多其他类型的数据. 见章节6.7的 bump-mapping. 从纹理中返回的值还可以进行转换, 例如重新映射, 将数据从(0,1)范围映射至(-1, 1). 另外还可以执行纹理值和参考值的比较, 返回一个flag用于表示比较的结果(用于shadow mapping---见章节9.1.4)
+
+</ul>
+
+<p>
+6.2 Image Texturing
+</p>
+<ul>
+<li>
+图像纹理中, 一个二维图像胶贴至多边形的表面. 见章节5.6.1所讨论的, 一个像素为一可显示的颜色值, 该颜色值可被像素所联合网格单元外的样本所影响.(?)  纹理也有样本问题, 但是主要发生在被渲染的三角形内.
+
+<li>
+用在GPU中的纹理图像大小通常为 2的m次方 x 2的n次方 大小, 其中m和n为非负数整数. 现代GPU可以处理任意大小的纹理. 允许一个生成的图像看成一个纹理. 图形加速器有不同的纹理大小上限, 典型的DX9手提电脑为2048x2048, 桌面电脑为4096x4096, DX机器为8192x8192
+
+<li>
+将纹理映射至一个表面, 投影后在屏幕上的表面大小如果比原图像大(magnification)或者小(minification), 其处理依赖于你设置的采样和过滤方法.( sampling and filtering methods). 采样和过滤后, 最终的结果应该避免锯齿. 这里的区别是过滤shading equation的输入还是输出. 假设输入和输出线性相关, 则过滤单个纹理值等同于过滤最终的颜色. 然而, 许多的shader输入和输出是非线性关系, 例如表面的发现和存储在纹理的光滑度. 标准的纹理过滤方法在这些纹理上可能没有多好的作用. 改进这些纹理的过滤方法见章节7.8.1
+
+</ul>
+
+<p>
+6.2.1 Magnification
+</p>
+<ul>
+<li>
+图6.8, 纹理放大, 48x48图像放大至320x320像素大小. 左边为 nearest neighbor过滤, 每个像素选择最近的纹素. 中间为 bilinear过滤, 使用最近四个纹素的权重平均值. 右边为bicubic filter, 使用 5x5最近纹素的权重平均值. 最常用的magnification 过滤技术为 nearest neighbor(实际上过滤为box filter)和bilinear interpolation. 还有 cubic convolution(立体卷积), 其使用4x4或者5x5的纹素数组的权重和, 可得到更高的magnification质量 虽然当前对立方体卷积的原生硬件支持不是很普遍. 但立方体卷积可在着色程序中执行.
+
+<li>
+nearest neighbor 方法会显示单个纹素, 该效果称为 pixelation, 放大时每个像素中心取最近的纹素值. 所以有块状的外观. 每个像素只取一个纹素. bilinear interpolation(有时称为linear interpolation), 查找四个相邻的纹素并在二维中线性插值, 并发现用于该像素的混合值. 该结果使得纹理模糊. 许多锯齿则会消失. bicubic filter 则移除剩下的块状部分, 其代价比bilinear filter更昂贵.
+
+<li>
+假设得到的纹理坐标为(Pu, Pv), 其中的小数部分不丢弃, 求出小数部分(u', v').  而后根据(Pu, Pv)得到相邻的四个纹素分别为(xl, yb), (xr, yb), (xl, yt), (xr, yt), 分别用t(x, y)表示该纹素的颜色值, 其中xl, xr, yb, yt, x, y都为整数值. 则有公式: b(Pu, Pv) = (1-u')(1-v')t(xl,yb) +  u'(1-v')t(xr, yb) + (1-u')v't(xl, yt) + u'v't(xr, yt). (公式6.1) 具体可见图6.9. 
+
+<li>
+解决纹理放大后的模糊问题是使用 detail textures. 这些为表现更好细节的纹理. 一个detail texture的高频重复图案用在低频重复的放大纹理中, 可以实现类似高分辨率纹理的视觉效果. 有时候不需要进行线性插值, 例如一个棋盘图案纹理, 其中只有黑白二色, 使用bilinear interpolation则会产生不同的灰度值. 则重新设置, 所有小于0.4的设为黑色, 所有大于0.6的社会白色, 这之间的灰度值则用来拉伸且填充这些缺口. 见图6.10, 棋盘图案纹理的放大方法, nearest neighbor, bilinear interpolation, remapping. 注意nearest neighbor采样已经和原来的纹理不相同了. 正方形的大小有些不同. 且不完全和原来的图像网格匹配.
+
+<li>
+remapping(重映射)很重要, 对于定义好的边缘这种情况很有用, 例如文本.其中一个方法是设置alpha值, 而后在 pixel shader中使用alpha testing来确定结果是否使用, 例如alpha值高于给定的值, 则使用纹理的值, 否则不使用. 这本质上为 cutout texture, 具体见章节 6.6. 通过形成特定纹理可生成高质量的边缘, 该纹理成为矢量纹理(vector textures), 在一个纹素上存储信息, 该信息描述边缘如何穿过网格单元(cross the grid cell). Qin et al.[1041]讨论了以前的作品并提出一种方法基于计算最近的切断边界(cutout boundary)的距离. 一相关的方法是使用pixel shader直接估计Bezier曲线. Nehab 和 Hoppe [922] 介绍了一个迷人的方案编码一个向量绘制进网格单元, 以及以无关分辨率的方式渲染这些元素, 每个单元包含了一个"texel program(纹素程序)", 定义了一系列规则用于该单元的每个元素如何放置. 顺序为从后向前. pixel shader 则估计每个图元用于发现对该像素其颜色值有多大的影响. 该向量纹理技术可以用于表示高精确度的复杂外形. 然而其需要很大的存储空间, 以及昂贵的计算代价. 还有其他的缺点(不支持有效的缩小), 所以矢量纹理不适用实时程序. 
+
+<li>
+Frisken et al[364]介绍了 sampled distance field data structure, Valve在 Team Fortress 2 使用的技术有该数据结构. distance field为一对象所在空间或所嵌入表面上的标量带符号域. 该 distance field 中放大(magnitude)的值等同于到最近的边界点的距离, 如果该点位于对象内部则为负值, 否则为正值. 一个 sampled distance field存储了一系列点distance filed的采样值. 这些值被线性插值. 由于该distance field接近线性, 除了高曲率边界的周围区域非线性. 所以其效果很好. Green采样该distance field(缩放和偏移至0到1范围内)到一个alpha map. 使用 GPU对bilinear linear interpolation和alpha testing的内置支持来估值该distance field. 不需要 pixel shader的任何修改. 该方法改进了用于alpha测试的alpha map的生成. (相当于在一个对象内外取一系列的点, 而求出该点到最近的对象边界的距离, 即为distance field)
+
+<li>
+图6.11, 一个矢量矩阵用于显示crisp text, 原始的"no trespassing"标记的数据存储在一个64x64的distance field中. 围绕文本的外形(outline)通过映射到一个特定的距离范围添加至外形颜色(outline color), 个人理解, 64x64的数据中, 保存的都是距离文本边框的距离值, 渲染的时候, 如果放大, 经过过滤得到的纹理值都是距离最近边框的值(估计的值),文本外部设置为背景颜色, 文本内部则设置为字体颜色值.
+
+<li>
+Green 还提供了简单的pixel shader修正使得其可以扩展功能, 如反锯齿边缘, outline, drop shadow(见图6.11), 注意尖锐的角会变得平滑, 但是可以通过在不同的纹理通道中编码第二个disance值来实现尖锐的角.
+
+</ul>
+
+<p>
+6.2.2 Minification
+</p>
+<ul>
+<li>
+图6.12 缩小: 显示一个缩小的棋盘纹理多边形通过了一行像素单元, 显示每个像素被多少个纹素影响. 图6.13, 最上面的图使用point sampling(nearest neighbor)渲染, 中间的图则是用mipmapping, 最底层的则是用summed area table.
+
+<li>
+一个方法是 nearest neighbor, 和放大使用的该方法相同. 选择像素中心的纹素用于显示. 该过滤会导致严重的锯齿问题. 见图6.13. 另外一个可用的过滤方法为 bilinear interpolation, 该方法仅仅比 nearest neighbor 好一点. 混合四个纹素得到像素的颜色值, 如果该像素被多于四个的纹素所影响, 则该过滤器仍然会产生锯齿.
+
+<li>
+更好的解决方法则是采样和过滤技术, 纹理的信号频率依赖于屏幕上纹素之间的空间大小. 由于 Nyquist limit, 需要确保纹理的信号频率不要大于采样频率的一半. 例如, 一个图像由交替的黑线和白线组成(可能假设线条为一个纹素宽度), 波长为两个纹素的宽度(黑线到黑线的距离), 则频率为1/2, 要正确显示该纹理, 则频率至少为 2x(1/2), 最少每个纹素一个像素. 所以, 对于纹理来说, 每个像素最多一个纹素可避免锯齿. 为了达到这个目标, 则增加像素的采样频率或者减少纹理的频率. 前面的章节介绍了反锯齿方法用于增加像素采样率(pixel sampling rate), 然而, 在采样频率中其只能有限地增加. 为了解决该问题, 发震了不同的纹理缩小算法. 
+
+<li>
+所有纹理反锯齿算法背后的基本思路都是一样的, 预处理该纹理, 创建数据结构用来帮助计算该像素上的纹素集, 使用固定时间和资源执行实时程序的算法, 这种方式下, 每个像素取固定数目的样本 并组合计算一定数目纹素的效果
+
+</ul>
+
+<p>
+Mipmapping
+</p>
+<ul>
+<li>
+最常用的反锯齿方法为 mipmapping, Mip 表示 multum in parvo, 拉丁语意思就是"在一小块地方里的许多事物". 一个原始图像多次过滤缩小为更小图像的处理. 在渲染之前, 进行 mipmapping minimization filter, 生成一系列原始图像更小的版本, 下一级图像是上一级的1/4大小. 见图6.14, 这一系列图像称为 mipmap chain. 
+
+<li>
+用于生成高质量的mipmap的两个重要因素为好的过滤和伽玛修正. 通常过滤方法为取每2x2纹素集以及平均他们得到mip texture value. 即 box filter.另外比较好的过滤器有 Gaussian, Lanczos, Kaiser或者类似过滤, 其已有快速免费的开源代码用于该任务[120, 1141]. 以及在GPU上有一些API支持更好的过滤. 注意纹理边缘的过滤, 无论是否纹理重复或者单个拷贝都应注意.
+
+<li>
+由于在非线性空间中对纹理编码(例如大多数的颜色纹理), 过滤时忽略伽玛修正会修改该mipmap level感知的明亮. 当你使用未修正的图像, 离对象越远, 其看起来越暗淡.同时也会影响到对比度和细节. 基于这个原因, 就应当将纹理转换到线性空间, 而后进行所有的mipmap filtering, 最后将其转换回非线性空间用于存储.(可以将图像看成display radiance的结果), 如前所述, 一些纹理和最终的着色颜色有基本地非线性关系. 虽然在过滤中导致一个问题, mipmap的生成对该问题非常敏感, 这是由于需要过滤数百数千的像素. 所以需要特定的mipmap生成方法用于得到最好的结果. 具体见章节7.8.1.
+
+<li>
+一个屏幕网格包围了纹理的一个区域, 即用屏幕网格投影到该纹理得到的区域, 其中包含一个或多个纹素. 要知道有多少个纹素影响该像素. 可有两个方法用于计算d(opengl中为level of detail), 其中一个方法是使用该像素单元形成的四边形的长边估计该像素的覆盖范围. 另一个方法则是使用四个微分 du/dx, dv/dy, du/dy, dv/dx. 每个微分表示纹理坐标沿屏幕轴方向变化的大小.
+
+<li>
+在 Shader Model 3.0或更新的版本中, 这些 gradient 值对于pixel shader程序都是可运用的. 这是由于它们是基于相邻像素里的值之间的差别., 它们不能被动态流控制(dynamic flow control, 章节3.6)影响的pixel shader部分访问. 该部分会执行纹理读取. derivative(导数, 派生物)必须在更早的时候计算出来. 注意, 由于 vertex shader 不能访问 gradient信息, 所以当进行vertex texturing(顶点纹理)时 gradient 或 lod 需要在 vertex shader中计算出来, 并提供给 GPU.
+
+</ul>
+
+</body>
+</html>

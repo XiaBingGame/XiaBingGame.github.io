@@ -1,0 +1,326 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../../style.css">
+<title>mingsoft</title>
+<meta http-equiv="Content-Type" content="text/html; charset=cp936">
+</head>
+<body>
+
+<h1 id="toc_1">实例001 在系统菜单中添加菜单项</h1>
+<ul>
+<li>
+PeculiarMenu
+
+</ul>
+<h1 id="toc_2">实例002 带图标的程序菜单</h1>
+<ul>
+<li>
+IconMenu
+
+<li>
+此类可以直接使用
+
+<li>
+创建该类对象, 而后调用调用该类的 LoadMenu 函数加载资源里的菜, 再调用ChangeMenuItem方法修改菜单为自绘制菜单
+
+<li>
+SetTopMenuBackground和SetTopMenuBackground设置自定义选项
+
+<li>
+本代码注释掉了图像列表, 方便后面直接使用该类, 如果需要可以自己创建
+
+<li>
+CDC::FromHandle(lpDrawItemStruct-&gt;hDC); 通过条目的hDC得到DC
+
+</ul>
+<h1 id="toc_3">实例03 根据表中数据动态生成菜单</h1>
+<ul>
+<li>
+DynamicMenu
+
+<li>
+主要是访问数据库得到数据
+
+<li>
+使用CMenu::AppendMenu 添加菜单项
+
+<li>
+CMenu::CreateMenu() 创建一个菜单, Detach() 和 DestroyMenu() 则销毁该菜单
+
+<li>
+CWnd::SetMenu() 之后, 可以调用 CMenu::Detach() 和 CMenu::DestroyMenu() 销毁该菜单的资源
+
+</ul>
+
+<h1 id="toc_4">实例04 浮动的菜单</h1>
+<ul>
+<li>
+FloatMenuDemo
+
+<li>
+DECLARE_DYNAMIC 宏: 当从CObject派生类时, 使用该宏可以在运行时期访问基类信息. 当在头文件包含该宏时, 就必须在源文件中包含宏 IMPLEMENT_DYNAMIC. 使用了该宏后, 可以在使用 RUNTIME_CLASS宏和CObject::IsKindOf函数在运行时期判断你对象属于何类
+
+<li>
+DECLARE_MESSAGE_MAP 宏: 每个CCmdTarget派生类需要定义该宏实现消息映射. 使用 BEGIN_MESSAGE_MAP 宏, 进入消息处理函数, END_MESSAGE_MAP结束消息映射
+
+<li>
+CMenu 临时LoadMenu之后, 如果不使用, 则注意 DestroyMenu 销毁资源
+
+<li>
+CToolBar::GetToolBarCtrl().GetButtonCount() 可以得到工具条按钮数目
+
+<li>
+在程序中使用自定义工具条, 需要先调用 Create 方法, 而后调用 CToolBarCtrl的SetBitmapSize和SetButtonSize设置大小
+
+<li>
+由于VS2005与VC6的不同, 未能将该程序实现
+
+</ul>
+
+<h1 id="toc_5">实例05 在控件上单击右键弹出菜单</h1>
+<ul>
+<li>
+PopMenu
+
+<li>
+CMenu::TrackPopupMenu
+
+</ul>
+
+<h1 id="toc_6">实例06 个性化的弹出菜单</h1>
+<ul>
+<li>
+CustomPopMenu
+
+<li>
+CBitmap::LoadBitmap --- 加载一个位图, CBitmap::GetBitmap --- 得到位图信息(如高宽), CBitmap::DeleteObject --- 不使用位图之后记得删除
+
+<li>
+CDC::CreateCompatibleDC, CDC::StretchBlt
+
+<li>
+CGdiObject
+
+<li>
+如何绘制一个位图到DC上, 首先创建一个CDC用于内存加载位图,使用方法CDC::CreateCompatibleDC. 而后该内存CDC调用方法SelectObject加载CBitmap对象, 之后调用要显示位图的CDC的方法StretchBlt
+
+<li>
+CFont::CreateFont --- 创建一个字体, 这里创建了一个垂直的字体
+
+</ul>
+
+<h1 id="toc_7">实例07 任务栏托盘弹出菜单</h1>
+<ul>
+<li>
+TrayPopMenu
+
+<li>
+NOTIFYICONDATA 结构体用于托盘
+
+<li>
+AfxGetApp()-&gt;LoadIcon: 事实上只是调用Windows API 的 LoadIcon 函数
+
+<li>
+使用 Shell_NotifyIcon 调用托盘消息, 比如添加, 删除托盘等
+
+<li>
+CWnd::OnSysCommand 系统消息的ID有 SC_MINIMIZE 表示最小化
+
+<li>
+CWnd::ShowWindow --- SW_RESTORE 可以还原窗口
+
+<li>
+Windows API 函数 GetCursorPos 获取光标所在位置
+
+<li>
+CMenu::TrackPopupMenu --- 弹出菜单
+
+<li>
+使用宏 ON_MESSAGE(WM_TRAYMESSAGE ,OnTrayMessage)  --- 将自定义消息发送到自定义函数
+
+</ul>
+
+<h1 id="toc_8">实例08 带背景的工具栏</h1>
+<ul>
+<li>
+ToolbarBacePic
+
+<li>
+CReBar 类 --- 可以自定义工具栏信息
+
+<li>
+调用 CReBar 的 AddBar, RedrawWindow 函数, 而后调用其CReBarCtrl的SetBandInfo设置第一个band信息
+
+<li>
+使用结构体 REBARBANDINFO 来设置band信息, 如果要设置背景, 则使用标志 RBBIM_BACKGROUND., 并设置该info的 hbmBack 成员(该成员类型为HBITMAP)
+
+<li>
+使用 LoadBitmap 加载一个位图
+
+<ul>
+<li>
+LoadBitmap(AfxGetInstanceHandle(), MAKEINTRESOURCE(IDB_BTMBACK)); 
+
+<li>
+AfxGetInstanceHandle() 得到当前应用程序的实例句柄
+
+<li>
+MAKEINTRESOURCE 将资源ID转换为字符串, 用于要求字符串资源的地方
+
+</ul>
+</ul>
+
+<h1 id="toc_9">实例09 带图标的工具栏</h1>
+<ul>
+<li>
+ToolIcon
+
+<li>
+使用CToolBarCtrl类的SetImageList方法设置工具栏的图标
+
+<li>
+CToolBarCtrl的方法SetButtonSize(), SetBitmapSize() 设置按钮和图标大小
+
+</ul>
+
+<h1 id="toc_10">实例10 带下拉菜单的工具栏</h1>
+<ul>
+<li>
+ToolbarWithMenu
+
+<li>
+CToolBarCtrl 调用方法 SetExtendedStyle 设置属性 TBSTYLE_EX_DRAWDDARROWS, 这样就允许有BTNS_DROPDOWN属性的按钮有下拉菜单
+
+<li>
+使用 ON_NOTIFY 宏设置工具栏的 TBN_DROPDOWN 消息
+
+<li>
+CToolBar 的 CommandToIndex 方法
+
+<li>
+使用 reinterpret_cast&lt;LPNMTOOLBAR&gt; 方法将参数的 NMHDR 类型转换成 NMTOOLBAR 类型
+
+<li>
+可使用 pWnd-&gt;SendMessage 发送消息 TB_GETRECT 得到项目矩形. 其中 pWnd 为工具栏窗口
+
+</ul>
+
+<h1 id="toc_11">实例11 可调整按钮位置的工具栏</h1>
+<ul>
+<li>
+ToolbarAdjustBtn
+
+<li>
+只是使用CToolBar的SetButtonInfo设置该位置的按钮为另一个按钮的资源ID和图像索引
+
+</ul>
+
+<h1 id="toc_12">实例12 可浮动的工具栏</h1>
+<ul>
+<li>
+ToolbarFloat
+
+<li>
+工具栏创建的时候设置风格 CBRS_FLOATING
+
+<li>
+调用 FloatControlBar 设置浮动工具栏
+
+</ul>
+
+<h1 id="toc_13">实例13 根据表中数据动态生成工具栏</h1>
+<ul>
+<li>
+ToolbarBtnFromList
+
+<li>
+CToolBarCtrl::AddButtons 方法增加按钮, DeleteButtons 删除按钮
+
+<li>
+CTOolBarCtrl::EnableAutomation --- 该方法允许对象的OLE自动化
+
+<li>
+CToolBarCtrl::AutoSize --- 重置整个工具条, 当父窗口大小变化时或者工具条大小变化时要调用该函数(例如设置按钮和位图大小, 或添加字符串)
+
+</ul>
+
+<h1 id="toc_14">实例014 具有提示功能的工具栏</h1>
+<ul>
+<li>
+ToolbarHint
+
+<li>
+文档程序默认实现了工具栏的提示功能
+
+<li>
+对话框程序需要增加 TTN_NEEDTEXT 消息, 工具栏需要 CBRS_TOOLTIP 风格
+
+<li>
+CToolBar::SetButtonText --- 可以设置按钮上的文字
+
+<li>
+在 TTN_NEEDTEXT 消息的处理函数中, 需要使用 TOOLTIPTEXT 结构体指针指向参数指针, 设置其 lpszText 成员为提示消息的文本
+
+</ul>
+
+<h1 id="toc_15">实例015 带进度条的状态栏</h1>
+<ul>
+<li>
+控件 CProgress, 注意使用 ShowWindow, UpdateWindow 让其显示. SetRange, SetPos 设置其参数
+
+<li>
+使用定时器, SetTimer 和 KillTimer 为设置定时器和取消定时器的函数 
+
+</ul>
+<h1 id="toc_16">实例016 动画效果的状态类</h1>
+<ul>
+<li>
+控件 CAnimateCtrl  用于播放 avi 动画, 用 SetParent 方法设置状态栏为其父窗口
+
+<li>
+使用 RepositionBars(AFX_IDW_CONTROLBAR_FIRST, AFX_IDW_CONTROLBAR_LAST, 0, reposQuery, rcClientNow); 重置所有控件. 而后才能重新获取状态栏等控件的信息. 例如:　m_statusBar.GetStatusBarCtrl().GetRect(2, &amp;rect);
+
+</ul>
+<h1 id="toc_17">实例017 滚动字幕的状态栏</h1>
+<ul>
+<li>
+ScrollStatus
+
+<li>
+使用 MoveWindow 实现
+
+</ul>
+<h1 id="toc_18">实例018 Outlook 导航界面</h1>
+<ul>
+<li>
+OutInterface
+
+<li>
+CPtrArray --- 控制数组指针
+
+<li>
+CStringList --- 字符串列表
+
+<li>
+CWnd::DestroyWindow --- 销毁一个窗口
+
+<li>
+CListCtrl::GetSelectionMark --- 列表视图控件的选择内容
+
+<li>
+COutlookList::PreTranslateMessage --- 拦截所有对按钮的列表视图控件的双击操作
+
+<li>
+PreSubclassWindow --- 在该窗口被子类化之前的操作, 可以用于创建和初始化一些内容, 这里创建和初始化按钮的视图列表
+
+<li>
+OnCmdMsg --- 处理控件上的命令消息, 个人认为是控件窗口上的Command命令 WM_COMMAND.
+
+<li>
+本例使用在视图列表控件中使用另一个视图列表控件显示每个按钮相关联的视图列表. 个人认为可以使用其他控件来实现这个视图列表, 比如Static, Picture控件
+
+</ul>
+
+</body>
+</html>

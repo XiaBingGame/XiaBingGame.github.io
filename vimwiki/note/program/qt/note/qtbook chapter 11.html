@@ -1,0 +1,703 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../style.css" />
+    <title>qtbook chapter 11</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<h1 id="toc_1">Chapter 11 Container Classes</h1>
+<ul>
+<li>
+容器类为可以在内存中存储给定类型元素的模板类. Qt提供了它自己的容器类.
+
+<ul>
+<li>
+Qt的顺序容器: QVector&lt;T&gt;, QLinkedList&lt;T&gt;, and QList&lt;T&gt;, 关联容器: QMap&lt;K, T&gt;, QHash&lt;K, T&gt;.
+
+<li>
+还提供了通用算法用于任意的容器. 例如 qSort() 排序一个顺序容器. qBinaryFind() 而在一个已排序的顺序容器执行二叉查找. 
+
+<li>
+QString 为一个16位Unicode字符串, QByteArray为一8位字符数组. QVariant 为可以存储大多数C++和Qt值类型的类型
+
+</ul>
+</ul>
+    
+<h2 id="toc_1.1">11.1 Sequential Containers</h2>
+<ul>
+<li>
+QVector 可以在构造函数中初始化大小, 使用[]操作符给items分配值.
+
+<li>
+QVector&lt;T&gt;, 使用append()扩展内容. 或用 &lt;&lt; 操作符替代 append() 函数, 可使用 [] 和count() 函数进行遍历
+
+<li>
+Vector元素如果创建时没有分配显式的值, 则使用元素其类的默认构造函数. 基本类型和指针类型则初始化为0.
+
+<li>
+QLinkedList&lt;T&gt;链表: find()函数, append()函数, insert()函数. 下面的代码为在两个元素间插入一个元素:
+<pre c++>
+QLinkedList&lt;QString&gt; list;
+list.append("Clash");
+list.append("Ramones");
+
+QLinkedList&lt;QString&gt;::iterator i = list.find("Ramones");
+list.insert(i, "Tote Hosen");
+</pre>
+
+<li>
+QList&lt;T&gt; 顺序容器, 支持随机访问, 它的接口和QVector一样是index-based. 在QList&lt;T&gt;的尾部插入和删除都很快. 就算有1000个items, 在中间进行删除也很快.
+
+<li>
+QStringList, 为QList&lt;QString&gt;的派生类.
+
+<li>
+QStack&lt;T&gt;, QQueue&lt;T&gt;, QStack&lt;T&gt;有函数push(), pop(), top(). QQueue&lt;T&gt; 有函数enqueue(), dequeue(), head().
+
+<li>
+容器元素的类型可以是基本类型, 如指针, 指针类型, 或者有默认构造函数, 复制构造函数, 分配操作符的类. 满足这些限定的类有 QByteArray, QDateTime, QRegTime, QRegExp, QString, QVariant. 从 QObject派生的类不满足这些限定, 因为它们没有复制构造函数和分配操作符. 实践中我们可以存储QObject类型的指针作为容器元素.
+
+<li>
+容器元素类型可以也是容器, 注意分离两个连续的尖括号＞．
+
+<li>
+c++提供的默认复制构造函数和分配操作符会逐元素复制.
+
+<li>
+Java风格迭代器更易用. STL风格迭代器可以组合Qt和STL的通用算法, 所以更强大.
+
+<li>
+Java风格的迭代器类型有两个: 只读迭代器和读写迭代器. 只读迭代器有QVectorIterator&lt;T&gt;, QLinkedListIterator&lt;T&gt;, QListIterator&lt;T&gt;. 读写迭代器则在它们的名字中加上Mutable, 例如 QMutableVectorIterator&lt;T&gt;.
+
+<li>
+对于 Java风格迭代器要注意的是它们不直接指向元素, 而是位于第一个item之前, 或者最后一个item之后, 或者两个item之间.
+
+<ul>
+<li>
+遍历, 从列表第一个元素的前一个位置开始. 用容器初始化一个Java风格迭代器, 使用 hasNext() 和 next() 方法进行遍历.
+<pre c++>
+        QList&lt;double&gt; list;
+        ...
+        QListIterator&lt;double&gt; i(list);
+        while (i.hasNext()) {
+            do_something(i.next());
+        }
+</pre>
+
+<li>
+倒退遍历, 从列表最后一个元素的后一个位置开始. 同样适用容器初始化一个迭代器, 而后使用 toBack() 方法将迭代器放置在最后一个item之后. 使用 hasPrevious() 和 previous() 方法进行遍历.
+<pre c++>
+        QListIterator&lt;double&gt; i(list);
+        i.toBack();
+        while (i.hasPrevious()) {
+            do_something(i.previous());
+        }
+</pre>
+
+<li>
+Mutable 迭代器提供当迭代之时进行插入, 修改, 移除元素操作.
+<pre c++>
+        QMutableListIterator&lt;double&gt; i(list);
+        while (i.hasNext()) {
+            if (i.next() &lt; 0.0)
+                i.remove();
+        }
+</pre>
+
+<li>
+remove() 函数则是对刚刚跳过去的元素进行操作. 如next() 和 previous() 跳过去的元素.
+<pre c++>
+        QMutableListIterator&lt;double&gt; i(list);
+        i.toBack();
+        while (i.hasPrevious()) {
+            if (i.previous() &lt; 0.0)
+                i.remove();
+        }
+</pre>
+
+<li>
+setValue()函数用于修改该值, 同样是对刚刚跳过去的元素进行操作
+<pre c++>
+        QMutableListIterator&lt;double&gt; i(list);
+        while (i.hasNext()) {
+            int val = i.next();
+            if (val &lt; 0.0)
+                i.setValue(-val);
+        }
+</pre>
+
+<li>
+insert() 用于插入, 而后迭代器则位于新的item和之后的item之间.
+
+<li>
+另有两种STL风格的迭代器: C&lt;T&gt;::iterator 和 C&lt;T&gt;::const_iterator
+
+<li>
+我们可以使用 ++ 和 -- 操作符将STL风格的迭代器移动至下一个或上一个item. 一元 * 操作符返回当前的 item. 对于 QVector&lt;T&gt;, 迭代器和常量迭代器类型很少做为 T* 和 const T* 的 typedef.
+
+<li>
+很少的 Qt 函数返回一个容器, 如果我们想要使用一个STL风格的迭代器迭代一个函数的返回容器, 我们必须拷贝该容器, 而后在该拷贝上迭代.
+
+<li>
+这是因为每一次 QSplitter::sizes() 调用的时候传值方式返回一个新的 QList&lt;int&gt;, 其会自动删除之前调用返回的 QList&lt;int&gt;. 所以下面的操作会有不可预料的行为.
+<pre c++>
+        QList&lt;int&gt; list = splitter-&gt;sizes();
+</pre>
+
+<li>
+下面代码是错误的
+<pre c++>
+        QList&lt;int&gt;::const_iterator i = splitter-&gt;sizes().begin();
+</pre>
+
+<li>
+对于Java-style的迭代器, 不需要拷贝, 因为其在内部会实现. 这是因为迭代器在其背后采用一个拷贝, 确保我们总在该函数第一次返回的数据上迭代.
+<pre c++>
+        QListIterator&lt;int&gt; i(splitter-&gt;sizes());
+        while (i.hasNext()) {
+            do_something(i.next());
+        }
+</pre>
+
+</ul>
+<li>
+拷贝的代价并不大, 和拷贝单个指针一样快, 这是由于其隐式的共享. 只有当拷贝中其中一个正在发生改变时才会进行数据的拷贝. 这一切都在背后自动处理. 因此, 隐式共享有时也称为"copy on write".
+
+<li>
+Qt 使用隐式共享用于所有的容器及其他许多的类, 包括 QByteArray, QBrush, QFont, QImage, QPixmap, QString. 这使得这些类传值传递时非常有效率, 无论在作为函数参数还是作为函数返回值时.
+
+<li>
+为了尽量使用隐式共享的好处, 这里一些习惯:
+
+<ol>
+<li>
+当只读访问vector和list的时候, 我们应当尽量使用 at()而不是使用[]访问容器元素. 由于用[]就不知道是进行读还是写操作.
+
+<li>
+当迭代 STL 风格的容器时. 无论何时我们在非常量的一个容器上调用 begin() 和 end(), 如果数据是共享的, 则Qt强迫发生一个深度拷贝. 为了避免这个无效率的行为, 我们使用常量迭代器, 如 constBegin(), constEnd().
+
+</ol>
+<li>
+Qt 提供了一个在顺序容器中迭代items的方法, 即 foreach 循环. 其看起来如下:
+<pre c++>
+QLinkedList&lt;Movie&gt; list;
+...
+foreach (Movie movie, list) {
+    if (movie.title() == "Citizen Kane") {
+        std::cout &lt;&lt; "Found Citizen Kane" &lt;&lt; std::endl;
+        break;
+    }
+}
+</pre>
+
+<li>
+当进入该循环时, foreach循环自动的进行该容器的拷贝, 并使用该拷贝.
+
+<li>
+隐式共享是如何工作的
+
+<ul>
+<li>
+数据的共享常在多线程程序中不作为一个选项考虑, 这是因为关联计数中的竞争状况. 而在Qt中, 这不是一个问题, 其内, 容器类使用汇编语言指令执行原子级的关联计数操作. 这个技术Qt使用者可以通过 QSharedData 和 QSharedDataPointer 类来使用.
+
+</ul>
+<li>
+支持break和continue循环语句, 如果循环体由一个语句构成, 则不需要括号. 迭代变量可以定义于循环之外. 如下面的 Movie movie:
+<pre c++>
+QLinkedList&lt;Movie&gt; list;
+Movie movie;
+...
+foreach (movie, list) {
+    if (movie.title() == "Citizen Kane") {
+        std::cout &lt;&lt; "Found Citizen Kane" &lt;&lt; std::endl;
+        break;
+    }
+}
+</pre>
+
+<li>
+在循环之外定义迭代器变量, 这是当容器元素的数据类型拥有一个逗号时唯一的选项. 如 QPair&lt;QString, int&gt;
+
+</ul>
+
+
+<h2 id="toc_1.2">11.2 Associative Containers</h2>
+<ul>
+<li>
+关联容器用于保存任意数量相同的条目, 由关键词索引. Qt 提供了两个主要的关联容器类型 QMap&lt;K, T&gt; 和 QHash&lt;K, T&gt;
+
+<li>
+QMap&lt;K, T&gt;数据结构以升序的关键词顺序存储key-value对. 在内部, QMap&lt;K, T&gt;实现为一个 skip-list. 
+
+<ul>
+<li>
+内部的插入语法是 insert, 也可以用[]
+<pre c++>
+        QMap&lt;QString, int&gt; map;
+        map.insert("eins", 1);
+        map.insert("sieben", 7);
+        map.insert("dreiundzwanzig", 23);
+
+        map["eins"] = 1;
+        map["sieben"] = 7;
+        map["dreiundzwanzig"] = 23;
+</pre>
+
+<li>
+不过使用[]访问的话, 如果没有找到该元素, 会生成一个值为空的条目. 为了避免创建这个值为空的条木, 可以使用value()来访问.
+<pre c++>
+		int val = map.value("dreiundzwanzig");
+        
+		int seconds = map.value("delay", 30);
+        // 这个代码等同于以下代码:
+        int seconds = 30;
+        if (map.contains("delay"))
+            seconds = map.value("delay");    
+</pre>
+
+</ul>
+<li>
+QMap&lt;K, T&gt;中K, T的数据类型可以是基本数据类型如int, double, 指针类型, 或者有一个缺省构造函数, 拷贝构造函数, 分配操作符的类. 另外, K类型必须提供一个 operator&lt;() 方法.
+
+<li>
+QMap&lt;K, T&gt; 提供了两个便利函数, keys() 和 values() 返回两个QList列表
+
+<li>
+QMap 可以使用 insertMulti() 函数以拥有多个相同关键字的 key-value 对. 
+
+<li>
+QMultiMap&lt;K, T&gt; 可以有多个相同的关键词, values(const Key &amp;)的重载函数可以返回该给定关键字的所有值的列表.
+<pre c++>
+	QMultiMap&lt;int, QString&gt; multiMap;
+	multiMap.insert(1, "one");
+	multiMap.insert(1, "eins");
+	multiMap.insert(1, "uno");
+            
+	QList&lt;QString&gt; vals = multiMap.values(1);
+</pre>
+
+</ul>
+
+<ul>
+<li>
+QHash&lt;K, T&gt; 与 QMap&lt;K, T&gt; 类似. 但对QHash而言, 其对K的模板类型有不同的要求, 其K的查找比QMap更快, 以及QHash&lt;K, T&gt; 并不是有序排列
+
+<ul>
+<li>
+对 QHash&lt;K, T&gt;而言, K必须能够提供 operator==() 操作. 以及被qHash()函数支持, 返回一个key的hash值.
+
+<li>
+Qt已经提供了整数类型, 指针, QChar, QString 和 QByteArray类型的qHash()函数.
+
+<li>
+QHash&lt;K, T&gt; 自动分配一个主号用于内部hash表格, 且随插入和移除重置该表格大小.
+
+<ul>
+<li>
+也可通过调用reserve() 指定其期望存储在hash中的item数量. squeeze() 则根据当前条目数量收缩 hash表
+
+</ul>
+</ul>
+<li>
+一个常用的做法是, 根据我们期望的item最大数量调用 reserve(), 而后插入数据, 如果最后的items数量少于预期, 则调用 squeeze() 最小化内存使用.
+
+<ul>
+<li>
+QHash&lt;K, T&gt; 一般一个关键词对应一个值. 但如想一个关键词有多个值, 可通过调用 insertMulti()函数或者 QMultiHash&lt;K, T&gt;的派生类实现.
+
+</ul>
+<li>
+除了 QHash之外, 还提供了 QCache, QCache&lt;K, T&gt; 用于表示关联至一个关键字的cache对象. 还有QSet&lt;K&gt;容器则只存储关键字.
+
+<ul>
+<li>
+这两者内部都依赖于 QHash&lt;K, T&gt;, 且对K的类型都有和 QHash&lt;K, T&gt;一样的要求.
+
+</ul>
+<li>
+用 Javs-Style 的迭代器进行遍历, 与顺序容器有些不同, 最主要的不同就是 next() 和 previous() 函数返回的是表示一个 key-value 值对的对象. 可通过 key() 和 value() 方法访问其key和value部分.
+<pre c++>
+        QMap&lt;QString, int&gt; map;
+        ...
+        int sum = 0;
+        QMapIterator&lt;QString, int&gt; i(map);
+        while (i.hasNext())
+            sum += i.next().value();
+</pre>
+
+<li>
+如果我们想要同时访问key和value, 我们可以忽略next()和previous()的返回值, 而是用迭代器的key()和value()函数, 这两个操作都是在刚跳过的item上进行.
+<pre c++>
+        QMapIterator&lt;QString, int&gt; i(map);
+        while (i.hasNext()) {
+            i.next();
+            if (i.value() &gt; largestValue) {
+                largestKey = i.key();
+                largestValue = i.value();
+            }
+        }    
+</pre>
+
+<ul>
+<li>
+可变迭代器则通过 setValue() 来修改关联至当前item的值
+<pre c++>
+        QMutableMapIterator&lt;QString, int&gt; i(map);
+        while (i.hasNext()) {
+            i.next();
+            if (i.value() &lt; 0.0)
+                i.setValue(-i.value());
+        }
+</pre>
+
+</ul>
+<li>
+STL风格的迭代器也提供了 key() 和 value() 函数, 对于非常量的迭代器类型, value() 返回一个非常量的关联, 当我们迭代时, 允许我们改变值.
+
+<li>
+foreach 循环同样可以在关联容器上工作, 但只在 key-value 对的value部分上工作. 如果我们想要同时使用items的key和value部分, 我们可以在嵌套的foreach循环中调用keys()和values(const K&amp;)函数.
+<pre c++>
+        QMultiMap&lt;QString, int&gt; map;
+        ...
+        foreach (QString key, map.keys()) {
+            foreach (int value, map.values(key)) {
+                do_something(key, value);
+            }
+        }
+</pre>
+
+</ul>
+
+<h2 id="toc_1.3">11.3 Generic Algorithms</h2>
+<ul>
+<li>
+ &lt;QtAlgorithms&gt; 头文件声明了一系列模板函数, 用于实现容器的基本算法, 大部分函数在STL风格迭代器上操作.
+
+<li>
+&lt;algorithm&gt; STL头文件提供的更完整的通用算法集可用于Qt容器和STL容器.
+
+<ul>
+<li>
+qFind() 返回该容器内符合查找要求的迭代器指针.
+
+<li>
+qBinaryFind() 算法类似 qFind(), 除了假设其内元素按升序排序, 二叉查找速度更快.
+
+<li>
+qFill() 使用某值填充容器.
+<pre c++>
+        QLinkedList&lt;int&gt; list(10);
+        qFill(list.begin(), list.end(), 1009);
+</pre>
+
+<li>
+qCopy() 从一个容器拷贝至另一个容器.
+
+<ul>
+<li>
+qCopy()还可以用于在相同的容器内复制值, 只要源范围和目标范围不重合.
+
+</ul>
+<li>
+qSort() 排序, 默认升序, 如要想要降序排序, 则使用 qGreater&lt;T&gt;() 作为第三个参数.
+<pre c++>
+        qSort(list.begin(), list.end(), qGreater&lt;int&gt;());
+</pre>
+
+<li>
+qStableSort() 排序, 类似qSort, 但当两者比较的相同时, 则其顺序排序在比较前后都会保持一致.
+
+<li>
+qDeleteAll() 删除容器内的所有指针, 删除后由于这些元素在容器内显示为悬挂指针,  所以我们通常还要调用clear()清理该元素
+<pre c++>
+        qDeleteAll(list);
+        list.clear();
+</pre>
+
+<li>
+qSwap() 交换两个变量的值
+
+<li>
+&lt;QtGlobal&gt;还有一些有用的函数, 如 qAbs()函数, qMin(), qMax()
+
+</ul>
+</ul>
+    
+<h2 id="toc_1.4">11.4 Strings, Byte Arrays, and Variants</h2>
+<ul>
+<li>
+QString , QByteArray, QVariant 这三个类和容器有许多共通的地方, 在一些上下文中可作为容器的另一个选择. 同样和容器一样, 这些类使用隐式共享作为一个内存和速度的优化.
+
+<li>
+C++本身提供了两个类型的字符串: 传统的以'\0'为结尾的C风格字符数组, std::string类.
+
+<li>
+QString使用16为Unicode值. Unicode包含 ASCII 和 Latin-1和它们的数字值作为一个子集, 
+
+<ul>
+<li>
+使用QString, 不需要担心是否能分配足够的内存和字符串是否以'\0'结束. QString可看成QChars的容器, 可包含'\0', length()返回整个字符串的大小, 包括'\0'字符.
+
+<li>
+可用+, +=连接字符串 由于QString自动在字符串数据的尾部预分配内存, 所以重复地扩充字符来构建一个字符串会非常地快. 
+<pre c++>
+QString str = "User: ";
+str += userName + "\n";
+</pre>
+
+<li>
+也可使用 append()函数实现+=一样的功能
+<pre c++>
+// 使用append()方法的等价代码.
+str = "User: ";
+str.append(userName);
+str.append("\n");
+</pre>
+
+<li>
+也可使用sprintf函数来组合字符串: str.sprintf("%s %.1f%%", "perfect competition", 100.0);
+
+<ul>
+<li>
+这个函数支持和C++库sprintf()函数一样的格式说明符.
+
+</ul>
+<li>
+也可用arg()来用其他字符串或数字构建新的字符串: str = QString("%1 %2 (%3s-%4s)").arg("permissive").arg("society").arg(1950).arg(1970);
+
+<ul>
+<li>
+arg()的重载可以处理多个数据类型, 一些重载有额外的参数用于控制field width, numerical base, 浮点精度.
+
+<li>
+arg()可处理多个数据类型. 胜过sprintf(), 因为其是类型安全的. 完全支持Unicode. 允许translator重排序"%n"参数. 
+
+</ul>
+<li>
+QString可使用QString::number()将数字转换成字符串, 或者使用setNum()函数
+<pre c++>
+	str = QString::number(59.6);
+	str.setNum(59.6);
+</pre>
+
+<li>
+其逆操作为 toInt(), toLongLong(), toDouble()
+
+<li>
+要使用 qDebug() &lt;&lt; arg 语法, 则需要包含 &lt;QtDebug&gt; 头文件, 而使用 qDebug("...", arg) 语法则只需要包括任意一个Qt头文件即可.
+
+<li>
+mid()函数用于得到子字符串.
+<pre c++>
+	QString str = "polluter pays principle";
+	qDebug() &lt;&lt; str.mid(9, 4);
+</pre>
+
+<li>
+left(), right() 也可以得到子字符串.
+
+<li>
+我们可以使用indexOf()函数查找字符串是否包含特定字符, 子字符串, 或者正则表达式, 查找失败则返回-1, 可选参数有起始位置和是否大小写敏感.
+<pre c++>
+	QString str = "the middle bit";
+	int i = str.indexOf("middle");        
+	// 失败的话i为-1
+</pre>
+
+<li>
+startsWith(), endsWith() 查看字符串的开头或者结尾是否符合要求
+<pre c++>
+	if (url.startsWith("http:") &amp;&amp; url.endsWith(".png"))
+	...
+	// 上面的代码比下面的要简单且快
+	if (url.left(5) == "http:" &amp;&amp; url.right(4) == ".png")
+	...
+</pre>
+
+<li>
+如果我们正在比较用户可见的字符串, 可以用 localeAwareCompare().
+
+<li>
+比较的时候如想忽略大小写, 则调用toUpper() 或 toLower()
+
+<li>
+replace() 字符串替换
+<pre c++>
+	QString str = "a cloudy day";
+	str.replace(2, 6, "sunny");
+</pre>
+
+<li>
+也可用 remove() 和 insert()
+<pre c++>
+	str.remove(2, 6);
+	str.insert(2, "sunny");        
+</pre>
+
+<li>
+replace()的一个重载版本也可替换所有第一个参数的字符串为第二个参数的字符串.
+<pre c++>
+	str.replace("&amp;", "&amp;amp;");
+</pre>
+
+<li>
+trimmed() 可以清除字符串开头和末尾的空格符
+
+<li>
+simplified()函数: 清除字符串开头和尾端的空格符, 且将字符串之内的空格符都设置为一个空格
+
+<li>
+split() 可将字符串分割至QStringList, 第二个参数用于表示空的子串是否应保留(默认保留).
+
+<li>
+join() 将QStringList连接成一个字符串
+
+<li>
+判断一个字符串是否为空: isEmpty() 或者 length()是否等于0
+
+<li>
+QString 可用+连接一个const char*字符串: str += " (1870)";
+
+<ul>
+<li>
+为了转换一个常量 char * 为一个 QString, 其简单地使用一个 QString 转换, 或者调用函数 fromAscii() 或者 fromLatin1().
+
+</ul>
+<li>
+为了转换一个QString为一个常量char*, 使用toAscii() 或者 toLatin1() 返回一个 QByteArray. 而后使用QByteArray::data() 或者 QByteArray::constData() 可返回一个const char*
+<pre c++>
+	printf("User: %s\n", str.toAscii().data());
+</pre>
+
+<li>
+Qt提供 qPrintable()宏 等同于执行序列 toAscii().constData()
+<pre c++>
+	printf("User: %s\n", qPrintable(str));
+</pre>
+
+<li>
+当在 QByteArray 上调用 data() 或者 constData() 时, 其返回 QByteArray 对象拥有的字符串. 这意味着我们不需要担心内存泄漏, Qt会自动回收内存. 即我们要小心不要使用该指针太长时间. 如果 QByteArray 并不存储在一个变量中, 其会自动地在语句尾部删除.
+
+</ul>
+<li>
+QByteArray 类的API类似 QString, 如left(), right(), mid(), toLower(), toUpper(), trimmed() 和 simplified().
+
+<ul>
+<li>
+QByteArray 常用于存储原生二进制数据和八位编码文本字符串. 一般来说, 我们推荐使用QString处理文本, 因为其支持 Unicode
+
+<li>
+QByteArray 也可支持带'\0'结尾的const char* 字符串. 很容易传递一个 QByteArray 至一个需要常量字符串参数的函数, 也支持在其内部包含'\0'字符
+
+</ul>
+<li>
+QVariant 可以用于处理在相同的变量中存储不同类型的数据:
+
+<ul>
+<li>
+可以保存许多的Qt类型的值: 包括QBrush, QColor, QCursor, QDateTime, QFont, QKeySequence, QPalette, QPen, QPixmap, QPoint, QRect, QRegion, QSize, QString,
+
+<li>
+还可以保存C++数字的类型如double, int, 容器类型 QMap&lt;QString, QVariant&gt;, QStringList, List&lt;QVariant&gt;.
+
+<li>
+item view 类, 数据库模型, QSetting 扩展地使用 variant. 允许我们读写任意QVariant兼容类型的item数据, 数据库数据, 用户偏好. 
+
+<li>
+使用QVariant通过嵌套的容器类型值来创建任意复杂的数据结构, 代码如下:
+<pre c++>
+	QMap&lt;QString, QVariant&gt; pearMap;
+	pearMap["Standard"] = 1.95;
+	pearMap["Organic"] = 2.25;
+
+	QMap&lt;QString, QVariant&gt; fruitMap;
+	fruitMap["Orange"] = 2.10;
+	fruitMap["Pineapple"] = 3.85;
+	fruitMap["Pear"] = pearMap;
+</pre>
+
+<li>
+当在一个有variant值的map上迭代时, 我们需要使用 type() 检查一个varian所拥有的类型以作出合适的反应.
+
+<li>
+QVariant被Qt的meta-object系统使用, 且因此是QtCore模块的一部分, 然而, 当我们连接至QtGui模块, QVariant可以存储GUI相关的类型, 如 QColor, QFont, QIcon, QImage, QPixmap
+<pre c++>
+	QIcon icon("open.png");
+	QVariant variant = icon;
+</pre>
+
+<li>
+为了返回 QVariant中GUI相关类型的值, 我们可以使用 QVariant::value&lt;T&gt;()模板成员函数:
+<pre c++>
+	QIcon icon = variant.value&lt;QIcon&gt;();
+</pre>
+
+<li>
+value&lt;T&gt;也可用于非GUI数据类型和QVariant之间的转换, 但是我们一般使用 to...() 函数进行转换(如 toString()).
+
+<li>
+QVariant也可以存储自定义类型, 但是需要其有缺省构造函数, 拷贝构造函数. 然后使用 Q_DECLARE_METATYPE()宏注册该类型, 通常在一个头文件中类定义之下使用该宏.
+<pre c++>
+	Q_DECLARE_METATYPE(BusinessCard)
+</pre>
+
+<li>
+这允许我们写如下的代码:
+<pre c++>
+	BusinessCard businessCard;
+	QVariant variant = QVariant::fromValue(businessCard);
+	...
+	if (variant.canConvert&lt;BusinessCard&gt;()) {
+	BusinessCard card = variant.value&lt;BusinessCard&gt;();
+	...
+	}
+</pre>
+
+<li>
+由于编译器限制, 其不被MSVC6支持, 你可用qVariantFromValue(), qVariantValue&lt;T&gt;(), qVariantCanConvert&lt;T&gt;() 替换
+
+<li>
+如果自定义类型有&lt;&lt;和>&gt;操作符用于从QDataStream写入和读取,  我们可以使用qRegisterMetaTypeStreamOperators&lt;T&gt;()注册它们.
+
+<ul>
+<li>
+这样我们可以使用QSetting存储自定义类型的偏好.
+
+<li>
+如 qRegisterMetaTypeStreamOperators&lt;BusinessCard&gt;("BusinessCard");
+
+</ul>
+</ul>
+<li>
+还有其他容器: QPair&lt;T1, T2&gt;, QBitArray, QVarLengthArray&lt;T, Prealloc&gt;
+
+<ul>
+<li>
+QVarLengthArray&lt;T, Prealloc&gt;是QVector&lt;T&gt;的底层选择, 因为其在栈上预分配内存且不隐式共享, 它的花费少于QVector&lt;T&gt;, 更适合于轻量级的循环.
+
+</ul>
+<li>
+算法: qCopyBackward(), qEqual(). 见文档: <a href="http://doc.trolltech.com/4.3/qtalgorithms.html">http://doc.trolltech.com/4.3/qtalgorithms.html</a>
+
+<li>
+容器的更多细节, 包括时间复杂度和增长策略的信息, 见文档: <a href="http://doc.trolltech.com/4.3/containers.html">http://doc.trolltech.com/4.3/containers.html</a>
+
+</ul>
+
+    </div>
+</body>
+</html>

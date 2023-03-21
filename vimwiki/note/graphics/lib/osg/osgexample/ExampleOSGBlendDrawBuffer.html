@@ -1,0 +1,65 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../../style.css" />
+    <title>ExampleOSGBlendDrawBuffer</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="../index.html">首页</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<ul>
+<li>
+实现渲染到多个纹理目标上
+
+<li>
+相机如何渲染到多个不同目标
+<pre c++>
+camera-&gt;attach( osg::Camera::BufferComponent(osg::Camera::COLOR_BUFFER0+i), tex );
+</pre>
+
+<li>
+创建 HUD 相机
+<pre>
+osg::Camera* createHUDCamera( double left, double right, double bottom, double top )
+{
+    osg::ref_ptr&lt;osg::Camera&gt; camera = new osg::Camera;
+    camera-&gt;setReferenceFrame( osg::Transform::ABSOLUTE_RF );
+    camera-&gt;setClearMask( GL_DEPTH_BUFFER_BIT );
+    camera-&gt;setRenderOrder( osg::Camera::POST_RENDER );
+    camera-&gt;setAllowEventFocus( false );
+    camera-&gt;setProjectionMatrix( osg::Matrix::ortho2D(left, right, bottom, top) );
+    camera-&gt;getOrCreateStateSet()-&gt;setMode( GL_LIGHTING, osg::StateAttribute::OFF );
+    return camera.release();
+}
+</pre>
+
+<li>
+输出至多个目标的着色器
+<pre c++>
+    const char* mrtFragmentCode = {
+        "void main() {\n"
+        "   gl_FragData[0] = gl_Color * vec4(1.0, 1.0, 1.0, 0.7);\n"
+        "   gl_FragData[1] = vec4(0.0, 1.0, 1.0, 0.0);\n"
+        "   gl_FragData[2] = vec4(1.0, 0.0, 1.0, 0.3);\n"
+        "   gl_FragData[3] = vec4(1.0, 1.0, 0.0, 1.0);\n"
+        "}\n"
+    };
+</pre>
+
+<li>
+osg::createTexturedQuadGeometry 创建矩形立方体
+
+</ul>
+
+    </div>
+</body>
+</html>

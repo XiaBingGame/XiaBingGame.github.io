@@ -1,0 +1,1342 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../../style.css" />
+    <title>Chapter008</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="../index.html">首页</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<div id="Chapter 8 Primitive Processing"><h1 id="Chapter 8 Primitive Processing">Chapter 8 Primitive Processing</h1></div>
+<ul>
+<li>
+顶点着色器之后的几个stage, 可以看着是图元处理stage. tessellation shader stage和固定功能的tessellator处理patches. 几何着色器处理整个图元(点, 线, 三角形).
+
+</ul>
+<div id="Chapter 8 Primitive Processing-8.1 Tessellation"><h2 id="8.1 Tessellation">8.1 Tessellation</h2></div>
+<ul>
+<li>
+tessellation 其将一个大图元当成一个 patch 以打破分割成更小的图元. 最常用的用途是给一个低真实度的mesh添加几何细节. 
+
+<li>
+tessellation control shader(TCS), 固定功能的tessellation引擎, tessellation evaluation shader(TES). 位于顶点着色器和几何着色器之间.
+
+<li>
+tessellation 激活后, 输入的顶点数据通过顶点着色器后, 成组的传递给 TCS. TCS一次操作最多32个顶点的组. 这聚集的组则为 patch. tessellation的上下文中, 该输入顶点常作为控制点.
+
+<li>
+TCS 负责生成三样内容:
+
+<ul>
+<li>
+per-patch 的 inner 和 outer tessellation factors
+
+<li>
+每个输出控制点的位置和其他属性
+
+<li>
+per-patch 的用户自定义的 varying.
+
+</ul>
+<li>
+tessellation factor 发送给固定功能的 tessellation engine, 该引擎使用它们来确定patch打破分割成更小图元的方法. 除了 tessellation factors 之外, TCS 的输出是一个新的 patch(例如, 顶点的一个新集合), 该 patch 被tessellation engine 进行 tessellate 之后发送给 TES. 如果某些数据对于所有的输出顶点都是相同的(例如 patch 的颜色), 则该数据被标记为 per patch. 当固定功能的 tessellator 运行之后, 根据 tessellation factor 和 tessellation mode 生成一个patch上顶点的新集合, tessellation mode 可以由 TES 的 layout 声明确定. 由 OpenGL 生成的 TES 的仅有输入是patch中顶点的坐标集合. 当 tessellator 生成三角形时, 这些坐标为重心坐标. 当 tessellation engine 正在生成线条或三角形时, 这些坐标仅仅是一对单元化的值, 表示顶点的相对位置. 它们存储于 gl_TessCoord 输入变量中. 
+
+<li>
+信息传递图可见图 8.1. TCS 发送给引擎有 glTessLevelOuter[], glTessLevelInner[]. TCS 发送给 TES 有 Per-Control Point 变量, patch 参数. 引擎发送给 TES 有 gl_TessCoord 
+
+</ul>
+
+<div id="Chapter 8 Primitive Processing-8.1 Tessellation-8.1.1 Tessellation Primitive Modes"><h3 id="8.1.1 Tessellation Primitive Modes">8.1.1 Tessellation Primitive Modes</h3></div>
+<ul>
+<li>
+tessellation mode 用于确定 OpenGL 如何将一个 patch 打破分割成更小的图元. 其在 TES 的输入 layout 前缀中设置, 可以是 quads, triangles, isolines 中的一个. 该 mode 不仅是控制 tessellator 产生的图元形式, 其还解释了 TES 的 gl_TessCoord 输入变量.
+
+</ul>
+<div id="Chapter 8 Primitive Processing-8.1 Tessellation-8.1.1 Tessellation Primitive Modes-8.1.1.1 Tessellation Using Quads"><h4 id="8.1.1.1 Tessellation Using Quads">8.1.1.1 Tessellation Using Quads</h4></div>
+<ul>
+<li>
+如果 mode 设为 quads, 则 tessellation 引擎将生成一个四边形, 而后打破成一个三角形集. 
+
+<li>
+TCS中 gl_TessLevelInner[] 数组的前两个元素控制四边形最内层区域的tessellation. 第一个元素控制水平方向(u)的tessellation, 第二个元素控制垂直方向(v)的tessellation. TCS 的 gl_TessLevelOuter[] 数组则控制四边形四条边的tessellation层次. 
+
+<li>
+例子中内部因子u和v方向分别为 9.0, 7.0. 外部因子则分别在u, v方向为3.0, 5.0
+<pre class="brush: glsl">
+#version 430 core
+layout (vertices = 4) out;
+void main(void)
+{
+	if (gl_InvocationID == 0)
+	{
+		gl_TessLevelInner[0] = 9.0;
+		gl_TessLevelInner[1] = 7.0;
+		gl_TessLevelOuter[0] = 3.0;
+		gl_TessLevelOuter[1] = 5.0;
+		gl_TessLevelOuter[2] = 3.0;
+		gl_TessLevelOuter[3] = 5.0;
+	}
+	gl_out[gl_InvocationID].gl_Position =
+		gl_in[gl_InvocationID].gl_Position;
+}
+</pre>
+
+<li>
+TES 代码, tesellation mode 设为 quads. gl_TessCoordinate 的 x和y成分执行顶点位置的插值. gl_in[] 数组则为4个顶点(在 TCS 中设置). 
+<pre class="brush: glsl">
+#version 430 core
+layout (quads) in;
+void main(void)
+{
+	// Interpolate along bottom edge using x component of the
+	// tessellation coordinate
+	vec4 p1 = mix(gl_in[0].gl_Position,
+				gl_in[1].gl_Position,
+				gl_TessCoord.x);
+	// Interpolate along top edge using x component of the
+	// tessellation coordinate
+	vec4 p2 = mix(gl_in[2].gl_Position,
+				gl_in[3].gl_Position,
+				gl_TessCoord.x);
+	// Now interpolate those two results using the y component
+	// of tessellation coordinate
+	gl_Position = mix(p1, p2, gl_TessCoord.y);
+}
+</pre>
+
+<li>
+记住, gl_TessCoord 是所处理顶点的重心坐标
+
+</ul>
+
+<div id="Chapter 8 Primitive Processing-8.1 Tessellation-8.1.1 Tessellation Primitive Modes-8.1.1.2 Tessellation Using Triangles"><h4 id="8.1.1.2 Tessellation Using Triangles">8.1.1.2 Tessellation Using Triangles</h4></div>
+<ul>
+<li>
+gl_TessLevelInner[] 数组只有第一个元素被使用, 该 level 应用于tessellated三角形的整个内部区域. gl_TessLevelOuter[] 的前三个元素则用于设置三角形三个边的tessellation因子. 
+
+<li>
+当 tessellation 引擎生成三角形tessellated后的顶点, 每个顶点分配了一个三维坐标, 即为重心坐标. 重心坐标的三个成分可用于形成三角形三个顶点的权重和.
+<pre class="brush: glsl">
+#version 430 core
+layout (vertices = 3) out;
+void main(void)
+{
+	if (gl_InvocationID == 0)
+	{
+		gl_TessLevelInner[0] = 5.0;
+		gl_TessLevelOuter[0] = 8.0;
+		gl_TessLevelOuter[1] = 8.0;
+		gl_TessLevelOuter[2] = 8.0;
+	}
+	gl_out[gl_InvocationID].gl_Position =
+		gl_in[gl_InvocationID].gl_Position;
+}
+</pre>
+
+<li>
+tes 代码
+<pre class="brush: glsl">
+#version 430 core
+layout (triangles) in;
+void main(void)
+{
+	gl_Position = (gl_TessCoord.x * gl_in[0].gl_Position) +
+					(gl_TessCoord.y * gl_in[1].gl_Position) +
+					(gl_TessCoord.z * gl_in[2].gl_Position);
+}
+</pre>
+
+</ul>
+
+<div id="Chapter 8 Primitive Processing-8.1 Tessellation-8.1.1 Tessellation Primitive Modes-8.1.1.3 Tessellation Using Isolines"><h4 id="8.1.1.3 Tessellation Using Isolines">8.1.1.3 Tessellation Using Isolines</h4></div>
+<ul>
+<li>
+isoline tessellation 其产生真正的线条图元, 在tessellation domain中产生相等v坐标的线条. 每个线条沿着u方向打破成线段. 两个 outer tessellation 因子存储在 gl_TessLevelOuter[] 的前两个元素中. 用于指定线条的数目以及每个线条其线段的数目. 至于 inner tessellation 因子(gl_TessLevelInnere[])则完全不使用. 
+
+</ul>
+
+<div id="Chapter 8 Primitive Processing-8.1 Tessellation-8.1.1 Tessellation Primitive Modes-8.1.1.4 Tessellation Point Mode"><h4 id="8.1.1.4 Tessellation Point Mode">8.1.1.4 Tessellation Point Mode</h4></div>
+<ul>
+<li>
+在TES中使用 point_mode 输入layout前缀. 
+
+<li>
+这里还需要使用 quads, triangles, isolines layout 前缀, 你设置 point_mode 附加上面几个前缀之一, quads, triangles, isolines 则仍然控制 gl_TessCoord 的生成以及对inner和outer tessellation levels的解释. 
+
+<li>
+例如, 如果 tessellation mode 为 quads, 则 gl_TessCoord 是一个二维向量, 如果 mode 为 triangles, 则其为三维重心坐标. 
+<pre class="brush: glsl">
+layout (triangles, point_mode) in;
+</pre>
+
+</ul>
+
+<div id="Chapter 8 Primitive Processing-8.1 Tessellation-8.1.2 Tessellation Subdivision Modes"><h3 id="8.1.2 Tessellation Subdivision Modes">8.1.2 Tessellation Subdivision Modes</h3></div>
+<ul>
+<li>
+tessellation 引擎生成一个三角形或四边形图元, 而后根据内部和外部tessellation factors将其边分割成线段. 而后分组这些生成顶点形成点, 线段, 或三角形, 并将之发送下一步的处理中.
+
+<li>
+在 tessellation 引擎生成的图元类型之外, 你还可控制如何子划分生成图元的边.
+
+<li>
+默认情况, tessellation 引擎子划分每个边为相等大小的部分, 分割的数量则由对应的tessellation因子决定, 这是 equal_spacing mode. 这是默认的, 你也可在下面的代码显式设置:
+<pre class="brush: glsl">
+layout (equal_spacing) in;
+</pre>
+
+<li>
+equal spacing mode 可能是最容易理解的模式, 将 tessellation factor 设置为你想要划分的线段数. 其有一个显著的缺点, 当你修改 tessellation factor 时, 其总是四舍五入至最近的整数, 所以会产生视觉的闪烁. 
+
+<li>
+另外两个 mode 为 fractional_even_spacing 和 fractional_odd_spacing. 
+<pre class="brush: glsl">
+layout (fractional_even_spacing) in;
+// or
+layout (fractional_odd_spacing) in;
+</pre>
+
+<li>
+对于 fractional even spacing, tessellation factor 则四舍五入较小的偶数, fractional odd spacing, 则四舍五入较小的奇数. 这两个方案, 产生一个多余的线段, 则该线段分割成相等的两部分, 放在边两端较靠近的两个位置.
+
+<li>
+对于因子 5.3, equal spacing 产生 6 个线段, even spacing 有4个相等大小的线段, 两个额外的较小线段. odd spacing 则由 5 个相等大小的线段, 两个较小的线段.
+
+</ul>
+
+<div id="Chapter 8 Primitive Processing-8.1 Tessellation-8.1.2 Tessellation Subdivision Modes-8.1.2.1 Controlling the Winding Order"><h4 id="8.1.2.1 Controlling the Winding Order">8.1.2.1 Controlling the Winding Order</h4></div>
+<ul>
+<li>
+你可以设置 tessellated 生成的顶点是顺时针还是逆时针次序. 在 TES 使用输入 layout 前缀设置.
+<pre class="brush: glsl">
+layout (cw) in;
+// or
+layout (ccw) in;
+</pre>
+
+<li>
+cw 和 ccw layout 前缀可以与其他 layout 前缀一起使用. 默认围绕次序为逆时针. 如果你的应用是生成 isolines 或者点, 则围绕次序被忽略. 
+
+</ul>
+
+<div id="Chapter 8 Primitive Processing-8.1 Tessellation-8.1.3 Passing Data between Tessellation Shaders"><h3 id="8.1.3 Passing Data between Tessellation Shaders">8.1.3 Passing Data between Tessellation Shaders</h3></div>
+<ul>
+<li>
+为了让 tessellation 更有趣, 我们沿着管线向下传递更多的数据.
+
+<li>
+在 TCS 运行之前, 每个顶点都表示一个控制点. 顶点分组在一起发送给TCS. TCS 处理一组控制点而后产生新的一组控制点, 这两组的控制点可能数量不会一样, 每个控制点都会运行一次TCS. 但是 TCS 的每次调用都可以访问所有的控制点, 因此, TCS的输入和输出都表示为一个数组. 输入数组的大小由每个patch的控制点数量确定, 由如下代码设置:
+<pre class="brush: glsl">
+glPatchParameteri(GL_PATCH_VERTICES, n);
+</pre>
+
+<li>
+n 为每个 patch 的顶点数量, 默认每个 patch 的顶点数量为 3. TCS 的输入数组的大小由该参数设置, 它们的内容来自于顶点着色器. 内置的 gl_in[] 变量此时可用, 被声明为 gl_PerVertex 结构的数组. 其为顶点着色器的输出. 来自于顶点着色器的其他输出都在TCS中形成数组. 如果你在顶点着色器中使用一个 output block, 则 block 的实例在 TCS 中形成一个实例数组. 例如:
+<pre class="brush: glsl">
+out VS_OUT
+{
+	vec4 foo;
+	vec3 bar;
+	int baz
+} vs_out;
+</pre>
+
+<ul>
+<li>
+则在TES变成
+<pre class="brush: glsl">
+becomes
+in VS_OUT
+{
+	vec4 foo;
+	vec3 bar;
+	int baz;
+} tcs_in[];
+</pre>
+
+</ul>
+<li>
+TCS 的输出同样是一个数组, 但其大小由着色器头部顶点的output layout前缀设置. 通常输出和输入的顶点数相同. TCS 的输出数组的大小受限于 GL_MAX_PATCH_VERTICES 常量.
+
+<li>
+TES 的输入同样也是数组. 每个生成的顶点都会运行一次TES, 每次调用都可以访问 patch 中的所有顶点的数据. 
+
+<li>
+TCS 到 TES 除了每个顶点的数据之外, 还可以传递常量数据. 在 TCS 和 TES 中使用 patch 关键字声明变量. 这种情况下, 该变量则不会被声明为数组, 将其作为每个 patch 的仅有实例(你也可对数组使用 patch 前缀声明).
+
+</ul>
+
+<div id="Chapter 8 Primitive Processing-8.1 Tessellation-8.1.3 Passing Data between Tessellation Shaders-8.1.3.1 Rendering without a Tessellation Control Shader"><h4 id="8.1.3.1 Rendering without a Tessellation Control Shader">8.1.3.1 Rendering without a Tessellation Control Shader</h4></div>
+<ul>
+<li>
+TCS 的目的是执行一些任务, 如计算到TES的每个patch的输入值, 计算被固定功能的 tessellator 使用的内部和外部 tessellation levels. 
+
+<li>
+在某些简单的应用中, TES 没有 per-patch 的输入, TCS 则仅写入 tessellation levels 的常量. 这种情况, 其可使用一个 TES, 而不是用 TCS 来设置一个程序.
+
+<li>
+如果没有 TCS, 则内部和外部的 tessellation levels 则为 1.0. 你可以使用 glPatchParameterfv() 来改变该值.
+<pre class="brush: c++">
+void glPatchParameterfv(GLenum pname,
+						const GLfloat * values);
+</pre>
+
+<li>
+GL_PATCH_DEFAULT_INNER_LEVEL: 指向两个浮点数的数组的值. GL_PATCH_DEFAULT_OUTER_LEVEL: 指向四个浮点数的数组的值. 
+
+<li>
+如果没有 TCS, 则TES控制点的数量和glPatchParameteri()及GL_PATCH_VERTICES参数设置的一样. 这种情况, TES的输入直接来自于顶点着色器.  TES 的输入则是一个数组, 其由生成patch的顶点着色器的调用的输出形成.
+
+</ul>
+
+<div id="Chapter 8 Primitive Processing-8.1 Tessellation-8.1.4 Communication between Shader Invocations"><h3 id="8.1.4 Communication between Shader Invocations">8.1.4 Communication between Shader Invocations</h3></div>
+<ul>
+<li>
+TCS 除了将数据传递给 TES 之外, 其还可以在 TCS 的调用之间通讯. patch 中的每个控制点都调用一次 TCS, 因此 TCS 中的每个输入变量都是一个数组. 数组的长度为输出patch的控制点数量. 通常, 每个 TCS 调用将负责写入数组的一个元素.
+
+<li>
+TCS 可以读取它们的输出变量 - 包括可能由其他调用写入的变量. TCS 的调用是并行的, 无法保证其执行的顺序. 
+
+<li>
+有可能你正在读取的数据其他调用正在写入, 为了解决这个问题, GLSL 有 barrier() 函数. 这是一个流控制 barrier, 其强制多个着色器调用执行的相对次序. barrier() 函数在 TCS 中有一个有限的形式, 以及一些限制. 在 TCS 中, 只能从你的 main() 函数直接调用 barrier(), 不能位于任何控制流结构内(例如 if, else, while, switch). 
+
+<li>
+当你调用 barrier(), TCS 的调用将会停止, 并等待抓取其他相同patch的调用. 知道其他的调用都到达相同点才会继续执行. 这意味着如果你在 TCS 写入一个输出变量, 而后调用 barrier(), 你可以保证所有其他的调用在barrier()之前的所有事情都做完后才会继续, 这样接着读取其他调用的输出变量则会变得安全了.
+
+</ul>
+
+<div id="Chapter 8 Primitive Processing-8.1 Tessellation-8.1.5 Tessellation Example - Terrain Rendering"><h3 id="8.1.5 Tessellation Example - Terrain Rendering">8.1.5 Tessellation Example - Terrain Rendering</h3></div>
+<ul>
+<li>
+地形例子, 基于四边形 patch 和 displacement(移置) mapping. displacement map 是一个纹理, 其包含了surface每个位置的移置信息. 每个 patch 表示一个 landscape 的小部分区域, 根据其可能的屏幕空间区域进行 tessellated. 每个 tessellated 的顶点根据displacement map 存储的值沿着surface的切线移动. 这样即可添加surface的几何细节而无需显式地存储每个tessellated顶点的位置. 
+
+<li>
+我们在着色器中使用常量表示四个顶点, 而非设置一个顶点数组. 
+
+<li>
+使用 gl_InstanceID 计算 patch 的偏移. patch 是xz平面上一个单位的正方形, 原点位于中心. 
+
+<li>
+本例渲染 64x64 的 patches. 
+
+<li>
+顶点着色器还计算用于 patch 的纹理坐标. 在 vs_out.tc 中传递给TCS.
+<pre class="brush: glsl">
+#version 430 core
+
+out VS_OUT
+{
+	vec2 tc;
+} vs_out;
+
+void main(void)
+{
+	const vec4 vertices[] = vec4[](vec4(-0.5, 0.0, -0.5, 1.0),
+								vec4( 0.5, 0.0, -0.5, 1.0),
+								vec4(-0.5, 0.0, 0.5, 1.0),
+								vec4( 0.5, 0.0, 0.5, 1.0));
+	int x = gl_InstanceID &amp; 63;
+	int y = gl_InstanceID &gt;&gt; 6;
+	vec2 offs = vec2(x, y);
+	vs_out.tc = (vertices[gl_VertexID].xz + offs + vec2(0.5)) / 64.0;
+	gl_Position = vertices[gl_VertexID] + vec4(float(x - 32), 0.0,
+				float(y - 32), 0.0);
+}
+</pre>
+
+<li>
+TCS, 首先我们投影patch的角至单元化的设备坐标, 这一点通过输入的坐标乘以模型视图投影矩阵而后除以齐次坐标 .w 实现.
+
+<li>
+我们计算 patch 四个边的长度, 从而计算出每个边的 tessellation level. 这通过一个简单的缩放和偏移实现. 
+
+<li>
+最后内部 tessellation 因子设为外部 tessellation 因子的最小值.
+
+<li>
+代码中还检查投影后的控制点的z坐标是否小于0, 如小于0则设置外部 tessellation level 为0, 这样其可以优化程序, 可以剔除掉整个 patch.
+<pre class="brush: glsl">
+#version 430 core
+layout (vertices = 4) out;
+in VS_OUT
+{
+	vec2 tc;
+} tcs_in[];
+out TCS_OUT
+{
+	vec2 tc;
+} tcs_out[];
+uniform mat4 mvp;
+void main(void)
+{
+	if (gl_InvocationID == 0)
+	{
+		vec4 p0 = mvp * gl_in[0].gl_Position;
+		vec4 p1 = mvp * gl_in[1].gl_Position;
+		vec4 p2 = mvp * gl_in[2].gl_Position;
+		vec4 p3 = mvp * gl_in[3].gl_Position;
+		p0 /= p0.w;
+		p1 /= p1.w;
+		p2 /= p2.w;
+		p3 /= p3.w;
+		if (p0.z &lt;= 0.0 ||
+			p1.z &lt;= 0.0 ||
+			p2.z &lt;= 0.0 ||
+			p3.z &lt;= 0.0)
+		{
+			gl_TessLevelOuter[0] = 0.0;
+			gl_TessLevelOuter[1] = 0.0;
+			gl_TessLevelOuter[2] = 0.0;
+			gl_TessLevelOuter[3] = 0.0;
+		}
+		else
+		{
+			float l0 = length(p2.xy - p0.xy) * 16.0 + 1.0;
+			float l1 = length(p3.xy - p2.xy) * 16.0 + 1.0;
+			float l2 = length(p3.xy - p1.xy) * 16.0 + 1.0;
+			float l3 = length(p1.xy - p0.xy) * 16.0 + 1.0;
+			gl_TessLevelOuter[0] = l0;
+		}
+	}
+	gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
+	tcs_out[gl_InvocationID].tc = tcs_in[gl_InvocationID].tc;
+}
+</pre>
+
+<li>
+tes
+<pre class="brush: glsl">
+layout (quads, fractional_odd_spacing) in;
+uniform sampler2D tex_displacement;
+uniform mat4 mvp;
+uniform float dmap_depth;
+in TCS_OUT
+{
+	vec2 tc;
+} tes_in[];
+out TES_OUT
+{
+	vec2 tc;
+} tes_out;
+void main(void)
+{
+	vec2 tc1 = mix(tes_in[0].tc, tes_in[1].tc, gl_TessCoord.x);
+	vec2 tc2 = mix(tes_in[2].tc, tes_in[3].tc, gl_TessCoord.x);
+	vec2 tc = mix(tc2, tc1, gl_TessCoord.y);
+	vec4 p1 = mix(gl_in[0].gl_Position,
+				gl_in[1].gl_Position,
+				gl_TessCoord.x);
+	vec4 p2 = mix(gl_in[2].gl_Position,
+				gl_in[3].gl_Position,
+				gl_TessCoord.x);
+	vec4 p = mix(p2, p1, gl_TessCoord.y);
+	p.y += texture(tex_displacement, tc).r * dmap_depth;
+	gl_Position = mvp * p;
+	tes_out.tc = tc;
+}
+</pre>
+
+<li>
+tes 修改顶点的y坐标, 计算出发送给片段着色器纹理坐标
+<pre class="brush: glsl">
+#version 430 core
+out vec4 color;
+layout (binding = 1) uniform sampler2D tex_color;
+in TES_OUT
+{
+	vec2 tc;
+} fs_in;
+void main(void)
+{
+	color = texture(tex_color, fs_in.tc);
+}
+</pre>
+
+<li>
+根据结果的网格显示, 所有的三角形屏幕上有差不多的面积, 其 tessellation level 不会产生突然的变化.
+
+</ul>
+
+<div id="Chapter 8 Primitive Processing-8.1 Tessellation-8.1.6 Tessellation Example - Cubic Bezier Patches"><h3 id="8.1.6 Tessellation Example - Cubic Bezier Patches">8.1.6 Tessellation Example - Cubic Bezier Patches</h3></div>
+<ul>
+<li>
+使用数学生成几何.
+
+<li>
+每行的四个控制点形成一个贝塞尔曲线, 4x4网格则有4个曲线, 取一个t值得到四个点作为新的控制点绘制一个贝塞尔曲线. 而后再取一个t值得到其上的一点. 两个t值都在TES的gl_TessCoord.xy中.
+
+<li>
+本例在视觉空间中执行 tessellation. 即我们在顶点着色器中将patch的控制点变换至视觉空间中. 
+<pre class="brush: glsl">
+#version 430 core
+in vec4 position;
+uniform mat4 mv_matrix;
+void main(void)
+{
+	gl_Position = mv_matrix * position;
+}
+</pre>
+
+<li>
+在更高级的算法中, 我们可以投影控制点至屏幕空间, 从而确定曲线长度, 固而取一个合适的 tessellation 因子. 本例我们则仅使用一个固定的 tessellation 因子. 
+<pre class="brush: glsl">
+#version 430 core
+layout (vertices = 16) out;
+void main(void)
+{
+	if (gl_InvocationID == 0)
+	{
+		gl_TessLevelInner[0] = 16.0;
+		gl_TessLevelInner[1] = 16.0;
+		gl_TessLevelOuter[0] = 16.0;
+		gl_TessLevelOuter[1] = 16.0;
+		gl_TessLevelOuter[2] = 16.0;
+		gl_TessLevelOuter[3] = 16.0;
+	}
+	gl_out[gl_InvocationID].gl_Position =
+			gl_in[gl_InvocationID].gl_Position;
+}
+</pre>
+
+<li>
+tes
+<pre class="brush: glsl">
+#version 430 core
+layout (quads, equal_spacing, cw) in;
+uniform mat4 mv_matrix;
+uniform mat4 proj_matrix;
+out TES_OUT
+{
+	vec3 N;
+} tes_out;
+vec4 quadratic_bezier(vec4 A, vec4 B, vec4 C, float t)
+{
+	vec4 D = mix(A, B, t);
+	vec4 E = mix(B, C, t);
+	return mix(D, E, t);
+}
+vec4 cubic_bezier(vec4 A, vec4 B, vec4 C, vec4 D, float t)
+{
+	vec4 E = mix(A, B, t);
+	vec4 F = mix(B, C, t);
+	vec4 G = mix(C, D, t);
+	return quadratic_bezier(E, F, G, t);
+}
+vec4 evaluate_patch(vec2 at)
+{
+	vec4 P[4];
+	int i;
+	for (i = 0; i &lt; 4; i++)
+	{
+		P[i] = cubic_bezier(gl_in[i + 0].gl_Position,
+			gl_in[i + 4].gl_Position,
+			gl_in[i + 8].gl_Position,
+			gl_in[i + 12].gl_Position,
+			at.y);
+	}
+	return cubic_bezier(P[0], P[1], P[2], P[3], at.x);
+}
+const float epsilon = 0.001;
+void main(void)
+{
+	vec4 p1 = evaluate_patch(gl_TessCoord.xy);
+	vec4 p2 = evaluate_patch(gl_TessCoord.xy + vec2(0.0, epsilon));
+	vec4 p3 = evaluate_patch(gl_TessCoord.xy + vec2(epsilon, 0.0));
+	vec3 v1 = normalize(p2.xyz - p1.xyz);
+	vec3 v2 = normalize(p3.xyz - p1.xyz);
+	tes_out.N = cross(v1, v2);
+	gl_Position = proj_matrix * p1;
+}
+</pre>
+
+<li>
+在我们的 TES 中, 我们计算出面法线. 
+<pre class="brush: glsl">
+#version 430 core
+out vec4 color;
+in TES_OUT
+{
+vec3 N;
+} fs_in;
+void main(void)
+{
+	vec3 N = normalize(fs_in.N);
+	vec4 c = vec4(1.0, -1.0, 0.0, 0.0) * N.z +
+			vec4(0.0, 0.0, 0.0, 1.0);
+	color = clamp(c, vec4(0.0), vec4(1.0));
+}
+</pre>
+
+</ul>
+
+<div id="Chapter 8 Primitive Processing-8.2 Geometry Shaders"><h2 id="8.2 Geometry Shaders">8.2 Geometry Shaders</h2></div>
+<ul>
+<li>
+几何着色器一次处理整个图元(三角形, 线, 点), 可以改变管线中的数据量.
+
+<li>
+片段着色器只能通过discarding一个片段来销毁片段.
+
+<li>
+几何着色器可以访问一个图元的所有顶点(最多6个, 为 GL_TRIANGLES_ADJACENCY 和 GL_TRIANGLE_STRIP_ADJACENCY), 其可以改变图元的类型, 可以创建和销毁图元.
+
+<li>
+顶点着色器或TES的输出作为几何着色器的输入. 如果其生成新的图元(这称之为 amplification), 其可以在创建的每个图元上应用不同的变换.
+
+</ul>
+
+<div id="Chapter 8 Primitive Processing-8.2 Geometry Shaders-8.2.1 The Pass-Through Geometry Shader"><h3 id="8.2.1 The Pass-Through Geometry Shader">8.2.1 The Pass-Through Geometry Shader</h3></div>
+<ul>
+<li>
+最简单的几何着色器是 pass-through(转发) 着色器
+<pre class="brush: glsl">
+#version 430 core
+
+layout (triangles) in;
+layout (triangle_strip) out;
+layout (max_vertices = 3) out;
+
+void main(void)
+{
+	int i;
+	for (i = 0; i &lt; gl_in.length(); i++)
+	{
+		gl_Position = gl_in[i].gl_Position;
+		EmitVertex();
+	}
+	EndPrimitive();
+}
+</pre>
+
+<li>
+几何着色器特有的东西
+<pre class="brush: glsl">
+#version 430 core
+layout (triangles) in;
+layout (triangle_strip) out;
+layout (max_vertices = 3) out;
+</pre>
+
+<ul>
+<li>
+使用 layout 前缀设置输入和输出图元的模式
+
+<li>
+几何着色器的输出不仅是可以设置输出的图元类型, 还可以设置该着色器预期生成顶点的最大数量. 
+
+<li>
+main 内部循环的次数依赖于内置变量 gl_in 数组的长度. 
+
+<li>
+gl_in[] 数组的长度由输入图元模式决定. 例如 triangles, 其 gl_in[] 的大小为3. 
+
+</ul>
+<li>
+几何着色器的输出非常类似于顶点着色器的输出, 这里我们写入 gl_Position. 
+
+<li>
+当我们设置了所有新顶点的属性后, 我们调用 EmitVertex(). 表示该顶点设置完毕, 准备设置下个顶点. 
+
+<li>
+另一个内置函数 EndPrimitive(), 该函数告知着色器我们已经完成当前图元顶点的生成, 准备生成下一个图元. 
+
+<li>
+如果我们想要几何着色器生成单独的多个三角形或三角形带, 我们可以每个图元之间调用 EndPrimitive() 以表示它们的边界. 如果你不在着色器中调用 EndPrimitive(), 则着色器结束时会自动结束图元.
+
+</ul>
+
+<div id="Chapter 8 Primitive Processing-8.2 Geometry Shaders-8.2.2 Using Geometry Shader in an Application"><h3 id="8.2.2 Using Geometry Shader in an Application">8.2.2 Using Geometry Shader in an Application</h3></div>
+<ul>
+<li>
+glCreateShader() 函数和 GL_GEOMETRY_SHADER 参数
+<pre class="brush: glsl">
+glCreateShader(GL_GEOMETRY_SHADER);
+</pre>
+
+<li>
+glShaderSource(), glCompileShader(), glAttachShader() 如常使用. 
+
+<li>
+几何着色器接受的图元必须匹配它自身输入图元模式预期的图元. 如果没有tessellation, 则绘制命令中的图元模式必须匹配几何着色器的输入图元模式. 例如, 如果几何着色器的输入图元模式为 points, 则你只能使用 glDrawArrays() 和 GL_POINTS. 如果为 triangles, 则可以使用 GL_TRIANGLES, GL_TRIANGLE_STRIP, GL_TRIANGLE_FAN.
+
+<li>
+几何着色器输入图元模式的完整列表见表格 8.1:
+
+<ul>
+<li>
+points --- GL_POINTS
+
+<li>
+lines --- GL_LINES, GL_LINE_LOOP, GL_LINE_STRIP
+
+<li>
+triangles --- GL_TRIANGLES, GL_TRIANGLE_FAN, GL_TRIANGLE_STRIP
+
+<li>
+lines_adjacency --- GL_LINES_ADJACENCY
+
+<li>
+triangles_adjacency --- GL_TRIANGLES_ADJACENCY
+
+</ul>
+<li>
+如果 tessellation 激活, 则你绘制命令使用的模式永远是 GL_PATCHES, OpenGL 将会变换 patches 为 points, lines, triangles.
+
+<li>
+几何着色器的输入图元模式必须匹配 tessellation primitive mode
+
+<li>
+几何着色器主体使用 layout 前缀设置输入图元类型, 输入的layout前缀通常形式为:
+<pre class="brush: glsl">
+layout (primitive_type) in;
+</pre>
+
+<ul>
+<li>
+primitive_type 必须是支持图元模式中的一个: points, lines, triangles, lines_adjacency, triangles_adjacency.
+
+<li>
+每个图元运行一次几何着色器, GL_POINTS 是每个顶点, GL_LINES, GL_LINE_STRIP 是每条线, GL_TRIANGLES, GL_TRIANGLE_STRIP, GL_TRIANGLE_FAN 则是每个三角形.
+
+<li>
+几何着色器的输入是数组形式, 预定义的输入为 gl_in[]. 其为结构数组, 定义如下
+<pre class="brush: glsl">
+in gl_PerVertex
+{
+	vec4 gl_Position;
+	float gl_PointSize;
+	float gl_ClipDistance[];
+} gl_in[];
+</pre>
+
+<li>
+该结构是顶点着色器的output block. 其内的成员在顶点着色器为全局变量, 这是因为顶点着色器该block还没有一个instance名称. 
+
+<li>
+其他顶点着色器写入的变量, 在几何着色器中都会形成数组.
+
+<li>
+对于各自的varyings, 顶点着色器中的输出都如常声明, 几何着色器的对应输入则有类似的声明, 只是为数组形式. 下面是顶点着色器的输出:
+<pre class="brush: glsl">
+out vec4 color;
+out vec3 normal;
+</pre>
+
+<li>
+对应几何着色器的输入:
+<pre class="brush: glsl">
+in vec4 color[];
+in vec3 normal[];
+</pre>
+
+</ul>
+<li>
+如果你有大量数据从顶点传递到几何着色器, 可以将每个顶点的信息包装成 interface block, 如下:
+<pre class="brush: glsl">
+out VertexData
+{
+	vec4 color;
+	vec3 normal;
+} vertex;
+</pre>
+
+<li>
+对应几何着色器的输入如下:
+<pre class="brush: glsl">
+in VertexData
+{
+	vec4 color;
+	vec3 normal;
+// More per-vertex attributes can be inserted here
+} vertex[];
+</pre>
+
+<ul>
+<li>
+几何着色器内可以使用 vertex[n].color 来访问. 
+
+<li>
+几何着色器处理的数组大小依赖于图元类型, 如点则大小为1, 三角形则大小为3.
+
+<li>
+如果你设计的几何着色器处理特殊的图元类型, 你可以显式设置你输入数组的大小, 其会提供少量的额外编译器错误检查. 否则, 你可以通过输入图元类型的layout前缀自动设置数组的大小. 
+
+<li>
+输入图元模式和输入数组的大小的映射如下:
+
+<ul>
+<li>
+points --- 1
+
+<li>
+lines --- 2
+
+<li>
+triangles --- 3
+
+<li>
+lines_adjacency --- 4
+
+<li>
+triangles_adjacency --- 6
+
+</ul>
+</ul>
+<li>
+同样, 你需要设置几何着色器生成的图元类型. 使用 layout 前缀确定
+<pre class="brush: glsl">
+layout (primitive_type) out;
+</pre>
+
+<ul>
+<li>
+和输入相同, 只是要用 out 关键字. 
+
+<li>
+允许的输出图元类型有 points, line_strip, triangle_strip.
+
+</ul>
+<li>
+由于几何着色器可以产生每个顶点大小可变的数据, 所以必须告诉 OpenGL 分配多少的空间用于所有的数据. 则通过设置几何着色器期望生成的顶点最大数目来实现. 使用如下的 layout前缀: 
+<pre class="brush: glsl">
+layout (max_vertices = n) out;
+</pre>
+
+<ul>
+<li>
+由于 OpenGL 可能分配 buffer 空间用于存储每个顶点的中间结果, 所以n应当是允许你的应用正确运行的最小可能数量.
+
+<li>
+如果你计划用点一次生成一条线, 则你可以设置 n 为 2. 
+
+<li>
+如果你想要对进来的几何进行较大的tessellate操作, 则可能设置 n 为很大的数字, 虽然这会耗费你的性能. 
+
+<li>
+n 可以设置的最大数字依赖于你的 OpenGL 实现. 可保证最少为 256. 可通过 glGetIntegerv() 和 GL_MAX_GEOMETRY_OUTPUT_VERTICES 查询.
+
+</ul>
+<li>
+你可以在一个语句里面声明多个layout前缀, 通过逗号分隔.
+<pre class="brush: glsl">
+layout (triangle_strip, max_vertices = n) out;
+</pre>
+
+<li>
+通过这些 layout 前缀, #versioin 声明, 空的 main() 函数, 可以产生最简单的几何着色器, 但是其不能干任何事情, 将会抛弃你所有发送的几何体. 
+
+<li>
+需要调用 EmitVertex() 和 EmitPrimitive() 才能绘制东西.
+
+<li>
+EmitVertex() 告知几何着色器你完成了该顶点所有信息的填充. 设置顶点的工作类似于顶点着色器, 需要写入内置变量 gl_Position. 该变量表示几何着色器产生的顶点需要设置 clip-space 坐标. 任意其他你想要传递给片段着色器的数据你可以声明在 interface block 中, 或者作为几何着色器的一个全局变量. 无论何时调用 EmitVertex, 几何着色器在所有输出变量中存储值, 而后生成一个新的顶点. 你可以多次调用 EmitiVertex(), 直到你达到 max_vertices layout 前缀的限制. 
+
+<li>
+注意, EmitVertex() 将使得你任意的输出变量的值重新变成未定义的.
+
+<li>
+EmitPrimitive() 表示你完成了图元的顶点设置, 注意, 几何着色器只支持 strip 图元类型(点除外, 如 line_strip 和 triangle_strip). 
+
+<li>
+EndPrimitive() 和 strip 相关, 表示如果你想要绘制单个线条或三角形, 你需要每两个或三个顶点调用一次 EndPrimitive(). 
+
+<li>
+如果你在几何着色器中单个图元没有提供足够的顶点, 则其会抛弃该图元.
+
+</ul>
+
+<div id="Chapter 8 Primitive Processing-8.2 Geometry Shaders-8.2.3 Discarding Geometry in the Geometry Shader"><h3 id="8.2.3 Discarding Geometry in the Geometry Shader">8.2.3 Discarding Geometry in the Geometry Shader</h3></div>
+<ul>
+<li>
+你可以完全不调用 EmitVertex() 和 EndPrimitive(), 这将让你裁减掉该几何体并完全抛弃了该图元.
+
+<li>
+本例实现自定义的backface culling routine. 见 gsculling 例子. 
+<pre class="brush: glsl">
+#version 330
+// Input is triangles, output is triangle strip. Because we’re going
+// to do a 1 in 1 out shader producing a single triangle output for
+// each one input, max_vertices can be 3 here.
+layout (triangles) in;
+layout (triangle_strip, max_vertices=3) out;
+// Uniform variables that will hold our custom viewpoint and
+// model-view matrix
+uniform vec3 viewpoint;
+uniform mav4 mv_matrix;
+</pre>
+
+<li>
+计算法线
+<pre class="brush: glsl">
+// Calculate two vectors in the plane of the input triangle
+vec3 ab = gl_in[1].gl_Position.xyz - gl_in[0].gl_Position.xyz;
+vec3 ac = gl_in[2].gl_Position.xyz - gl_in[0].gl_Position.xyz;
+vec3 normal = normalize(cross(ab, ac));
+</pre>
+
+<li>
+模型视图矩阵的左上 3x3 矩阵的转置矩阵的逆矩阵为法线矩阵. 如果你的模型视图矩阵仅包含平移, 一致缩放(没有 shear), 以及旋转, 你可以直接使用模型视图矩阵的左上 3x3 矩阵. 
+<pre class="brush: glsl">
+// Calculate the transformed face normal and the view direction vector
+vec3 transformed_normal = (vec4(normal, 0.0) * mv_matrix).xyz;
+vec3 vt = normalize(gl_in[0].gl_Position.xyz - viewpoint);
+// Take the dot product of the normal with the view direction
+float d = dot(vt, normal);
+// Emit a primitive only if the sign of the dot product is positive
+if (d &gt; 0.0)
+{
+	for (int i = 0; i &lt; 3; i++)
+	{
+		gl_Position = gl_in[i].gl_Position;
+		EmitVertex();
+	}
+	EndPrimitive();
+}
+</pre>
+
+</ul>
+
+<div id="Chapter 8 Primitive Processing-8.2 Geometry Shaders-8.2.4 Modifying Geometry in the Geometry Shader"><h3 id="8.2.4 Modifying Geometry in the Geometry Shader">8.2.4 Modifying Geometry in the Geometry Shader</h3></div>
+<ul>
+<li>
+如果输入几何的形式为 triangle strips 或 fans, 则产生的几何体会有共享的顶点或共享的边. 使用顶点着色器移动共享的顶点则会移动所有共享该顶点的三角形. 其不可能分离两个共享一条边的三角形. 这些可以用几何着色器做到.
+
+<li>
+几何着色器接受 triangles 作为输入, 则不需要考虑 glDrawArrays() 或 glDrawElements() 使用的是 GL_TRIANGLES, GL_TRIANGLE_STRIP 还是 GL_TRIANGLE_FAN.
+
+<li>
+几何着色器以 triangle_strip 作为输出, 除非几何着色器的输出多于三个顶点, 否则结果是独立的, 不连接的三角形. 
+
+<li>
+本例, 我们"爆炸"一个模型, 将所有三角形沿着面法线向外移动. 
+<pre class="brush: glsl">
+#version 330
+// Input is triangles, output is triangle strip. Because we’re going to do a
+// 1 in 1 out shader producing a single triangle output for each one input,
+// max_vertices can be 3 here.
+layout (triangles) in;
+layout (triangle_strip, max_vertices=3) out;
+</pre>
+
+<li>
+位置修改
+<pre class="brush: glsl">
+for (int i = 0; i &lt; 3; i++)
+{
+	gl_Position = gl_in[i].gl_Position +
+		vec4(explode_factor * normal, 0.0);
+}
+</pre>
+
+</ul>
+
+<div id="Chapter 8 Primitive Processing-8.2 Geometry Shaders-8.2.5 Generating Geometry in the Geometry Shader"><h3 id="8.2.5 Generating Geometry in the Geometry Shader">8.2.5 Generating Geometry in the Geometry Shader</h3></div>
+<ul>
+<li>
+可以多次调用 EmitVertex() 和 EndPrimitive() 产生新的几何体. 
+
+<li>
+本例为 gstessellate 例子. 
+
+<li>
+着色器的输入是个四面体, 中心位于原点. 四面体的每个面有一个三角形组成. 沿着每条边的一半产生新的顶点, 而后移动所有的顶点, 移动距离为到原点的可变距离. 产生一个长钉似的形状.
+
+<li>
+顶点着色器是个转发着色器
+<pre class="brush: glsl">
+#version 330
+in vec4 position;
+void main(void)
+{
+	gl_Position = position;
+}
+</pre>
+
+<li>
+每个三角形我们产生四个三角形, 所以最大的输出顶点量为 12. 
+<pre class="brush: glsl">
+#version 430 core
+layout (triangles) in;
+layout (triangle_strip, max_vertices = 12) out;
+// A uniform to store the model-view-projection matrix
+uniform mat4 mvp;
+</pre>
+
+<li>
+设置
+<pre class="brush: glsl">
+// Copy the incoming vertex positions into some local variables
+vec3 a = gl_in[0].gl_Position.xyz;
+vec3 b = gl_in[1].gl_Position.xyz;
+vec3 c = gl_in[2].gl_Position.xyz;
+// Find a scaled version of their midpoints
+vec3 d = (a + b) * stretch;
+vec3 e = (b + c) * stretch;
+vec3 f = (c + a) * stretch;
+// Now, scale the original vertices by an inverse of the midpoint
+// scale
+a *= (2.0 - stretch);
+b *= (2.0 - stretch);
+c *= (2.0 - stretch);
+
+// 外置的函数
+void make_face(vec3 a, vec3 b, vec3 c)
+{
+	vec3 face_normal = normalize(cross(c - a, c - b));
+	vec4 face_color = vec4(1.0, 0.2, 0.4, 1.0) * (mat3(mvMatrix) * face_normal
+	gl_Position = mvpMatrix * vec4(a, 1.0);
+	color = face_color;
+	EmitVertex();
+	gl_Position = mvpMatrix * vec4(b, 1.0);
+	color = face_color;
+	EmitVertex();
+	gl_Position = mvpMatrix * vec4(c, 1.0);
+	color = face_color;
+	EmitVertex();
+	EndPrimitive();
+}
+
+make_face(a, d, f);
+make_face(d, b, e);
+make_face(e, c, f);
+make_face(d, e, f);
+</pre>
+
+<li>
+重度 tessellation 最好使用 OpenGL 的硬件 tessellation 功能. 如果每个输入图元仅增加两个到四个输出的图元, 则可用几何着色器.
+
+</ul>
+
+<div id="Chapter 8 Primitive Processing-8.2 Geometry Shaders-8.2.6 Changing the Primitive Type in the Geometry Shader"><h3 id="8.2.6 Changing the Primitive Type in the Geometry Shader">8.2.6 Changing the Primitive Type in the Geometry Shader</h3></div>
+<ul>
+<li>
+normalviewer 例子. 将三角形改成线条. 
+
+<li>
+你不能在单个几何着色器同时绘制不同的图元类型.
+<pre class="brush: glsl">
+// 顶点着色器
+#version 330
+in vec4 position;
+in vec3 normal;
+out Vertex
+{
+	vec3 normal;
+} vertex;
+void main(void)
+{
+	gl_Position = position;
+	vertex.normal = normal;
+}
+
+// 几何着色器
+#version 330
+layout (triangles) in;
+layout (line_strip) out;
+layout (max_vertices = 8) out;
+in Vertex
+{
+	vec3 normal;
+} vertex[];
+// Uniform to hold the model-view-projection matrix
+uniform mat4 mvp;
+// Uniform to store the length of the visualized normals
+uniform float normal_length;
+
+// 顶点法线
+gl_Position = mvp * gl_in[0].gl_Position;
+gs_out.normal = gs_in[0].normal;
+gs_out.color = gs_in[0].color;
+EmitVertex();
+gl_Position = mvp * (gl_in[0].gl_Position +
+	vec4(gs_in[0].normal * normal_length, 0.0));
+gs_out.normal = gs_in[0].normal;
+gs_out.color = gs_in[0].color;
+EmitVertex();
+EndPrimitive();
+
+// 面法线
+vec3 ab = gl_in[1].gl_Position.xyz - gl_in[0].gl_Position.xyz;
+vec3 ac = gl_in[2].gl_Position.xyz - gl_in[0].gl_Position.xyz;
+vec3 face_normal = normalize(cross(ab, ac));
+vec4 tri_centroid = (gl_in[0].gl_Position +
+	gl_in[1].gl_Position +
+	gl_in[2].gl_Position) / 3.0;
+gl_Position = mvp * tri_centroid;
+gs_out.normal = gs_in[0].normal;
+gs_out.color = gs_in[0].color;
+EmitVertex();
+gl_Position = mvp * (tri_centroid +
+	vec4(face_normal * normal_length, 0.0));
+gs_out.normal = gs_in[0].normal;
+gs_out.color = gs_in[0].color;
+EmitVertex();
+EndPrimitive();	
+</pre>
+
+</ul>
+
+<div id="Chapter 8 Primitive Processing-8.2 Geometry Shaders-8.2.7 Multiple Stream of Storage"><h3 id="8.2.7 Multiple Stream of Storage">8.2.7 Multiple Stream of Storage</h3></div>
+<ul>
+<li>
+当只有一个顶点着色器的时候, 在输入给着色器的顶点和transform feedback buffer中存储的顶点之间, 其只有简单的一一对应的进出关系
+
+<li>
+当有几何着色器的时候, 每次着色器的调用会存储0个, 一个, 或多个顶点至绑定的transform feedback buffers. 
+
+<li>
+不仅这样, 其可以配置之多4个output stream, 并使用几何着色器将它的输出发送给其选择的那个. 这样做, 当在 transform feedback buffers中存储其他的几何时, 其可以排序几何或者渲染一些图元.
+
+<li>
+在一个几何着色器中使用多个输出streams时, 有一些主要的限制.
+
+<ul>
+<li>
+用于所有stream的几何着色器的输出图元模式必须设置为 points.
+
+<li>
+虽然其可以同时渲染几何和在transform feedback buffers中存储数据, 但只有第一个stream可以渲染 - 其他的仅用于存储.
+
+</ul>
+<li>
+如果你的应用可以满足这些限制, 则其可以有非常强大的功能.
+
+<li>
+使用 stream layout 前缀选择四个stream中的一个, stream 前缀可能直接用于单个输出, 或者应用于输出块. 其也可直接应用于 out 关键字, 而无需声明一个输出变量. 
+
+<li>
+其会影响所有进一步的输出声明, 直到遇到另一个stream layout 前缀. 如:
+<pre class="brush: glsl">
+out vec4 foo; // "foo" is in stream 0 (the default).
+layout (stream=2) out vec4 bar; // "bar" is part of stream 2.
+out vec4 baz; // "baz" is back in stream 0.
+layout (stream=1) out; // Everything from here on is in stream 1.
+out int apple; // "apple" and "orange" are part
+out int orange; // of stream 1.
+layout (stream=3) out MY_BLOCK // Everything in "MY_BLOCK" is in
+stream 3.
+{
+	vec3 purple;
+	vec3 green;
+};
+</pre>
+
+<li>
+当你调用 EmitVertex(), 则顶点记录至第一个输出stream(stream 0), 当你调用 EndPrimitive(), 图元记录至stream 0. 
+
+<li>
+当你调用 EmitStreamVertex() 和 EndStreamPrimitive(), 则记录至参数指定的stream
+<pre class="brush: glsl">
+void EmitStreamVertex(int stream);
+void EndStreamPrimitive(int stream);
+</pre>
+
+<ul>
+<li>
+stream 参数必须是编译器常量, 如果允许光栅化(rasterization), 则发送给stream 0的图元会被光栅化(rasterized).
+
+</ul>
+</ul>
+
+<div id="Chapter 8 Primitive Processing-8.2 Geometry Shaders-8.2.8 New Primitive Types Introduced by the Geometry Shader"><h3 id="8.2.8 New Primitive Types Introduced by the Geometry Shader">8.2.8 New Primitive Types Introduced by the Geometry Shader</h3></div>
+<ul>
+<li>
+新的图元类型: GL_LINES_ADJACENCY, GL_LINE_STRIP_ADJACENCY, GL_TRIANGLES_ADJACENCY, GL_TRIANGLE_STRIP_ADJACENCY. 这些图元类型只有当几何着色器激活的时候才有用. 对于 adjacency 图元类型, 每个传送给几何着色器的线条或三角形, 其不仅可访问定义该图元的顶点, 其还可以访问其正处理图元的下一个图元的顶点.
+
+<li>
+当你使用 GL_LINES_ADJACENCY, 每个线段可以在允许的属性数组中使用4个顶点. 中心的两个顶点构成了该线条, 第一个和最后一个顶点看成相邻的顶点. 所以几何着色器的输入是一个四元素的数组. 四个元素的数组可以绘制成两个三角形组成的triangle strip. 这样允许你使用 GL_LINES_ADJACENCY 渲染四边形. 
+
+<li>
+当你使用 GL_LINES_ADJACENCY 时没有激活几何着色器时, 则使用最内部的两个顶点绘制常规的线条, 最外部的两个顶点则被抛弃, 顶点着色器则完全不会运行最外部的两个顶点.
+
+<li>
+GL_LINE_STRIP_ADJACENCY 则产生类似的效果, 不同之处在于整个 strip 看成是一个图元. 在两端各有一个额外的顶点. 如果你使用 GL_LINES_ADJACENCY 发送 8 个顶点给OpenGL, 则几何着色器运行两次, 如果你使用 GL_LINE_STRIP_ADJACENCY 发送同样数目的顶点, 几何着色器将运行五次. 具体可以看图 8.20
+
+<li>
+GL_TRIANGLES_ADJACENCY 图元模式其工作类似于 GL_LINES_ADJACENCY 模式. 发送给几何着色器的三角形有六个顶点, 第一个, 第三个, 第五个顶点组成实际的三角形, 第二个, 第四个, 第六个顶点看成三角形之间的顶点.
+
+<li>
+GL_TRIANGLE_STRIP_ADJACENCY 表示一个三角形带, 其相隔一个顶点组成实际的三角形带(第一个, 第三个, 第五个, 第七个, 第九个, 等等). 它们之间的顶点则为相邻的顶点. 图 8.22 显示了这个特色. 
+
+</ul>
+
+<div id="Chapter 8 Primitive Processing-8.2 Geometry Shaders-8.2.8 New Primitive Types Introduced by the Geometry Shader-8.2.8.1 Rendering Quads Using a Geometry Shader"><h4 id="8.2.8.1 Rendering Quads Using a Geometry Shader">8.2.8.1 Rendering Quads Using a Geometry Shader</h4></div>
+<ul>
+<li>
+现代图形 APIs 不支持直接渲染四边形, 主要因为图形硬件不支持 quads. 当建模程序产生由四边形组成的对象后, 其会包含一个选项, 以便导出几何数据, 其内每个四边形转换成两个三角形. 而后由图形硬件直接渲染. 有些图形硬件, 其支持 quads, 但是内部会做这种转换. 
+
+<li>
+有很多情况下, 四边形转换成三角形并不产生正确的结果. 见图 8.24
+
+<li>
+几何着色器用 GL_LINES_ADJACENCY 类型, 其可以有四个顶点 - 足够表示一个四边形. 我们可以得到四个顶点的信息内容.
+
+<li>
+然后我们处理 rasterizer. 此时我们可以传递任意想要的信息给片段着色器.
+
+<li>
+为了正确地渲染一个四边形, 我们必须考虑我们想要插值的颜色上其域的参数化. 对于三角形, 我们使用重心坐标, 对于四边形, 我们使用一个二维的参数化. 见图 8.25
+
+<li>
+quad 的域参数化是二维的, 可以表示成二维向量, 四个顶点的向量值为(0, 0), (0, 1), (1, 0), (1, 1). 其可以发送给片段着色器.
+
+<li>
+在片段上, 我们使用向量的x成员在A和B上, 在C和D上插值. 而后使用y成员在两者结果上插值.
+
+<li>
+见例子 gsquads.
+
+<li>
+几何着色器
+<pre class="brush: glsl">
+#version 430 core
+layout (lines_adjacency) in;
+layout (triangle_strip, max_vertices = 6) out;
+in VS_OUT
+{
+	vec4 color;
+} gs_in[4];
+out GS_OUT
+{
+	flat vec4 color[4];
+	vec2 uv;
+} gs_out;
+void main(void)
+{
+	gl_Position = gl_in[0].gl_Position;
+	gs_out.uv = vec2(0.0, 0.0);
+	EmitVertex();
+	gl_Position = gl_in[1].gl_Position;
+	gs_out.uv = vec2(1.0, 0.0);
+	EmitVertex();
+	gl_Position = gl_in[2].gl_Position;
+	gs_out.uv = vec2(1.0, 1.0);
+	// We’re only writing the output color for the last
+	// vertex here because they’re flat attributes,
+	// and the last vertex is the provoking vertex by default
+	gs_out.color[0] = gs_in[1].color;
+	gs_out.color[1] = gs_in[0].color;
+	gs_out.color[2] = gs_in[2].color;
+	gs_out.color[3] = gs_in[3].color;
+	EmitVertex();
+</pre>
+
+<li>
+片段着色器
+<pre class="brush: glsl">
+#version 430 core
+in GS_OUT
+{
+	flat vec4 color[4];
+	vec2 uv;
+} fs_in;
+out vec4 color;
+void main(void)
+{
+	vec4 c1 = mix(fs_in.color[0], fs_in.color[1], fs_in.uv.x);
+	vec4 c2 = mix(fs_in.color[2], fs_in.color[3], fs_in.uv.x);
+	color = mix(c1, c2, fs_in.uv.y);
+}
+</pre>
+
+</ul>
+
+<div id="Chapter 8 Primitive Processing-8.2 Geometry Shaders-8.2.9 Multiple Viewport Transformations"><h3 id="8.2.9 Multiple Viewport Transformations">8.2.9 Multiple Viewport Transformations</h3></div>
+<ul>
+<li>
+使用 glViewport() 和 glDepthRange() 设置你渲染的窗口矩形区域. 你可以四处移动你的viewport, 可以在单个很大的 framebuffer 中绘制多个虚拟窗口. 更进一步, OpenGL 允许你同时绘制多个 viewport. 这就是 viewport arrays
+
+<li>
+为了使用 viewport array, 首先我们需要告诉 OpenGL 我们想要使用并绑定哪个 viewport. 为了做到这点, 调用 glViewportIndexedf() 或者 glViewportIndexedfv(). 原型为:
+<pre class="brush: c++">
+void glViewportIndexedf(GLuint index,
+						GLfloat x,
+						GLfloat y,
+						GLfloat w,
+						GLfloat h);
+void glViewportIndexedfv(GLuint index,
+						const GLfloat * v);
+</pre>
+
+<ul>
+<li>
+index 为你想要修改的 viewport 的 index. 同样注意到 viewport 参数为浮点值, 而非用于 glViewport() 的整数值. 
+
+<li>
+OpenGL 支持16个viewports的最少6个. 所以 index 范围为 0 到 15.
+
+<li>
+同样的, 每个 viewport 有它自己的深度范围, 可以通过调用 glDepthRangeIndexed() 设置
+<pre class="brush: c++">
+void glDepthRangeIndexed(GLuint index,
+						GLdouble n,
+						GLdouble f);
+</pre>
+
+<li>
+index 的值可以是0到15. glViewport() 可以设置所有的viewport范围为相同范围. glDepthRange() 可以设置所有 viewport 的深度范围为相同范围.
+
+<li>
+如果你想要同时设置多个 viewport, 你应当考虑使用 glViewportArrayv() 和 glDepthRangeArrayv(), 原型为:
+<pre class="brush: c++">
+void glViewportArrayv(GLuint first,
+					GLsizei count,
+					const GLfloat * v);
+void glDepthRangeArrayv(GLuint first,
+						GLsizei count,
+						const GLdouble * v);
+</pre>
+
+</ul>
+<li>
+一旦你设置了你的时候, 你需要指示几何体如何绘制给它们, 这点可以用几何着色器完成. 内置变量 gl_ViewportIndex 选择要渲染的 viewport. 下面代码显示了类似的几何着色器
+<pre class="brush: glsl">
+#version 430 core
+layout (triangles, invocations = 4) in;
+layout (triangle_strip, max_vertices = 3) out;
+layout (std140, binding = 0) uniform transform_block
+{
+	mat4 mvp_matrix[4];
+};
+in VS_OUT
+{
+	vec4 color;
+} gs_in[];
+out GS_OUT
+{
+	vec4 color;
+} gs_out; 
+void main(void)
+{
+	for (int i = 0; i &lt; gl_in.length(); i++)
+	{
+		gs_out.color = gs_in[i].color;
+		gl_Position = mvp_matrix[gl_InvocationID] *
+						gl_in[i].gl_Position;
+		gl_ViewportIndex = gl_InvocationID;
+		EmitVertex();
+	}
+	EndPrimitive();
+}
+</pre>
+
+<li>
+见 multipleviewport 例子.
+
+<li>
+几何着色器中, gl_InvocationID 的范围为[0, N-1], N 表示每个图元绘制的次数, 这对于 layered rendering 和输出到 multiple streams 都很有用.
+
+</ul>
+
+    </div>
+</body>
+</html>

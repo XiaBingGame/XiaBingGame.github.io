@@ -1,0 +1,383 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../style.css" />
+    <title>NERDTree</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<h2 id="toc_0.1">全局命令</h2>
+<ul>
+<li>
+:NERDTree [&lt;start-directory&gt; | &lt;bookmark&gt;]
+
+<ul>
+<li>
+打开一个新的 NERDTree 树.
+
+<li>
+如果没有参数, 则当前目录为根目录
+
+<li>
+如果有起始目录或者书签, 则起始目录或书签为根目录
+
+</ul>
+<li>
+:NERDTreeFromBookmark &lt;bookmark&gt; 
+
+<ul>
+<li>
+以书签位置打开一个新的NERDTree树
+
+</ul>
+<li>
+:NERDTreeToggle [&lt;start-directory&gt; | &lt;bookmark&gt;]
+
+<ul>
+<li>
+切换NERDTree树
+
+</ul>
+<li>
+:NERDTreeMirror
+
+<ul>
+<li>
+共享一个已有的NERDTree树
+
+</ul>
+<li>
+:NERDTreeClose
+
+<ul>
+<li>
+关闭树
+
+</ul>
+<li>
+:NERDTreeFind
+
+<ul>
+<li>
+在树中查找当前文件
+
+</ul>
+<li>
+:NERDTreeCWD
+
+<ul>
+<li>
+改变树的根为当前目录
+
+</ul>
+</ul>
+
+<h2 id="toc_0.2">书签</h2>
+<ul>
+<li>
+用于感兴趣的文件和目录
+
+</ul>
+<h3 id="toc_0.2.1">书签表格</h3>
+<ul>
+<li>
+如果书签表格是活跃的, 则会在树的上方显示. 双击或者使用 NERDTree-o 选择书签.
+
+</ul>
+<h3 id="toc_0.2.2">书签命令</h3>
+<ul>
+<li>
+这些命令仅在 NERDTree buffer 中有效.
+
+<li>
+:Bookmark &lt;name&gt;
+
+<ul>
+<li>
+当前节点作为书签, 不能有空格.
+
+<li>
+如果不提供参数, 则缺省为文件或目录名.
+
+</ul>
+<li>
+:BookmarkToRoot &lt;bookmark&gt;
+
+<ul>
+<li>
+该书签对应的目录为新的树根.
+
+</ul>
+<li>
+:RevealBookmark &lt;bookmark&gt;
+
+<ul>
+<li>
+如果该书签在该树中, 则会显示出来.
+
+</ul>
+<li>
+:OpenBookmark &lt;bookmark&gt;
+
+<ul>
+<li>
+打开一个书签, 该书签必须为一个文件.
+
+</ul>
+<li>
+:ClearBookmarks [&lt;bookmarks&gt;]
+
+<ul>
+<li>
+移除书签, 如果没有参数则移除当前节点的所有书签.
+
+</ul>
+<li>
+:ClearAllBookmarks
+
+<ul>
+<li>
+移除所有书签.
+
+</ul>
+<li>
+:ReadBookmarks
+
+<ul>
+<li>
+重读取'NERDTreeBookmarksFile'中的书签, 
+
+</ul>
+</ul>
+<h3 id="toc_0.2.3">无效书签</h3>
+<ul>
+<li>
+'NERDTreeBookmarksFile' 存储书签.
+
+<li>
+书签格式为: &lt;bookmark name&gt;&lt;space&gt;&lt;full path to the bookmark location&gt;
+
+</ul>
+
+<h2 id="toc_0.3">键的映射</h2>
+<ul>
+<li>
+o --- 打开文件, 目录, 书签
+
+<li>
+go --- 打开选择的文件, 但不移动光标.
+
+<li>
+t --- 在新的tab中打开节点和书签.
+
+<li>
+T --- 同上, 但是仍留在当前tab中.
+
+<li>
+i --- 在分割的窗口中打开文件
+
+<li>
+gi --- 同上, 但光标仍留在树中.
+
+<li>
+s --- 在新的vsplit打开文件
+
+<li>
+gs --- 同上, 但光标仍留在树中.
+
+<li>
+O --- 递归打开选择的目录
+
+<li>
+x --- 收缩当前节点的父节点.
+
+<li>
+X --- 收缩当前节点的所有子节点
+
+<li>
+e --- 编辑当前目录
+
+<li>
+D --- 删除当前书签
+
+<li>
+P --- 跳到根节点
+
+<li>
+P --- 跳到当前节点的父节点
+
+<li>
+J, K --- 当前树深度上下跳转
+
+<li>
+C-J, C-K -- 当前目录相邻目录的上下跳转
+
+<li>
+C --- 改变树的根为所选择的目录
+
+<li>
+u --- 根的上一层目录为树的根
+
+<li>
+U --- 同上, 但旧的根目录仍保持打开
+
+<li>
+r --- 递归更新当前目录
+
+<li>
+R --- 递归更新当前根
+
+<li>
+cd --- 改变CWD为所选择节点的目录
+
+<li>
+CD --- 改变CWD为树根所在目录
+
+<li>
+I --- 切换模式, 表示隐藏文件是否可见.
+
+<li>
+f --- 切换模式, 表示是否使用文件过滤器
+
+<li>
+F --- 切换模式, 表示文件是否可见
+
+<li>
+B --- 切换模式, 表示书签表格是否可见
+
+</ul>
+
+<h2 id="toc_0.4">鼠标</h2>
+<ul>
+<li>
+双击同 o
+
+<li>
+中键单击, 文件同 i, 目录同 e
+
+</ul>
+
+<h2 id="toc_0.5">NERD 树菜单 </h2>
+<ul>
+<li>
+可以根据 API NERDTreeMenuAPI 来编程右键菜单.
+
+<li>
+这个脚本有两个默认的菜单插件:  exec_menuitem.vim 和 fs_menu.vim. 前者用于执行可执行文件, 后者用于基本的文件系统操作.
+
+</ul>
+
+<h2 id="toc_0.6">自定义 </h2>
+<ul>
+<li>
+有一些可用于自定义的选项.
+
+<li>
+loaded_nerd_tree --- 关闭脚本
+
+<li>
+NERDChristmasTree --- 使树颜色化和完美
+
+<li>
+NERDTreeAutoCenter --- 控制树窗口是否居中
+
+<li>
+NERDTreeAutoCenterThreshold
+
+<li>
+NERDTreeCaseSensitiveSort
+
+<li>
+NERDTreeChDirMode --- NERD树是否改变当前的工作目录
+
+<li>
+NERDTreeHighlightCursorline --- 是否高亮当前行
+
+<li>
+NERDTreeHijackNetrw
+
+<li>
+NERDTreeIgnore --- 哪些文件要忽略
+
+<li>
+NERDTreeBookmarksFile --- 书签存储在哪里
+
+<li>
+NERDTreeMouseMode --- 处理鼠标点击
+
+<li>
+NERDTreeQuitOnOpen --- 打开一个文件后关闭树
+
+<li>
+NERDTreeShowBookmarks --- 是否启动时显示书签表格
+
+<li>
+NERDTreeShowFiles --- 是否启动时显示文件
+
+<li>
+NERDTreeShowHidden --- 是否启动时显示隐藏文件
+
+<li>
+NERDTreeShowLineNumbers --- 是否在树窗口中显示行号
+
+<li>
+NERDTreeSortOrder --- 如何排序树中节点
+
+<li>
+NERDTreeStatusline --- 设置树窗口的状态行
+
+<li>
+NERDTreeWinPos --- 设置树窗口的位置.
+
+<li>
+NERDTreeWinSize --- 设置树窗口的大小
+
+<li>
+NERDTreeMinimalUI --- 禁止显示  'Bookmarks' 标签和 'Press ? for help' 文本.
+
+<li>
+NERDTreeDirArrows --- 使用箭头代替'+', '-'符号
+
+<li>
+NERDTreeCasadeOpenSingleChildDir
+
+<li>
+NERDTreeAutoDeleteBuffer --- 当通过右键菜单删除和重命名文件, 告诉NERD树自动移除一个缓存.
+
+</ul>
+
+<h2 id="toc_0.7">NERD树API</h2>
+<ul>
+<li>
+NERDTreeAddKeyMap({options}) 
+
+<li>
+NERDTreeAddSubmenu({options}) 
+
+<li>
+NERDTreeAddMenuItem({options})  
+
+<li>
+NERDTreeAddMenuSeparator([{options}]) 
+
+<li>
+NERDTreeRender()  
+
+</ul>
+
+    </div>
+</body>
+</html>

@@ -1,0 +1,434 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../style.css" />
+    <title>qtbook chapter 13</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<h1 id="toc_1">Chapter 13 Databases</h1>
+<ul>
+<li>
+数据库  QSqlDatabase 对象. Qt的桌面版本包含以下驱动器 QDB2, QIBASE, QMYSQL, QOCI, QODBC, QPSQL, QSQLITE, QSQLITE2, QTDS
+
+<ul>
+<li>
+由于许可证限制, 不是所有Qt的驱动器都可用于Qt开源版本. 在Qt自身中包含SQL驱动器或者将它们构建为插件.
+
+<li>
+Qt提供了SQLite数据库, a public domain in-process database
+
+</ul>
+<li>
+QSqlQuery类提供了直接执行SQL语句和处理它们结果的方法.
+
+<li>
+QSqlRelationalTableModel 提供了合适的抽象, 不需要使用SQL语法, 使用高层的数据库接口.
+
+</ul>
+
+<h2 id="toc_1.1">13.1 Connecting and Querying</h2>
+<ul>
+<li>
+要执行SQL查询, 首先要建立与数据库的连接, 代码如下:
+<pre c++>
+    bool createConnection()
+    {
+        QSqlDatabase db = QSqlDatabase::addDatabase("QMYSQL");
+        db.setHostName("mozart.konkordia.edu");
+        db.setDatabaseName("musicdb");
+        db.setUserName("gbatstone");
+        db.setPassword("T17aV44");
+        if (!db.open()) {
+            QMessageBox::critical(0, QObject::tr("Database Error"),
+                                  db.lastError().text());
+            return false;
+        }
+        return true;
+    }
+</pre>
+
+<ul>
+<li>
+首先, QSqlDatabase::addDatabase() 创建一个QSqlDatabase 对象, 第一个参数表示使用哪个驱动器访问数据库, 这里使用MySQL
+
+<li>
+接下来, 我们设置数据库host名称, 数据库名称, 用户名称, 密码, 而后打开连接.
+
+<li>
+一旦连接建立起来, 我们可以使用 QSqlQuery 执行任何SQL语句.
+<pre c++>
+        QSqlQuery query;
+        query.exec("SELECT title, year FROM cd WHERE year &gt;= 1998");
+</pre>
+
+<li>
+浏览查找结果
+<pre c++>
+        while (query.next()) {
+            QString title = query.value(0).toString();
+            int year = query.value(1).toInt();
+            std::cerr &lt;&lt; qPrintable(title) &lt;&lt; ": " &lt;&lt; year &lt;&lt; std::endl;
+        }
+</pre>
+
+<li>
+next()函数可以逐渐浏览record set结果, value()函数返回该域的值, 类型为QVariant.
+
+<li>
+QSqlQuery() 还提供了其他的方法用于浏览result set: first(), last(), previous(), seek().
+
+<li>
+使用QSqlQuery::setForwardOnly(true)和 next() 会大大优化操作
+
+<li>
+另外, 我们也可不使用exec, 而是直接将SQL语句作为参数传送给QSqlQuery构造函数: QSqlQuery query("SELECT title, year FROM cd WHERE year &gt;= 1998");
+
+<li>
+而后调用isActive()来检查错误
+<pre c++>
+        if (!query.isActive())
+            QMessageBox::warning(this, tr("Database Error"),
+                                 query.lastError().text());
+</pre>
+
+<li>
+执行插入操作
+<pre c++>
+        QSqlQuery query("INSERT INTO cd (id, artistid, title, year) "
+                        "VALUES (203, 102, 'Living in America', 2002)");
+</pre>
+
+<li>
+numRowsAffected() 则返回该SQL语句影响的行数目(-1表示错误)
+
+<li>
+如果我们需要插入大量的record或者我们想要避免将值转换成字符串, 我们可以使用prepare()
+<pre c++>
+        QSqlQuery query;
+        query.prepare("INSERT INTO cd (id, artistid, title, year) "
+                      "VALUES (:id, :artistid, :title, :year)");
+        query.bindValue(":id", 203);
+        query.bindValue(":artistid", 102);
+        query.bindValue(":title", "Living in America");
+        query.bindValue(":year", 2002);
+        query.exec();
+</pre>
+
+<li>
+相同的结果, 使用ODBC风格, 上面使用的是ORACLE风格:
+<pre c++>
+        QSqlQuery query;
+        query.prepare("INSERT INTO cd (id, artistid, title, year) "
+                      "VALUES (?, ?, ?, ?)");
+        query.addBindValue(203);
+        query.addBindValue(102);
+        query.addBindValue("Living in America");
+        query.addBindValue(2002);
+        query.exec();
+</pre>
+
+<li>
+Qt支持SQL和数据库 transaction, 对QSqlDatabase对象调用transaction()函数, 而后调用commit()或者rollback().
+<pre c++>
+        QSqlDatabase::database().transaction();
+        QSqlQuery query;
+        query.exec("SELECT id FROM artist WHERE name = 'Gluecifer'");
+        if (query.next()) {
+            int artistId = query.value(0).toInt();
+            query.exec("INSERT INTO cd (id, artistid, title, year) "
+                       "VALUES (201, " + QString::number(artistId)
+                       + ", 'Riding the Tiger', 1997)");
+        }
+        QSqlDatabase::database().commit();
+</pre>
+
+<li>
+调用hasFeatrue测试其是否支持transaction
+<pre c++>
+        QSqlDriver *driver = QSqlDatabase::database().driver();
+        if (driver-&gt;hasFeature(QSqlDriver::Transactions))
+            ...
+</pre>
+
+<li>
+调用 QSqlDriver::handle() 和 QSqlResult::handle() 处理数据库底层处理和底层查询结果集处理
+
+<li>
+如果我们想创建多个连接, 我们可以传递第二个参数一个名称给addDatabase()
+<pre c++>
+        QSqlDatabase db = QSqlDatabase::addDatabase("QPSQL", "OTHER");
+        db.setHostName("saturn.mcmanamy.edu");
+        db.setDatabaseName("starsdb");
+        db.setUserName("hilbert");
+        db.setPassword("ixtapa7");
+</pre>
+
+<li>
+得到该QSqlDatabase对象的指针
+<pre c++>
+        QSqlDatabase db = QSqlDatabase::database("OTHER");
+</pre>
+
+<li>
+为了使用其他连接进行查询, 我们将该QSqlDatabase对象传递给QSqlQuery构造函数
+<pre c++>
+        QSqlQuery query(db);
+        query.exec("SELECT id FROM artist WHERE name = 'Mando Diao'");
+</pre>
+
+<li>
+多个连接对于同时执行多个transaction非常有用, 由于一个连接只能处理一个transaction.
+
+<li>
+QSqlTableModle类 为一高级接口, 允许我们避免原始SQL, 也可在无GUI环境下进行操作. 也可作为QListView和QTableView的源.
+<pre c++>
+        QSqlTableModel model;
+        model.setTable("cd");
+        model.setFilter("year &gt;= 1998");
+        model.select();
+        // 等同于: SELECT * FROM cd WHERE year &gt;= 1998
+</pre>
+
+<li>
+通过QSqlTableModel::record() 的record浏览结果集, 通过value()访问指定的域
+<pre c++>
+        for (int i = 0; i &lt; model.rowCount(); ++i) {
+            QSqlRecord record = model.record(i);
+            QString title = record.value("title").toString();
+            int year = record.value("year").toInt();
+            std::cerr &lt;&lt; qPrintable(title) &lt;&lt; ": " &lt;&lt; year &lt;&lt; std::endl;
+        }
+</pre>
+
+<li>
+或者, value() 最好使用索引值
+<pre c++>
+        int titleIndex = model.record().indexOf("title");
+        int yearIndex = model.record().indexOf("year");
+        for (int i = 0; i &lt; model.rowCount(); ++i) {
+            QSqlRecord record = model.record(i);
+            QString title = record.value(titleIndex).toString();
+            int year = record.value(yearIndex).toInt();
+            std::cerr &lt;&lt; qPrintable(title) &lt;&lt; ": " &lt;&lt; year &lt;&lt; std::endl;
+        }
+</pre>
+
+<li>
+插入一个record, 我们可以调用insertRow()创建一个空白行, 使用setData()设置值
+<pre c++>
+        QSqlTableModel model;
+        model.setTable("cd");
+        int row = 0;
+        model.insertRows(row, 1);
+        model.setData(model.index(row, 0), 113);
+        model.setData(model.index(row, 1), "Shanghai My Heart");
+        model.setData(model.index(row, 2), 224);
+        model.setData(model.index(row, 3), 2003);
+        model.submitAll();
+</pre>
+
+<li>
+对于SQL模型来说, 我们必须调用submitAll() 写入数据库.
+
+<li>
+更新:
+<pre c++>
+        QSqlTableModel model;
+        model.setTable("cd");
+        model.setFilter("id = 125");
+        model.select();
+        if (model.rowCount() == 1) {
+            QSqlRecord record = model.record(0);
+            record.setValue("title", "Melody A.M.");
+            record.setValue("year", record.value("year").toInt() + 1);
+            model.setRecord(0, record);
+            model.submitAll();
+        }
+</pre>
+
+<li>
+我们也可使用setData()实现更新数据
+
+<li>
+删除:
+<pre c++>
+        model.setTable("cd");
+        model.setFilter("id = 125");
+        model.select();
+        if (model.rowCount() == 1) {
+            model.removeRows(0, 1);
+            model.submitAll();
+        }
+</pre>
+
+<li>
+或删除所有的记录集:
+<pre c++>
+        model.setTable("cd");
+        model.setFilter("year &lt; 1990");
+        model.select();
+        if (model.rowCount() &gt; 0) {
+            model.removeRows(0, model.rowCount());
+            model.submitAll();
+        }
+</pre>
+
+</ul>
+</ul>
+    
+<h2 id="toc_1.2">13.2 Viewing Tables</h2>
+
+<ul>
+<li>
+前一个章节演示 QSqlQuery与QSqlTableModel互动, 这个章节演示在QTableView演示QSqlTableMode
+
+<li>
+模型设置
+<pre c++>
+        model = new QSqlTableModel(this);
+        model-&gt;setTable("scooter");
+        model-&gt;setSort(Scooter_Name, Qt::AscendingOrder);
+        model-&gt;setHeaderData(Scooter_Name, Qt::Horizontal, tr("Name"));
+        model-&gt;setHeaderData(Scooter_MaxSpeed, Qt::Horizontal, tr("MPH"));
+        model-&gt;setHeaderData(Scooter_MaxRange, Qt::Horizontal, tr("Miles"));
+        model-&gt;setHeaderData(Scooter_Weight, Qt::Horizontal, tr("Lbs"));
+        model-&gt;setHeaderData(Scooter_Description, Qt::Horizontal,
+                                tr("Description"));
+        model-&gt;select();
+</pre>
+
+<ul>
+<li>
+setSort() 设置排序, 通过select() 放置数据.
+<pre c++>
+        view = new QTableView;
+        view-&gt;setModel(model);
+        view-&gt;setSelectionMode(QAbstractItemView::SingleSelection);
+        view-&gt;setSelectionBehavior(QAbstractItemView::SelectRows);
+        view-&gt;setColumnHidden(Scooter_Id, true);
+        view-&gt;resizeColumnsToContents();
+        view-&gt;setEditTriggers(QAbstractItemView::NoEditTriggers);
+
+        QHeaderView *header = view-&gt;horizontalHeader();
+        header-&gt;setStretchLastSection(true);    
+</pre>
+
+</ul>
+<li>
+一个显示只读表的方法是使用QSqlTableModel的基类 QSqlQueryModel. 该类提供 setQuery()函数. 其可设置复杂的SQL查询.
+
+<ul>
+<li>
+不像本章节的例子, 许多的数据库都有很多表和外部关键码关联.
+
+<li>
+Qt提供了QSqlRelationalTableModel, 为QSqlTableModel的派生类. 可以根据外部关键码显示和编辑表格.
+
+<li>
+QSqlRelationalTableModel 和 QSqlTableModel非常相似, 除了可以添加 QSqlRelation 给模型.
+
+</ul>
+</ul>
+
+<h2 id="toc_1.3">13.3 Editing Records Using Forms</h2>
+<ul>
+<li>
+本例使用了3个表
+<pre c++>
+    CREATE TABLE location (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name VARCHAR(40) NOT NULL);
+
+    CREATE TABLE department (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name VARCHAR(40) NOT NULL,
+        locationid INTEGER NOT NULL,
+        FOREIGN KEY (locationid) REFERENCES location);
+
+    CREATE TABLE employee (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name VARCHAR(40) NOT NULL,
+        departmentid INTEGER NOT NULL,
+        extension INTEGER NOT NULL,
+        email VARCHAR(40) NOT NULL,
+        startdate DATE NOT NULL,
+        FOREIGN KEY (departmentid) REFERENCES department);
+</pre>
+
+<li>
+本例使用 QSqlRelationalTableModel, 而非 QSqlTableModel, 因为我们要使用 foreign keys.
+
+<ul>
+<li>
+QDateWidgetMapper 该类允许我们映射form的一个widget至对应数据模型的列.
+
+</ul>
+<li>
+QIntValidator 用于验证文本编辑框, 让其只用整数
+
+<ul>
+<li>
+QDateEdit: setCalendarPopup, setDateRange
+
+<li>
+QDate: addDays
+
+<li>
+QHBoxLayout: setContentsMargins
+
+<li>
+QGridLayout: setRowMinimumHeight, setRowStretch, setColumnStretch
+
+<li>
+QSqlRelationalTableModel: setTable, setRelation, setSort, select
+
+</ul>
+<li>
+创建 QSqlRelationalTableModel, 并调用函数setRelation()设置外部关键词.
+
+<ul>
+<li>
+本例的组合框使用了其关联model.
+
+<li>
+QDataWidgetMapper: 提交政策-自动提交 setSubmitPolicy(QDataWidgetMapper::AutoSubmit);
+
+<li>
+由于Model有外部关键词. 所以需要设置Delegate, 可以显示其代理的值, 而后写入的时候写入正确的域.
+
+<li>
+接下来的代码可以看 Modle和Mapper如何处理插入和删除
+
+</ul>
+</ul>
+    
+<h2 id="toc_1.4">13.4 Presenting Data in Tabular Forms</h2>
+<ul>
+<li>
+Employee的model设置过滤器
+
+<li>
+Model还有 beforeInsert() 信号
+
+<li>
+本例使用了: QSqlDatabase::database().transaction(); QSqlDatabase::database().rollback(); QSqlDatabase::database().commit();
+
+</ul>
+
+    </div>
+</body>
+</html>

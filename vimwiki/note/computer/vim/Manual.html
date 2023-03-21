@@ -1,0 +1,664 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../style.css" />
+    <title>Manual</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<h1 id="toc_1">第1章 关于本手册 </h1>
+<ul>
+<li>
+两套帮助
+
+<ul>
+<li>
+用户手册面向问题, 由浅入深进行讲解
+
+<li>
+参考手册详述Vim方方面面的细节
+
+</ul>
+<li>
+"CTRL-]" 命令 --- 跳转到当前光标所在单词对应的主题; "CTRL-0" 命令 --- 回到前一个位置
+
+<li>
+拷贝: :!copy \(VIMRUNTIME/vimrc_example.vim \)VIM/_vimrc
+
+<li>
+查看 compatible选项 :set compatible?  
+
+</ul>
+
+<h1 id="toc_2">第2章 VIM第一步 </h1>
+<ul>
+<li>
+两行合并为一行 "J"
+
+<li>
+撤销上一次的操作 "u"; 重做 CTRL-R; 一次撤销一行的全部操作 "U"
+
+<li>
+"i"当前光标之前插入文本, "a"当前光标之后添加一些内容
+
+<li>
+"o"命令在当前行的下面另起一行, 并使当前模式转换为 Insert模式 "O"在当前行的上面另起一行
+
+<li>
+指定的数字紧挨在修饰的命令之前,表示执行命令次数
+
+<li>
+退出VIM, 命令"ZZ"; :q! 丢弃所有的修改直接退出; :e! 放弃所有修改, 以该文件的初始内容重新开始编辑
+
+<li>
+有两个小栅栏围起来的内容, 如 |help| , 表示超链接, ctrl + ] 可以跳转. ctrl + T 回到原来位置, ctrl + 0 回到较早位置.
+
+<li>
+帮助主题
+
+<ul>
+<li>
+特殊主题的帮助 :help {subject}
+
+<li>
+要得到所有VIM命令的缩影 :help index
+
+<li>
+要得到控制字符的帮助, 例如 :help CTRL-A
+
+<li>
+其他模式的帮助, 例如 :help i_CTRL-H(插入模式下)
+
+<li>
+查看命令行参数的功能, 例如 :help -t
+
+<li>
+得到某个选项的帮助, 用单引号括起来, 例如 :help 'number'
+
+<li>
+特殊键头用尖括号和描述性名字表示, :help i_&lt;Up&gt;
+
+<li>
+查看错误信息 :help E37
+
+<li>
+查看本地安装帮助文件 :help usr_toc.txt
+
+<li>
+用户手册的目录 :help :subject
+
+<li>
+:help subject() 关于函数subject的帮助
+
+<li>
+:help +subject 编译时特性"+subject"的帮助
+
+<li>
+:help EventName 关于引发自动命令的事件"EventName"的帮助
+
+<li>
+:help digraphs.txt 到帮助文件 "digraphs.txt" 的开头
+
+<li>
+:help pattern&lt;Tab&gt; 查找 "pattern"开始的帮助标记, 重复按<Tab&gt;查看其它匹配帮助标记
+
+<li>
+:help pattern&lt;Ctrl-D&gt; 同时列出匹配"pattern"的所有可能的帮助主题
+
+<li>
+:helpgrep pattern 在帮助文件中搜索全部文本查找指定的"pattern", 并定位到第一个匹配位置, 命令 :cn 可以跳转到其他匹配项, 其他匹配项 :cprev, :cN, :cfirst, :clast
+
+</ul>
+<li>
+:copen :cclose 打开/关闭快速修改窗口
+
+</ul>
+
+<h1 id="toc_3">第3章 移动</h1>
+<ul>
+<li>
+以Word为单位的移动
+
+<ul>
+<li>
+"w" --- 光标向前移动一个word; "b" --- 光标向后移动一个word; "e" --- 下一个word的最后一个字符; "ge" --- 前一个word的最后一个字符
+
+<li>
+数字加上面命令, 光标一次移动多个word
+
+<li>
+word的边界可能为特殊字符: ".", "-", ")". 如想改变Vim对word边界的定义, 查看 'iskeyword' 选项
+
+</ul>
+<li>
+移动到行首或行尾
+
+<ul>
+<li>
+'$'命令 --- 光标移动到当前行行尾 同<End&gt;, 加数字表示移动至多行后的行尾; '^'命令 --- 光标移动到当前行的第一个非空白字符; '0'命令 --- 光标移动到当前行的第一个字符上 同<Home&gt;
+
+<li>
+"f(字母)" --- 当前行查找字母, 如"fx", 可带命令计数; "F" --- 向左方向搜索; "tx" --- 同"fx", 只是光标不停留在被搜索字符上, 而是在它之前的一个字符上; 反方向 "Tx"
+
+<li>
+";" --- 重复上个命令  "," --- 反方向重复上个命令.
+
+</ul>
+<li>
+匹配一个括号为目的的移动
+
+<ul>
+<li>
+"%"命令 --- 当前括号的匹配括号处. 同样适用于 "[]", 见'matchpairs'
+
+</ul>
+<li>
+移动到指定行
+
+<ul>
+<li>
+"G"命令, "gg"命令 --- 加上数字, 跳转到指定行, 如"33G"  "G" --- 跳转到最后一行, "gg" --- 跳转到第一行
+
+<li>
+"%"命令 --- 加上数字, 跳转到文件的百分比, 如 "50%" --- 跳转到文件的中间
+
+<li>
+当前屏幕位置的跳转 --- "H" 顶部, "M" 中间, "L" 底部
+
+</ul>
+<li>
+告诉你当前的位置
+
+<ul>
+<li>
+"CTRL-G"命令 --- 得到信息
+
+<li>
+'number'选项 --- 这样可以在前面显示一个行号
+
+<ul>
+<li>
+:set number - 关闭行号 :set nonumber
+
+</ul>
+<li>
+'ruler'选项 --- 在Vim窗口右下角显示当前光标位置
+
+</ul>
+<li>
+滚屏
+
+<ul>
+<li>
+"CTRL-U"命令 --- 文本向上滚动半屏; "CTRL-D"命令 --- 窗口向下滚动半屏
+
+<li>
+"CTRL-E", "CTRL-Y" --- 一次滚动一行, 向上/向下
+
+<li>
+"CTRL-F", "CTRL-B" --- 一次滚动一整屏, 向前/向后
+
+<li>
+"zz" --- 将当前光标所在行置为屏幕中间; "zt" --- 当前行置于屏幕顶端, "zb" --- 当前行置为屏幕底端
+
+<li>
+'scrolloff' 选项 --- 保证当前行前后都有一段内容显示在屏幕上.
+
+</ul>
+<li>
+简单搜索
+
+<ul>
+<li>
+"/string" --- 搜索一个字符串, 可用正则表达式, "n"命令 --- 下一次查找, "?" --- 同"/", 只是查找方向相反  "N" --- 下一次查找, 只是方向相反.
+
+<li>
+'ignorecase' 选项 --- 忽略大小写. 'noignorecase'选项 --- 不忽略大小写
+
+<li>
+命令历史记录 --- 例如查找, 按下'/'之后, 用上下键循环历史搜索记录, 按下':'之后, 可查看历史命令记录
+
+<li>
+"*"命令 --- 对光标所在word进行查找 "#" --- 相反方向.  两个命令可以加上命令计数.
+
+<li>
+"\&gt;" , "\&lt;" --- 匹配一个word的结束处和开始处. 例如"/\&lt;the\&gt;" 可用来搜索"the"单词
+
+<li>
+'hlsearch' 选项 --- 高亮查找结果.  'nohlsearch' --- 关闭高亮查找结果  ':nohlsearch' --- 关闭当前的高亮显示
+
+<li>
+'incsearch' 选项 --- 在键入目标字符串的过程中Vim就同时开始了搜索工作.  
+
+<li>
+'nowrapscan' 选项 --- 搜索过程中在文件结束时就停止. 或反向搜索在到达文件开头时停止. 默认开启 'wrapscan'
+
+<li>
+:scriptnames 查看脚本文件
+
+<li>
+:edit ~/.vimrc --- 可以预先设置命令
+
+</ul>
+<li>
+简单的搜索模式
+
+<ul>
+<li>
+正则表达式 --- 该主题的更多内容查看 |usr_27.txt| 或 |pattern|
+
+<li>
+^字符匹配一行的开头,        \(字符匹配一行的末尾, 例如"was\)"
+
+<li>
+.字符匹配任何的单字符
+
+<li>
+\字符 用于转换特殊字符, 例如查找"ter.", 则为"/ter\."
+
+</ul>
+<li>
+使用标记
+
+<ul>
+<li>
+使用"G"命令从一个地方跳转到另一个地方之后, 使用"''"两个单引号就可以跳转回去, 该命令可以在两点之间来回跳转.
+
+<li>
+"CTRL-o" 命令 --- 跳转到你早些时候停置光标的位置, "CTRL-I" 命令 --- 跳回到后来停置光标的更新的位置
+
+<li>
+"jumps" 命令 --- 列出关于你曾经跳转过位置的列表, 最后一个跳转的位置特别以一个"&gt;"号标记
+
+<li>
+"ma" 命令 --- 将当前光标下的位置定义为标记"a", 从a-z一共可以使用26个自定义的标记.
+
+<li>
+"`{mark}" --- 跳转到一个你定义过的标记, 如 "^a"
+
+<li>
+"'{mark}" --- 跳转到定义过的标记所在行的行首
+
+<li>
+":marks" 命令 --- 查看标记的列表
+
+</ul>
+</ul>
+
+<h1 id="toc_4">第4章 小幅改动</h1>
+<ul>
+<li>
+操作符命令和位移
+
+<ul>
+<li>
+"x" --- 删除一个字符, 加上数字可以删除多个字符
+
+<li>
+"d" --- 后可跟任何一个位移命令, 其将删除从当前光标起到位移终点处的文本内容, 例如 "d2e", "dw" 删除一个单字, "d4w" 删除4个单字, "d$" 删除至行尾.
+
+</ul>
+<li>
+改变文本
+
+<ul>
+<li>
+"c" --- 改变命令, "cw" 改变一个word, 其后可跟任何一个位移命令
+
+<li>
+"dd" --- 删除整行, "cc" 改变整行, "c$" 改变当前光标至行尾.
+
+<li>
+"x" 代表"d1", "X" 代表"db", 删除当前光标下左边的字符, "D" 代表"d$", "C"代表"cc", "s" 代表"c1" 修改一个字符, "S" 代表"cc"
+
+<li>
+"r" --- 替换当前光标下的字符, 不同于"c1"或"s, 不需要<Esc&gt;键回到Normal模式, 前加数字表示多个字符替换为即将输入的那个字符, 将一个字符替换为一个换行符 "r&lt;Enter&gt;"
+
+</ul>
+<li>
+重复改动
+
+<ul>
+<li>
+"." --- 重复上一次作出的改动. 除了不能重复"u"命令, CTRL-R命令和以冒号开头的命令
+
+</ul>
+<li>
+Visual模式
+
+<ul>
+<li>
+"v" --- 进入Visual模式, 移动光标以覆盖你想操纵的文本范围, 同时被选中的文本会议高亮显示, 最后键入操作符命令, visual模式是以一整行为单位, "vjj"可选中三行, 选择文本块, CTRL-V 进入visual 模式, 选择了一段文本, 'o'键可以在选择文本的两端来回跳动. '0'数字键可让你选中该行的两个角之间移动
+
+</ul>
+<li>
+移动文本
+
+<ul>
+<li>
+"d" 或 "x" 这样的命令删除文本时, "p"命令可以取回被删除的文本, "P" 同 "p", 只是其将被取回的内容置于光标之前. 该命令前面可以加上数字.
+
+</ul>
+<li>
+复制文本
+
+<ul>
+<li>
+"y" 命令把文本复制到一个寄存器中, 而后用 "p" 取出来. "yw"复制一个word, 也可以用命令计数, "y2w"
+
+<li>
+"yy" 命令复制一整行. "y$" 复制当前光标至行尾
+
+</ul>
+<li>
+使用剪贴板
+
+<ul>
+<li>
+Visual 模式选择文本, Edit-Copy菜单可以拷贝至剪贴板.
+
+<li>
+如果不是用菜单, 则可以用"y"和"p"命令实现, 只是命令之前需要附加一个"*(双引号加星号)
+
+<ul>
+<li>
+""*yy" --- 复制到剪贴板  ""*p" 拷贝
+
+</ul>
+<li>
+关于剪贴板的内容, 参考 |09.3| 和 |clipboard|
+
+</ul>
+<li>
+文本对象
+
+<ul>
+<li>
+"daw" --- 即使光标位于单词中间也可以删除该单词.
+
+<li>
+"cis" --- 修改整个句子的命令
+
+<li>
+"das" --- 删除整个句子
+
+<li>
+visual模式: "as" --- 可以选择一个句子
+
+<li>
+|text-objects|发现一个很长的文本对象
+
+</ul>
+<li>
+替换模式
+
+<ul>
+<li>
+"R" --- 进入替换模式
+
+<li>
+&lt;Insert&gt;键来在Insert模式和Replace模式之间来回切换.
+
+</ul>
+<li>
+结论
+
+<ul>
+<li>
+|operator| 找到一个操作符命令的列表
+
+<li>
+删除文本常用的方法
+
+<ul>
+<li>
+x        删除当前光标下的字符 "d1"
+
+<li>
+X        删除当前光标之前的字符 "db"
+
+<li>
+Dd        删除子当前光标至行尾的内容 "d$"
+
+<li>
+dw        删除自当前光标至下一个word的开头
+
+<li>
+db        删除自当前光标至前一个word的开头
+
+<li>
+diw        删除当前光标所在的word(不包括空白字符)
+
+<li>
+daw        删除当前光标所在的word(包括空白字符)
+
+<li>
+dG        删除当前行至文件尾的内容
+
+<li>
+dgg        删除当前行至文件头的内容
+
+</ul>
+<li>
+可将上面的命令更改为"c", "y"命令
+
+<li>
+其他不常用的更改文本的命令
+
+<ul>
+<li>
+~        改变当前光标下字符的大小写, 并将光标移至下一字符
+
+<li>
+I        将光标置于当前行第一个非空白字符处并进入Insert模式
+
+<li>
+A        将光标置于当前行尾并进入Insert模式
+
+</ul>
+</ul>
+</ul>
+
+<h1 id="toc_5">第5章 定制你的Vim</h1>
+<ul>
+<li>
+vimrc示例
+
+<ul>
+<li>
+本手册对Vim的描述都假设它是在增强模式下, 并不完全与Vi兼容, 需确保关闭了'compatible'选项
+
+<li>
+set backspace = indent, ecol, start 告诉Vim在Insert模式下退格键何时可以删除光标之前的字符.
+
+<li>
+set autoindent 再开始一个新行时对该行施以上一行的缩进方式
+
+<li>
+除了VMS系统之外, 覆盖一个文件之前备份该文件
+<pre>
+	if has("vms")
+		set nobackup
+	else
+		set backup
+	endif
+</pre>
+
+<li>
+'backup' 选项 --- 当成功写入时留下备份文件. 如果你不需要保持备份文件, 只需当文件正在写入时备份, 重置该选项, 并设置'writebackup'选项 如果你不需要备份文件, 可以重置这两个选项
+
+<li>
+set history = 50 冒号命令和搜索命令的命令历史列表的长度
+
+<li>
+set ruler 在右下角设置当前光标信息
+
+<li>
+set showcmd 右下角显示一个完整命令之前已经完成的部分
+
+<li>
+map Q gq 定义了一个键映射
+
+<li>
+vnoremap _g y:exe "grep /" . escape(@", '\\/') . "/ *.c *.h"&lt;CR&gt; 映射取得Visual区域的内容, 而后在c文件找哦国内搜索, 这是一个复杂的映射
+
+<li>
+如果当前系统支持彩色显示, 打开高亮
+<pre>
+	if &amp;t_Go &gt; 2 || has("gui_running')
+		syntax on
+		set hlsearch
+	endif
+</pre>
+
+<li>
+如何写Vim脚本 见 |usr_41.txt|
+
+<li>
+filetype plugin indent on
+
+<li>
+autocmd FileType text setlocal textwidth=78, Vim 自动断行, 触发点是当前行超过78个字符, "autocmd FileType text" --- 表示当文件类型为"text"时自动执行后面的命令
+
+</ul>
+<li>
+简单的映射
+
+<ul>
+<li>
+:map &lt;F5&gt; i{&lt;Esc&gt;ea}&lt;Esc&gt;  将对应word用{}括起来
+
+<li>
+:map \p i(&lt;Esc&gt;ea)&lt;Esc&gt;   :map \c i(&lt;Esc&gt;ea)&lt;Esc&gt;  可以映射两个"\p", "\c"
+
+<li>
+:maps 会列出当前已定义的映射
+
+</ul>
+<li>
+添加一个plugin
+
+<ul>
+<li>
+plugin --- vim会自动载入执行的脚本. 将脚本放入plugin目录即可
+
+<ul>
+<li>
+分为两类: 全局的---用于所有文件, 用于某特定文件的.
+
+<li>
+有些plugins以vimball这种文档的形式发放
+
+</ul>
+<li>
+Vim的发布版本中包含针对不同文件类型的相应plugin, 使用下面的命令开启
+
+<ul>
+<li>
+:filetype plugin on
+
+</ul>
+<li>
+$VIMRUNTIME/macros下的脚本是全局的, VIMRUNTIME/ftpplugin目录下则是专门用于特定文件类型的
+
+<li>
+文件类型 plugin的文件名一般形式
+
+<ul>
+<li>
+ftplugin/&lt;filetype&gt;.vim
+
+<li>
+ftplugin/&lt;filetype&gt;_&lt;name&gt;.vim
+
+<li>
+ftplugin/&lt;filetype&gt;/&lt;name&gt;.vim
+
+</ul>
+</ul>
+<li>
+增加一个帮助文件
+
+<ul>
+<li>
+:!mkdir ~/.vim
+
+<li>
+:!mkdir ~/.vim/plugin
+
+<li>
+:!copy $VIMRUNTIME/macros/matchit.vim ~/.vim/plugin  
+
+<li>
+:!mkdir ~/.vim/doc 	"把帮助文件copy到这个"doc"目录下
+
+<li>
+:!copy $VIMRUNTIME/macros/matchit.txt ~/.vim/doc
+
+<li>
+:helptags ~/.vim/doc
+
+<li>
+参考|write-local-help|了解更多关于写一个本地化的帮助文件的信息
+
+</ul>
+<li>
+选项窗口
+
+<ul>
+<li>
+如果要查找一个选项, 可在|options|帮助主题中寻找, 或用命令 :options, 回车查看一个子主题, 回车或CTRL-o返回目录, 可以修改里面的选项
+
+</ul>
+<li>
+常用选项
+
+<ul>
+<li>
+如果一个选项值要恢复默认值, 使用符号&amp;恢复默认值, 例如:
+
+<ul>
+<li>
+:set iskeyword&amp;
+
+</ul>
+<li>
+:set nowrap        不自动换行
+
+<li>
+:set whichwrap=b,s 行首退格键会自动会移动到上一行的行尾, 行尾空格键自动移动到下一行的行首
+
+<li>
+:set whichwrap=b,s,&lt;,&gt;,[,]
+
+<li>
+:set list    查看制表符
+
+<li>
+:set listchars=tab:&gt;-,trail:~
+
+<li>
+'iskeyword' 选项 定义了一个word中可以包含哪些字符
+
+<li>
+'cmdheight' 选项 用来控制拿出几行来显示信息
+
+</ul>
+</ul>
+
+    </div>
+</body>
+</html>

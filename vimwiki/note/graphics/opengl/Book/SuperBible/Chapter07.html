@@ -1,0 +1,393 @@
+ï»¿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../../style.css" />
+    <title>Chapter07</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/ç™¾åº¦äº‘/Vimwiki/Vimwiki_html/index.html">é¦–é¡µ</a>
+		</li>
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/ç™¾åº¦äº‘/Vimwiki/Vimwiki_html/diary/diary.html">æ—¥è®°</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<h1 id="toc_1">OpenGL ³¬¼¶±¦µä µÚ7ÕÂ OpenGLÖĞµÄÍ¼Ïñ</h1>
+<h2 id="toc_1.1">¹¦ÄÜ</h2>
+<p>
+	ÉèÖÃ¹âÕ¤Î»ÖÃ            glRasterPos, glWindowPos<br />
+	»æÖÆÎ»Í¼                glBitmap<br />
+	¶ÁÈ¡ºÍĞ´Èë²ÊÉ«Í¼Ïñ        glReadPixels, glDrawPixels<br />
+	·Å´ó, ÊÕËõºÍ·­×ªÍ¼Ïñ    glPixelZoom<br />
+	ÉèÖÃÑÕÉ«µÄ²Ù×÷            glPixelTransfer, glPixelMap<br />
+	Ö´ĞĞÑÕÉ«Ìæ»»            glColorTable<br />
+	Ö´ĞĞ¸ß¼¶Í¼Ïñ¹ıÂË        glConvolutionFilter2D<br />
+	ÊÕ¼¯Í¼ÏñÍ³¼ÆĞÅÏ¢        glHistogram, glGetHistogram<br />
+<br />
+	<strong>Î»Í¼µÄÑÕÉ«ÊÇÔÚglRasterPosºÍglWindowsPos±»µ÷ÓÃÊ±ÉèÖÃµÄ</strong>, ÒâÎ¶×ÅglColorËùÉèÖÃµÄµ±Ç°ÑÕÉ«½«×÷ÓÃÓÚºóĞøµÄÎ»Í¼²Ù×÷ÖĞ, µ«ÊÇ, ÔÚ¹âÕ¤Î»ÖÃÒÑ¾­ÉèÖÃÖ®ºóÔÙµ÷ÓÃglColor²»»á¶ÔÎ»Í¼µÄÑÕÉ«²úÉúÓ°Ïì<br />
+<br />
+</p>
+<h2 id="toc_1.2">ÏñËØ°ü×°</h2>
+<p>
+	È±Ê¡Çé¿öÏÂ, OpenGL²ÉÓÃ4¸ö×Ö½ÚµÄ¶ÔÆë.<br />
+	Ê¹ÓÃÏÂÃæµÄº¯ÊıĞŞ¸ÄÎ»Í¼»òÏñËØÍ¼µÄ´æ´¢ºÍÌá¸ßÏñËØµÄ·½Ê½<br />
+		void glPixelStorei(GLenum pname, GLint param);<br />
+		void glPixelStoref(GLenum pname, GLfloat param);<br />
+	GL_UNPACK_ALIGNMENTÖ¸¶¨ÁËOpenGLÈçºÎ´ÓÊı¾İ»º³åÇøÖĞ¶ÔÍ¼ÏñÊı¾İ½øĞĞ½â°ü<br />
+	GL_PACK_ALIGNMENTÖ¸¶¨ÁËOpenGLÈçºÎ´ÓÑÕÉ«»º³åÇø¶ÁÈ¡µÄÊı¾İ½øĞĞ°ü×°. ²¢°ÑËü·ÅÖÃÔÚÒ»¸öÓÃ»§Ö¸¶¨µÄÄÚ´æ»º³åÇøÖĞ.<br />
+<br />
+</p>
+<h2 id="toc_1.3">ÏñËØÍ¼</h2>
+<p>
+	ÏñËØÍ¼¿ÉÄÜÓÉ³¬¹ı1¸öÎ»µÄ´æ´¢¿Õ¼äÀ´±íÊ¾, Ã¿¸öÏñËØËù¶à³öÀ´µÄÕâĞ©Î»¿ÉÒÔ´æ´¢Õâ¸öÏñËØµÄÇ¿¶È(»ò³ÆÎªÁÁ¶ÈÖµ)»òÑÕÉ«³É·ÖÖµ<br />
+	»æÖÆÏñËØÍ¼µÄº¯Êı:<br />
+		void glDrawPixels(GLsizei width, GLsizei height, GLenum format, GLenum type, const void *pixels)<br />
+	¸Ãº¯Êı²»¶Ô¹âÕ¤Î»ÖÃ½øĞĞ¸üĞÂ.<br />
+</p>
+<pre c++>
+////////////////////////////////////////////////////////////////////
+// ·ÖÅäÄÚ´æ¼ÓÔØTGAÊı¾İ, ·µ»Ø»º´æÇøµÄÖ¸Õë
+// ÎÆÀíµÄ¸ß¶ÈºÍ¿í¶È, ÒÔ¼°OpenGLµÄÊı¾İ¸ñÊ½
+// º¯Êı½áÊøµÄÊ±ºòµ÷ÓÃfree()ÊÍ·Å»º´æ
+// Õâ¸öº¯ÊıÖ»ÄÜÓÃÓÚÆÕÍ¨µÄtargaÍ¼Ïñ
+// 8Î», 24Î»»òÕß32Î», ²»ÄÜÊ¹ÓÃµ÷É«°å, ²»ÄÜµ÷ÓÃRLE±àÂë
+GLbyte *gltLoadTGA(const char *szFileName, GLint *iWidth, GLint *iHeight, GLint *iComponents, GLenum *eFormat)
+{
+    FILE *pFile;                        // ÎÄ¼şÖ¸Õë
+    TGAHEADER tgaHeader;                // TGA ÎÄ¼şÍ·
+    unsigned long lImageSize;           // ÎÄ¼şµÄ´óĞ¡(ÒÔ×Ö½Ú¼Æ)
+    short sDepth;                       // ÏñËØÉî¶È
+    GLbyte      *pBits = NULL;          // Ö¸ÏòÎ»µÄÖ¸Õë
+
+    // È±Ê¡/Ê§°ÜÖµ
+    *iWidth = 0;
+    *iHeight = 0;
+    *eFormat = GL_BGR_EXT;
+    *iComponents = GL_RGB8;
+
+    // ´ò¿ªÎÄ¼ş
+    fopen_s(&amp;pFile, szFileName, "rb");
+    if(pFile == NULL)
+        return NULL;
+
+    // ¶ÁÈ¡ÎÄ¼şÍ·
+    fread(&amp;tgaHeader, 18/* sizeof(TGAHEADER)*/, 1, pFile);
+
+    // ¶Ô´ó¶ËºÍĞ¡¶Ë×Ö½ÚË³Ğò½øĞĞ×Ö½Ú½»»»
+#ifdef __APPLE__
+    LITTLE_ENDIAN_WORD(&amp;tgaHeader.colorMapStart);
+    LITTLE_ENDIAN_WORD(&amp;tgaHeader.colorMapLength);
+    LITTLE_ENDIAN_WORD(&amp;tgaHeader.xstart);
+    LITTLE_ENDIAN_WORD(&amp;tgaHeader.ystart);
+    LITTLE_ENDIAN_WORD(&amp;tgaHeader.width);
+    LITTLE_ENDIAN_WORD(&amp;tgaHeader.height);
+#endif
+
+
+    // »ñÈ¡ÎÆÀíµÄ¸ß¶È, ¿í¶ÈºÍÉî¶È
+    *iWidth = tgaHeader.width;
+    *iHeight = tgaHeader.height;
+    sDepth = tgaHeader.bits / 8;
+
+    // ÔÚ´Ë½øĞĞÒ»Ğ©ÓĞĞ§ĞÔÑéÖ¤. Ö»Àí½â»ò¹ØĞÄ8, 24ºÍ32Î»µÄtargaÍ¼Ïñ
+    if(tgaHeader.bits != 8 &amp;&amp; tgaHeader.bits != 24 &amp;&amp; tgaHeader.bits != 32)
+        return NULL;
+
+    // ¼ÆËãÍ¼Ïñ»º³åÇøµÄ´óĞ¡
+    lImageSize = tgaHeader.width * tgaHeader.height * sDepth;
+
+    // ·ÖÅäÄÚ´æ
+    pBits = (GLbyte*)malloc(lImageSize * sizeof(GLbyte));
+    if(pBits == NULL)
+        return NULL;
+
+    // ¶ÁÈ¡Êı¾İÎ»
+    if(fread(pBits, lImageSize, 1, pFile) != 1)
+    {
+        free(pBits);
+        return NULL;
+    }
+
+    // ÉèÖÃÆÚÍûµÄOpenGL¸ñÊ½
+    switch(sDepth)
+    {
+        case 3:     // ×î¿ÉÄÜ³öÏÖµÄÇé¿ö
+            *eFormat = GL_BGR_EXT;
+            *iComponents = GL_RGB8;
+            break;
+        case 4:
+            *eFormat = GL_BGRA_EXT;
+            *iComponents = GL_RGBA8;
+            break;
+        case 1:
+            *eFormat = GL_LUMINANCE;
+            *iComponents = GL_LUMINANCE8;
+            break;
+    };
+
+
+    // Íê³É¶ÔÎÄ¼şµÄ²Ù×÷
+    fclose(pFile);
+
+    // ·µ»ØÖ¸ÏòÍ¼ÏñÊı¾İµÄÖ¸Õë
+    return pBits;
+}
+</pre>
+<p>
+¶ÁÈ¡ÏñËØÊı¾İ.<br />
+</p>
+<pre c++>
+	void glReadPixels(GLint x, GLint y, GLsizei width, GLsizei height,
+    	GLenum format, GLenum type, GLvoid *pixels);
+</pre>
+<p>
+¸´ÖÆÏñËØÊı¾İ<br />
+	void glCopyPixels(GLint x, GLint y, GLsizei width, GLsizei height, GLenum type);<br />
+<br />
+È±Ê¡Çé¿öÏÂ, Ë«»º³åÇøäÖÈ¾»·¾³ÖĞ, ÕâĞ©ÏñËØ²Ù×÷ÔÚºó»º³åÇø½øĞĞ. µ¥»º³åÇøäÖÈ¾»·¾³ÖĞ, ÔÚÇ°»º³åÇøÖĞ½øĞĞ.<br />
+Ê¹ÓÃÒÔÏÂº¯ÊıĞŞ¸ÄÏñËØ²Ù×÷µÄÔ´»òÄ¿±ê<br />
+	void glDrawBuffer(GLenum mode);<br />
+	void glReadBuffer(GLenum mode);<br />
+</p>
+<pre c++>
+// ²¶×½µ±Ç°µÄÊÓ¿Ú, ²¢°ÑËü±£´æÎªÒ»¸ötargaÎÄ¼ş
+// ÔÚµ÷ÓÃÕâ¸öº¯ÊıÖ®Ç°, ¶ÔÓÚË«»º³åÇøÉÏÏÂÎÄ»·¾³, È·ĞÅµ÷ÓÃÁËSwapBuffersº¯Êı.
+// ¶ÔÓÚµ¥»º³åÇøÉÏÏÂÎÄ»·¾³, È·ĞÅµ÷ÓÃÁËglFinishº¯Êı
+// Èç¹û³öÏÖÁË´íÎó, Õâ¸öº¯Êı·µ»Ø0, ·ñÔò·µ»Ø1
+GLint gltWriteTGA(const char *szFileName)
+{
+    FILE *pFile;                    // ÎÄ¼şÖ¸Õë
+    TGAHEADER tgaHeader;            // TGA ÎÄ¼şÍ·
+    unsigned long lImageSize;       // Í¼Ïñ´óĞ¡
+    GLbyte      *pBits = NULL;      // Ö¸Õë
+    GLint iViewport[4];             // ÊÓ¿Ú´óĞ¡
+    GLenum lastBuffer;              // ÓÃÓÚ´æ´¢µ±Ç°¶ÁÈ¡»º³åÇøµÄÉèÖÃ
+
+    // µÃµ½µ±Ç°ÊÓ¿Ú´óĞ¡
+    glGetIntegerv(GL_VIEWPORT, iViewport);
+
+    // Í¼ÏñµÄ´óĞ¡
+    lImageSize = iViewport[2] * 3 * iViewport[3];
+
+    // ·ÖÅäÄÚ´æ
+    pBits = (GLbyte *)malloc(lImageSize);
+    if(pBits == NULL)
+        return 0;
+
+    // ´ÓÑÕÉ«»º³åÇøÖĞ¶ÁÈ¡Êı¾İ
+    glPixelStorei(GL_PACK_ALIGNMENT, 1);
+    glPixelStorei(GL_PACK_ROW_LENGTH, 0);
+    glPixelStorei(GL_PACK_SKIP_ROWS, 0);
+    glPixelStorei(GL_PACK_SKIP_PIXELS, 0);
+
+    // »ñÈ¡µ±Ç°¶ÁÈ¡»º³åÇøµÄÉèÖÃ²¢½øĞĞ±£´æ
+    // ÇĞ»»µ½Ç°»º³åÇø²¢½øĞĞ¶ÁÈ¡²Ù×÷
+    // ×îºó, »Ö¸´¶ÁÈ¡»º³åÇøµÄ×´Ì¬
+    glGetIntegerv(GL_READ_BUFFER, (GLint *)&amp;lastBuffer);
+    glReadBuffer(GL_FRONT);
+    glReadPixels(0, 0, iViewport[2], iViewport[3], GL_BGR_EXT, GL_UNSIGNED_BYTE, pBits);
+    glReadBuffer(lastBuffer);
+
+    // ³õÊ¼»¯TargaÊı¾İ
+    tgaHeader.identsize = 0;
+    tgaHeader.colorMapType = 0;
+    tgaHeader.imageType = 2;
+    tgaHeader.colorMapStart = 0;
+    tgaHeader.colorMapLength = 0;
+    tgaHeader.colorMapBits = 0;
+    tgaHeader.xstart = 0;
+    tgaHeader.ystart = 0;
+    tgaHeader.width = iViewport[2];
+    tgaHeader.height = iViewport[3];
+    tgaHeader.bits = 24;
+    tgaHeader.descriptor = 0;
+
+    // Ö¸¶¨´ó¶ËºÍĞ¡¶Ë×Ö½ÚË³ĞòµÄ×Ö½Ú±ä»»
+#ifdef __APPLE__
+    LITTLE_ENDIAN_WORD(&amp;tgaHeader.colorMapStart);
+    LITTLE_ENDIAN_WORD(&amp;tgaHeader.colorMapLength);
+    LITTLE_ENDIAN_WORD(&amp;tgaHeader.xstart);
+    LITTLE_ENDIAN_WORD(&amp;tgaHeader.ystart);
+    LITTLE_ENDIAN_WORD(&amp;tgaHeader.width);
+    LITTLE_ENDIAN_WORD(&amp;tgaHeader.height);
+#endif
+
+    // ´ò¿ªÎÄ¼ş
+    fopen_s(&amp;pFile, szFileName, "wb");
+    if(pFile == NULL)
+                {
+        free(pBits);    
+        return 0;
+                }
+
+    // Ğ´ÈëÎÄ¼şÍ·
+    fwrite(&amp;tgaHeader, sizeof(TGAHEADER), 1, pFile);
+
+    // Ğ´ÈëÍ¼ÏñÊı¾İ
+    fwrite(pBits, lImageSize, 1, pFile);
+
+    // ÊÍ·ÅÁÙÊ±»º³åÇø²¢¹Ø±ÕÎÄ¼ş
+    free(pBits);
+    fclose(pFile);
+
+    // ³É¹¦
+    return 1;
+}
+</pre>
+<h2 id="toc_1.4">ÏñËØËõ·Å</h2>
+<p>
+	void glPixelZoom(GLfloat xfactor, GLfloat yfactor);<br />
+<br />
+</p>
+<h2 id="toc_1.5">ÏñËØ×ªÒÆ</h2>
+<p>
+	void glPixelTransferf(GLenum pname, GLfloat param);<br />
+		scaleºÍbias²ÎÊıÔÊĞíÄãËõ·ÅºÍÆ«×ªµ¥¶ÀµÄÑÕÉ«Í¨µÀ. Ëõ·ÅÒò×Ó½«ÓëÑÕÉ«³É·ÖÖµÏà³Ë. Æ«×ªÖµ½«»á¼Óµ½ÑÕÉ«³É·ÖÖµÖĞ.<br />
+		ĞÂÖµ = (¾ÉÖµ * Ëõ·ÅÖµ) + Æ«×ªÖµ<br />
+		È±Ê¡Çé¿öÏÂ, Ëõ·ÅÖµÎª1.0, Æ«×ªÖµÎª0.0.<br />
+<br />
+</p>
+<h2 id="toc_1.6">ºÚ°×Ä£Ê½</h2>
+<p>
+	Ê×ÏÈÔÚÑÕÉ«»º³åÇøÖĞ»æÖÆÍêÕû²ÊÉ«Í¼Ïñ<br />
+		glDrawPixels(iWidth, iHeight, eFormat, GL_UNSIGNED_BYTE, pImage);<br />
+	·ÖÅäÒ»»º³åÇø, ÈİÄÉÃ¿¸öÏñËØµÄÁÁ¶ÈÖµ<br />
+		pModifiedBytes = (GLbyte*)malloc(iWidth * iHeight);<br />
+	¶ÁÈ¡ÁÁ¶ÈÖµ<br />
+		glReadPixels(0, 0, iWidth, iHeight, GL_LUMINANCE, GL_UNSIGNED_BYTE, pModifiedBytes);<br />
+	ÁÁ¶ÈÖµĞ´»ØÑÕÉ«»º³åÇø<br />
+		glDrawPixels(iWidth, iHeight, GL_LUMINANCE, GL_UNSIGNED_BYTE, pModifiedBytes);<br />
+<br />
+	È±µã: ÁÁ¶ÈµÄ¼ÆËã½ö½öÊÇÈı¸öÑÕÉ«Í¨µÀµÄÏà¼Ó.ºÜÈİÒ×³¬¹ı1.0, ËùÒÔÒª×öÏñËØ×ªÒÆÄ£Ê½.<br />
+	NTSC±ê×¼<br />
+		ÁÁ¶È = (0.3 * ºìÉ«) + (0.59 * ÂÌÉ«) + (0.11 * À¶É«)<br />
+<br />
+</p>
+<h2 id="toc_1.7">ÑÕÉ«Ó³Éä</h2>
+<p>
+	ÓÃÓÚ²éÕÒÒ»ÖÖÑÕÉ«Öµ¿ÉÒÔ×ª»»ÎªÁíÍâÄÄÒ»ÖÖÑÕÉ«Öµ.<br />
+	¿ÉÓÃÓÚÖ´ĞĞÉ«²ÊĞŞÕı, Ö´ĞĞgammaµ÷Õû. »òÕß²»Í¬µÄÑÕÉ«±íÊ¾ĞÎÊ½Ö®¼ä½øĞĞ×ª»».<br />
+	ÆôÓÃÏñËØÓ³Éä: glPixelTransferi(GL_MAP_COLOR, GL_TRUE);<br />
+	ÉèÖÃÏñËØÓ³Éä<br />
+		glPixelMapuiv(GLenum map, GLint mapsize, GLuint *value);<br />
+		glPixelMapusv(GLenum map, GLint mapsize, GLushort *value);<br />
+		glPixelMapfv(GLenum map, GLint mapsize, GLfloat *value);<br />
+<br />
+</p>
+<h2 id="toc_1.8">Í¼Ïñ"×Ó¼¯"</h2>
+<p>
+	À©Õ¹ GL_ARB_imaging<br />
+<br />
+</p>
+<pre c++>
+///////////////////////////////////////////////////////////////////////////////
+// This function determines if the named OpenGL Extension is supported
+// Returns 1 or 0
+int gltIsExtSupported(const char *extension)
+{
+        GLubyte *extensions = NULL;
+        const GLubyte *start;
+        GLubyte *where, *terminator;
+
+        where = (GLubyte *) strchr(extension, ' ');
+        if (where || *extension == '\0')
+                return 0;
+
+        extensions = (GLubyte *)glGetString(GL_EXTENSIONS);
+
+        start = extensions;
+        for (;;)
+                {
+                where = (GLubyte *) strstr((const char *) start, extension);
+
+                if (!where)
+                        break;
+
+                terminator = where + strlen(extension);
+
+                if (where == start || *(where - 1) == ' ')
+                        {
+                        if (*terminator == ' ' || *terminator == '\0')
+                                return 1;
+                        }
+                start = terminator;
+                }
+        return 0;
+}
+</pre>
+<p>
+<br />
+	Í¼Ïñ´¦Àí×Ó¼¯¸ù¾İ¹¦ÄÜ·ÖÎª3¸öÖ÷ÒªÁìÓò: ÑÕÉ«¾ØÕóºÍÑÕÉ«±í, »ØÈÆÒÔ¼°Öù×´Í¼.<br />
+	Í¼Ïñ´¦Àí¹ÜÏß: ºì±¦ÊéP214<br />
+<br />
+</p>
+<h3 id="toc_1.8.1">1. ÑÕÉ«¾ØÕó</h3>
+<p>
+	½«ÑÕÉ«Öµ¿´³ÉÊÇÉ«²Ê¿Õ¼äÖĞµÄ×ø±ê, RGB½üËÆÓÚÒÔÈıÖÖÑÕÉ«ÎªÖáµÄXYZ×ø±êÏµÍ³. Alpha³É·Ö¿´³ÉÏòÁ¿µÄW³É·Ö. Ôò¿ÉÒÔÊÊµ±µÄ×ª»»ÎªÒ»¸ö4X4µÄÑÕÉ«¾ØÕó.<br />
+	ÑÕÉ«¾ØÕóÀàËÆÓÚÆäËûµÄ¾ØÕó(GL_PROJECTION, GL_MODELVIEW, GL_TEXTURE).<br />
+	Í¨¹ıµ÷ÓÃglMatrixModeº¯Êı²¢Ê¹ÓÃ²ÎÊıGL_COLOR°ÑÑÕÉ«¾ØÕóÉèÖÃÎª»î¶¯¾ØÕó.<br />
+</p>
+<pre c++>
+// ¼ÓÁÁÍ¼Ïñ
+glMatrixMode(GL_COLOR);
+glScalef(1.25f, 1.25f, 1.25f);
+glMatrixMode(GL_MODELVIEW);
+
+// ÉèÖÃÎªÈ±Ê¡Öµ
+glMatrixMode(GL_COLOR);
+glLoadIdentity();
+glMatrixMode(GL_MODELVIEW);
+</pre>
+<h3 id="toc_1.8.2">2. ÑÕÉ«²éÕÒ</h3>
+<p>
+	Ö¸¶¨Ò»¸ö°üº¬¸÷¸öÑÕÉ«ÖµµÄ±í¸ñ, ÓÃÓÚÌæ»»Ò»¸öÏñËØµÄµ±Ç°ÑÕÉ«.<br />
+		void glColorSubTableEXT(GLenum target, GLsizei start, GLsizei count, GLenum format, GLenum type, const GLvoid *data);<br />
+			target: Ö¸¶¨ÁËÔÚÍ¼Ïñ´¦Àí¹ÜÏßµÄÊ²Ã´½×¶ÎÓ¦ÓÃÑÕÉ«±í<br />
+	ÆôÓÃÑÕÉ«±í GL_COLOR_TABLE<br />
+		glGetCOlorTableParameterº¯ÊıÊ¹ÄãÄÜ¹»²éÑ¯ÑÕÉ«±íµÄ¸÷ÖÖÉèÖÃ<br />
+<br />
+	ÑÕÉ«±í¿ÉÒÔ¶ÔÑÕÉ«³É·ÖÖµÓ¦ÓÃËõ·ÅÒò×ÓºÍÆ«É«.<br />
+	Ê¹ÓÃglColorTableParameterÊµÏÖ.<br />
+<br />
+	ÑÕÉ«»º³åÇøµÄÄÚÈİ×÷ÎªÑÕÉ«±íµÄÔ´Êı¾İ¶ÔÑÕÉ«±í½øĞĞäÖÈ¾.<br />
+		glCopyColorTableº¯Êı<br />
+	Ò²¿ÉÒÔÊ¹ÓÃglColorSubTableÌæ»»ÑÕÉ«±íµÄÈ«²¿»ò²¿·ÖÄÚÈİ.<br />
+	ÓÃglCopyColorSubTableÌæ»»ÑÛÉ«»º³åÇøÖĞÒ»¸öÑÕÉ«±íµÄÈ«²¿»ò²¿·ÖÄÚÈİ.<br />
+<br />
+</p>
+<h2 id="toc_1.9">»ØÈÆ</h2>
+<p>
+	»ØÈÆÊÇÒ»ÖÖ¹ıÂËÆ÷, ¸ù¾İÒ»Ğ©È¨ÖØÄ£Ê½(³ÆÎªºËĞÄ)ÔÚÒ»·ùÍ¼ÏñÖĞ½øĞĞÏñËØ´¦Àí.<br />
+	»ØÈÆÓÃÕâ¸öÏñËØÒÔ¼°ÁÚ½üÏñËØµÄ¼ÓÈ¨Æ½¾ùÖµ¶ÔËü½øĞĞÌæ»». Ã¿¸öÏñËØµÄÑÕÉ«Öµ¸ù¾İºËĞÄÖĞµÄÈ¨Öµ½øĞĞËõ·Å.<br />
+		¼û ºì±¦Êé218<br />
+	ÔÚµäĞÍÇé¿öÏÂ, »ØÈÆºËĞÄÊÇ¸¡µãÖµµÄ¾ØÕóÊı×é, ±íÊ¾Í¼ÏñÖĞÒ»¸ö¶ÔÓ¦µÄÏñËØÅÅÁĞÈ¨ÖØ.<br />
+</p>
+<pre c++>
+static GLfloat mSharpen[3][3] = {
+{0.0f, -1.0f, 0.0f},
+{-1.0f, 5.0f, -1.0f},
+{0.0f, -1.0f, 0.0f} };
+</pre>
+<p>
+	ÎªÁËÓ¦ÓÃ»ØÈÆ¹ıÂËÆ÷, µ÷ÓÃÁ½¸öº¯Êı<br />
+	glConvolutionFilter2D<br />
+	glEnable(GL_CONVOLUTION_2D)<br />
+<br />
+</p>
+<h2 id="toc_1.10">Öù×´Í¼</h2>
+<p>
+	glHistogramº¯Êı
+	ÊÕ¼¯Öù×´Í¼Êı¾İ
+	glGetHistogram
+</p>
+
+    </div>
+</body>
+</html>

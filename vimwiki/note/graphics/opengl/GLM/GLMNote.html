@@ -1,0 +1,639 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../style.css" />
+    <title>GLMNote</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<h1 id="toc_1">介绍</h1>
+<ul>
+<li>
+包含 &lt;glm/glm.hpp&gt;
+
+<li>
+如果包含 &lt;boost/static_assert.hpp&gt;, 则GLM代码提供编译期错误, 除非GLM在static_assert情况下由C++ 11编译器构建.
+
+</ul>
+<h2 id="toc_1.1">GLM 扩展</h2>
+<ul>
+<li>
+GLM使用扩展扩充核心的GLSL功能. 包括四元数, 变换, 样条, 矩阵求逆, 颜色空间.
+
+<li>
+要使用这些扩展, 只需要包含其专用的头文件即可. 例如: glm/gtc/matrix_transform.hpp
+
+</ul>
+<h2 id="toc_1.2">和OpenGL一起工作 </h2>
+<ul>
+<li>
+可用 glVertex3fv(glm::vec3(0)), 但可能会产生非预期的行为.
+
+<li>
+使用头文件 glm/gtc/type_ptr.hpp, 使用 glm::value_ptr(v)可以获取参数的数据指针.
+
+<li>
+另一种方式则是直接使用取址操作符
+<pre class="brush: c++">
+glm::vec4 v(0.0f);
+glm::mat4 m(1.0f);
+//...
+glVertex3fv(&amp;v[0]);
+glLoadMatrixfv(&amp;m[0][0]);
+</pre>
+
+</ul>
+
+<h1 id="toc_2">高级用法</h1>
+<h2 id="toc_2.1">通知系统</h2>
+<ul>
+<li>
+默认禁止, 如果要使用通知系统, 定义 GLM_MESSAGES
+
+</ul>
+<h2 id="toc_2.2">更快的程序编译 </h2>
+<ul>
+<li>
+&lt;glm/fwd.hpp&gt; 提供了 GLM 类型的前向声明.
+
+</ul>
+<h2 id="toc_2.3">精度前缀</h2>
+<ul>
+<li>
+精度前缀: lowp_, mediump_, highp_. 例如 vec4 有 lowp_vec4, mediump_vec4, highp_vec4.
+
+<li>
+默认所有类型使用high精度.
+
+</ul>
+<h2 id="toc_2.4">默认精度</h2>
+<ul>
+<li>
+C++ 中, 不可能使用 GLSL 语法实现 GLSL 默认精度.
+<pre class="brush: c++">
+precision mediump int;
+precision highp float;
+</pre>
+
+<li>
+为了使用默认精度功能, GLM需要在任意 glm.hpp 之前提供一些定义.
+<pre class="brush: c++">
+#define GLM_PRECISION_MEDIUMP_INT;
+#define GLM_PRECISION_HIGHP_FLOAT;
+#include &lt;glm/glm.hpp&gt;
+</pre>
+
+</ul>
+<h2 id="toc_2.5">强制使用弧度</h2>
+<ul>
+<li>
+声明 GLM_FORCE_RADIANS 切换所有 GLM 函数使用弧度.
+
+</ul>
+<h2 id="toc_2.6">C++ 语言检测 </h2>
+<ul>
+<li>
+避免编译器的语言扩展
+<pre class="brush: c++">
+#define GLM_FORCE_CXX98
+#include &lt;glm/glm.hpp&gt;
+
+//c++11
+#define GLM_FORCE_CXX11
+#include &lt;glm/glm.hpp&gt;
+</pre>
+
+</ul>
+<h2 id="toc_2.7">CUDA 支持</h2>
+<ul>
+<li>
+定义 GLM_FORCE_CUDA
+
+</ul>
+<h2 id="toc_2.8">SIMD 支持</h2>
+<ul>
+<li>
+GLM 提供了一些 SIMD 优化. 主要通过扩展优化, GLM_GTX_simd_vec4 和 GLM_GTX_simd_mat4
+
+<li>
+限制或强制指令集用于这些优化: GLM_FORCE_SSE2 或 GLM_FORCE_AVX.
+
+<li>
+可以忽略任何内在的优化: GLM_FORCE_PURE
+
+</ul>
+<h2 id="toc_2.9">强制内联</h2>
+<ul>
+<li>
+迫使编译器内联 GLM 代码: GLM_FORCE_INLINE.
+
+</ul>
+
+<h1 id="toc_3">SWizzle操作符 </h1>
+<ul>
+<li>
+这种操作符允许选择一个向量的多个成分, 以及改变其顺序. 例如: variable.x, variable.xzy, variable.zxyy. 这种操作符可以是左值和右值. 可以使用"xyzw", "rgba", "stpq" 访问.
+
+<li>
+默认 GLM 禁止该功能, 要打开该功能定义: GLM_SWIZZLE
+
+</ul>
+<h2 id="toc_3.1">默认 C++98 的实现 </h2>
+<ul>
+<li>
+C++98的实现显示R值的swizzle操作符, 其作为vector类型的成员函数.
+<pre class="brush: c++">
+#define GLM_SWIZZLE
+#include &lt;glm/glm.hpp&gt;
+
+void foo()
+{
+	glm::vec4 ColorRGBA(1.0f, 0.5f, 0.0f, 1.0f);
+	glm::vec3 ColorBGR = ColorRGBA.bgr();
+
+	glm::vec4 PositionA(1.0, 0.5, 0.0, 1.0);
+	glm::vec3 PositionB = PositionA.xyz() * 2.0f;
+
+	glm::vec2 TexCoordST(1.0f, 0.5f);
+	glm::vec4 TexCoordSTPQ = TexCoordST.stst();
+}
+</pre>
+
+<li>
+不能作为左值.
+
+</ul>
+<h2 id="toc_3.2">匿名union成员实现</h2>
+<ul>
+<li>
+Visual C++ 支持union中的匿名结构.
+<pre class="brush: c++">
+#define GLM_SWIZZLE
+#include &lt;glm/glm.hpp&gt;
+
+void foo()
+{
+	glm::vec4 ColorRGBA(1.0f, 0.5f, 0.0f, 1.0f);
+	glm::vec4 ColorBGRA = ColorRGBA.bgra;
+
+	ColorRGBA.bgra = ColorRGBA;
+
+	ColorRGBA.bgra = ColorRGBA.rgba;
+}
+</pre>
+
+<li>
+匿名 union 成员的swizzle操作符不返回vector类型. 但其可以被其他 swizzle 操作符或者vector构造函数认识.
+<pre class="brush: c++">
+#define GLM_SWIZZLE
+#include &lt;glm/glm.hpp&gt;
+#include &lt;iostream&gt;
+
+void foo()
+{
+	glm::vec4 Color(1.0f, 0.5f, 0.0f, 1.0f); 
+
+	// glm::vec4 ClampedA = glm::clamp(Color.rgba, 0.f, 1.f); // ERROR  
+	
+	// With by using a constructor 
+	glm::vec4 ClampedB = glm::clamp(glm::vec4(Color.rgba), 0.f, 1.f); // OK 
+
+	// Or by using the () operator 
+	glm::vec4 ClampedC = glm::clamp(Color.rgba(), 0.f, 1.f); // OK 
+}
+</pre>
+
+</ul>
+
+<h1 id="toc_4">替换不赞同的函数</h1>
+<ul>
+<li>
+下面列出可以替换的函数
+
+</ul>
+<h2 id="toc_4.1">OpenGL函数</h2>
+<ul>
+<li>
+glRotate{f, d}
+
+<ul>
+<li>
+glm::mat4 glm::rotate(glm::mat4 const&amp; m, float angle, glm::vec3 const&amp; axis);
+
+<li>
+glm::dmat4 glm::rotate(glm::dmat4 const&amp; m, double angle, glm::dvec3 const&amp; axis);
+
+</ul>
+<li>
+glScale{f, d}
+
+<ul>
+<li>
+glm::mat4 glm::scale(glm::mat4 const&amp; m, glm::vec3 const&amp; factors);
+
+<li>
+glm::dmat4 glm::scale(glm::dmat4 const&amp; m, glm::dvec3 const&amp; factors);
+
+</ul>
+<li>
+glTranslate{f, d}
+
+<ul>
+<li>
+glm::mat4 glm::translaate(glm::mat4 const&amp; m, glm::vec3 const&amp; translation);
+
+<li>
+glm::dmat4 glm::translaate(glm::dmat4 const&amp; m, glm::dvec3 const&amp; translation);
+
+</ul>
+<li>
+glLoadIdentity
+
+<ul>
+<li>
+glm::mat4(1.0) 或 glm::mat4();
+
+<li>
+glm::dmat4(1.0) 或 glm::dmat4();
+
+</ul>
+<li>
+glMultMatrix{f, d}
+
+<ul>
+<li>
+glm::mat4() * glm::mat4();
+
+<li>
+glm::dmat4() * glm::dmat4();
+
+</ul>
+<li>
+glLoadTransposeMatrix{f, d}
+
+<ul>
+<li>
+glm::transpose(glm::mat4());
+
+<li>
+glm::transpose(glm::dmat4());
+
+</ul>
+<li>
+glMultTransposeMatrix{f, d}
+
+<ul>
+<li>
+glm::mat4() * glm::transpose(glm::mat4());
+
+<li>
+glm::dmat4() * glm::transpose(glm::dmat4());
+
+</ul>
+<li>
+glFrustum
+
+<ul>
+<li>
+glm::mat4 glm::frustum(float left, float right, float bottom, float top, float zNear, float zFar);
+
+<li>
+glm::dmat4 glm::frustum(double left, double right, double bottom, double top, double zNear, double zFar);
+
+</ul>
+<li>
+glOrtho
+
+<ul>
+<li>
+glm::mat4 glm::ortho(float left, float right, float bottom, float top, float zNear, float zFar);
+
+<li>
+glm::dmat4 glm::ortho(double left, double right, double bottom, double top, double zNear, double zFar);
+
+</ul>
+</ul>
+<h2 id="toc_4.2">GLU函数</h2>
+<ul>
+<li>
+gluLookAt
+
+<ul>
+<li>
+glm::mat4 glm::lookAt(glm::vec3 const&amp; eye, glm::vec3 const&amp; center, glm::vec3 const&amp; up);
+
+<li>
+glm::dmat4 glm::lookAt(glm::dvec3 const&amp; eye, glm::dvec3 const&amp; center, glm::dvec3 const&amp; up);
+
+</ul>
+<li>
+gluOrtho2D
+
+<ul>
+<li>
+glm::mat4 glm::ortho(float left, float right, float bottom, float top);
+
+<li>
+glm::dmat4 glm::ortho(double left, double right, double bottom, double top);
+
+</ul>
+<li>
+gluPerspective
+
+<ul>
+<li>
+glm::mat4 perspective(float fovy, float aspect, float zNear, float zFar);
+
+<li>
+glm::dmat4 perspective(double fovy, double aspect, double zNear, double zFar);
+
+</ul>
+<li>
+gluPickMatrix
+
+<ul>
+<li>
+glm::mat4 pickMatrix(glm::vec2 const&amp; center, glm::vec2 const&amp; delta, glm::ivec4 const&amp; viewport);
+
+<li>
+glm::dmat4 pickMatrix(glm::dvec2 const&amp; center, glm::dvec2 const&amp; delta, glm::ivec4 const&amp; viewport);
+
+</ul>
+<li>
+gluProject
+
+<ul>
+<li>
+glm::vec3 project(glm::vec3 const&amp; obj, glm::mat4 const&amp; model, glm::mat4 const&amp; proj, glm::{i, ' '}vec4&amp; viewport);
+
+<li>
+glm::dvec3 project(glm::dvec3 const&amp; obj, glm::dmat4 const&amp; model, glm::dmat4 const&amp; proj, glm::{i, ' ', d}vec4&amp; viewport);
+
+</ul>
+<li>
+gluUnProject
+
+<ul>
+<li>
+glm::vec3 unProject(glm::vec3 const&amp; win, glm::mat4 const&amp; model, glm::mat4 const&amp; proj, glm::{i, ' '}vec4 const&amp; viewport);
+
+<li>
+glm::dvec3 unProject(glm::dvec3 const&amp; win, glm::dmat4 const&amp; model, glm::dmat4 const&amp; proj, glm::{i, ' ', d}vec4 const&amp; viewport);
+
+</ul>
+</ul>
+
+<h1 id="toc_5">扩展</h1>
+<h2 id="toc_5.1">GLM_GTC_constants</h2>
+<ul>
+<li>
+内置常量列表
+
+</ul>
+<h2 id="toc_5.2">GLM_GTC_epsilon</h2>
+<ul>
+<li>
+selectable epsilon的近似相等和不等比较.
+
+</ul>
+<h2 id="toc_5.3">GLM_GTC_matrix_access</h2>
+<ul>
+<li>
+定义了访问矩阵行或列的函数
+
+</ul>
+<h2 id="toc_5.4">GLM_GTC_matrix_integer</h2>
+<ul>
+<li>
+提供了整数矩阵类型, 该类型不支持逆矩阵和行列式函数.
+
+</ul>
+<h2 id="toc_5.5">GLM_GTC_matrix_inverse</h2>
+<ul>
+<li>
+定义了矩阵求逆函数
+
+</ul>
+<h2 id="toc_5.6">GLM_GTC_matrix_transform</h2>
+<ul>
+<li>
+定义了生成常用变换矩阵的函数.
+
+</ul>
+<h2 id="toc_5.7">GLM_GTC_noise</h2>
+<ul>
+<li>
+定义了2D, 3D, 4D的procedural noise 函数
+
+</ul>
+<h2 id="toc_5.8">GLM_GTC_packing</h2>
+<ul>
+<li>
+转换标量和向量类型为packed格式. 同样还可以unpacked打包的数据为原始类型.
+
+</ul>
+<h2 id="toc_5.9">GLM_GTC_quaternion</h2>
+<ul>
+<li>
+定义了四元素类型和相关操作.
+
+</ul>
+<h2 id="toc_5.10">GLM_GTC_random</h2>
+<ul>
+<li>
+使用不同分布方法生成随机数.
+
+</ul>
+<h2 id="toc_5.11">GLM_GTC_reciprocal</h2>
+<ul>
+<li>
+提供了双曲函数: 正切, 余割, 余切等.
+
+</ul>
+<h2 id="toc_5.12">GLM_GTC_swizzle</h2>
+<ul>
+<li>
+模拟GLSL的swizzle操作符.
+
+</ul>
+<h2 id="toc_5.13">GLM_GTC_type_precision</h2>
+<ul>
+<li>
+向量和矩阵类型有相应的精度.
+
+</ul>
+<h2 id="toc_5.14">GLM_GTC_type_ptr</h2>
+<ul>
+<li>
+处理指针和向量, 矩阵类型之间的相互作用.
+
+<li>
+其定义了一个重载函数 glm::value_ptr
+
+<li>
+对于上传值缓存对象或者从缓存对象中拷贝来说, 很有用.
+<pre class="brush: c++">
+#include &lt;glm/glm.hpp&gt;
+#include &lt;glm/gtc/type_ptr.hpp&gt;
+
+glm::vec3 aVector(3);
+glm::mat4 someMatrix(1.0);
+
+glUniform3fv(uniformLoc, 1, glm::value_ptr(aVector));
+glUniformMatrix4fv(uniformMatrixLoc, 1, GL_FALSE, glm::value_ptr(someMatrix));
+</pre>
+
+</ul>
+<h2 id="toc_5.15">GLM_GTC_ulp</h2>
+<ul>
+<li>
+允许对一个关联实现测量一个函数的精度.
+
+</ul>
+
+<h1 id="toc_6">已知问题</h1>
+<h2 id="toc_6.1">not function</h2>
+<ul>
+<li>
+C++中不是关键词. 使用 not_ 实现.
+
+</ul>
+<h2 id="toc_6.2">Swizzle操作符限制 </h2>
+<h2 id="toc_6.3">精度前缀支持</h2>
+
+<h1 id="toc_7">代码例子</h1>
+<ul>
+<li>
+计算三角形法线
+<pre class="brush: c++">
+#include &lt;glm/glm.hpp&gt; // vec3 normalize cross 
+ 
+glm::vec3 computeNormal(glm::vec3 const &amp; a, glm::vec3 const &amp; b, glm::vec3 const &amp; c)
+{
+	return glm::normalize(glm::cross(c - a, b - a)); 
+}
+ 
+// A much faster but less accurate alternative: 
+#include &lt;glm/glm.hpp&gt; // vec3 cross 
+#include &lt;glm/gtx/fast_square_root.hpp&gt; // fastNormalize 
+glm::vec3 computeNormal(glm::vec3 const &amp; a, glm::vec3 const &amp; b, glm::vec3 const &amp; c )
+{
+	return glm::fastNormalize(glm::cross(c - a, b - a)); 
+}
+</pre>
+
+<li>
+矩阵变换
+<pre class="brush: c++">
+// vec3, vec4, ivec4, mat4 
+#include &lt;glm/glm.hpp&gt; 
+// translate, rotate, scale, perspective  
+#include &lt;glm/gtc/matrix_transform.hpp&gt; 
+// value_ptr 
+#include &lt;glm/gtc/type_ptr.hpp&gt; 
+ 
+void setUniformMVP(GLuint Location, glm::vec3 const &amp; Translate, glm::vec3 const &amp; Rotate)
+{
+	glm::mat4 Projection = glm::perspective(45.0f, 4.0f / 3.0f, 0.1f, 100.f); 
+	glm::mat4 ViewTranslate = glm::translate(glm::mat4(1.0f), Translate); 
+	glm::mat4 ViewRotateX = glm::rotate(ViewTranslate,Rotate.y, glm::vec3(-1.0f, 0.0f, 0.0f)); 
+	glm::mat4 View = glm::rotate(ViewRotateX,Rotate.x, glm::vec3(0.0f, 1.0f, 0.0f)); 
+	glm::mat4 Model = glm::scale(glm::mat4(1.0f),glm::vec3(0.5f));
+	glm::mat4 MVP = Projection * View * Model;
+	glUniformMatrix4fv(Location, 1, GL_FALSE, glm::value_ptr(MVP));
+}
+</pre>
+
+<li>
+向量类型
+<pre class="brush: c++">
+#include &lt;glm/glm.hpp&gt; //vec2 
+#include &lt;glm/gtc/type_precision.hpp&gt; //hvec2, i8vec2, i32vec2 
+ 
+std::size_t const VertexCount = 4; 
+ 
+// Float quad geometry 
+std::size_t const PositionSizeF32 = VertexCount * sizeof(glm::vec2); 
+glm::vec2 const PositionDataF32[VertexCount] = 
+{ 
+glm::vec2(-1.0f,-1.0f), 
+glm::vec2( 1.0f,-1.0f), 
+glm::vec2( 1.0f, 1.0f), 
+glm::vec2(-1.0f, 1.0f) 
+}; 
+// Half-float quad geometry 
+std::size_t const PositionSizeF16 = VertexCount * sizeof(glm::hvec2); 
+glm::hvec2 const PositionDataF16[VertexCount] = 
+{ 
+glm::hvec2(-1.0f, -1.0f), 
+glm::hvec2( 1.0f, -1.0f), 
+glm::hvec2( 1.0f, 1.0f), 
+glm::hvec2(-1.0f, 1.0f) 
+}; 
+// 8 bits signed integer quad geometry 
+std::size_t const PositionSizeI8 = VertexCount * sizeof(glm::i8vec2); 
+glm::i8vec2 const PositionDataI8[VertexCount] = 
+{ 
+glm::i8vec2(-1,-1), 
+glm::i8vec2( 1,-1), 
+glm::i8vec2( 1, 1), 
+glm::i8vec2(-1, 1) 
+}; 
+// 32 bits signed integer quad geometry 
+std::size_t const PositionSizeI32 = VertexCount * sizeof(glm::i32vec2); 
+glm::i32vec2 const PositionDataI32[VertexCount] = 
+{ 
+glm::i32vec2(-1,-1), 
+glm::i32vec2( 1,-1), 
+glm::i32vec2( 1, 1), 
+glm::i32vec2(-1, 1) 
+}; 
+</pre>
+
+</ul>
+<h2 id="toc_7.1">光照</h2>
+<pre class="brush: c++">
+#include &lt;glm/glm.hpp&gt; // vec3 normalize reflect dot pow 
+#include &lt;glm/gtx/random.hpp&gt; // vecRand3 
+ 
+// vecRand3, generate a random and equiprobable normalized vec3 
+glm::vec3 lighting(intersection const &amp; Intersection, material const &amp; Material, light const &amp; Light, glm::vec3 const &amp; View)
+{
+	glm::vec3 Color = glm::vec3(0.0f); 
+	glm::vec3 LightVertor = glm::normalize(Light.position() - Intersection.globalPosition() + glm::vecRand3(0.0f, Light.inaccuracy()); 
+	if(!shadow(Intersection.globalPosition(), Light.position(), LightVertor)) 
+	{
+		float Diffuse = glm::dot(Intersection.normal(), LightVector); 
+		if(Diffuse &lt;= 0.0f) 
+			return Color; 
+		if(Material.isDiffuse()) 
+			Color += Light.color() * Material.diffuse() * Diffuse; 
+		if(Material.isSpecular()) 
+		{
+			glm::vec3 Reflect = glm::reflect(-LightVector, Intersection.normal()); 
+			float Dot = glm::dot(Reflect, View); 
+			float Base = Dot &gt; 0.0f ? Dot : 0.0f; 
+			float Specular = glm::pow(Base, Material.exponent()); 
+			Color += Material.specular() * Specular; 
+		}
+	}
+	return Color;  
+}
+</pre>
+
+    </div>
+</body>
+</html>

@@ -1,0 +1,105 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../../style.css" />
+    <title>Chapter13</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<ul>
+<li>
+函数
+
+<ul>
+<li>
+glGenQueries/glDeleteQueries
+
+<li>
+glBeginQuery/glEndQuery
+
+<li>
+glGetQueryObjectiv
+
+</ul>
+</ul>
+
+<h1 id="toc_1">Bounding Boxes</h1>
+<ul>
+<li>
+围绕体的复杂度越低, 则优化的结果可能越好.
+
+<li>
+当我们绘制我们的围绕体时, 我们将允许 occlusion query, 其将统计通过深度测试的片段数量. 因此, 我们不必将围绕体绘制至屏幕. 所以我们在渲染围绕体之前关闭写入深度和颜色缓存等功能.
+<pre c++>
+	glShadeModel(GL_FLAT);
+	// Texturing is already disabled
+	...
+	glDisable(GL_LIGHTING);
+	glDisable(GL_COLOR_MATERIAL);
+	glDisable(GL_NORMALIZE);
+	glDepthMask(GL_FALSE);
+	glColorMask(0, 0, 0, 0);
+</pre>
+
+<li>
+而后给 occludee 命名. 使用 GLuint 数组保存.
+<pre c++>
+	// Generate occlusion query names
+	glGenQueries(27, queryIDs);	
+</pre>
+
+<li>
+删除
+<pre c++>
+	glDeleteQueries(27, queryIDs);
+</pre>
+
+<li>
+glBeginQuery开始查询, query object是一个内部计数器, 统计可以写入帧缓存的片段数量. 开始该查询则计数器重置为0.
+
+<li>
+当我们完成绘制围绕体之后, 则用 glEndQuery 结束查询.
+
+</ul>
+<h2 id="toc_1.1">Querying the Query Object</h2>
+<ul>
+<li>
+glGetQueryObjectiv 查看该pass计数器是否为0.
+
+<li>
+还可以查询结果是否立即可用. 围绕盒的渲染可能还在管线中其结果还没有准备好. 你可以查询 GL_QUERY_RESULT_AVAILABLE 查看结果是否准备好. 可以在其准备好之前在应用程序中处理其他的工作.
+
+<li>
+查询实现的pass counter的位数量可以为0, 表示该occlusion queries无用且不会被用. 所以在程序初始化时检查这种情况.
+
+<li>
+glIsQuery --- 检查某个名字是否是一个已有查询对象的名字.
+
+</ul>
+
+<h2 id="toc_1.2">最佳实践 </h2>
+<ul>
+<li>
+首先绘制occluder, occludee, 从前向后排序.
+
+<li>
+本帧的occlude结果用于下一帧, 以避免等待. 结果接近于0的物体也可以不去渲染.
+
+</ul>
+
+    </div>
+</body>
+</html>

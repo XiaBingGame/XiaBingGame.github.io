@@ -1,0 +1,517 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../style.css" />
+    <title>CEGUI Tutorial</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///D:/Documents/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+
+<ul>
+<li>
+三个基本步骤
+
+<ol>
+<li>
+创建 CEGUI::Renderer 对象的实例
+
+<li>
+创建 CEGUI::System 对象
+
+<li>
+每一帧, 调用 CEGUI::System::renderAllGUIContext 函数渲染
+
+</ol>
+<li>
+头文件: &lt;CEGUI/CEGUI.h&gt;, 库 CEGUIBase-0.lib
+
+</ul>
+
+<h2 id="toc_0.1">最简单的方法: Renderer 的 'bootstrapSystem' 函数</h2>
+<ul>
+<li>
+Renderer 类上的辅助函数 'bootstrap'
+
+<li>
+Renderer 类还有 destroySystem() 函数用于清理.
+
+<li>
+对于 Ogre3D 和 Irrlicht 引擎, CEGUI::ResourceProvider 和 CEGUI::ImageCodec 的自定义实现可用于它们的文件加载和图像分析, CEGUI::Renderer 和这些对象的实例传递给 System::create 函数.
+
+<li>
+这些渲染器的 bootstrapSystem 函数可以自动创建所有特定引擎支持的对象.
+
+<li>
+首先单个函数初始化 CEGUI
+
+<ul>
+<li>
+OpenGL 固定管线
+<pre c++>
+#include &lt;CEGUI/RendererModules/OpenGL/GLRenderer.h&gt;
+// lib: CEGUIOpenGLRenderer-0 
+// Bootstrap CEGUI::System with an OpenGLRenderer object that uses the
+// current GL viewport, the DefaultResourceProvider, and the default
+// ImageCodec.
+//
+// NB: Your OpenGL context must already be initialised when you call this; CEGUI
+// will not create the OpenGL context itself.
+CEGUI::OpenGLRenderer&amp; myRenderer =
+    CEGUI::OpenGLRenderer::bootstrapSystem();
+</pre>
+
+<li>
+OpenGL 3
+<pre c++>
+#include  &lt;CEGUI/RendererModules/OpenGL/GL3Renderer.h&gt;
+// lib: CEGUIOpenGLRenderer-0 
+// Bootstrap CEGUI::System with an OpenGL3Renderer object that uses the
+// current GL viewport, the DefaultResourceProvider, and the default
+// ImageCodec.
+//
+// NB: Your OpenGL context must already be initialised when you call this; CEGUI
+// will not create the OpenGL context itself.
+CEGUI::OpenGL3Renderer&amp; myRenderer =
+    CEGUI::OpenGL3Renderer::bootstrapSystem();
+</pre>
+
+</ul>
+</ul>
+
+<h2 id="toc_0.2">对象手动创建</h2>
+<ul>
+<li>
+手动创建所有需要的对象, 下面有 Renderer 和 System 对象的创建
+
+<li>
+D3D9
+<pre c++>
+#include &lt;CEGUI/RendererModules/Direct3D9/Renderer.h&gt;
+// lib: CEGUIDirect3D9Renderer-0 
+CEGUI::Direct3D10Renderer&amp; myRenderer =
+    CEGUI::Direct3D10Renderer::create( myD3D10Device );
+</pre>
+
+<li>
+D3D10
+<pre c++>
+#include &lt;CEGUI/RendererModules/Direct3D10/Renderer.h&gt;
+// lib: CEGUIDirect3D10Renderer-0 
+CEGUI::Direct3D10Renderer&amp; myRenderer =
+    CEGUI::Direct3D10Renderer::create( myD3D10Device );
+</pre>
+
+<li>
+OpenGL 固定管线
+<pre c++>
+#include  &lt;CEGUI/RendererModules/OpenGL/GLRenderer.h&gt;
+// lib: CEGUIOpenGLRenderer-0 
+// Create an OpenGLRenderer object that uses the current GL viewport as
+// the default output surface.
+CEGUI::OpenGLRenderer&amp; myRenderer =
+    CEGUI::OpenGLRenderer::create();
+</pre>
+
+<li>
+OpenGL3
+<pre c++>
+#include &lt;CEGUI/RendererModules/OpenGL/GL3Renderer.h&gt;
+// lib CEGUIOpenGL3Renderer-0 
+// Create an OpenGL3Renderer object that uses the current GL viewport as
+// the default output surface.
+CEGUI::OpenGL3Renderer&amp; myRenderer =
+    CEGUI::OpenGL3Renderer::create();
+</pre>
+
+<li>
+调用 EGUI::System::create( myRenderer ) 创建 System.
+
+</ul>
+
+<h2 id="toc_0.3">调用函数渲染 GUI</h2>
+<ul>
+<li>
+在渲染循环最后调用 CEGUI::System::renderAllGUIContexts
+
+<li>
+OpenGL
+<pre c++>
+// user function to draw 3D scene
+draw3DScene();
+// make sure that before calling renderAllGUIContexts, that any bound textures
+// and shaders used to render the scene above are disabled using
+// glBindTexture(0) and glUseProgram(0) respectively also set
+// glActiveTexture(GL_TEXTURE_0) 
+    // draw GUI
+    // NB: When not using &gt;=3.2 core profile, this call should not occur
+    // between glBegin/glEnd calls.
+    CEGUI::System::getSingleton().renderAllGUIContexts();
+</pre>
+
+</ul>
+
+<h1 id="toc_1">使用 ResourceProviders 加载资源</h1>
+<ul>
+<li>
+在 DefaultResourceProvider 中设置资源组和目录.
+
+<li>
+使用一个 ResourceProvider 对象提供 CEGUI 库与外部文件系统的桥接.
+
+<li>
+这里一个资源组是系统上目录位置的一个标签.
+
+<li>
+设置资源组和目录
+
+<ul>
+<li>
+DefaultResourceProvider 允许你定义任意数量的命名资源组, 设置其他组可访问的目录.
+
+<li>
+其意思你可创建一个资源组 "imagesets", 分配一个目录给该组, 如 "./mygame/datafiles/gui/imagesets/"
+
+<li>
+目前一个资源组只有一个目录.
+
+<li>
+下面使用的是详细地址
+<pre c++>
+ImageManager::getSingleton().loadImageset(
+    "./mygame/datafiles/gui/imagesets/WindowsLook.imageset");
+</pre>
+
+<li>
+初始化阶段时, 在 default resource provider 中设置资源组.
+<pre c++>
+DefaultResourceProvider* rp = static_cast&lt;DefaultResourceProvider*&gt;(
+    CEGUI::System::getSingleton().getResourceProvider());
+rp-&gt;setResourceGroupDirectory("imagesets", "./mygame/datafiles/gui/imagesets/");
+</pre>
+
+<li>
+加载一个 imageset
+<pre c++>
+ImageManager::getSingleton().loadImageset(
+    "WindowsLook.imageset", "imagesets");
+</pre>
+
+</ul>
+<li>
+每个可加载资源的核心系统类其有静态成员为默认资源组.
+<pre c++>
+const String&amp; getDefaultResourceGroup();
+void setDefaultResourceGroup(const String&amp; groupname);
+</pre>
+
+<li>
+一些资源加载类
+
+<ul>
+<li>
+CEGUI::Font : Font xml and freetype loadable font files.
+
+<li>
+CEGUI::Scheme : Scheme xml files.
+
+<li>
+CEGUI::WindowManager : Window layout xml files.
+
+<li>
+CEGUI::WidgetLookManager : LookNFeel xml files
+
+<li>
+CEGUI::ScriptModule : Script files in whichever scripted langauge.
+
+</ul>
+<li>
+ResourceProvider 类同样有一个默认的资源组, 看成全局或者主要的 default.
+
+<li>
+两个例外情况  ImageManager 和 基于 XML parser 的 Xerces-C++.
+
+<li>
+在 CEGUI::ImageManager 类上设置加载
+
+<ul>
+<li>
+没有实际的 Imageset 类, 使用 CEGUI::ImageManager 加载.
+<pre c++>
+const String&amp; ImageManager::getImagesetDefaultResourceGroup();
+void ImageManager::setImagesetDefaultResourceGroup(const String&amp; resourceGroup);
+</pre>
+
+<li>
+对于 XercesParser, .xsd 文件, 使用 PropertySet 接口访问名为 SchemaDefaultResourceGroup 的 property.
+
+<li>
+预先检查 "Xerces" 的 XML parser ID.
+<pre c++>
+// setup default group for validation schemas
+CEGUI::XMLParser* parser = CEGUI::System::getSingleton().getXMLParser();
+if (parser-&gt;isPropertyPresent("SchemaDefaultResourceGroup"))
+    parser-&gt;setProperty("SchemaDefaultResourceGroup", "schemas");
+</pre>
+
+</ul>
+<li>
+初始化资源组
+<pre c++>
+// initialise the required dirs for the DefaultResourceProvider
+CEGUI::DefaultResourceProvider* rp = static_cast&lt;CEGUI::DefaultResourceProvider*&gt;
+    (CEGUI::System::getSingleton().getResourceProvider());
+rp-&gt;setResourceGroupDirectory("schemes", "../datafiles/schemes/");
+rp-&gt;setResourceGroupDirectory("imagesets", "../datafiles/imagesets/");
+rp-&gt;setResourceGroupDirectory("fonts", "../datafiles/fonts/");
+rp-&gt;setResourceGroupDirectory("layouts", "../datafiles/layouts/");
+rp-&gt;setResourceGroupDirectory("looknfeels", "../datafiles/looknfeel/");
+rp-&gt;setResourceGroupDirectory("lua_scripts", "../datafiles/lua_scripts/");
+// This is only really needed if you are using Xerces and need to
+// specify the schemas location
+rp-&gt;setResourceGroupDirectory("schemas", "../datafiles/xml_schemas/");
+</pre>
+
+<ul>
+<li>
+设置默认资源组
+<pre c++>
+// set the default resource groups to be used
+CEGUI::ImageManager::setImagesetDefaultResourceGroup("imagesets");
+CEGUI::Font::setDefaultResourceGroup("fonts");
+CEGUI::Scheme::setDefaultResourceGroup("schemes");
+CEGUI::WidgetLookManager::setDefaultResourceGroup("looknfeels");
+CEGUI::WindowManager::setDefaultResourceGroup("layouts");
+CEGUI::ScriptModule::setDefaultResourceGroup("lua_scripts");
+// setup default group for validation schemas
+CEGUI::XMLParser* parser = CEGUI::System::getSingleton().getXMLParser();
+if (parser-&gt;isPropertyPresent("SchemaDefaultResourceGroup"))
+    parser-&gt;setProperty("SchemaDefaultResourceGroup", "schemas");
+</pre>
+
+</ul>
+<li>
+为了使用 .xsd, 最好用 CEGUI::XercesParser 设置该资源组. 建议开发测试时使用 Xerces-C++, 而后转至 Expat 用于最后的部署.
+
+<li>
+CEGUI 使用的资源文件大部分基于 XML 格式
+
+<li>
+Imageset, Font, LookNFeel(皮肤系统).Scheme. Layout, Config.
+
+<li>
+加载 scheme 和 font 文件
+<pre c++>
+// create (load) the TaharezLook scheme file
+// (this auto-loads the TaharezLook looknfeel and imageset files)
+CEGUI::SchemeManager::getSingleton().createFromFile( "TaharezLook.scheme" );
+// create (load) a font.
+// The first font loaded automatically becomes the default font, but note
+// that the scheme might have already loaded a font, so there may already
+// be a default set - if we want the "DejaVuSans-10" font to definitely
+// be the default, we should set the default explicitly afterwards.
+CEGUI::FontManager::getSingleton().createFromFile( "DejaVuSans-10.font" );
+</pre>
+
+<li>
+设置 System 的选项, 确保有字体和光标
+
+<li>
+FontManager 自动设置首先加载的字体为默认字体, 如不能确保加载次序, 则显式指定
+<pre c++>
+CEGUI::System::getSingleton().getDefaultGUIContext().setDefaultFont( "DejaVuSans-10" );
+</pre>
+
+<li>
+光标, 本例先用了 TaharezLook scheme
+<pre c++>
+CEGUI::System::getSingleton().getDefaultGUIContext().
+    getMouseCursor().setDefaultImage( "TaharezLook/MouseArrow" );
+</pre>
+
+</ul>
+
+<h1 id="toc_2">创建 CEGUI 窗口</h1>
+<ul>
+<li>
+每个 Widget 都是一个窗口, 由相同的 Window 基类派生而来, 
+
+<li>
+许多设置都是继承而来. 例如, 如果你在一个窗口上设置 alpha 透明度为 0.5, 则所有 attach 至该窗口的 window 和 widgets 都受此影响. 注意子窗口的实际设置保持不变. 组合窗口层次体系的值得到最终值. 窗口销毁时会自动销毁其所有子窗口.
+
+<li>
+两种方式创建窗口, c++ 代码和XML文件
+
+<li>
+WindowManager 对象
+<pre c++>
+using namespace CEGUI;
+WindowManager&amp; wmgr = WindowManager::getSingleton();
+</pre>
+
+<li>
+通常使用 DefaultWindow 作为根窗口.
+<pre c++>
+Window* myRoot = wmgr.createWindow( "DefaultWindow", "root" );
+System::getSingleton().getDefaultGUIContext().setRootWindow( myRoot );
+</pre>
+
+<ul>
+<li>
+WindowManager::createWindow 函数有两个参数: 第一个为要创建的窗口其类型或类. 这些窗口已通过 scheme 文件注册. 第二个参数为分配的名称.
+
+<li>
+GUIContext::setRootWindow 设置给定 GUIContext 的根窗口. 其会替换当前的根窗口.
+
+</ul>
+<li>
+创建 frame 窗口, 类似于你的桌面 UI 有一个标题栏, 可以移动, 可以更改大小
+<pre c++>
+FrameWindow* fWnd = static_cast&lt;FrameWindow*&gt;(
+    wmgr.createWindow( "TaharezLook/FrameWindow", "testWindow" ));
+</pre>
+
+<li>
+创建的窗口连接至根窗口
+<pre c++>
+myRoot-&gt;addChild( fWnd );
+</pre>
+
+<li>
+CEGUI 使用 'unified' co-ordinate system 来同时使用相对(缩放)和绝对(偏移)组件.
+<pre c++>
+// position a quarter of the way in from the top-left of parent.
+fWnd-&gt;setPosition( UVector2( UDim( 0.25f, 0.0f ), UDim( 0.25f, 0.0f ) ) );
+// set size to be half the size of the parent
+fWnd-&gt;setSize( USize( UDim( 0.5f, 0.0f ), UDim( 0.5f, 0.0f ) ) );
+</pre>
+
+<li>
+名称路径, 斜号连接, 如 "root/testWindow". 可通过  CEGUI::Window::getChild() 访问该子窗口. 注意以 Window 的名称为起点, 其不包括 Window 的名称.
+
+<li>
+WindowManager::loadWindowLayout() 函数, 通过 XML 文件创建窗口, 返回根窗口的指针.
+<pre xml>
+&lt;?xml version="1.0" ?&gt;
+&lt;GUILayout version="4"&gt;
+    &lt;Window type="DefaultWindow" name="root"&gt;
+        &lt;Window type="TaharezLook/FrameWindow" name="testWindow"&gt;
+            &lt;Property name="UnifiedPosition" value="{ {0.25, 0}, {0.25, 0} }" /&gt;
+            &lt;Property name="UnifiedSize" value="{ {0.5, 0}, {0.5, 0} }" /&gt;
+            &lt;Property name="Text" value="Hello World!" /&gt;
+        &lt;/Window&gt;
+    &lt;/Window&gt;
+&lt;/GUILayout&gt;
+</pre>
+
+<li>
+加载
+<pre c++>
+using namespace CEGUI;
+Window* myRoot = WindowManager::getSingleton().loadLayoutFromFile( "test.layout" );
+System::getSingleton().getDefaultGUIContext().setRootWindow( myRoot );
+</pre>
+
+</ul>
+
+<h1 id="toc_3">输入</h1>
+<ul>
+<li>
+CEGUI 的输入注入接口 CEGUI::InjectedInputReceiver. 其有用于各种基本输入的成员函数
+
+<ul>
+<li>
+bool InjectedInputReceiver::injectMouseMove( float delta_x, float delta_y );
+
+<li>
+bool InjectedInputReceiver::injectMousePosition( float x_pos, float y_pos );
+
+<li>
+bool InjectedInputReceiver::injectMouseLeaves( void );
+
+<li>
+bool InjectedInputReceiver::injectMouseButtonDown( MouseButton button );
+
+<li>
+bool InjectedInputReceiver::injectMouseButtonUp( MouseButton button );
+
+<li>
+bool InjectedInputReceiver::injectKeyDown( Key::Scan scan_code );
+
+<li>
+bool InjectedInputReceiver::injectKeyUp( Key::Scan scan_code );
+
+<li>
+bool InjectedInputReceiver::injectChar( utf32 code_point );
+
+<li>
+bool InjectedInputReceiver::injectMouseWheelChange( float delta );
+
+<li>
+bool InjectedInputReceiver::injectTimePulse( float timeElapsed );
+
+</ul>
+<li>
+用于点击和多次点击事件的可选函数
+
+<ul>
+<li>
+bool InjectedInputReceiver::injectMouseButtonClick( MouseButton button );
+
+<li>
+bool InjectedInputReceiver::injectMouseButtonDoubleClick( MouseButton button );
+
+<li>
+bool InjectedInputReceiver::injectMouseButtonTripleClick( MouseButton button );
+
+</ul>
+<li>
+返回的布尔值表示 CEGUI 是否接受了该输入.
+
+<li>
+要使得其工作, 你需要有个全屏 DefaultWindow 作为你的根layout,其 MousePassThroughEnabled 属性为真.
+
+<li>
+注意 InjectedInputReceiver 是和 GUIContext 关联在一起的. 访问默认的 GUIContext 并注入你的输入
+<pre c++>
+CEGUI::GUIContext&amp; context = CEGUI::System::getSingleton().getDefaultGUIContext();
+</pre>
+
+<li>
+鼠标按钮
+<pre c++>
+enum MouseButton
+{
+    LeftButton,
+    RightButton,
+    MiddleButton,
+    X1Button,
+    X2Button,
+    MouseButtonCount,
+    NoButton
+};
+</pre>
+
+<li>
+key 的 scan code 为 CEGUI::Key::Scan 枚举值.
+
+<li>
+ InjectedInputReceiver::injectTimePulse() 之外还需要  CEGUI::System::injectTimePulse() 注入系统.
+
+<li>
+使用 bool InjectedInputReceiver::injectMouseButtonClick() 和 bool InjectedInputReceiver::injectMouseButtonDoubleClick() 函数时, 使用 GUIContext::setMouseClickEventGenerationEnabled() 禁止点击事件的自动生成.
+
+</ul>
+
+    </div>
+</body>
+</html>

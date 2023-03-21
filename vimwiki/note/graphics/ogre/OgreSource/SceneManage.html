@@ -1,0 +1,73 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../style.css" />
+    <title>SceneManage</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="../index.html">首页</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<p>
+一. 场景的组成
+</p>
+<ul>
+<li>
+Ogre 把离散的, 相对较小的, 可移动的物体定义为 Ogre::MovableObject
+
+<li>
+Entity 属于 MovableObject, 但不属于 Renderable, 其有 SubEntity, 属于Renderable. Entity 是被分解为 SubEntity 完成渲染
+
+</ul>
+<p>
+二. 场景的管理
+</p>
+<ul>
+<li>
+Ogre::SceneManager --- 组织场景中的物体, 把物体发送到渲染系统进行渲染, 具体由子类实现(BspSceneManager, OctreeSceneManager, TerrainSceneManager)
+
+<li>
+SceneManager 对于场景中的对象是通过一个List来管理. 
+
+<li>
+把需要渲染的Objects放入一个渲染队列中 --- Ogre::RenderQueue
+
+<li>
+RenderQueueGroupID 代表 Objects 的渲染先后顺序, 如 RENDER_QUEUE_BACKGROUND 为0, RENDER_QUEUE_OVERLAY 为100
+
+<li>
+RenderQueue 通过成员 addRenderable 添加物体到渲染队列, RenderPriorityGroup 的生命周期是由 RenderQueueGroup 管理的
+
+<li>
+RenderPriorityGroup 将需要渲染的 Objects 组织为 RenderableList, 然后把 RenderableList 组织成 SolidRenderablePassMap
+
+<li>
+需要渲染的物体分别经过 RenderPriorityGroup, RenderQueueGroup 分类后, 由 RenderQueue 统一管理
+
+</ul>
+<p>
+三. 场景的组织
+</p>
+<ul>
+<li>
+SceneNode --- 重要数据成员 mSceneNodes. SceneNode的基类Node提供的方法 createChild, addChild, numChildren, getChild
+
+<li>
+SceneNode挂接Entity的方法: attachObject, numAttachedObjects, getAttachedObject, getAttachedObject, detachObject, detachAllObjects
+
+</ul>
+<p>
+四. 场景的建立
+</p>
+
+    </div>
+</body>
+</html>

@@ -1,0 +1,438 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../style.css" />
+    <title>automate_the_boring_stuff_with_python</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="../index.html">首页</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<div id="第一章 基础"><h1 id="第一章 基础" class="header"><a href="#第一章 基础">第一章 基础</a></h1></div>
+<ul>
+<li>
+操作
+<pre>
+**		指数
+//		整除
+</pre>
+
+<li>
+input() 等待输入
+
+<li>
+len()
+
+<li>
+str(), int(), float()
+
+</ul>
+
+<div id="第2章 控制流 "><h1 id="第2章 控制流 " class="header"><a href="#第2章 控制流 ">第2章 控制流 </a></h1></div>
+<ul>
+<li>
+and or not
+
+<li>
+elif
+
+<li>
+random 模块
+
+<li>
+导入
+<pre>
+import random
+或者
+from random import *
+</pre>
+
+<li>
+sys.exit() 提前结束程序
+
+<li>
+None 值
+
+<li>
+关键字参数
+
+</ul>
+
+<div id="第3章 函数"><h1 id="第3章 函数" class="header"><a href="#第3章 函数">第3章 函数</a></h1></div>
+<ul>
+<li>
+global 语句
+
+<li>
+异常 ZeroDivisionError
+
+</ul>
+
+<div id="第4章 列表"><h1 id="第4章 列表" class="header"><a href="#第4章 列表">第4章 列表</a></h1></div>
+<ul>
+<li>
+del 语句从列表中删除值
+
+<li>
+in 和 not in 操作符
+
+<li>
+多重赋值
+<pre>
+cat = ['fat', 'black', 'loud']
+size, color, disposition = cat
+</pre>
+
+<li>
+index() 在列表中查找值
+<pre>
+spam = ['hello', 'hi', 'howdy', 'heyas']
+spam.index('heyas')
+</pre>
+
+<li>
+append() 和 insert() 添加列表元素
+
+<li>
+remove() 从列表中删除值.
+
+<li>
+sort() 给列表排序, 关键字参数 reverse, 关键字参数 key 可以为 str.lower
+
+<li>
+list() 和 tuple() 相互转换为列表和元组
+
+<li>
+列表通过引用传递
+
+<li>
+copy 模块的 copy() 和 deepcopy()
+
+</ul>
+
+<div id="第5章 字典和结构化数据"><h1 id="第5章 字典和结构化数据" class="header"><a href="#第5章 字典和结构化数据">第5章 字典和结构化数据</a></h1></div>
+<ul>
+<li>
+keys(), values(), items()
+
+<li>
+in 和 not in 判断是否存在于键或值
+
+<li>
+get() 如果不存在返回备用值.
+
+<li>
+setdefault() 如果字典不存在该键, 则设置默认值.
+
+<li>
+漂亮打印 pprint 模块, 可以美化打印字典
+
+</ul>
+
+<div id="第6章 字符串操作 "><h1 id="第6章 字符串操作 " class="header"><a href="#第6章 字符串操作 ">第6章 字符串操作 </a></h1></div>
+<ul>
+<li>
+方法 upper(), lower(), isupper(), islower()
+
+<li>
+isalpha(), isalnum(), isdecimal(), isspace(), istitle()
+
+<li>
+startswith(), endswith()
+
+<li>
+join(), split()
+
+<li>
+rjust(), ljust(), center()
+
+<li>
+strip(), rstrip(), lstrip()
+
+<li>
+pyperclip 模块拷贝粘贴字符串
+<pre>
+pyperclip.copy()
+pyperclip.paste()
+</pre>
+
+</ul>
+
+<div id="第7章 模式匹配与正则表达式"><h1 id="第7章 模式匹配与正则表达式" class="header"><a href="#第7章 模式匹配与正则表达式">第7章 模式匹配与正则表达式</a></h1></div>
+<ul>
+<li>
+re 模块
+
+<li>
+\d 数字, {数字} 重复次数
+
+<li>
+re.compile() 加上正则表达式得到一个Regex Pattern 对象. 该对象有 search() 方法, 如果有匹配, 则返回 Match 对象. 该对象有 group() 方法, 返回实际的匹配文本.
+
+<li>
+添加括号可以分组正则表达式
+
+<li>
+'|' 匹配多个表达式
+
+<li>
+正则模式的findall() 方法发现所有匹配, 返回一个列表
+
+<li>
+? 字符表示可选, 匹配 0 次或 1 次
+
+<li>
+* 字符表示匹配0次或多次
+
+<li>
++ 字符表示匹配1次或多次
+
+<li>
+re.DOTALL 作为 re.compile() 的第二个参数, 让 '.' 匹配所有字符, 包括换行字符.
+
+<li>
+re.IGNORECASE 不区分大小写
+
+<li>
+sub() 替换字符串
+
+<li>
+re.VERBOSE 忽略正则表达式字符串中的空白符和注释.
+
+</ul>
+
+<div id="第8章 读写文件"><h1 id="第8章 读写文件" class="header"><a href="#第8章 读写文件">第8章 读写文件</a></h1></div>
+<ul>
+<li>
+os.path.join() 返回一个文件路径的字符串, 包含正确的路径分隔符
+<pre>
+&gt;&gt;&gt; import os
+&gt;&gt;&gt; os.path.join('usr', 'bin', 'spam')
+'usr\\bin\\spam'
+</pre>
+
+<li>
+os.getcwd() --- 取得当前的工作路径
+
+<li>
+os.chdir() --- 改变当前的工作路径
+
+<li>
+os.makedirs() --- 创建新文件夹, 会自动创建所有必要的中间文件夹
+
+<li>
+os.path 模块
+
+<li>
+os.path.abspath(path) 返回绝对路径
+
+<li>
+os.path.isbas(path) 是否绝对路径
+
+<li>
+os.path.relpath(path, start) 返回相对路径
+
+<li>
+os.path.dirname(path) 返回目录
+
+<li>
+os.path.basename(path) 返回最后一个斜杠之后的所有内容.
+
+<li>
+os.path.split(path) 获取目录和basename
+
+<li>
+os.path.getsize(path) 得到 path 参数中文件的字节数
+
+<li>
+os.listdir(path) 得到目录中文件的列表.
+
+<li>
+os.path.exists(path) 文件或文件夹是否存在
+
+<li>
+os.path.isfile(path) 是否文件
+
+<li>
+os.path.isdir(path) 是否目录
+
+<li>
+open() 打开文件
+
+<li>
+File 对象 read(), readlines() 方法. write() 方法.
+
+<li>
+shelve 模块保存变量
+<pre>
+import shelve
+shelfFile = shelve.open('mydata')
+cats = ['Zophie', ' Pooka', 'Simon']
+shelfFile['cats'] = cats
+shelfFile.close()
+</pre>
+
+<li>
+pprint.pformat() 保存变量
+<pre>
+&gt;&gt;&gt; import pprint
+&gt;&gt;&gt; cats = [{'name: 'Zophie', 'desc': 'chubby'}, {'name: 'Pooks', 'desc': 'fluffy'}]
+&gt;&gt;&gt; pprint.pformat(cats)
+&gt;&gt;&gt; fileobj = open('myCats.py', 'w')
+&gt;&gt;&gt; fileobj.write('cats = ' + pprint.pformat(cats) + '\n')
+&gt;&gt;&gt; fileobj.close()
+</pre>
+
+</ul>
+
+<div id="第9章 组织文件"><h1 id="第9章 组织文件" class="header"><a href="#第9章 组织文件">第9章 组织文件</a></h1></div>
+<ul>
+<li>
+shutil 模块
+
+<ul>
+<li>
+shutil.copy(source, destination) 复制一个文件
+
+<li>
+shutil.copytree() 复制整个文件夹
+
+<li>
+shutil.move(source, destination) 移动改名
+
+<li>
+os.unlink(path) 删除 path 处的文件
+
+<li>
+os.rmdir(path) 删除 path 处的文件夹, 该文件夹必须为空.
+
+<li>
+shutil.rmtree(path) 删除 path 处的文件夹.
+
+</ul>
+<li>
+send2trash 模块进行安全删除, send2trash.send2trash(path)
+
+<li>
+遍历目录树, 包括子目录
+<pre>
+import os
+
+for folderName, subfolders, filenames in os.walk('C:\\delicious'):
+	print('The current folder is ' + folderName)
+	
+	for subfolder in subfolders:
+		print('SUBFOLDER OF ' + folderName + ': ' + subfolder)
+	for filename in filenames:
+		print('FILE INSIDE ' + folderName + ': ' + filename)
+</pre>
+
+<li>
+zipfile 模块压缩
+
+<ul>
+<li>
+ZipFile()
+
+<li>
+ZipFile 对象
+
+<ul>
+<li>
+namelist()
+
+<li>
+getinfo()
+
+<li>
+file_size()
+
+<li>
+compress_size()
+
+<li>
+extractall() 解压缩
+
+<li>
+extract() 解压单个文件
+
+<li>
+write() 压入
+
+</ul>
+</ul>
+</ul>
+
+<div id="第10章 调试"><h1 id="第10章 调试" class="header"><a href="#第10章 调试">第10章 调试</a></h1></div>
+<ul>
+<li>
+抛出异常, raise 语句
+<pre>
+&gt;&gt;&gt; raise Exception('This is the error message.')
+</pre>
+<pre>
+	...
+	try:
+		...
+	except Exception as err:
+		print('An exception happened: ' + str(err))
+	...
+</pre>
+
+<li>
+断言 assert 关键字
+
+<li>
+python -O 可以禁用断言
+
+<li>
+logging 模块, 下面为头部信息
+<pre>
+import logging
+logging.basicConfig(level=logging.DEBUG, format= '%(asctime)s - %(levelname)s - %(message)s'
+</pre>
+
+<ul>
+<li>
+logging.debug()
+
+</ul>
+<li>
+日志级别
+
+<ul>
+<li>
+DEBUG
+
+<li>
+INFO
+
+<li>
+WARNING
+
+<li>
+ERROR
+
+<li>
+CRITICAL
+
+</ul>
+<li>
+logging.disable() 禁用日志
+
+<li>
+logging.basicConfig() 的 filename 参数设置输出路径
+
+</ul>
+
+    </div>
+</body>
+</html>

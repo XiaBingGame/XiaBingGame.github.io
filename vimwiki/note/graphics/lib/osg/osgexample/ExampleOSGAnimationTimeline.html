@@ -1,0 +1,58 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../../style.css" />
+    <title>ExampleOSGAnimationTimeline</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="../index.html">首页</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<ul>
+<li>
+演示动画的管理, 通过时间线的方式, 可以动态添加和管理动画
+
+<li>
+使用 nathan.osg 演示动画的管理
+
+<li>
+从更新回调里面获取 osgAnimation::AnimationManagerBase
+
+<li>
+osgAnimation::TimelineAnimationManager: 动画时间线管理, 直接替换掉原有的动画管理
+
+<li>
+osg::Callback::addNestedCallback: 添加嵌套回调
+
+<li>
+osgAnimation::Timeline
+
+<ul>
+<li>
+addActionAt: 添加动画片段
+
+</ul>
+<li>
+osgAnimation::ActionStripAnimation 动画片段, 
+
+<ul>
+<li>
+可以添加回调, 在特定时调用, setCallback
+
+</ul>
+<li>
+可以在时间线上动态添加动画片段
+
+</ul>
+
+    </div>
+</body>
+</html>

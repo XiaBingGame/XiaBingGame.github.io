@@ -1,0 +1,74 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../../style.css" />
+    <title>Chapter1</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<h1 id="toc_1">OpenGL 和图形管线 </h1>
+<ul>
+<li>
+OpenGL 可以将渲染工作分散并平行运行其基本的操作.
+
+<li>
+当前GPU由大量的小型可编程处理器(shader cores)组成,每个core有相对少的吞吐量, 一个或多个时钟周期内处理shader的单个指令, 且缺乏一些高级功能, 如 out-of-order execution, branch prediction,  super-scalar issue等.
+
+</ul>
+
+<h1 id="toc_2">OpenGL的起源和发展</h1>
+<ul>
+<li>
+GL - Graphics Library
+
+<li>
+ARB - OpenGL Architectural Review Board. 现为 Khronos Group 的一部分.
+
+<li>
+本书版本为 OpenGL 4.3
+
+<li>
+2008年起, ARB分出两个分支:
+
+<ul>
+<li>
+core profile: 移除所有之前的功能, 仅留当前管理硬件加速的功能
+
+<li>
+compatibility profile: 兼容之前的 OpenGL 版本.
+
+</ul>
+<li>
+本书仅关心 core profile.
+
+</ul>
+
+<h1 id="toc_3">图元, 管线和像素 </h1>
+<ul>
+<li>
+三种基本类型图元: 点, 线, 三角形.
+
+<li>
+使用一个叫 rasterizer 的硬件加速其渲染三角形. 其将三角形转换成在屏幕上绘制的一系列像素.
+
+<li>
+图形管线拆分为两个部分, 第一部分为 front end, 其处理顶点和图元, 最终转换为点, 线, 三角形, 而后发送给 rasterizer. 这过程可看成 primitive assembly. 在rasterizer之后, 几何体则从向量表达式转换为大量各自独立的像素. 而后发送给 back end 处理. 其内包含深度和stencil测试, 片段着色, 混合, 更新输出图像.
+
+</ul>
+
+    </div>
+</body>
+</html>

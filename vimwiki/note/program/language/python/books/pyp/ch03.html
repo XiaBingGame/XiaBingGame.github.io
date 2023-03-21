@@ -1,0 +1,305 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../../../style.css" />
+    <title>ch03</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="../index.html">首页</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<div id="第三章 TCP"><h1 id="第三章 TCP" class="header"><a href="#第三章 TCP">第三章 TCP</a></h1></div>
+<ul>
+<li>
+在某一时刻发送方希望同时传输的数据量叫做 TCP 窗口(window)的大小.
+
+<li>
+接收方的TCP实现可以通过控制发送的窗口大小来减缓或暂停连接.
+
+<li>
+两台主机之间建立连接需要3个数据包:SYN、SYN-ACK、ACK, 关闭连接:FIN、FIN-ACK、ACK。
+
+<li>
+TCP 的 connect() 有可能失败, 如不做应答, 拒绝连接, 协议错误.
+
+<li>
+TCP 接口包括两种套接字类型:
+
+<ul>
+<li>
+被动套接字(passive socket), 也叫监听套接字(listening socket). 服务器通过该套接字来接受连接请求. 但是该套接字不能用于发送或接收任何数据, 也不表示任何实际的网络会话.
+
+<li>
+主动套接字(active socket), 又叫做连接套接字(connected socket). 只用于与特定远程主机进行通信, 可以通过该套接字发送或接收数据.
+
+</ul>
+<li>
+多个主动套接字可以绑定到服务器的公共IP地址和TCP的特定端口, 通过四元组唯一标识
+
+</ul>
+<p>
+```
+(local_ip, local_port, remote_ip, remote_port)
+```
+```py
+#!/usr/bin/env python3
+</p>
+<ol>
+<li>
+Foundations of Python Network Programming, Third Edition
+
+<li>
+<a href="https://github.com/brandon-rhodes/fopnp/blob/m/py3/chapter03/tcp_sixteen.py">https://github.com/brandon-rhodes/fopnp/blob/m/py3/chapter03/tcp_sixteen.py</a>
+
+<li>
+Simple TCP client and server that send and receive 16 octets
+
+</ol>
+
+<p>
+import argparse, socket
+</p>
+
+<p>
+def recvall(sock, length):
+</p>
+<blockquote>
+data = b''
+while len(data) &lt; length:
+more = sock.recv(length - len(data))
+if not more:
+raise EOFError('was expecting %d bytes but only received'
+' %d bytes before the socket closed'
+% (length, len(data)))
+data += more
+return data
+</blockquote>
+
+<p>
+def server(interface, port):
+</p>
+<blockquote>
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+sock.bind((interface, port))
+sock.listen(1)
+print('Listening at', sock.getsockname())
+while True:
+print('Waiting to accept a new connection')
+sc, sockname = sock.accept()
+print('We have accepted a connection from', sockname)
+print('  Socket name:', sc.getsockname())
+print('  Socket peer:', sc.getpeername())
+message = recvall(sc, 16)
+print('  Incoming sixteen-octet message:', repr(message))
+sc.sendall(b'Farewell, client')
+sc.close()
+print('  Reply sent, socket closed')
+</blockquote>
+
+<p>
+def client(host, port):
+</p>
+<blockquote>
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+sock.connect((host, port))
+print('Client has been assigned socket name', sock.getsockname())
+sock.sendall(b'Hi there, server')
+reply = recvall(sock, 16)
+print('The server said', repr(reply))
+sock.close()
+</blockquote>
+
+<p>
+if _<em>name</em>_ == '_<em>main</em>_':
+</p>
+<blockquote>
+choices = {'client': client, 'server': server}
+parser = argparse.ArgumentParser(description='Send and receive over TCP')
+parser.add_argument('role', choices=choices, help='which role to play')
+parser.add_argument('host', help='interface the server listens at;'
+' host the client sends to')
+parser.add_argument('-p', metavar='PORT', type=int, default=1060,
+help='TCP port (default 1060)')
+args = parser.parse_args()
+function = choices[args.role]
+function(args.host, args.p)
+</blockquote>
+<p>
+```
+</p>
+<ul>
+<li>
+sendall() 确保所有数据发送
+
+<li>
+listen() 调用对套接字的改变是无法撤消的,调用之后该套接字再也不能用于发送或接收数据. 只能通过 accept() 接受连接请求. listen() 可设置等待连接的最大数目.
+
+<li>
+close() 关闭套接字
+
+<li>
+SO_REUSEADDR 选项, 操作系统一般关闭几分钟后才能使用套接字地址, 使用该选项忽略, 可立即使用该地址.
+
+<li>
+死锁
+
+</ul>
+<p>
+```py
+#!/usr/bin/env python3
+</p>
+<ol>
+<li>
+Foundations of Python Network Programming, Third Edition
+
+<li>
+<a href="https://github.com/brandon-rhodes/fopnp/blob/m/py3/chapter03/tcp_deadlock.py">https://github.com/brandon-rhodes/fopnp/blob/m/py3/chapter03/tcp_deadlock.py</a>
+
+<li>
+TCP client and server that leave too much data waiting
+
+</ol>
+
+<p>
+import argparse, socket, sys
+</p>
+
+<p>
+def server(host, port):
+</p>
+<blockquote>
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+sock.bind((host, port))
+sock.listen(1)
+print('Listening at', sock.getsockname())
+while True:
+sc, sockname = sock.accept()
+print('Processing up to 1024 bytes at a time from', sockname)
+n = 0
+while True:
+data = sc.recv(1024)
+if not data:
+break
+output = data.decode('ascii').upper().encode('ascii')
+sc.sendall(output)  # send it back uppercase
+n += len(data)
+print('\r  %d bytes processed so far' % (n,), end=' ')
+sys.stdout.flush()
+print()
+sc.close()
+print('  Socket closed')
+</blockquote>
+
+<p>
+def client(host, port, bytecount):
+</p>
+<blockquote>
+sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+bytecount = (bytecount + 15) // 16 * 16  # round up to a multiple of 16
+message = b'capitalize this!'  # 16-byte message to repeat over and over
+</blockquote>
+<blockquote>
+print('Sending', bytecount, 'bytes of data, in chunks of 16 bytes')
+sock.connect((host, port))
+</blockquote>
+<blockquote>
+sent = 0
+while sent &lt; bytecount:
+sock.sendall(message)
+sent += len(message)
+print('\r  %d bytes sent' % (sent,), end=' ')
+sys.stdout.flush()
+</blockquote>
+<blockquote>
+print()
+sock.shutdown(socket.SHUT_WR)
+</blockquote>
+<blockquote>
+print('Receiving all the data the server sends back')
+</blockquote>
+<blockquote>
+received = 0
+while True:
+data = sock.recv(42)
+if not received:
+print('  The first data received says', repr(data))
+if not data:
+break
+received += len(data)
+print('\r  %d bytes received' % (received,), end=' ')
+</blockquote>
+<blockquote>
+print()
+sock.close()
+</blockquote>
+
+<p>
+if _<em>name</em>_ == '_<em>main</em>_':
+</p>
+<blockquote>
+roles = ('client', 'server')
+parser = argparse.ArgumentParser(description='Get deadlocked over TCP')
+parser.add_argument('role', choices=roles, help='which role to play')
+parser.add_argument('host', help='interface the server listens at;'
+' host the client sends to')
+parser.add_argument('bytecount', type=int, nargs='?', default=16,
+help='number of bytes for client to send (default 16)')
+parser.add_argument('-p', metavar='PORT', type=int, default=1060,
+help='TCP port (default 1060)')
+args = parser.parse_args()
+if args.role == 'client':
+client(args.host, args.p, args.bytecount)
+else:
+server(args.host, args.p)
+</blockquote>
+<p>
+```
+</p>
+<ul>
+<li>
+网络连接每一端的TCP栈中都有缓冲区, 这些缓冲区能够暂时保存数据.
+
+<li>
+通过套接字选项关闭阻塞, 当 send() 和 recv() 不能发送数据时会立即返回.
+
+<li>
+可以用多个线程处理收发.
+
+<li>
+运行 select() 或 poll() 等操作系统调用, 使得程序在发送套接字和接收套接字繁忙时等待, 当它们当中任何一个空闲时就做出响应.
+
+<li>
+套接字的关闭是惰性的, 客户端和服务器之间发送信息后可以保持套接字的打开状态,之后再关闭套接字,无需担心任何一方会由于等待另一套接字的关闭而阻塞.
+
+<li>
+shutdown() 可以用来关闭套接字中任意方向的通信连接
+
+<ul>
+<li>
+SHUT_WR:不再向套接字写入数据
+
+<li>
+SHUT_RD:关闭接收方向的套接字流. 通信对方尝试发送更多数据时,就会引发文件结束错误.
+
+<li>
+SHUT_RDWR: 通信两个方向都关闭. close() 仅结束了调用它的进程与套接字的关系.
+
+</ul>
+<li>
+Python 为每个套接字提供了一个 makefile() 方法. 该方法返回一个 Python 文件对象, 其底层调用 recv() 和 send()
+
+</ul>
+
+    </div>
+</body>
+</html>

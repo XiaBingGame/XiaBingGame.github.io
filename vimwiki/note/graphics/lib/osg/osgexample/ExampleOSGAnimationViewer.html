@@ -1,0 +1,59 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../../style.css" />
+    <title>ExampleOSGAnimationViewer</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="../index.html">首页</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<ul>
+<li>
+获取节点的动画管理, 设置动画播放模式, 创建 GUI 控制动画的播放.
+
+<li>
+osgAnimation::AnimationManagerBase 派生自 osg::NodeCallback
+
+<ul>
+<li>
+链接新加的动画, 更新动画
+
+<li>
+getAnimationList() 获取动画列表
+
+</ul>
+<li>
+osgAnimation::Animation::playMode --- 播放模式
+
+<li>
+osgAnimation::Animation::setPlayMode 设置播放模式
+
+<li>
+AnimationManagerFinder 遍历节点, 找到 osgAnimation::AnimationManagerBase 的更新回调
+
+<li>
+osgDB::equalCaseInsensitive --- 可以进行字符串比较
+
+<li>
+AnimtkViewerModelController 控制播放哪个动画, 自定义类
+
+<li>
+AnimtkViewerGUI: 控制动画播放的 GUI
+
+<li>
+osgWidget::WindowManger 创建 GUI 管理界面的基类
+
+</ul>
+
+    </div>
+</body>
+</html>

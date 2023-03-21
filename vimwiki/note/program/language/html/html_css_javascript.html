@@ -1,0 +1,2152 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../style.css" />
+    <title>html_css_javascript</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+<!--
+	<ul id="top-nav">
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+-->	
+</div>
+</div>
+    <div class="content">
+    
+<h1 id="toc_1">HTML 基本标记</h1>
+<ul>
+<li>
+head, title
+
+<li>
+元信息标志 meta, 不需结束标记, 定义页面信息的说明, 关键字, 刷新等
+
+<ul>
+<li>
+name 用于描述网页, 便于搜索引擎查找, 分类
+<pre class="brush: html">
+&lt;meta name="keywords" content="输入具体的关键字"&gt;
+&lt;meta name="description" content="设置页面说明"&gt;
+&lt;meta name="generator" content="编辑软件的名"&gt;
+&lt;meta name="author" content="作者的姓名"&gt;
+</pre>
+
+<li>
+设置网页的编码方式
+<pre class="brush: html">
+&lt;meta http-equiv="content-type" content="text/html; charset=字符集类型" /&gt;
+</pre>
+
+<li>
+设置网页的定时跳转
+<pre class="brush: html">
+&lt;meta http-equiv="refresh" content="跳转的时间;URL=跳转到的地址"&gt;
+</pre>
+
+</ul>
+<li>
+主题标志 Body
+
+<ul>
+<li>
+背景颜色: &lt;body bgcolor="背景颜色"&gt;
+
+<li>
+背景图片: &lt;body background="图片的地址"&gt;
+
+<li>
+文字颜色: &lt;body text="文字的颜色"&gt;
+
+<li>
+链接文字颜色: &lt;body link="颜色" alink="正在访问的文字颜色" vlink="访问后的文字颜色"&gt;
+
+<li>
+页面与浏览器边框之间的距离(像素为单位): &lt;body topmargin=上边值的距离 leftmargin=左边值的距离&gt;
+
+<li>
+注释: &lt;!--注释内容--&gt;
+
+</ul>
+</ul>
+
+<h1 id="toc_2">第3章 文字与段落标记 </h1>
+<ul>
+<li>
+标题字标记 h
+
+<ul>
+<li>
+大小:  h1 到 &lt;h6&gt;
+
+<li>
+对齐属性: align
+
+</ul>
+<li>
+文本基本标记 font
+
+<ul>
+<li>
+字体属性 face 
+
+<li>
+字号属性 size: 绝对字号 1-7, 相对字号 -4到+4(相对于3号)
+
+<li>
+颜色属性 color
+
+</ul>
+<li>
+文本格式化标记
+
+<ul>
+<li>
+粗体标记 b, strong
+
+<li>
+斜体标记 i, em, cite
+
+<li>
+上标标记 sup
+
+<li>
+下表标记 sub
+
+<li>
+大字号标记 big
+
+<li>
+小字号标记 small(和上面一样可以逐级放大或缩小)
+
+<li>
+下划线标记 u
+
+</ul>
+<li>
+段落标记
+
+<ul>
+<li>
+段落标记 p
+
+<li>
+换行标记 br
+
+<li>
+不换行标记 nobr
+
+</ul>
+<li>
+水平线
+
+<ul>
+<li>
+插入水平线 hr
+
+<li>
+水平线宽度 width, 高度 size, 去掉阴影 noshade, 颜色 color, 排列 align
+
+</ul>
+<li>
+其他标记
+
+<ul>
+<li>
+空格: &amp;nbsp;
+
+<li>
+""-&amp;quot;  &amp;-&amp;amp;  &lt;-&amp;lt;  &gt;-&amp;gt;  x-&amp;times;  &amp;sect  &amp;ccopy;  &amp;reg;  &amp;trade;
+
+</ul>
+</ul>
+
+<h1 id="toc_3">第4章 使用图像</h1>
+<ul>
+<li>
+插入图像
+
+<ul>
+<li>
+插入图像标记 img
+
+<ul>
+<li>
+src 图像的源文件
+
+<li>
+alt 提示文字
+
+<li>
+width, height 高宽
+
+<li>
+border 边框
+
+<li>
+vspace, hspace 垂直, 水平间距
+
+<li>
+align 排列
+
+<li>
+dynsrc 设置 avi 文件的播放
+
+<li>
+loop 设置 avi 文件循环播放次数
+
+<li>
+loopdelay 设置 avi 文件循环播放延迟
+
+<li>
+start 设置 avi 文件播放方式
+
+<li>
+lowsrc 设定低分辨率图像
+
+<li>
+usemap 映像地图
+
+</ul>
+</ul>
+<li>
+图像的超链接: &lt;a href="链接地址"&gt;&lt;img src="图像文件的地址"&gt;&lt;/a&gt;
+
+<li>
+图像的热区链接
+
+<ul>
+<li>
+设置映像图像名: &lt;img src="图像地址" usemap="映射图像名称"&gt;
+
+<li>
+定义热区图像
+<pre class="brush: html">
+&lt;map name="映射图像名称"&gt;
+&lt;area shape="热区形状" coords="热区坐标" href="链接地址"&gt;
+&lt;/map&gt;
+</pre>
+
+</ul>
+</ul>
+
+<h1 id="toc_4">第5章 使用列表</h1>
+<ul>
+<li>
+有序列表
+
+<ul>
+<li>
+有序列表 ol
+
+<li>
+有序列表的序号类型 type: 小写字母, 数字,  大写字母, 小写罗马数字, 大写罗马数字
+
+<li>
+有序列表的起始数值 start
+
+</ul>
+<li>
+无序列表
+
+<ul>
+<li>
+无序列表 ul: disc, circle, square
+
+<li>
+目录列表标记 &lt;dir&gt;
+
+<li>
+定义列表标记 &lt;dl&gt;
+
+<ul>
+<li>
+&lt;dt&gt; 定义的名词
+
+<li>
+&lt;dd&gt; 定义的解释
+
+</ul>
+<li>
+菜单标记 &lt;menu&gt;
+
+</ul>
+</ul>
+
+<p>
+第6章 使用表格
+</p>
+<ul>
+<li>
+创建表格
+
+<ul>
+<li>
+基本构成: table, tr, td
+
+<li>
+标题: caption
+
+<li>
+表头: th
+
+</ul>
+<li>
+表格的基本属性
+
+<ul>
+<li>
+宽度 width
+
+<li>
+高度 height
+
+<li>
+对齐 align
+
+</ul>
+<li>
+表格的边框
+
+<ul>
+<li>
+宽度 border
+
+<li>
+颜色 bordercolor
+
+<li>
+内框宽度 cellspacing
+
+<li>
+表格内文字和边框间距 cellpadding
+
+</ul>
+<li>
+表格背景
+
+<ul>
+<li>
+背景颜色 bgcolor
+
+<li>
+背景图像 background
+
+</ul>
+<li>
+表格的行属性
+
+<ul>
+<li>
+高度 height: 行的高度 &lt;tr height="行的高度"&gt;
+
+<li>
+边框颜色 bordercolor: &lt;tr bordercolor="边框的颜色"&gt;
+
+<li>
+行背景 bgcolor, background
+
+<li>
+行文字对齐 align
+
+<li>
+行文字垂直对齐 valign
+
+</ul>
+<li>
+单位各属性
+
+<ul>
+<li>
+width, height
+
+<li>
+水平跨度 colspan
+
+<li>
+垂直跨度 rowspan
+
+<li>
+对齐方式 align, valign
+
+<li>
+单元格的背景色 bgcolor
+
+<li>
+边框颜色 bordercolor
+
+<li>
+亮边框 bordercolorlight
+
+<li>
+暗边框 bordercolordark
+
+<li>
+背景图像 background
+
+</ul>
+<li>
+表格的结构
+
+<ul>
+<li>
+表格的表首标记 &lt;thead&gt;, 用于定义表格最上端表首的样式, 可以设置背景颜色, 文字对齐方式, 文字的垂直对齐方式等
+<pre class="brush: html">
+&lt;thead bgcolor="背景颜色" align="对齐方式"&gt;
+...
+&lt;\thead&gt;
+</pre>
+
+<li>
+表格的表主体标记 &lt;tbody&gt;
+
+<li>
+表格的表尾标记(tfoot)
+
+</ul>
+</ul>
+
+<h2 id="toc_4.1">第7章 建立超链</h2>
+<ul>
+<li>
+内部链接: 在同一个网站中的资源
+
+<ul>
+<li>
+目标窗口 target: self, blank, top, parent
+
+</ul>
+<li>
+锚点链接
+
+<ul>
+<li>
+建立锚点: &lt;a name ="锚点名称"&gt;&lt;/a&gt;
+
+<li>
+链接至同一页面中的锚点: &lt;a href="#锚点名称"&gt;...&lt;/a&gt;
+
+<li>
+链接至其他页面中的锚点: &lt;a href="链接的文件地址#锚点名称"&gt;...&lt;/a&gt;
+
+</ul>
+<li>
+外部链接
+
+<ul>
+<li>
+链接到外部网站: &lt;a href="<a href="http://......"&gt;...&lt;/a&gt;">http://......"&gt;...&lt;/a&gt;</a>
+
+<li>
+链接到email: &lt;a href="<a href="mailto:邮件地址"&gt;...&lt;/a&gt;">mailto:邮件地址"&gt;...&lt;/a&gt;</a>
+
+<li>
+链接到 ftp: &lt;a href="<a href="ftp://......"&gt;...&lt;/a&gt;">ftp://......"&gt;...&lt;/a&gt;</a>
+
+<li>
+链接到 Telnet: &lt;a href="<a href="telnet://地址"&gt;...&lt;/a&gt;">telnet://地址"&gt;...&lt;/a&gt;</a>
+
+<li>
+下载文件: &lt;a href="文件地址"&gt;...&lt;/a&gt;
+
+</ul>
+</ul>
+
+<h1 id="toc_5">第8章 添加多媒体 </h1>
+<ul>
+<li>
+设置滚动效果
+
+<ul>
+<li>
+滚动标记 marquee: 移动文字, 图片, 表格等
+<pre class="brush: html">
+&lt;marquee&gt;......&lt;/marquee&gt;
+</pre>
+
+<li>
+滚动方向 direction: up, down, left, right
+
+<li>
+滚动方式 behavior: scroll(循环), slide(滚动一次), alternate(来回)
+
+<li>
+滚动速度 scrollamount
+
+<li>
+滚动延迟 scrolldelay
+
+<li>
+滚动循环 loop
+
+<li>
+滚动范围 width, height
+
+<li>
+滚动背景颜色 bgcolor
+
+<li>
+空白空间 hspace, vspace
+
+</ul>
+<li>
+插入多媒体文件
+
+<ul>
+<li>
+插入 Flash 动画
+
+<ul>
+<li>
+&lt;embed src="多媒体文件地址" width="多媒体的宽度" height="多媒体的高度"&gt;&lt;/embed&gt;
+
+</ul>
+<li>
+插入音频和视频文件
+
+<ul>
+<li>
+&lt;embed src="多媒体文件地址" width="播放界面的宽度" height="播放界面的高度"&gt;&lt;/embed&gt;
+
+</ul>
+</ul>
+<li>
+设置背景音乐
+
+<ul>
+<li>
+背景音乐 bgsound
+
+<ul>
+<li>
+&lt;bgsound src="背景音乐的地址"&gt;
+
+</ul>
+<li>
+循环次数 loop, 如果希望无限循环, 设为 true
+
+</ul>
+<li>
+插入 JavaApplet
+<pre class="brush: html">
+&lt;applet code="Lake.class" width="宽度" height="高度"&gt;
+&lt;param name="文件夹的名称" value="图片名称"&gt;
+&lt;/applet&gt;
+</pre>
+
+</ul>
+
+<h2 id="toc_5.1">第9章 使用框架结构</h2>
+<ul>
+<li>
+框架是浏览器窗口中的一个区域, 它可以显示与浏览器窗口的其余部分中所显示的内容无关的HTML文档
+
+<li>
+框架集是HTML文件, 它定义一组框架的布局和属性, 包括框架的数目, 大小和位置, 以及在每个框架中初始显示页面的URL
+
+<li>
+设置框架集的属性 frameset
+
+<ul>
+<li>
+水平分割窗口 rows
+<pre class="brush: html">
+&lt;frameset rows="框架窗口的高度, 框架窗口的高度, ..."&gt;
+&lt;frame&gt;
+&lt;frame&gt;
+...
+&lt;frameset&gt;
+</pre>
+
+<li>
+垂直分割窗口
+
+<li>
+嵌套分割窗口
+
+<li>
+框架的边框 frameborder: &lt;frameset frameborder="是否显示"&gt;
+
+<li>
+框架的边框宽度: framespacing
+
+<li>
+框架的边框颜色: bordercolor
+
+</ul>
+<li>
+设置窗口属性 frame
+
+<ul>
+<li>
+页面源文件 src
+
+<li>
+页面名称 name
+
+<li>
+禁止调整窗口的尺寸 noresize
+
+<li>
+边框与页面内容的水平边距 marginwidth
+
+<li>
+边框与页面内容的垂直编剧 marginheight
+
+<li>
+框架滚动条显示 scrolling
+
+<li>
+不支持框架标记 noframes: &lt;noframes&gt;替换显示内容&lt;/noframes&gt;
+
+</ul>
+<li>
+浮动框架 iframe
+
+<ul>
+<li>
+页面源文件 src
+
+<li>
+高宽 width, height
+
+<li>
+对齐 align
+
+<li>
+滚动 scrolling
+
+</ul>
+<li>
+创建框架链接
+
+<ul>
+<li>
+一般一个页面中会有一个框架窗口作为导航页面, 其中添加了对另一个框架内容的链接设置, 这些链接则是通过 target 来实现
+
+<li>
+浮动框架的链接
+
+</ul>
+</ul>
+
+<p>
+第10章 使用表单
+</p>
+<ul>
+<li>
+&lt;form&gt;和</form&gt;之间创建一个表单
+
+<ul>
+<li>
+提交表单 action: &lt;form action="表单的处理程序"&gt;
+
+<li>
+表单名称 name
+
+<li>
+传送方法 method: get, post
+
+<li>
+编码方式 enctype: application/x-www-form-urlencoded 默认, multipart/from-data MIME编码
+
+<li>
+目标显示方式 target: _blank, _parent(父框架或父窗口), _self, _top
+
+</ul>
+<li>
+插入表单对象
+
+<ul>
+<li>
+文字字段 text: &lt;input name="控件名称" type="text" value="文字字段的默认取值" size="控件的长度" maxlength="最长字符数" /&gt;
+
+<li>
+密码域 password
+
+<li>
+单选按钮 radio
+
+<li>
+复选框按钮 checkbox
+
+<li>
+普通按钮 button
+
+<li>
+提交按钮 submit
+
+<li>
+重置按钮 reset
+
+<li>
+图像域 image
+
+<li>
+隐藏域 hidden
+
+<li>
+文件域 file
+
+</ul>
+<li>
+菜单和列表
+
+<ul>
+<li>
+下拉菜单
+<pre class="brush: html">
+&lt;select name="下拉菜单名称"&gt;
+&lt;option value="选项值" selected="是否选择"&gt;选项显示内容&lt;/option&gt;
+.....
+&lt;/select&gt;
+</pre>
+
+<li>
+列表项
+<pre class="brush: html">
+&lt;select name="列表项名称" size="显示的列表项项目" multiple&gt;
+&lt;option value="选项值" selected="是否选择"&gt;选项显示内容&lt;/option&gt;
+.....
+&lt;/select&gt;
+</pre>
+
+</ul>
+<li>
+文本域标记 textarea: &lt;textarea name="文本域名称" color="列数" rows="行数"&gt;&lt;/textarea&gt;
+
+<li>
+id 标记, 标记唯一的元素
+
+<ul>
+<li>
+&lt;id=元素的标识名&gt;
+
+</ul>
+</ul>
+
+<h1 id="toc_6">第11章 使用 XHTML</h1>
+<ul>
+<li>
+最简单的XHTML页面
+<pre class="brush: html">
+&lt;!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+"http:://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd"&gt;
+&lt;html xmlns="http://www.w3.org/1999/xhtml"&gt;
+&lt;head&gt;
+&lt;meta http-equiv="Content-Type" content="text/html; charset=gb2312" /&gt;
+&lt;title&gt;标题&lt;/title&gt;
+&lt;/head&gt;
+&lt;body&gt;
+正文...
+&lt;/body&gt;
+</pre>
+
+<ul>
+<li>
+&lt;!DOCTYPE&gt; 文档生命文件
+
+<li>
+html 元素和名字空间
+
+<li>
+头部元素, 定义页面头部信息, 含标题元素, &lt;meta&gt;元素
+
+</ul>
+<li>
+XHTML 语法规范
+
+<ul>
+<li>
+XHTML 元素必须是完全嵌套的, 如 <b><i>这就是粗体和斜体</i></b>
+
+<li>
+XHTML 文档格式必须规范
+
+<li>
+标签名必须小写
+
+<li>
+所有XHTML元素必须有始有终
+
+<li>
+用 id 属性代替 name 属性: 在XHTML里除了表单(form)外,  name属性不能使用, 需要用 id 来替换
+
+<li>
+DOCTYPE 声明是不可缺少的
+
+<li>
+属性必须加上英文双引号
+
+<li>
+明确所有属性的值, 没有值的属性也要用自己的名称作为值
+
+</ul>
+</ul>
+
+<h1 id="toc_7">第12章 使用 CSS 样式表 </h1>
+<ul>
+<li>
+使用 CSS
+
+<ul>
+<li>
+CSS的基本语法: 选择符{样式属性: 取值; 样式属性: 取值; 样式属性: 取值; ......}
+
+<ul>
+<li>
+选择符指这组样式编码所要针对的对象, 可以是一组 XHTML 标签, 如 body, h1, 也可以是定义了特定id或class的标签
+
+<li>
+值的形式有两种, 一种指定范围的值, 一种为数值
+
+</ul>
+<li>
+4种添加CSS的方法
+
+<ul>
+<li>
+链接外部样式表: &lt;head&gt; 中使用 &lt;link&gt; 标记
+<pre class="brush: html">
+&lt;head&gt;
+...
+&lt;link rel=stylesheet type=text/css href=s1style.css&gt;
+...
+&lt;/head&gt;
+</pre>
+
+<li>
+内部样式表, 位于 &lt;head&gt; 内 &lt;style&gt; 标签
+<pre class="brush: html">
+&lt;head&gt;
+&lt;style tpye="text/css"&gt;
+&lt;!--
+body {
+	margin-left: 0px;
+	margin-top: 0px;
+	margin-right: 0px;
+	margin-bottom: 0px;
+}
+.style1 {
+	color: #fbe33e;
+	font-size: 13px;
+}
+--&gt;
+&lt;/style&gt;
+&lt;/head&gt;
+</pre>
+
+<li>
+导入外部样式表: 在内部样式表的 &lt;style&gt; 内导入一个样式表, @import
+<pre class="brush: html">
+&lt;head&gt;
+&lt;style tpye="text/css"&gt;
+&lt;!--
+@import style.css
+其他样式表的声明
+--&gt;
+&lt;/style&gt;
+&lt;/head&gt;
+</pre>
+
+<li>
+内嵌样式, 在 HTML 标记内添加 style 参数
+<pre class="brush: html">
+&lt;table style=color:red; margin-right: 220px&gt;
+这是个表格
+&lt;/p&gt;
+</pre>
+
+</ul>
+</ul>
+<li>
+字体属性
+
+<ul>
+<li>
+字体 font-family
+
+<ul>
+<li>
+语法: font-family: "字体1", "字体2", ...
+
+</ul>
+<li>
+字号 font-size
+
+<ul>
+<li>
+语法: font-size: 大小的取值
+
+<li>
+xx-small, x-small, small, medium, large, x-large, xx-large, larger, smaller, length(可采用百分比或长度值, 百分比则是基于父对象的字体)
+
+</ul>
+<li>
+字体风格 font-style
+
+<ul>
+<li>
+语法: font-style: 样式的取值
+
+<li>
+normal, italic, oblique(中间)
+
+</ul>
+<li>
+加粗字体: font-weight
+
+<ul>
+<li>
+语法: font-weight:字体粗细值
+
+<li>
+normal, bold, bolder, lighter, number(100-900之间的数值)
+
+</ul>
+<li>
+小写字母转大写: font-variant
+
+<ul>
+<li>
+语法: font-variant: 取值
+
+<li>
+normal, samll-caps(将小写的英文字母转换成大写, 且字体较小)
+
+</ul>
+<li>
+字体复合属性
+
+<ul>
+<li>
+语法: font:字体取值
+
+</ul>
+</ul>
+<li>
+颜色和背景属性
+
+<ul>
+<li>
+颜色属性 color
+
+<ul>
+<li>
+语法: color: 颜色取值
+
+</ul>
+<li>
+背景颜色 background-color
+
+<li>
+背景图像 background-image
+
+<ul>
+<li>
+语法: background-image:url(图像地址)
+
+</ul>
+<li>
+背景重复 background-repeat 
+
+<ul>
+<li>
+background-repeat: 取值
+
+<li>
+norepeat, repeat-x, repeat-y
+
+</ul>
+<li>
+背景附件 background-attachment: 背景图像随对象滚动还是固定不动
+
+<ul>
+<li>
+background-attachment: scroll/fixed
+
+</ul>
+<li>
+背景位置 background-position: 设置背景图像的位置, 只能应用于块级元素和替换元素. 替换元素包括 img, input, textarea, select, object
+
+<ul>
+<li>
+语法 background-position: 位置取值
+
+<li>
+长度设置值
+
+<ul>
+<li>
+X, Y
+
+</ul>
+<li>
+百分比设置值
+
+<li>
+关键字设置值
+
+</ul>
+<li>
+背景复合属性 background
+
+<ul>
+<li>
+语法 background:  取值
+
+</ul>
+</ul>
+<li>
+段落: 主要包括单词间隔, 字符间隔, 文字修饰, 纵向排列, 文本替换
+
+<ul>
+<li>
+单词间隔 word-spacing
+
+<ul>
+<li>
+语法 word-spacing: 取值
+
+<li>
+normal, 长度值(可以负值)
+
+</ul>
+<li>
+字符间隔 letter-spacing
+
+<ul>
+<li>
+语法 letter-spacing: 取值
+
+<li>
+none, underline, overline, linethrough, blink(闪烁)
+
+</ul>
+<li>
+垂直对齐方式 vertical-align
+
+<ul>
+<li>
+语法 vertical-align: 排列取值
+
+<li>
+baseline, sub, super, top, text-top, middle, text-bottom
+
+</ul>
+<li>
+文本转换 text-transform
+
+<ul>
+<li>
+语法 text-transform: 转换值
+
+<li>
+none, capitalize, uppercase, lowercase
+
+</ul>
+<li>
+水平对齐方式 text-align
+
+<ul>
+<li>
+语法: text-align: 排列值
+
+<li>
+left, right, center, justify
+
+</ul>
+<li>
+文本缩进 text-indent
+
+<ul>
+<li>
+语法: text-indent: 缩进值
+
+<li>
+长度值和百分比
+
+</ul>
+<li>
+文本行高 line-height
+
+<ul>
+<li>
+line-height: 行高值
+
+<li>
+长度, 倍数, 百分比
+
+</ul>
+<li>
+处理空白 white-space
+
+<ul>
+<li>
+white-space: 值
+
+<li>
+normal-连续多个空格合并, pre-源代码中空格和换行符被保留(仅限IE6), nowrap-同一行显示文本, 直至文本结束或<br&gt;对象
+
+</ul>
+<li>
+文本反排 unicode-bidi, direction
+
+<ul>
+<li>
+unicode-bidi 属性
+
+<ul>
+<li>
+unicode-bidi:bidi-override | normal | embed
+
+<ul>
+<li>
+bidi-overrid: 严格按照 direction 属性的值重排序
+
+<li>
+normal: 默认
+
+<li>
+embed: 对象打开附加的嵌入层, direction 属性的值指定嵌入层, 在对象内部进行隐式重排序
+
+</ul>
+</ul>
+<li>
+direction 属性
+
+<ul>
+<li>
+direction:ltr | rtl | inherit 
+
+</ul>
+</ul>
+</ul>
+<li>
+外边距和内边距属性
+
+<ul>
+<li>
+外边距有五种: margin-top, margin-bottom, margin-left, margin-right, margin.
+
+<li>
+取值有长度, 百分比, auto. 百分比允许负数
+
+<li>
+margin 的顺序为 上下左右
+
+<li>
+内边距: padding-top, padding-bottom, padding-left, padding-right, padding
+
+<li>
+取值有长度和百分比, 百分比不能用负数
+
+</ul>
+<li>
+边框属性
+
+<ul>
+<li>
+边框样式 border-style 
+
+<ul>
+<li>
+boder-style: 样式值
+
+<li>
+boder-top-style: 样式值
+
+<li>
+boder-right-style: 样式值
+
+<li>
+boder-bottom-style: 样式值
+
+<li>
+boder-left-style: 样式值
+
+<li>
+取值: none, dotted, dashed, solid, double, groove, ridge, inset, outset
+
+</ul>
+<li>
+边框宽度 border-width
+
+<ul>
+<li>
+border-width: 宽度值
+
+<li>
+border-top-width: 宽度值
+
+<li>
+border-right-width: 宽度值
+
+<li>
+border-bottom-width: 宽度值
+
+<li>
+border-left-width: 宽度值
+
+<li>
+取值: medium, thin, thick, 长度
+
+</ul>
+<li>
+边框颜色 border-color
+
+<ul>
+<li>
+border-color: 颜色值
+
+<li>
+border-top-color: 颜色值
+
+<li>
+border-right-color: 颜色值
+
+<li>
+border-bottom-color: 颜色值
+
+<li>
+border-left-color: 颜色值
+
+<li>
+取值: 关键字或RGB值
+
+</ul>
+<li>
+边框属性 border
+
+<ul>
+<li>
+border: 边框宽度边框样式颜色值
+
+<li>
+border-top: 上边框宽度上边框样式颜色值
+
+<li>
+border-right: 右边框宽度右边框样式颜色值
+
+<li>
+border-bottom: 下边框宽度下边框样式颜色值
+
+<li>
+border-left: 左边框宽度左边框样式颜色值
+
+</ul>
+</ul>
+<li>
+定位属性
+
+<ul>
+<li>
+使用定位属性可以控制元素的位置, 包括相对定位和绝对定位两种方式
+
+<li>
+定位方式 position: 控制浏览器如何定位 HTML 元素
+
+<ul>
+<li>
+语法 position:static | absolute | fixed | relative
+
+<ul>
+<li>
+static 默认值
+
+<li>
+absolute 绝对定位, 需同时使用 left, right, top, bottom 等属性进行绝对定位
+
+<li>
+fixed 页面滚动时, 元素不随着滚动
+
+<li>
+relative 相对定位, 对象不可层叠
+
+</ul>
+</ul>
+<li>
+元素位置 top, right, bottom, left
+
+<ul>
+<li>
+元素位置属性和定位方式共同设置元素的具体位置
+
+<li>
+语法: 
+
+<ul>
+<li>
+top: auto | 长度值 | 百分比
+
+<li>
+left: auto | 长度值 | 百分比
+
+<li>
+bottom: auto | 长度值 | 百分比
+
+<li>
+right: auto | 长度值 | 百分比
+
+<li>
+auto 表示默认值
+
+</ul>
+</ul>
+<li>
+浮动属性 float: 设置元素在某个元素周围
+
+<ul>
+<li>
+语法: float: none | left | right
+
+</ul>
+<li>
+清除属性 clear: 用于指定一个元素是否允许有其他元素漂浮在它的前面
+
+<ul>
+<li>
+语法 clear: none | left | right | both
+
+<li>
+none: 表示允许两边都可以有浮动对象
+
+<li>
+left: 表示不允许左边有浮动对象
+
+<li>
+right: 表示不允许右边有浮动对象
+
+<li>
+both: 表示不允许有浮动对象
+
+</ul>
+<li>
+可视区域 clip: 限制只显示裁切出的区域, 裁切出的区域为矩形, 只要设置两个点就可以了
+
+<ul>
+<li>
+语法: clip: auto | rect (数字)
+
+<ul>
+<li>
+auto 表示对象不裁切
+
+<li>
+rect (数字) 表示它依据上, 右, 下, 左的顺序提供自对象左上角(0, 0) 坐标计算的四个偏移数值, 其中任一数值都可用 auto 替换, 即此边不裁切
+
+</ul>
+</ul>
+<li>
+层的宽度和高度 width, height
+
+<ul>
+<li>
+语法: 
+
+<ul>
+<li>
+width: auto | 长度值
+
+<li>
+height: auto | 长度值
+
+</ul>
+</ul>
+<li>
+超出范围 overflow: 可以设置当层内的内容超出层所能容纳的范围时的显示方式
+
+<ul>
+<li>
+语法: overflow: visible | auto | hidden | scroll
+
+<li>
+visible 层的大小和内容都会自动显示出来
+
+<li>
+auto 只会在内容超出层的内容时才显示滚动条
+
+<li>
+hidden 隐藏超出内容
+
+<li>
+scroll 总是显示滚动条
+
+</ul>
+<li>
+可见属性 visibility: 针对嵌套层的设置
+
+<ul>
+<li>
+visibility: inherit | visible | hidden
+
+<li>
+inherit 继承父对象的可见性
+
+<li>
+visible 无论父层对象是否可见, 子层都是可见的
+
+<li>
+hidden 表示无论浮层对象是否可见, 子层都隐藏
+
+</ul>
+</ul>
+<li>
+列表属性
+
+<ul>
+<li>
+列表符号 list-style-type
+
+<ul>
+<li>
+语法: list-style-type: 值
+
+<li>
+disc(默认值) 实心圆
+
+<li>
+circle 空心圆
+
+<li>
+square 实心方块
+
+<li>
+decimal 阿拉伯数字
+
+<li>
+lower-roman 小写罗马数字
+
+<li>
+upper-roman 大写罗马数字
+
+<li>
+lower-alpha 小写英文字母
+
+<li>
+upper-alpha 大写英文字母
+
+<li>
+none 不使用任何项目符号或编号
+
+</ul>
+<li>
+图像符号 list-style-image
+
+<ul>
+<li>
+语法: list-style-image: none | url(图像地址)
+
+<li>
+none 不指定图像
+
+</ul>
+<li>
+列表缩进 list-style-position
+
+<ul>
+<li>
+语法 list-style-position: outside | inside
+
+<li>
+outside 列表项目标记放置在文本之外, 且环绕文本不根据标记对齐
+
+<li>
+inside 列表项目标记放置在文本以内, 且环绕文本根据标记对齐
+
+</ul>
+<li>
+列表复合属性 list-style
+		语法 list-style: list-stype-image | list-style-position | list-style-type
+
+</ul>
+<li>
+光标属性 cursor: 设置在对象上移动时鼠标指针采用的光标形状
+
+<ul>
+<li>
+语法 cursor: auto | 形状取值 | url(图像地址)
+
+<li>
+default: 默认光标
+
+<li>
+hand 手形光标
+
+<li>
+crosshair
+
+<li>
+text 大写字幕I的形状
+
+<li>
+help 问号标记箭头
+
+<li>
+wait
+
+<li>
+e-resize 向东的箭头
+
+<li>
+ne-resize 东北的箭头
+
+<li>
+n-resize
+
+<li>
+nw-resize
+
+<li>
+w-resize
+
+<li>
+sw-resize
+
+<li>
+s-resize
+
+<li>
+se-resize
+
+<li>
+auto 默认值. 浏览器根据当前情况自动确定光标类型
+
+</ul>
+<li>
+滤镜属性: 用很简单的方法对网页中的对象进行特效处理
+
+<ul>
+<li>
+不透明度 alpha
+
+<ul>
+<li>
+语法 filter: alpha(参数1=参数值, 参数2=参数值,...)
+
+<li>
+参数
+
+<ul>
+<li>
+opacity 开始时的透明度, 范围0-100, 默认0, 即完全透明, 100为完全不透明
+
+<li>
+finishopacity 结束时的透明度
+
+<li>
+style 渐变的样式, 0 无渐变, 1 直线渐变, 2 圆形渐变, 3 矩形渐变
+
+<li>
+startx 透明渐变开始点的水平坐标
+
+<li>
+starty 透明渐变开始点的垂直坐标
+
+<li>
+finishx 透明渐变结束点的水平坐标
+
+<li>
+finishy 透明渐变结束点的垂直坐标
+
+</ul>
+</ul>
+<li>
+动感模糊 blur: 设置对象的动态模糊效果
+
+<ul>
+<li>
+语法: filter: blur(add=参数值, direction=参数值, strength=参数值)
+
+<ul>
+<li>
+add 是否显示原始图像
+
+<li>
+direction 动态模糊的方向, 按顺时针方向以45度为单位进行累积
+
+<li>
+strength 动态模糊的强度, 只能使用整数, 默认5个
+
+</ul>
+</ul>
+<li>
+对颜色进行透明处理 chroma: 将图片中的某种颜色转换为透明色, 产生透明效果
+
+<ul>
+<li>
+语法: filter:chroma(color=颜色代码或颜色关键字)
+
+</ul>
+<li>
+阴影效果 dropShadow: 设置在指定的方向和位置上产生阴影效果
+
+<ul>
+<li>
+语法 dropShadow(color=阴影颜色, offX=参数值, offY=参数值, positive=参数值)
+
+<ul>
+<li>
+color 控制阴影的颜色
+
+<li>
+offX, offY 阴影相对于原始图像移动的水平距离和垂直距离
+
+<li>
+positive 阴影是否透明
+
+</ul>
+</ul>
+<li>
+对象翻转 flipH, flipV 设置沿水平方向/垂直方向翻转
+
+<ul>
+<li>
+语法: 
+
+<ul>
+<li>
+filter:flipH
+
+<li>
+filter:flipV
+
+</ul>
+</ul>
+<li>
+发光效果 glow: 对象周围产生发光的效果
+
+<ul>
+<li>
+语法: filter:glow(color=颜色代码, strength=强度值)
+
+<ul>
+<li>
+strength 发光强度, 范围 1-255, 默认5
+
+</ul>
+</ul>
+<li>
+灰度处理 gray: 彩色图片中的色彩去掉
+
+<ul>
+<li>
+语法: filter: gray
+
+</ul>
+<li>
+反相 invert: 图片的颜色, 饱和度以及亮度完全反转过来
+
+<ul>
+<li>
+语法: filter: invert
+
+</ul>
+<li>
+X光片效果 xray: 制作出类似 X 光片的效果
+
+<ul>
+<li>
+语法: filter: xray
+
+</ul>
+<li>
+遮罩效果 mask: 可以做出印章一样的效果
+
+<ul>
+<li>
+filter: Mask(Color=颜色代码)
+
+</ul>
+<li>
+波形滤镜 wave: 创建波纹扭曲效果 
+
+<ul>
+<li>
+filter: wave(add=参数值, freq=参数值, lightstrength=参数值, phase=参数值, strength=参数值)
+
+<ul>
+<li>
+add 是否要把对象按照波形样式打乱
+
+<li>
+freq 设置图片上的波浪数目
+
+<li>
+lightstrength 设置波浪的光照强度, 范围为 0~100
+
+<li>
+phase 设置波浪的起始位置
+
+<li>
+strength 设置波浪的强度大小
+
+</ul>
+</ul>
+</ul>
+</ul>
+
+<h1 id="toc_8">第13章 Web 标准与CSS网页布局实例</h1>
+<ul>
+<li>
+DIV+CSS布局网页基础
+
+<ul>
+<li>
+认识 DIV
+
+<ul>
+<li>
+DIV 是 XHTML 的一个标记, 以 &lt; div&gt;&lt; /div&gt;的形式出现, 本身是容器性质的, 不但可以内嵌table, 还可以内嵌文本和其他的HTML代码
+
+<li>
+DIV 用来为 HTML 文档内大块的内容提供结构和背景
+
+<li>
+其内所含元素的特性由DIV标记的属性来控制, 或者通过样式表格式化这个块来进行控制
+
+</ul>
+<li>
+一列固定宽度
+
+<ul>
+<li>
+一列式布局是所有布局的基础.
+
+<li>
+一列固定宽度中, 宽度的属性值是固定的像素.
+
+<li>
+具体步骤:
+
+<ol>
+<li>
+在 HTML 文档的 &lt;head&gt; 与 &lt;/head&gt; 之间的相应位置输入定义的CSS样式代码
+<pre class="brush: html">
+&lt;style&gt;
+#layer{
+	background-color:#ffcc33;
+	border:3px solid #ff3399;
+	width:300px;
+	height:350px;
+}
+&lt;/style&gt;
+</pre>
+
+<li>
+在 HTML 文档的 &lt;body&gt;&lt;/body&gt; 之间的正文中输入以下代码, 对 div 使用 layer 作为 id 名称
+<pre class="brush: html">
+&lt;div id="Layer"&gt;1列固定宽度 &lt; /div&gt;
+</pre>
+
+</ol>
+</ul>
+<li>
+一列自适应
+
+<ul>
+<li>
+根据浏览器窗口的大小, 自动改变宽度或高度值
+<pre class="brush: html">
+&lt;html xmlns="http://www.w3.org/1999/xhtml"&gt;
+&lt;head&gt;
+&lt;meta http-equiv="content-type" content="text/html; charset=gb2312"/&gt;
+&lt;title&gt;1列自适应&lt;/title&gt;
+&lt;style&gt;
+#Layer{
+	background-color:#ffcc33;
+	border:3px solid #ff3399;
+	width:80%;
+	height:80%;
+}
+&lt;/style&gt;
+&lt;/head&gt;
+&lt;body&gt;
+&lt;div id="Layer"&gt;1列自适应&lt;/div&gt;
+&lt;/body&gt;
+</pre>
+
+</ul>
+<li>
+两列固定宽度
+
+<ul>
+<li>
+&lt;head&gt;中代码
+<pre class="brush: html">
+&lt;style&gt;
+#left{
+	background-color:#ffcc33;
+	border:1px solid #ff3399;
+	width:250px;
+	height:250px;
+	float:left;
+}
+#right{
+	background-color:#ffcc33;
+	border:1px solid #ff3399;
+	width:250px;
+	height:250px;
+	float:left;
+}
+&lt;/style&gt;
+</pre>
+
+<li>
+float 属性控制对象的浮动布局方式.
+
+<li>
+&lt;body&gt; 中的代码
+<pre class="brush: html">
+&lt;div id="left"&gt;左列&lt;/div&gt;
+&lt;div id="right"&gt;右列&lt;/div&gt;
+</pre>
+
+</ul>
+<li>
+两列宽度自适应
+<pre class="brush: html">
+&lt;style&gt;
+#left{
+	background-color:#ffcc33;
+	border:1px solid #ff3399;
+	width:65%;
+	height:250px;
+	float:left;
+}
+#right{
+	background-color:#ffcc33;
+	border:1px solid #ff3399;
+	width:25%;
+	height:250px;
+	float:left;
+}
+&lt;/style&gt;
+</pre>
+
+<li>
+两列右列宽度自适应
+<pre class="brush: html">
+&lt;style&gt;
+#left{
+	background-color:#ffcc33;
+	border:1px solid #ff3399;
+	width:200px;
+	height:250px;
+	float:left;
+}
+#right{
+	background-color:#ffcc33;
+	border:1px solid #ff3399;
+	height:250px;
+	float:left;
+}
+</pre>
+
+</ul>
+<li>
+使用 CSS 设计网站导航栏
+
+<ul>
+<li>
+实现背景变换的导航菜单
+
+<ul>
+<li>
+导航也是一种列表, 每个列表数据就是导航栏中的一个导航频道, 使用 ul 元素以及 li 元素以及 CSS 样式可以实现背景变换的导航菜单, 具体操作步骤如下:
+
+<ul>
+<li>
+&lt;head&gt; 内部
+<pre class="brush: html">
+&lt;style&gt;
+#button {
+	width: 150px;
+	border-right: 1px solid #000;
+	padding: 0 0 1em 0;
+	margin-bottom: 1em;
+	font-family: "宋体";
+	font-size: 13px;
+	background-color: #ff9933;
+	color: #0000;
+}
+#button ul {
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	border: none;
+}
+#button li {
+	margin: 0;
+	border-bottom-width: 1px;
+	border-bottom-style: solid;
+	border-bottom-color: #ffff00;
+}
+#button li a {
+	display: block;
+	padding: 5px 5px 5px 0.5em;
+	background-color: #ff9933;
+	color: #fff;
+	text-decoration: none;
+	width: 100%;
+	border-right-width: 10px;
+	border-left-width: 10px;
+	border-right-style: solid;
+	border-left-style: solid;
+	border-right-color: #ffcc00;
+	border-left-color: #ffcc00;
+}
+html&gt;body #button li a {
+	width: auto
+}
+#button li a:hover {
+	background-color: #ffcc00;
+	color: #fff;
+	border-right-width: 10px;
+	border-left-width: 10px;
+	border-right-style: solid;
+	border-left-style: solid;
+	border-right-color: #ff00ff;
+	border-left-color: #ff00ff;
+}
+&lt;/style&gt;
+</pre>
+
+<li>
+&lt;body&gt; 中代码
+<pre class="brush: html">
+&lt;div id = "button"&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="#"&gt;首页&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="#"&gt;公司频道&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="#"&gt;最新动态</a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="#"&gt;客房介绍&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="#"&gt;酒店服务&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="#"&gt;休闲娱乐&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="#"&gt;旅行社</a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/div&gt;
+</pre>
+
+</ul>
+</ul>
+<li>
+利用 CSS 制作横向导航
+
+<ul>
+<li>
+&lt;head&gt;中代码
+<pre class="brush: html">
+&lt;style&gt;
+#n li {
+	float:left;
+}
+#n li a {
+	color: #ffffff;
+	text-decoration: none;
+	padding-top: 4px;
+	display: block;
+	width: 65px;
+	height: 20px;
+	text-align: center;
+	background-color: #6600cc;
+	margin-left: 2px;
+}
+
+#n li a:hover {
+	background-color: #9999ff;
+	color: #ffffff;
+}
+&lt;/style&gt;
+</pre>
+
+<li>
+&lt;body&gt; 中代码
+<pre class="brush: html">
+&lt;div id="n"&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a href="#"&gt;酒店情况&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="#"&gt;客房&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="#"&gt;餐饮&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="#"&gt;商务会议&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="#"&gt;酒店服务&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="#"&gt;订房表</a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href="#"&gt;友情链接&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/div&gt;
+</pre>
+
+</ul>
+</ul>
+<li>
+使用 CSS 设计表单样式
+
+<ul>
+<li>
+改变按钮的背景颜色和文字颜色
+
+<ul>
+<li>
+head 中代码
+<pre class="brush: html">
+&lt;style type="text/css"&gt;
+input.ann {
+	border: 1 solid #99cc00;
+	color: #6600ff;
+	font-size: 9pt;
+	font-style: normal;
+	font-variant: normal;
+	font-weight: normal;
+	height: 18px;
+	line-height: normal;
+	background-color: #999999;
+}
+&lt;/style&gt;
+</pre>
+
+<li>
+body 中代码
+<pre class="brush: html">
+&lt;input type="submit" value="登录" name="Submit" class="ann" /&gt;
+&lt;input type="reset" value="取消" name="Close" class="ann" /&gt;
+</pre>
+
+</ul>
+<li>
+设计文本框的样式
+<pre class="brush: html">
+&lt;input type="password" size=10 name="pwd"
+style="border:2px solid red red;background:yellow;"/&gt;
+</pre>
+
+<li>
+设计文本框的文字样式
+
+<ul>
+<li>
+内嵌样式: style=font-family:"宋书";font-size:12px
+
+</ul>
+</ul>
+<li>
+字体及段落样式设计
+
+<ul>
+<li>
+利用 CSS 控制字体大小和行距
+
+<ul>
+<li>
+head
+<pre class="brush: html">
+&lt;style type="text/css"&gt;
+&lt;!--
+.dx {
+font-family: "宋体";
+font-size: 12px;
+line-height: 20px;
+}
+--&gt;
+&lt;/style&gt;
+</pre>
+
+</ul>
+<li>
+制作光晕文字效果
+<pre class="brush: html">
+&lt;style type="text/css"&gt;
+&lt;!--
+.qy {
+filter: Glow(Color=#87ca27, Strength=10);
+}
+--&gt;
+&lt;/style&gt;
+</pre>
+
+</ul>
+</ul>
+<p>
+}}} 
+</p>
+<ul>
+<li>
+使用 CSS 设计图片样式
+
+<ul>
+<li>
+鼠标指针移上时图片渐变的效果, 利用 alpha 滤镜设置图像的透明度
+<pre class="brush: html">
+&lt;style&gt;
+.highlightit img{
+filter:progid:DxImageTransform.Microsoft.Alpha(opacity=60);
+-moz-opacity: 0.5;
+}
+.highlightit:hover img{
+filter:progid:DXImageTransform.Microsoft.Alpha(opacity=100);
+}
+&lt;/style&gt;
+</pre>
+
+<li>
+设计不会重复出现的背景
+
+<ul>
+<li>
+利用 background-repeat  可以设置背景图像是否平铺, 还可以设计不重复出现的背景
+
+<li>
+head
+<pre class="brush: html">
+.style2 {font-size: 12px; color: #ffff00; }
+body {
+	margin-left: 0px;
+	margin-top: 0px;
+	margin-right: 0px;
+	margin-bottom: 0px;
+	background-image: url(images/175.jpg);
+	background-color: #ffffff;
+	background-repeat: no-repeat;
+	background-position: right;
+}
+</pre>
+
+</ul>
+</ul>
+<li>
+使用 CSS 控制链接样式
+
+<ul>
+<li>
+使用 CSS 实现鼠标指针形状改变
+<pre class="brush: html">
+&lt;style type=text/css&gt;
+.shb{
+cursor: e-resize;
+}
+&lt;/style&gt;
+</pre>
+
+<li>
+鼠标指针移到链接文字上时改变文字大小或颜色
+<pre class="brush: html">
+&lt;style type="text/css"&gt;
+a:link {font-size: 12px; text-decoration: none; color: #000000;}
+a:visited {font-size: 12px; text-decoration: none; color: #000000;}
+a:hover {font-size: 15px; text-decoration: none; color: #0000ff;}
+a:active {font-size: 13px; text-decoration: none; color: #cc99ff;}
+&lt;/style&gt;
+</pre>
+
+</ul>
+</ul>
+
+    </div>
+</body>
+</html>

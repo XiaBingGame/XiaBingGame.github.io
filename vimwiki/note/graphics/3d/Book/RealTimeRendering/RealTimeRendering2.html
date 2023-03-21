@@ -1,0 +1,467 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../../../style.css">
+<title>RealTimeRendering2</title>
+<meta http-equiv="Content-Type" content="text/html; charset=cp936">
+</head>
+<body>
+
+<p>
+Chapter 5 Visual Appearance
+</p>
+<ul>
+<li>
+大多数时候, 渲染3维模型图像的目标是 photorealism --- 非常接近相片上的真实物体.
+
+<li>
+本章节首先介绍一些光照和材质在真实世界中的表现, 通过使用可编程着色器来显示如何实现一个光照表面的模型. 接下来的章节内容是如何给一个渲染的模型产生一个真实的效果, 如透明, 反锯齿, 合成(compositing).
+
+</ul>
+
+<p>
+5.1 Visual Phenomena(视觉现象)
+</p>
+<ul>
+<li>
+通过渲染如同Figure5.1那样的场景, 可有助于理解相关的physical phenomena. 如下:
+
+<ul>
+<li>
+通过太阳或者其他来源发射光(自然或人工)
+
+<li>
+光和其他物体之间的关系, 一部分被吸收, 一部分发散和传播至新的方向.
+
+<li>
+最后, 光被sensor接收(传感器, 即人类眼睛, 电子传感器或者电影)
+
+</ul>
+</ul>
+
+<p>
+5.2 Light Source
+</p>
+<ul>
+<li>
+类似太阳光的光称为 directional lights. 这种光源的方向由光向量l(世界空间坐标西)表示. 光向量l常常定义为一个点以及和光发射方向相反的方向.
+
+<li>
+有向光的发射量可通过测量单位时间内垂直通过单位面积表面的光能来确定. 该发射量可称为 irradiance. 光有颜色, 所以通过颜色形式表示irradiance. 不同于绘制应用程序的颜色. RGB irradiance 的值可以超过1, 以及理论上可以取任意大的值.
+
+<li>
+ambient lights 环境光
+
+<li>
+一个表面接收的irradinance等于垂直于光的平面接收的irradinance乘以cos(a). 角度(a)为表面平面和垂直于光的平面的夹角.或者是光和法线的夹角. 其中光向量的方向定义为光发射方向的相反值, 这样光向量l点乘法线n就可以到两者夹角(a)的cos值
+
+<li>
+使用E表示垂直于法线向量n的 irradiance. El 表示垂直光方向的 irradiance. 则, E = El*cos(a) = El*max(n*l, 0)
+
+<li>
+如果有多个光源, 则表面的 irradiance 则为这些光源的 irradiance 乘以各自 cos(a)结果的和.
+
+</ul>
+
+<p>
+5.3 Material(材质)
+</p>
+<ul>
+<li>
+场景中物体的外貌是通过将材质附在模型上来表现. 每个材质可关联至一系列着色程序, 纹理, 以及其他属性.用于模拟光照和物体之间的相互影响.
+
+<li>
+所有的 light-matter interactions 可分为两个结果: scattering 和 absorption(分散和吸收)
+
+<li>
+Scattering 不改变光的总量, 只是改变其方向.(如反射-reflection和折射-refraction, 传输-transmission), absorption 则表示光被吸收, 转换为其他能量且消失.
+
+<li>
+将 surface shading equations 分为两个部分: specular term 表示那些反射的光. diffuse term 表示那些经历了传输, 吸收和scattering(发散)的光.
+
+<li>
+光射进一个表面时, 光照通过表面的 irradiance来测了. 当光从该表面反射和散射出去时, 通过 exitance(出射度, 出射率)测量. 记号为M. exitance和 irradiance两者为线性关系. 双倍的irradiance会产生双倍的exitance. exitance除以irradiance的结果为材质的属性. 该属性值在0和1之间. 表示为RGB向量,这向量称为 surface color C. 为了区分两个不同部分的term, shading equation 分别表示为specular color(Cspec)和diffuse color(Cdiff), 这两者之和为C.表面的specular 和 diffuse colors都依赖于该表面的成分, 例如是钢铁, 颜色塑料, 黄金, 木材, 还是皮肤等等.
+
+<li>
+我们假设 diffuse term 没有方向. 而 specular term 则有方向. spectular term 依赖于表面的光滑度. Shading equation 会根据光滑度参数设置specular term.
+
+<li>
+观察者与对象的距离可以影响到surface detail(表面细节). 在图5.9中, 最坐标的图是一张叶子, 叶片经脉作为一纹理绘制. 下一张图是一簇叶子, 每个叶子作为一个简单的mesh绘制. 叶子经脉不可见, 由于叶子将反射光散射开来, 但我们可减少shading equation的光滑度(smoothness)参数. 下一张图片显示山腰的一批树, 单个叶子不可见, 每棵树作为一个三角mesh, 随机的叶子将光线散射的更加分散, 我们可进一步减少光滑度参数. 最后一张图, 则是一座带森林的山. 单个树不可见, 整个山可能作为一个mesh, shadow equation则可能建立树影重重的效果.
+
+</ul>
+
+<p>
+5.4 Sensor
+</p>
+<ul>
+<li>
+图像的传感器有很多: 眼睛的视锥, 数字相机的感光器, 以及电影的dye particles. 这些sensors都可得到那些表面的irradiance值并产生颜色信号. 一个完整的图像系统应当包含一个暗箱和小孔来限制光的进入以及触发各个sensors. 镜头则聚焦光线使得每个sensor只接受一定区域的进入光.
+
+<li>
+sensor不去测量irradiance(光流的强度---所有方向--单个表面面积), 而去测量平均 radiance, Radiance是每个面积和每个进入方向光的强度. Radiance(记为L)可以看成单个光线的亮度和颜色. 表示为RGB向量形式, 理论上其值无限制. 渲染系统也会计算radiance, 但是它们使用更简化和理想化的模型.该模型可见图5.11和图5.12, 在这个模型中, 每个sensor测量单个radiance样本, 该radiance 样本沿着光线到达点p, p为透视投影转换中的中心点(个人认为可以看成观察点), 这个光线在shading equation中表示为 view vector V. 并且其长度为1.
+
+<li>
+sensor接收的radiance值和sensor产生的图像信号之间的关系是复杂的且非线性的. 依赖于许多因素, 且随时间和空间位置变化, 另外sensor可以感知的randiance范围通常要比显示设备可支持的范围要大得多. 需要采取一个合适的方式映射场景radiance至显示设备的radiance. 图5.10和图5.11显示了物理imaging sensors和渲染系统模型的区别. 物理每个sensors测量一个区域内一定时间间隔radiance的平均值, 这些区域进入的有向光会聚焦于镜头而后到达sensor. 而shader equation则即时地计算单个光线的radiance.
+
+</ul>
+
+<p>
+5.5 Shading
+</p>
+<ul>
+<li>
+Shading 使用一个方程计算沿着view ray V的outgoing radiance L0, V基于材质的属性和光源
+
+<li>
+由于有许多公式, 具体介绍见笔记
+
+<li>
+图5.15, Per-vertex evaluation的shading equations 弄出的效果依赖于vertex tessellation. 三个球分别包含256, 1024, 16384个三角形
+
+<li>
+见Shader()着色程序用来实现公式 5.12, 得到outgoing light的radiance Lo
+
+<li>
+当调用Shader()时, 我们应当使用何种 frequancy of evaluation呢? 当使用顶点法线时, 即每个顶点都有其自己的法线, 就不应当使用 per-primitive evaluatio(通常称为flat shading). 这是由于其会产生 faceted look(很多小块的方块, 见图5.17左边的图), Per-vertex evaluation则进行线性插值, 其结果通常称为 Gouraud shading[435]. 在Gouraud shading的实现中, vertex shader应当传递世界空间的顶点法线和位置给 Shade()函数, 而后结果为一个插值结果, 而后pixel shader则会使用该插值结果并将其直接写入到输出中. Gouraud shading会产生合适的粗糙平面, 但是在高亮部分可能会显出人工的痕迹. 见图5.15和图5.17中间的图. 这种人工痕迹是由于线性插值作用于非线性的光照值的结果, 从镜面光的公式来看, 镜面光的结果是非线性的, 其有指数操作.
+
+<li>
+相对于 Gouraud shading 的另一个极端, 则为完全 per-pixel evaluation of shading equation, 称为 Phong shading, 在这个实现中, vertex shader 则会将插值后的世界空间的法线和位置通过pixel shader传送给 Shade() 函数, 在Shade()函数内部计算outgoing light的 radiance. 由于镜面光照部分是在 pixel shader里面计算, 所以不会产生人工的镜面效果. 注意插值后的法线长度可能有所变化(见图5.16), 需要在pixel shader中进行单元化, 这个方法代价昂贵. 另外一种意见就是采取中间方法, 一部分的evaluation执行per-vertex, 另一部分执行per-pixel, 顶点插值的值不会是高度非线性的值.
+
+<li>
+实现一个 shading equation 应当决定那部分可以简化, 计算各种表达式的频率, 以及用户如何能够修改和控制界面.
+
+<li>
+图5.17 Flat, Gouraud, Phong shading. flat-shaded 图像没有镜面部分, 当观察者移动时, 看起来有闪闪的方块. Gouraud shading 则高光部分处理不好.
+
+</ul>
+
+<p>
+5.6 Aliasing and Antialiasing
+</p>
+<ul>
+<li>
+图5.18 显示的图表示反锯齿的作用, 最左边没有进行反锯齿操作, 中间的图每个像素使用了4个样本进行渲染, 最右边的图每个像素使用了8个样本(4x4的周围像素).
+
+<li>
+多边形和线段容易产生锯齿.关于锯齿的书籍[422, 1035, 1367]
+
+</ul>
+
+<p>
+5.6.1 Sampling and Filtering Theory
+</p>
+<ul>
+<li>
+渲染图像的处理过程就是一个 sampling task(采样任务). 一个图像的生成就是为一个三维场景进行采样处理, 即通过一个图像为每个像素得到其颜色值. 使用纹理映射时, 在各种环境中, 纹素需要进行重采样以得到更好的结果. 在一个动画中生成一系列的图像, 该动画通常在一定时间间隔进行一次采样, 该节介绍采样, 重构造(reconstruction), 过滤(filtering), 为了简化, 大多数内容使用一维方式来解释原理, 这些概念原理也可以扩展到二维来处理二维图像.
+
+<li>
+图5.19 显示了一个连续的信号被采样以及采样之后通过重构进行恢复的过程, 一个连续的信号在相同的间隔中进行采样, 这样可以以数字形式描述信息, 大大减少了信息量, 而后通过重构恢复信息, 这个过程称为 filtering the sampled signal.
+
+<li>
+图5.20显示了一个旋转的车轮被采样的过程, 第一行的车轮是以原始信号显示出来, 第二行的采样使得车轮看起来以相反方向滚动. 第三行的采样的车轮看起来有两种方向都可以进行滚动, 第四行的车轮方向看起来和第一行一致. 这四行的采样率(sampling rate)越来越高. 图5.21显示了一个正弦波在不同的采样率下并重构之后的曲线样本. 这些采样造成的 aliasing 可称为 temporal aliasing.
+
+<li>
+计算机图形学的aliasing 发生在线段或多边形边缘, 闪烁的高亮光(flickering highlights), 以及当一个棋盘图案的纹理被缩小时.
+
+<li>
+为了能够正确采样一个信号, 这采样频率(sampling frequency)需大于被采样信号本身最大频率的两倍. 这通常称为 sampling theorem(采样定律). 而该采样频率称为 Nyquist rate 或 Nyquist limit. 其中最大频率"maximum frequency"表示该信号是bandlimited. bandlimited的意思就是有一个频率值使得该信号没有任何频率大于该值. 即在两个相邻样本之间, 信号有足够光滑的曲线.
+
+<li>
+当渲染点的样本时, 一个三维空间通常不可能 bandlimited. 多边形的边缘, 阴影边界, 以及其他的现象产生一个信号不连续的变化. 导致频率根本上是无限的. 即无论将样本包装的如何紧凑,  对象仍可足够的小到以至于他们根本不需要进行任何采样. 然而, 当使用点样本渲染一个场景时, 不可能完全避免 aliasing 问题. 然后, 有时我们可能知道信号何时信号是 bandlimited. 其中一个例子是当将一个纹理应用于一个表面时, 可以计算出纹理采样的频率(frequency of texture sample)以及像素的样本率(sampling rate), 如果纹理采样频率低于 Nyquist limit, 对于采样该纹理不需要进行任何特别的操作, 如果该频率太高, 则 schems to bandlimit the texture 就需要被使用 (具体见 章节 6.2.2)
+
+<li>
+Reconstruction (重构), 图5.22 显示了3个常用的filter. 注意所有filter和x轴包围的面积大小都为1. box filter将其最高点的值乘以样本值, 然后多个样本的结果相加得到恢复后的signal.tent filter, 则在0.0处的最大值乘以样本值, 而后多个样本的结果相加. sinc filter 也是如此, 最大值乘以样本值
+
+<li>
+图5.22: 左上图显示了一个 box filter, 右上则是 tent filter, 下面则是 sinc filter(需要在x轴上进行裁剪)
+
+<li>
+图5.23: 显示的是一个box filter用来重构一个样本信号. 这是最糟糕的 filter.最终的图形形成一个梯状的图. 使用样本点的值作为y的高度.
+
+<li>
+图5.24: tent filter,  也成为 triangle filter,  在相邻的点中实现了一个线性插值, 但是其显得并不光滑.
+
+<li>
+使用 lowpass filter来进行重构, 假设信号是一个sine波: sin(2*Pi*f), f为信号的频率. lowpass filter 移除所有高于某个频率的频率, 即该filter移除了所有信号尖锐的部分, 过滤器公式: sinc(x) = sin(Pi*x) / (Pi*x) 公式5.15, 图5.22则表述了该公式, 在[-1, 1]之间是一个高峰波, 其余范围曲线则越来越平缓. 使用sinc filter的结果见图5.25
+
+<li>
+在 sinc filter 中, 那些信号中的高频部分会被移除, 所有频率高于sampling rate的1/2的部分都会消除. 公式5.15中, 如果sampling frequence为1.0时, 则为perfect reconstruction filter.(采样的信号其最大频率小于1/2). 信号的频率=1/(一个波长经历的x宽度), 这里一个波长经历了2单元x轴长. 采样频率 sampling frequency 为 fs, 表示两个相邻样本的距离为 1/fs. 则 reconsturction filter 为 sinc(fs*x), 消除了所有大于 fs/2 频率的频率部分. 注意, 有图中可知, sinc filter中, sinc的filter宽度为无限长, 且有时有负数部分. 所以实际中不会采取这个filter.
+
+<li>
+由于box和tent filter的质量差, 以及sinc filter 不实用, 所以被广泛使用的filter functions是这些filter权衡的结果. 这些filter function 都有一部分接近于 sinc function. 但是限制了其影响的像素数, 而非上面的无限延长. 该filter十分接近sinc function的部分, 由于sinc function有负值部分, 即大于0.5和小雨-0.5处的负值部分. 由于应用程序不适合使用负的filter值, 不带 negative lobes的filter(通常关联至 Gaussian filter, 从Gaussian曲线派生或者类似该曲线)常被使用.. 
+
+<li>
+通过filter, 得到一系列连续的信号后, 在计算机图形中我们不能直接显示连续的信号. 我们可以重采样连续的信号为另一种形式, 例如放大, 或者消减信号.
+
+<li>
+Resampling 用于放大和缩小采样的信号. 假设初始样本点位置坐标为(0, 1, 2, ...), 两个样本点的位置间隔为单元1. 假设我们重采样后的新样本点之间间隔为a, 如 a &gt; 1, 则为缩小信号(minification, downsampling), 如 a &lt; 1, 则为放大(magnification, upsampling)
+
+<li>
+图5.26 显示了如何放大采样信号. 左边的图显示了如何通过sinc filter进行重构. 将sinc wave的最高点设置在样本点, 而后将所有的样本点形成的sinc 波相加形成的最后图案会恢复的连续信号. 右边的 resampling很简单, 只需要在所需的间隔上进行采样即可.
+
+<li>
+这个放大的方法不适用于缩小, 此处为缩小的公式,  其filter使用 sinc(x/a) 来创建一个连续信号. sinc(x/a) = sin(Pi*x/a) / (x/a). 单位波长的宽度为原来的a倍, 表示更多信号的高频部分被移除. 这个技术同样可用于数字图像, 用于在更低的分辨率中blurring和重采样图像. 这一点可以对照OpenGL纹理参数部分的 GL_TEXTURE_MIN_FILTER 和 GL_TEXTURE_MAG_FILTER. 放大图像时需要进行模糊化处理, 缩小图像相对简单.
+
+<li>
+这里的放大是指采样频率增加, 缩小是采样频率减少
+
+<li>
+图5.27 显示了缩小采样信号, 注意右边的 filter width 为原来的2倍, 这是由于样本的间隔也为原来的两倍.
+
+</ul>
+
+<p>
+5.6.2 Screen-Based Antiliasing
+</p>
+<ul>
+<li>
+如果不进行采样和过滤, 多边形边缘, 阴影边缘, 镜面高亮, 以及其他颜色快速变化的地方都会产生引人注意的锯齿. 本章节讨论的算法用于提高这些情况的渲染质量, 这些算法都是基于屏幕的(screen based), 即只操作管线的输出样本, 而不需要知道渲染什么对象.
+
+<li>
+一些 antialiasing scheme 着重于特定的渲染图元, 有两个特殊例子就是 texture aliasing 和 line aliasing. 前者在 6.2.2 进行讨论. Line aliasing则有多种方法:
+
+<ul>
+<li>
+将线看成一个一像素宽的四边形.而后与其背景进行混合.
+
+<li>
+把线看成足够细, 足够透明, 其带一个 halo 的对象
+
+<li>
+按照 antialiased texture 那样渲染线条.
+
+</ul>
+<li>
+虽然有这些方法用于 line aliasing, 但是专用于 line-aliasing的硬件可以提供更快, 更高质量的渲染. 要想了解这个论题, 可以看一些文章, 如 Nelson's article[923, 924], Chan and Durand[170] 提供了 GPU-specific的方案用于 prefiltered lines(预过滤线条).
+
+<li>
+对于图形, 最简单的采样就是每个像素为其自身网格单元. 例如黑色三角形白色背景, 则判断其是否包括该网格的中心点, 如包括, 则该像素点为黑色, 否则为白色. 屏幕上每个网格单元使用的样本越多, 并按照一定的方法进行混合, 则能计算出更好的像素颜色.见图5.28. 右边的图一个网格单元采样四个点, 两个点在三角形外, 两个在三角形内, 则颜色为中间颜色. 注意一个网格单元为nxn大小的更小网格集合, 然后样本为这个子网格集合的子集合(个人理解). (一个网格单元看成屏幕的网格单元)
+
+<li>
+一般 screen-based antiliasing 方案为使用一个采样模式, 而后根据权重值将这些采样值相加得到最终的像素颜色. p(x, y) = wi*c(i, x, y) +..., i = 1, 2, 3, ..., n. n为样本数,  wi为权重, c(i, x, y)为样本颜色, 对于网格上每个样本如何得到其位置都有不同的方法, 像素之间其sampling pattern可能会有不同. 在实时渲染中, 样本通常为点样本. 所以该公式的c() 函数可以看成两个部分, 第一个部分 f(i, n) 返回样本在屏幕的浮点值位置(xf, yf), 返回在该精确位置的颜色值, 根据每帧(每个应用程序)的设定, 渲染管线进行配置以计算该特定亚像素位置(particular subpixel locations)的样本, 对于wi, 所有的权重值之和为1, 实时渲染系统的大多数方法都是使用常量权重值. 例如 wi = 1/n. 
+
+<li>
+Antiliasing 算法, 对于每个像素都计算一个或大于一个样本的算法称为 supersampling(oversampling)方法.full-scene antialiasing(FSAA)在一个高分辨率下渲染一个场景, 而后平均相邻样本值来创建一个图像. 例如, 你想要一个1000x800像素的图像, 如果你绘制一个2000x1600的无屏图像并平均每个2x2像素值于屏幕上. 这样你每个像素就有4个样本. 这个方法代价昂贵, 必须要将中间的2000x1600像素绘制出来, 且每个样本还带有Z深度缓存值. FSAA的优点是简单.另外, 还可只沿一个轴方向进行平均, 例如 1x2和2x1 supersampling.  FSAA方法, 如果有nxn样本, 且要绘制一图像, 则需要绘制offscreen图像的大小为该图像的nxn倍.
+
+<li>
+图5.29 一些 pixel sampling scheme 的比较. 由图可知, 一个旋转的 2x2样本比直接的2x2样本效果更好,  8x8 checker样本比8x8 grid 样本更好
+
+<li>
+还有一种相关方法是 accumulation buffer[474, 814]. 不需要用一个巨大的无屏(offscreen)缓存, 该方法使用一个相同分辨率的缓存, 使用比所需图像更多位数的颜色. 如要得到2x2样本, 需要生成四个图像, 分别将视图在x和y方向上移动半个像素. 在网格单元中, 每个图像会生成不同的样本位置. 而后将这些图像相加并平均, 将结果发送至显示器. Accumulation buffer 是OpenGL API的一部分. 可用于实现如 motion blur的效果. 但是每一帧都需要进行渲染多次, 且将结果拷贝至屏幕, 对于实时渲染而言代价昂贵.
+
+<li>
+Modern GPUs 不一定有 accumulation buffer 硬件, 但我们可以通过使用像素操作混合多个图像来模拟. 如果只是用8位颜色通道用于accumulated图像, 则图像的低位字节可能会在混合中失去. 可能会导致 color banding. 使用高精度缓存(大多数硬件支持每通道10或16位)可避免该问题. 相对于FSAA, accumulation buffer还有一个优点, 就是每个像素网格单元不一定需要一个直角模式(orthogonal pattern), 每个pass对于其他pass都是独立的, 所以可以交替使用 sampling pattern, 例如使用一个旋转的正方形 pattern 如(0, 0.25), {0.5, 0}, {0.75, 0.5}, (0.25, 0.75), 有时称呼这个为 rotated grid supersampling(RGSS), 该方法对于接近于垂直和水平的边沿的反锯齿效果更好.
+
+<li>
+supersampling 技术生成的样本带有各自计算的shades, depths, 和 locations. 代价昂贵. 尤其是在pixel shader进行采样. 所以 DirectX不直接支持 supersampling作为反锯齿的方法. Multisampling 方法则减少这些计算的高额代价. 通过不同的频率(at differing frequancies)采样不同的数据类型. 一个multisampling算法在每个pass中每个像素都有多个样本. 并且在样本之间共享计算结果. 该技术在GPU硬件中称为 multisample antialiasing(MSAA), coverage sampling(CSAA). 在对象边沿, 高亮, 锐利的阴影中会导致颜色突然变化时, 需要额外的样本. 阴影部分可以使得其柔和, 高亮部分可以让其更宽大一些, 但是对象的边沿仍是主要的采样问题. MSAA通过每个片段计算更少的shading samples节省了时间. 所以生成的图像每个像素可能会有4个样本位置, 颜色, 和z深度值, 但是每个片段仅仅计算一次该shade. 
+
+<li>
+如果所有MSAA positional samples之上有fragment. 该shading sample则为像素的中心点. 如果片段仅仅覆盖了一些positional samples. 则shading sample的位置需要移动(shift), 避免shade sampling离开纹理的边沿. 该位置修正成为 centroid sampling或者 centroid interpolation, 由GPU自动执行. (计算一个像素的中心点 shade sampling)
+
+<li>
+图5.30, MSAA sampling patterns, 用于 ATI和NVIDIA图形加速器. 绿色正方形为 shading sample的位置, 红色正方形为计算出来的样本位置, 而后该位置上的样本用于采样并保存. 分别为2x, 4x, 6x, 8x sampling. (由D3D FSAA Viewer生成)
+
+<li>
+MSAA的运行要比 supersampling schem 快, 这是由于 fragment 只需要被着色(shaded)一次, 它着重于在比较高的rate下对 fragment 的覆盖区域进行采样, 并共享计算出来的shade. 然而, 为每个样本存储单独的颜色和Z缓存没有必要,  CSAA 的优点在更高的sampling rate下仅仅存储片段的覆盖区域. coverage for the fragment. 每个子像素(subpixel)存储其关联的片段索引. 一个有限数目entry(大小为四个或八个)的表格存储每个片段关联的颜色和z值. 例如, 一个表格存储了4个颜色和z-depth值,  每个subpixel需要有两位大小的数字来索引该表格, (个人理解, 该表格可被多个subpixel共享). 理论上, 一个像素如有16个样本, 可有16个不同的fragment. 这种情况下 CSAA可能不能正确地存储需要的信息. 可能导致人工痕迹的效果. 对于大多数数据类型来说, 在一个像素的可见shade中(in shade visible in a pixel)很少有超过4个片段是完全不同的. 
+
+<li>
+分开存储 shading 和 depth类似于 Carpenter's A-buffer, multisampling的另一个形式, 常用于软件生成高质量的渲染. 但是没有交互速度. 在A-buffer中, 每个多边形的渲染会创建一个 coverage mask 用于每个屏幕网格单元, 表示其完全或者部分覆盖该网格单元, 见图5.31, 类似于 MSAA, 在片段的重心位置只计算一次该多边形的shade和coverage mask, 并被所有的样本所共享. 同样的方式可用于z-depth的计算. 一些系统计算两个深度值: 最小值和最大值. 还有一些会保留该多边形的坡度(slope). 所以可以在任意的样本位置推算出其确切的z-depth值. 因此两个相互相交的多边形可以被正确地渲染(coverage mask), shade, z-depth和其他信息组成一个 A-buffer片段. A-buffer不同于Z-buffer的主要地方在于一个屏幕网格单元可以一次有多个片段. 多个片段如果被隐藏则可以抛弃这些片段. 例如一个不透明的片段A有一个coverage mask表示完全覆盖片段B, 并且A的最大z-depth值小于B的最小z-depth值, 此时片段B可以完全抛弃掉. Coverage mask也可以合并起来并一起使用. 例如一个不透明片段覆盖了一个像素的一部分, 另外一个不透明片段覆盖了另一部分, 则他们的mask可以逻辑上联合起来, 并使用两者较大的那个 maximum z-depth来形成一个更大的覆盖区域. 由于该合并机制, 片段通常由 z-depth 排序. 当填满一个片段时, 就开始进行合并. 或者合并作为shading和display前的最后一步操作. 一个像素如何计算它的颜色:当所有的多边形发送给了 A-buffer, 计算了所有要存储在pixel中的颜色. 多少片段的mask确定是否可见, 然后乘以该片段颜色所表示的百分比, 而后结果相加. 见图5.18为multisampling 硬件使用的一个例子. 透明效果, 也是A-buffer的一个长处. (这里一个像素内有多个片段fragment)
+
+<li>
+图5.31 该多边形的一角覆盖的网格, 该图一个网格单元表示一个像素. 该网格单元分割成4x4子网格, 使用0和1表示其覆盖的子网格. 0000 0111 1111 0111 
+
+<li>
+虽然这个看起来是一个复杂的步骤, 渲染一个三角形值至一个Z-buffer的许多机制可以重新用于实现在硬件中的A-buffer. 相对于简单的FSAA, 该方法有着更少的存储和计算需求. A-buffer为每个像素存储可变数目的片段. 该方法的一个问题就是存储的半透明片段数量没有上限. Jouppi &amp; Chang[614]发明了Z^3算法, 每个像素有固定数目的片段, 当达到内存限制时进行合并(merge). Bavoil et al.[74, 77]概括了 k-buffer architecture的方法
+
+<li>
+所有的反锯齿方法都是为了每个多边形如何更好地覆盖一个网格单元(grid cell), 这里有一些限制, 一个场景的对象可能会任意的小, 以至于无法进行很好的采样. 一种避免锯齿的方法就是在该像素上随机的分布样本, 每个像素有不同的采样模式(sampling pattern), 这称之为 stochastic sampling,
+
+<li>
+常用的stochastic sampling 为 jittering, stratified sampling的一个形式, 假设一个像素使用n个样本, 将该样本分割成n个等大小的子区域, 且每个样本位于每个子区域的随机位置. 见图5.32, 最终的像素颜色为这些样本的某种平均值. N-rooks sampling方法则是 stratified sampling的另一种形式, n个样本位于nxn的网格内, 且每行和列只有一个样本. 该方法用于 IniiniteReality. 对于接近水平和垂直的边沿效果非常好. 对于这种结构, 每个像素都是该模式, 且样本为子像素的中心点(the same pattern is used per pixel and is subpixel-centered)
+
+<li>
+图5.32, 用于三个像素的典型jitter 模式. 每个像素分割成3x3的子单元, 每一个子单元有且只有一个样本, 样本在子单元内的位置随机
+
+<li>
+AT&amp;T Pixel Machines 和 Silicon Graphics'VGX 以及最近的 ATI's SMOOTHVISION scheme, 使用一种叫 interleaved sampling的技术. 在ATI版本中,反锯齿硬件允许每个像素最多16个样本, 以及最多16个不同的用户自定义样本模式(sampling pattern)用于混合在一个重复的模式中. 使用交错 stochastic samping 可以最小化每个像素使用相同模式形成的锯齿现象. 见图5.33, 这个技术可看成累积缓存技术的一般化形式  例如在有数个像素间隔的像素中使用重复的sampling pattern
+
+<li>
+图5.33, 左边的图案, 带accumulation buffer的antialiasing, 每个像素使用四个样本, 使用重复相同的pattern. 右边, 每个像素的samplilng不都是一样的. 而是交错使用不同的sampling pattern.
+
+<li>
+另外一种sampling和filtering的方法, 其中最好的sampling pattern 为 Poisson(泊松) disk sampling. 不均匀分布的点(点之间的距离有个最小距离).由Poisson disk pattern 安排的无权重采样, 带有 Gaussian filtering 内核
+
+<li>
+一个实时反锯齿的方案就是样本影响多个像素的方案是 NVIDIA's older Quincunx 方法, 也叫做 high resolution antialiasing(HRAA), "Quincunx"意味着分配五个对象, 其中四个位于一个正方形, 第五个位于中心位置.如同六面骰子的五点. 在这个 multisampling antialiasing scheme中, 这个sampling pattern 是一个quincunx(五点形), 四个样本在像素单元的角, 一个样本在像素的中心. 见图5.29, 中心的样本权重为1/2, 角落的样本权重为1/8, 由于像素与像素之间的共享, 平均下来 Quincunx scheme每个像素只需要计算两个样本. 这个结果比每个像素两个样本的FSAA方法有更好的效果.这个模式(pattern)接近于一个两维的tent filter. 胜过box filter. Quincunx方法现在已很少使用, 更新的GPUs重新在像素之间共享单个样本的结果, 用于更高质量的信号恢复(signal reconstruction), 例如, ATI Radeon HD 2000 有 custom filter antialiasing(CFAA), 能够使用窄的和宽的tent filters延伸进其他的像素单元. 其有更好的视觉效果, 从一个更大的区域采集样本, 例如4x4, 5x5像素网格, 在写这本书的时候, Sun微系统的defunct XVR-4000是唯一的图形硬件用于实时执行这种级别的过滤
+
+<li>
+应当注意的是, 样本共享也用于手机图形context的反锯齿. RGSS(图形5.29)的另一种共享形式,为FLIPQUAD, 每个像素仅仅需要计算两个样本, 而RGSS需要计算4个样本. 见图5.34, 将旋转后的四边形样本顶点共享起来.
+
+<li>
+图5.34, 左边, 显示了一个RGSS 采样模型, 每个像素需要计算四个样本, 将样本移动到像素的边缘, 而后像素之间共享样本, 这样的方法称之为FLIPQUAD, 这样每个像素只需要计算两个样本
+
+<li>
+Molnar 提供了一个 sampling pattern 进行了适当的改进. 通过随时间增加样本数目来改进图像. 对于交互应用程序非常有用, 当场景不断变化时, 使用较低的样本数目, 当用户停止交互场景为静态时, 图像使用更多的样本数并显示中间的结果. 可以使用accumulation buffer来实现这个schem.
+
+<li>
+用于sampling的rate可以不断变化, 其依赖于被采样的场景信息, 例如, 在MSAA中, 其着重于提高样本的数量来改进边缘的检测. 同时计算的shading samples在一个很低的rate下. Persson[1007]讨论了pixel shader如何通过收集多余的纹理样本在per-surface basis改进质量, 在这种方法下, 可以选择地应用 supersampling在表面上.
+
+<li>
+相对于颜色的不同, 眼睛更容易感觉到密度的不同, 其中一种应用是微软的 ClearType 技术, 用于液晶显示器. LCD显示器的每个像素由3个垂直的着色矩形组成红, 绿, 蓝.可是用放大镜查看. 这个配置使得其对于水平有3倍的分辨率. 使用不同的shade填充这些subpixels. 眼睛会混合这些颜色, 红蓝的边缘觉察不出来. 见图5.35.
+
+<li>
+图5.35, 放大灰度反锯齿和subpixel 反锯齿版本.
+
+<li>
+总的来说, 用于antialiasing edge的scheme涉及范围很广, 要权衡速度, 质量, 制造成本. 没有解决方案是完美的. 但是MSAA, CSAA提供了速度和质量之间比较合理的权衡方案. 毫无疑问的, 随着时间变化, 制造商会提供更好的采样和过滤方案. 例如2007年的夏天, ATI提供了基于片段边缘检测的高质量(计算代价非常昂贵)反锯齿方案, 为 edge detect antialiasing.
+
+</ul>
+
+<p>
+5.7 Transparency, Alpha, and Compositing
+</p>
+<ul>
+<li>
+半透明物体允许光线穿过他们, 用于半透明物体的算法分为两类 view-based effect 和 light-based effect. View-based effect 表示渲染一个半透明物体, Light-based effect 表示该物体导致光线衰减或者转移(diverted), 移植场景中其他对象被光线照射. 
+
+<li>
+本节会涉及 view-based 透明的最简单形式, 即半透明物体看起来就像是颜色过滤器或者衰减器. 更多详细的 view-based 和 light-based效果如 frosted glass(磨砂玻璃), the bending of light(光的弯曲, 折射), 透明物体的厚度决定了光的衰减程度. 观察角度决定了光折射和传输的变化
+
+<li>
+Z-buffer中, 一个像素只能存储一个对象, 如果有透明物体在该像素之上, Z-buffer的值很难保证. 解决该问题的accelerator architectures有 A-buffer. A-buffer 有"deep pixels", 在渲染了所有对象之后, 存储了一些fragments, 然后将其解(resolve)成单个像素颜色(个人理解). 由于Z-buffer在加速器市场(accelerator market)中占有主要位置, 所以我们这里介绍一些在z-buffer限制之下的方法.
+
+<li>
+其中一种方法是给出透明的假象, 称为 screen-door transparency. 例如绘制一个透明多边形, 使用一个棋盘填充模式(checkboard fill pattern), 该方法在多边形中每隔一个像素渲染该多边形像素, 其余的像素则绘制位于该多边形之后的物体. 该方法所存在的问题有:
+
+<ul>
+<li>
+该透明物体在50%透明度的情况下效果最好. 除了棋盘模式也可以使用其他的模式, 但这些模式看起来透明效果不那么好. 有些锐利.
+
+<li>
+在一定区域内只有一个透明物体时渲染效果可信, 例如, 如果一个蓝色物体前有红色半透明物体和绿色半透明物体, 则棋盘模式中三种颜色只有两个颜色会显示.
+
+</ul>
+<li>
+这个 screen-door transparency方法的优点就是简单, 可以随时以任何次序绘制透明物体, 不需要特定硬件(除了填充模式的支持), 所有的对象为不透明物体. 该技术的思想也可用于截断纹理(cutout textures)的反锯齿, 但是只用于subpixel等级, 使用的技术为 alpha to coverage.
+
+<li>
+用于更一般和弹性的透明效果的方法是将透明物体的颜色和背后物体的颜色混合起来, 即为alpha blending的概念. 当一个物体渲染至屏幕, 每个像素关联至一个RGB颜色和一个Z-buffer depth. 另外一个成分alpha也用于该对象的每个像素. 用来表示该绘制物体的透明度, 公式: Co = AsCs + (1-As)Cd [over operator](5.17), Cs 为透明物体的颜色, As为透明物体的alpha值, Cd为屏幕上的像素颜色(称为 destination), Co 为结果颜色.
+
+<li>
+为了在场景中渲染透明物体应当要有正确的顺序, 首先, 渲染不透明物体, 然后按照从后到前的顺序绘制透明物体. 任意顺序进行混合会导致各种各样的不真实的样式. 这是由于混合公式依赖于顺序. 见图5.36, 可以修改公式, 使得可以按照从前向后的顺序绘制透明物体. 将透明表面渲染至分离的缓存, 而不首先绘制不透明物体, 该混合模式成为 under operator, 其用于 volume rendering technique. 仅当两个重叠的透明表面alpha值都为0.5, 则混合的顺序不重要, 不需要进行任何排序.
+
+<li>
+图5.36 左边的图形使用Z-buffer渲染带透明的模型, 这些mesh以任意顺序绘制, 产生一系列错误. 右边的图形, depth peeling提供了正确的外观. 虽然多花费了额外的通道(additional passes)
+
+<li>
+测试各个对象的图形中心深度并不保证其正确的排序顺序, 如相互交叉的多边形会导致排序的困难, 当GPU通过多边形给定的顺序进行渲染而不排序, 会导致绘制多边形mesh出现排序问题(sorting problems), 如果不可能进行排序或者只能部分排序, 则最好使用 Z-buffer 测试, 但在渲染透明物体时, 不会替换z-depth值. 使用这种方法, 所有的透明物体至少可以看到. 其他的技术也可以避免artifacts, 例如关闭culling, 或者渲染两次透明多边形, 第一次渲染多边形背面, 第二次渲染多边形前面
+
+<li>
+存在不需要应用程序自身进行排序而正确渲染透明物体的其他方法, A-buffer multisampling 方法的一个优点就是通过硬件合并已排序片段以得到高质量的透明度, 一般来说, 一个片段的alpha值可表示透明和该像素单元的覆盖范围(coverage). 而一个multisample片段的alpha值则单纯表示该样本的透明度. 这是由于其存储了单独的coverage mask.
+
+<li>
+透明度可以使用两个或多个depth buffers和多通道(multiple passes)来计算. 首先, 进行一个渲染pass, 以便将不透明表面的z-depth值写入Z-buffer, 而后开始进行透明物体的渲染. 在第二个渲染pass中, 修改这个深度测试, 接受的表面是这样的, 其深度值比第一个缓存中存储的z-depth更接近观察点, 而后在这些深度值取出最远的那个点作为接受的表面. 如此之后可以渲染最靠近不透明物体的渲染对象至帧缓存, 而后z-depth变为第二次pass的Z-buffer, 该Z-buffer用于下一个pass得到最靠近该值的透明表面, 具体见图5.37.
+
+<li>
+图5.37, 每个 depth peel pass渲染一个透明层, 左边为第一个pass, 为眼睛直接可见的层. 中间的图, 第二层(layer), 显示了每个像素上靠近观察点第二近的透明表面, 右边的图, 第三层, 显示了每个像素上靠近观察点第三近的透明表面. 第二层和第三层一次一次的靠近观察点, 前者要比后者离观察点更远, 不可见的透明表面. 最后的结果见P394, Figure 9.47
+
+<li>
+pixel shader 可以通过这样的方法来比较 z-depth 值, 执行 depth peeling, 依次绘制每个可见层, 该方法的一个初始化问题就是需要多少层才能够捕捉所有的透明层. 这个方法通过使用 pixel draw counter 来解决. 其告知了有多少的像素在渲染中被写入. 当一个通道中没有任何像素被渲染, 则完成了所有渲染. 或者, 当一个通道渲染的像素小于某值, 就停止peeling. 
+
+<li>
+depth peeling为有效地方法, 由于peeled的每层都是所有透明对象的分离渲染通道(separate rendering pass), 所以该方法速度慢. Mark and Proudfoot 讨论了一个硬件结构扩展如"F-buffer"通过在流中(stream)存储和访问解决片段来该透明问题. Bavoil et al提议一个k-buffer结构也用于解决该问题.  Liu et al. 和 Pangerl 则探索multiple render target的使用来模拟四层的deep A-buffer.不过该方法受限于同时读取和写入相同buffer的问题, 该问题会导致渲染的透明fragment无次序. Liu et al.提供了一个方法确保片段永远正确排序, 不过牺牲了性能. 尽管如此, 渲染 depth-peeled 透明层大概快于总帧率的两倍. 也就是说, DX10以及后来者不允许同时对相同的buffer进行读写, 所以这些方法不能够使用新的APIs
+
+<li>
+over operator 也可用于反锯齿边缘(antialiasing edges), 如前面章节介绍, 有一系列的算法用于发现一个像素被多边形边缘所覆盖的百分比. 不再存储coverage mask来表示该区域被对象所覆盖, 而是用一个alpha来存储, 这里有许多方法来生成一个alpha值来表示该边缘, 线条, 点的覆盖率.例如, 一个不透明的多边形覆盖了一个屏幕网格单元的百分之三十, 所以alpha值=0.3. 想象两个相邻多边形的边缘完全覆盖了一个像素, 每个覆盖了百分之50, 如果每个多边形生成了一个alpha值用于它的边缘, 则两个alpha值组合起来可能只覆盖该像素的75%.(两个alpha值都为0.5, 则第一个透明对象使用了0.5, 而后绘制第二个透明对象则为0.5*0.5=0.25), 这样会有25%的背景显示出来. 通过使用coverage mask或者blurring edge outward来解决该排序的错误. 见前面章节所讨论的内容.总的来说, alpha值可用于表示透明度, 边缘覆盖率, 或者两者都有(两个alpha值相乘)
+
+<li>
+例子, 使用反锯齿技术渲染一个茶壶, 表面的着色为灰褐色(0.8, 0.7, 0.1), 背景为淡蓝色(0.7, 0.7, 0.9), 表面覆盖了一个像素的60%, 则颜色为 0.6(0.8, 0.7, 0.1) + 0.4(0.7, 0.7, 0.9) = (0.76, 0.7, 0.42)
+
+<li>
+over operator对于混合照片或对象的合成渲染非常有用. 该过程成为 compositing, alpha值和RGB颜色值同时存储为RGBA值.
+
+<li>
+其他的混合操作, 但大多数不常用语实时程序, 除了一个例外加法混合(additive blending) Co=AsCs+Cd(5.18), 该混合模式的优点如有两个三角形是不需要排序(见前面的例子), 对于背景不会减弱其颜色, 使得其更明亮. 但是该模式对于透明来说, 由于不透明物体不过滤(filtered), 结果看起来不大合理, 如烟和火, 加法混合使得颜色过于饱和.
+
+<li>
+常用存储RGBA图像的方法是 premultiplied alphas, 在存储之前将RGB值乘以alpha值. Co = Cs' + (1-As)Cd(5.19). Cs'为premultiplied源通道(source channel), 在premultiplied RGBA中, RGB的值小于A值. 带premultiplied alpha进行渲染synthetic(人工的, 合成的)图像, 一个反锯齿不透明对象绘制于黑色背景, 假设缺省提供了一个premultiplied值, 一个白色多边形(1.0, 1.0, 1.0)覆盖了一个像素40%, 由于反锯齿, 像素值应当为(0.4, 0.4, 0.4), 该像素则应保存颜色值(0.4, 0.4, 0.4),alpha值为0.4, RGBA值则为(0.4, 0.4, 0.4, 0.4), 另一种存储图像的方式是 unmultiplied alphas. 或者叫unassociated alphas.RGB值不乘以alpha值. 这个很少用于 synthetic image的存储. 这是由于最终像素的颜色不会是多边形的颜色, 而是多边形颜色乘以alpha并和背景混合. 无论是过滤(filtering)还是混合都最好使用premultiplied. 使用unmultiplied alphas线性插值的运行不正确.
+
+<li>
+对于图像操作程序, unassociated alpha则对于mask一个照片非常有用, 其不影响图像内的原始数据. 支持alpha的图像格式有TIFF(两者都支持, unmultiplied, premultiplied), PNG(只支持unmultiplied).
+
+<li>
+一个有关alpha通道的概念是 chroma-keying, 这是来自显示产品的一个专用词, 演员在摄影中对应蓝色, 黄色或者绿色屏幕和背景混合.在电影工业中这种处理叫做 green-screen或者blue-screen matting. 这个概念是某个特定颜色被设定为透明, 一旦检测到该颜色, 背景显示. 这样通过使用RGB颜色来给图像一个外形(outline), 不需要存储alpha. 该scheme的缺点就是对象上的像素是完全非透明或者完全透明, GIF格式允许一个颜色被分配为透明色. 
+
+<li>
+over operator 可用于在任何已绘制对象之上绘制半透明物体. 更有代表性的公式用于一个透明物体如何表现, 该公式是过滤和反射的组合. 对于过滤, 该透明物体背后的场景应当乘以该透明物体的光谱不透明度(spectral opacity), 例如, 一个黄色玻璃则用它的黄色乘以场景颜色. 以及该黄色玻璃可能反射一些光进入眼睛, 所以我们需要添加该反射光. 为了模拟这样的alpha混合, 我们需要用RGB颜色乘以帧缓存, 而后加上另一个RGB颜色. 在一个通道内完成这个则不能使用规则的alpha混合. 但可使用双颜色混合(dual-color blending). 这些在DX10中(见章节3.7). 章节7.5.3, 9.4, 9.5讨论物理修正透明度.
+
+<li>
+关于alpha还有一个注意要点: 该通道可以存储任意值, 例如image文件格式, 存储alpha值通常有特定含义, 例如unmultiplied或premultiplied. 在shader计算中, 该通道可以存储其他值, 例如grayscale specular contribution, 指数, 或者其他缩放因子. 理解这些可用的混合模式可以使得大量的效果得到快速的运算
+
+</ul>
+
+<p>
+5.8 Gamma Correction
+</p>
+<ul>
+<li>
+计算出像素值之后, 需要在显示器上显示它们, 以前的数码显示使用CRT.CRT在输入电压和显示发光度(display radiance)之间有幂定律关系(Y=AX^k), 刚好和人眼的光感度相反.幸运一致的结论就是CRT输入电压的按比例编码, 其成为 perceptually uniform(感知的一致性)(两个可编码值N和N+1之间的perceptual difference为可显示范围(displayable range)上的常量值), 值的近似优化分布最小化了 banding artifacts, 当distinct值的数目非常小时非常讨厌(颜色缓存每通道存储八位或者更少), 现在CRT显示器很少见, perceptual uniformity 是使用 power-law编码的一个原因, 已有图像对相容性的需求则是另外一个原因. LCDs相对于CRTs有不同的tone response curves. 而弄出硬件修正用于提供相容性
+
+<li>
+transfer function 定义了一个已编码像素值和radiance之间的关系, 该function修改了power curves.(指数曲线) 该函数在0至1范围内接近一个指数曲线. Fxfer(x) 约等于 x^r, 该曲线的指数r(gamma 伽玛)
+
+<li>
+图5.38, 坐标的图想为单元化的场景发光度(scene radiance)和编码像素值(encoded pixel values)的函数曲线, 中间的则为encoded pixel values和单元化的显示器发光度(display radiance)的关系. 两个函数曲线相连就得到 scene radiance 到 display radiance的函数曲线
+
+<li>
+需要两个gamma值来描述一个成像系统(imaging system), encoding gamma描述encoding transfer function, 表示scene radiance值(由一个成像设备如相机捕捉的值)和encoded pixel value之间的关系, display gamma描述了 display transfer function.表示encoded pixel 值和displayed radiance之间的关系. 两个gamma值的乘积可以表述一个成像系统, 描述了一个 end-to-end transfer function(见图5.38), 如果乘积为1, 则dispalyed radiance可以按比例地对应scene radiance.这看起来非常理想. 也许display可以精确地复制原始场景的观察环境(viewing conditions), 然而, 事实上在原始场景的观察环境和displayed version之间有两个重要的不同点. 第一个不同点为不受任何限制的display radiance值为若干数量级, 且少于scene radiance values.(这是由于 display device 技术的限制), 第二个不同点称为 surround effect, 原始的scene radiance值填充了观察者的整个field of view(FOV,观察视角). 而display radiance值受限于一个被室内环境光照影响的屏幕.该环境光照也许非常暗淡(例如在影院里), 模糊(看电视的平均环境), 或者明亮(办公室),  两个不同的view conditions导致和原始场景在感知上的反差戏剧性地减少. 为了减少这个不同点, 使用non-unit end-to-end gamma(推荐值的范围为1.5-暗的电影院到1.125-明亮的办公室).确保display看起来就像原始的场景.
+
+<li>
+用于渲染目的相关gamma为encoding gamma, Rec.709 for HDTV则使用0.5的encoding gamma, 用于电视机显示. 个人计算时则使用一个标准为sRGB, encoding gamma为0.45. 该gamma用于明亮的办公室环境. 这些encoding gamma配合一个2.5的display gamma生成一个end-to-end gamma. 该display gamma为一个典型的CRT显示器.
+
+<li>
+例子: CMMA CORRECTION, 计算出一个像素的相对颜色(0.3, 0.5, 0.6), 要正确显示它, 则需要使用0.45=(1/2.22)的指数.得到(0.582, 0.732, 0.794), 显示时每个通道8位. 乘以255得(148, 187, 203). 其中0.45为伽玛修正.
+
+<li>
+通过适当的转换函数transfer function转换physical radiance值为非线性帧缓存值. 这是渲染器的责任. 在过去经常忽略这个, 导致许多的人工痕迹. 这是由于用于修正physically linear radiance值的shading的计算是在非线性值上执行, 图5.39为其中一个例子. 经过了正确的伽玛修正后, 光的颜色值就会在线性空间中变化, 而不是非线性变化.
+
+<li>
+图5.40, 左边的图, 白色多边形边缘黑色背景, 四个像素分别被该多边形覆盖, 且其上表示了覆盖率. 如果不使用伽玛修正, 则图形看起来如同右边那样扭曲, 看起来更暗淡一些. 
+
+<li>
+图5.41 左边图案为经过伽玛修正的反锯齿线条. 中间的为部分修正, 右边的则无伽玛修正.
+
+<li>
+忽略伽玛修正同样会影响到反锯齿边缘. 例如一个多边形边缘覆盖了四个屏幕网格单元(图5.40), 这个多边形单元化的radiance为1(白色), 背景为0(黑色), 从左到有, 多边形分别覆盖1/8, 3/8, 5/8, 7/8, 如果我们使用box filter, 我们希望表示该像素单元化的scene radiance为0.125, 0.375, 0.625, 0.875. 正确的方法是在线性空间中执行反锯齿, 应用encoding transfer 函数得到四个结果值. 如果不这么做, 则所代表的scene radiance则会太暗淡. 造成边缘看起来扭曲. 该人工痕迹称为 roping. 这是由于边缘看起来像扭曲的绳索. 图5.41显示了这个效果.
+
+<li>
+幸运的是, 当将值写入颜色缓存时, 现代GPU可以自动应用 encoding transfer function.(典型的是sRGB transfer function), 虽然GPU能够正确的转换线性radiance值为非线性像素编码(nonlinear pixel encodings), 如果不使用或者误用该功能则会导致人工痕迹. 注意在渲染的最后阶段应用该转换(当最后一次将值写入display buffer中时), 在伽玛修正后进行处理, 则会在非线性空间中处理, 会导致结果不正确且有人工痕迹. 虽然像tone mapping(章节10.11)的操作可以修正图像的亮度平衡(luminance balance). 但是伽玛修正仍应该放在最后的阶段. 这并不意味着中间的缓存不能包含非线性编码(encoding), 但是, 缓存的内容在进行post-processing效果计算之前必须小心的转换回线性空间.
+
+<li>
+将encoding transfer function作用于渲染管线的输出并不足够, 也没有必要转换任何非线性的输入值为线性空间. 许多的纹理(如reflectance maps)包含的值范围为0到1, 且存储为 low-bit-depth格式, 要求非线性的编码用于避免banding. 幸运的是, GPUs可用于设置为自动转换非线性的纹理, 只需设置它们为sRGB纹理. 章节6.2.2, mipmap的生成需要考虑非线性的编码(nonlinear encoding)
+
+<li>
+用于编辑纹理的应用程序通常存储结果于非线性空间, 没必要和用于GPU的转换相同, 当编辑的时候注意使用正确的颜色空间, 包括显示时使用的标准(calibration of the displayed used). 任何相片纹理要求相机的标准(calibration of the camera). Mensell ColorChecker chart为标准的颜色表, 对于这些标准非常有用. 
+
+<li>
+纹理之外其他的shader输入也可被编码为非线性地, 以及在用于shading之前要求类似的转换. 颜色常量(Color constant)(例如tint(色彩) value)经常在非线性空间中编辑. 也可以同样地应用于顶点颜色. 注意不要再线性空间中"转换"这些值.
+
+</ul>
+
+<p>
+Further Reading and Resources
+</p>
+<ul>
+<li>
+Fundamentals of Computer Graphics, Second Edition[1172] by Shirley et al. 讨论光照, 颜色, 信号处理等
+
+<li>
+Blinn的文章"What Is a Pixel"[111]提供了计算机图形学的一个有趣的浏览.  Walberg的书[1367] 则对于采样和过滤有详细的介绍. 还有Foley et al.的书[349]也是一样的. Blinn's Dirty Pixel书[106]则介绍过滤和反锯齿, alpha, compositing和伽玛修正. 
+
+<li>
+Shirley[1169]则介绍samplilng patterns. Mitchell[884]则介绍了反锯齿. Smith的文章[1196]则修正了像素的误解, Smith关于采样和过滤的教程同样有趣[1194, 1195]. Gritz和d'Eon[459]则介绍了伽玛修正的问题. Poynton's Digital Video and HDTV: Algorithms and Interfaces 则介绍了不同媒体的伽玛修正, 以及其他颜色相关的主题
+
+</ul>
+
+</body>
+</html>

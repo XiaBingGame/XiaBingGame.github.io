@@ -1,0 +1,215 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../style.css" />
+    <title>Debugging</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<ul>
+<li>
+AfxDebugBreak() 
+
+<ul>
+<li>
+源代码中的硬编码断点
+
+<li>
+release版本中移除或者使用 #ifdef _DEBUG.
+
+<li>
+在非MFC程序中, 使用 DebugBreak
+
+</ul>
+<li>
+TRACE 宏
+
+<ul>
+<li>
+ATLTRACE/TRACE 宏
+
+<li>
+只用于 Debug 版本
+
+</ul>
+<li>
+检测MFC中的内存泄漏
+
+<ul>
+<li>
+MFC中, 使用宏 DEBUG_NEW 代替new来帮助定位内存泄漏.
+
+<li>
+如果不想手写替代所有的new为DEBUG_NEW, 可使用下面代码:
+<pre c++>
+#define new DEBUG_NEW
+</pre>
+
+<li>
+当你执行一个 object dump, 就会显示文件和行号.
+
+</ul>
+<li>
+允许内存诊断
+
+<ul>
+<li>
+AfxEnableMemoryTracking 开启关闭(Debug版本默认开启)
+
+<li>
+使用具体的内存诊断功能(全局变量: afxMemDF)
+
+<ul>
+<li>
+allocMemDF: 开启诊断内存分配器(默认)
+
+<li>
+delayFreeMemDF: 延迟释放内存
+
+<li>
+checkAlwaysMemDF: 当内存分配和释放时调用 AfxCheckMemory.
+
+</ul>
+</ul>
+<li>
+得到内存快照
+
+<ul>
+<li>
+创建一个 CMemoryState Members 对象, 调用 CMemoryState::Checkpoint 成员函数, 其创建了第一个内存快照.
+
+<li>
+其后使用 CMemoryState和Checkpoint 创建第二个内存使用的快照
+
+<li>
+创建第三个 CMemoryState对象和调用 CMemoryState::Difference成员函数.
+
+</ul>
+<li>
+查看统计信息
+
+<ul>
+<li>
+CMemoryState::DumpStatistics --- 得到没有被释放的对象.
+
+</ul>
+<li>
+得到 object dumps
+
+<ul>
+<li>
+CMemoryState::DumpAllObjectsSince --- 得到从上次检查点开始所有没有被释放的对象.
+
+<li>
+要使用该功能, 首先必须允许诊断tracing.
+
+<li>
+为了得到一个对象dump的最大化信息, 你可以覆写任何CObject派生对象的Dump成员函数来自定义对象的dump.
+
+<li>
+你可以通过设置全局变量 _afxBreakAlloc为显示在括号内的数字在特定的内存分配里设置断点. 
+
+<li>
+C运行时库类似的函数 _CrtSetBreakAlloc
+
+</ul>
+<li>
+解释内存dump
+
+<ul>
+<li>
+为了避免栈变量的检测, 你应当在这些变量的外围处设置检查点. 比如放置括号.
+<pre c++>
+oldMemState.Checkpoint();
+{
+    // Do your memory allocations and deallocations ...
+    CString s("This is a frame variable");
+    // The next object is a heap object.
+    CPerson* p = new CPerson( "Smith", "Alan", "581-0215" );
+}
+newMemState.Checkpoint();
+</pre>
+
+<li>
+non-object allocations: 表示非CObject派生的对象, 或者原生C类型的分配.
+
+<li>
+检测的过程中, 在需要清除的泄漏处 delete 那些未释放的空间.
+
+</ul>
+<li>
+自定义对象的dumps.
+
+<ul>
+<li>
+重写派生自CObject的Dump成员函数. 写入 CDumpContext. 代码如下:
+<pre c++>
+class CPerson : public CObject
+{
+public:
+#ifdef _DEBUG
+    virtual void Dump( CDumpContext&amp; dc ) const;
+#endif
+
+    CString m_firstName;
+    CString m_lastName;
+    // And so on...
+};
+
+#ifdef _DEBUG
+void CPerson::Dump( CDumpContext&amp; dc ) const
+{
+    // Call the base class function first.
+    CObject::Dump( dc );
+
+    // Now do the stuff for our specific class.
+    dc &lt;&lt; "last name: " &lt;&lt; m_lastName &lt;&lt; "\n"
+        &lt;&lt; "first name: " &lt;&lt; m_firstName &lt;&lt; "\n";
+}
+#endif
+
+CPerson* pMyPerson = new CPerson;
+// Set some fields of the CPerson object.
+//...
+// Now dump the contents.
+#ifdef _DEBUG
+pMyPerson-&gt;Dump( afxDump );
+#endif
+</pre>
+
+</ul>
+<li>
+减少一 MFC 调试构建的大小
+
+<ul>
+<li>
+使用 /Z7, /Zi, /ZI代替/Z7 重新构建MFC库. 其构建单个程序数据库(PDB)文件
+
+<li>
+不使用调试信息(无/Z7, /Zi, /ZI)重新构建MFC库.
+
+<li>
+使用下面描述的用于选择模块的调试信息来构建你自己的应用程序
+
+</ul>
+<li>
+构建一个MFC应用程序, 其有用于选定模块的调试信息
+
+</ul>
+
+    </div>
+</body>
+</html>

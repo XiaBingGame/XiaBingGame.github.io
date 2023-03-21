@@ -1,0 +1,910 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../../../style.css" />
+    <title>C++Primer18</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<h1 id="toc_1">第18章 特殊工具与技术 </h1>
+<h2 id="toc_1.1">18.1 优化内存分配</h2>
+<ul>
+<li>
+预先分配用于创建新对象的内存, 需要时在预先分配的内存中构造每个新对象. 将内存分配和对象构造分离开.
+
+<li>
+最好将优化推迟到已知程序能够工作, 并且运行时测度指出改进内存分配将解决已知的性能问题的时候.
+
+<li>
+接管内存分配时, 必须处理这两个任务, 分配原始内存时, 必须在该内存中构造对象; 在释放该内存之前, 必须保证适当地撤销这些对象.
+
+<li>
+现代 C++ 程序一般应该使用 allocator 类来分配内存, 它更安全更灵活. 但是, 在构造对象的时候, 用 new 表达式比 allocator::construct 成员更灵活. 有几种情况下必须使用 new.
+
+<li>
+标准 allocator 类与定制算法
+
+</ul>
+<pre class="brush: c++">
+<table>
+<tr>
+<th>
+&nbsp;
+</th>
+<th>
+&nbsp;
+</th>
+</tr>
+<tr>
+<td>
+allocator&lt;T&gt; a
+</td>
+<td>
+定义名为a的allocator对象, 可以分配内存或构造T类型的对象 
+</td>
+</tr>
+<tr>
+<td>
+a.allocate(n)
+</td>
+<td>
+分配原始的未构造内存以保存T类型的n个对象 
+</td>
+</tr>
+<tr>
+<td>
+a.deallocate(p, n)
+</td>
+<td>
+释放内存, 在名为pde T*指针中包含的地址处保存T类型的n个对象.
+</td>
+</tr>
+<tr>
+<td>
+a.constructor(p, t)
+</td>
+<td>
+构造一个元素 
+</td>
+</tr>
+<tr>
+<td>
+p.destroy(p)
+</td>
+<td>
+析构一个元素 
+</td>
+</tr>
+<tr>
+<td>
+uninitialized_copy(b, e, b2)
+</td>
+<td>
+从迭代器b和e指出的输入范围将元素复制到从迭代器b2开始的未构造的原始内存中.
+</td>
+</tr>
+<tr>
+<td>
+uninitialized_fill(b, e, t)
+</td>
+<td>
+b和e指出的范围初始化为t的副本 
+</td>
+</tr>
+<tr>
+<td>
+uninitialized_fill_n(b, e, t, n)
+</td>
+<td>
+b和e指出的范围初始化为至多n个t的副本.
+</td>
+</tr>
+</table>
+string *sp = new string("initialized");
+delete sp;
+</pre>
+<ul>
+<li>
+上面的 new 表达式和 delete 表达式是如何工作的:
+
+<ul>
+<li>
+new 表达式
+
+<ol>
+<li>
+调用名为 operator new 的标准库函数, 分配足够大的原始的未类型化的析构函数
+
+<li>
+运行该类型的一个构造函数来构造对象
+
+<li>
+返回指向新分配并构造的对象的指针
+
+</ol>
+<li>
+delete 表达式
+
+<ol>
+<li>
+对 sp 指向的对象运行适当地析构函数.
+
+<li>
+调用名为 operator delete 的标准库函数释放该对象引用内存.
+
+</ol>
+</ul>
+<li>
+operator new 和 operator delete 并没有重载 new 和 delete 表达式, 他们仅是在new和delete表达式做了一部分的工作.
+
+<li>
+operator new 和 operator delete 有两个重载版本
+<pre class="brush: c++">
+void *operator new(size_t);
+void *operator new[](size_t);
+
+void *operator delete(void*);
+void *operator delete[](void*);
+</pre>
+
+<li>
+虽然 operator new 和 operator delete 函数的设计意图是供 new 表达式使用, 但它们通常是标准库中的可用函数, 可以使用它们获得未构造的内存, 类似于 allocator 类的 allocate 和 deallocate 成员. 例如下面两行代码等价, 且 operator delete 和下面代码一样:
+<pre class="brush: c++">
+T* newelements = alloc.allocate(newcapacity);
+
+T* newelements = static_cast&lt;T*&gt;(operator new[])(newcapacity * sizeof(T));
+</pre>
+
+<ul>
+<li>
+不同点在于 operator new 和 operator delete 在 void* 指针而不是类型化的指针上进行操作. 标准库 operator new 和 operator delete 是 allocator 的 allocate 和 deallocate 成员的低级版本.* 定位 new (placement new). 定位 new 表达式在已分配的原始内存中初始化一个对象, 它与 new 的其他版本的不同之处在于, 它不分配内存. 它接受指向已分配但未构造内存的指针, 并在该内存中初始化一个对象. 定位 new 表达式的形式如下:
+<pre class="brush: c++">
+new (place_address) type
+new (place_address) type (initializer-list)
+</pre>
+
+<li>
+下面两句代码等价
+<pre class="brush: c++">
+alloc.construct(free_type, t);
+new (free_type) T(t);
+</pre>
+
+</ul>
+<li>
+定位 new 表达式比 allocator 类的 construct 成员更灵活. 定位 new 表达式初始化一个对象的时候, 它可以使用任何构造函数, 并直接建立对象. construct 函数总是使用复制构造函数. 
+<pre class="brush: c++">
+allocator&lt;string&gt; alloc;
+string* sp = alloc.allocate(2);
+
+new (sp) string(b, e);
+alloc.construct(sp+1, string(b, e));
+</pre>
+
+<ul>
+<li>
+定位 new 表达式直接使用一对迭代器的string构造函数在sp指向的空间直接构造 string 对象
+
+<li>
+contruct 函数, 必须先从迭代器构造一个string 临时对象, 而后再复制构造该对象
+
+</ul>
+<li>
+当有些类使用复制构造函数是不可能的(例如复制构造函数是私有的), 或者应该是避免的, 此时用定位new表达式.
+
+<li>
+对应于定位new表达式, 还有显示析构函数的调用
+<pre class="brush: c++">
+for (T* p=first_free; p!=elements; /* empty */)
+	alloc.destroy(--p);
+
+// 等下的析构函数显式调用
+for (T* p = first_free; p!=elements; /* empty */)
+	p-&gt;~T();
+</pre>
+
+<ul>
+<li>
+析构函数显式调用只是清除了对象本身, 并没有释放对象所占内存
+
+<li>
+调用 operator delete 函数不会运行析构函数, 只是释放指定的内存.
+
+</ul>
+<li>
+类通过定义自己的名为 operator new 和 operator delete 的成员, 类可以管理用于自身类型的内存.
+
+<ul>
+<li>
+编译器看到类类型的 new 或 delete 表达式的时候, 它查看该类是否有 operator new 或 operator delete 成员. 如果类定义(或继承)了自己的成员new和delete函数, 则使用那些函数为对象分配和释放内存; 否则调用这些函数的标准库版本
+
+<li>
+优化 new 和 delete 的行为的时候, 只需要定义 operator new 和 operator delete 的新版本, new 和 delete 表达式自己照管对象的构造和撤销.
+
+<li>
+如果类定义了这两个成员中的一个, 它也应该定义另一个.
+
+<li>
+类成员 operator new 函数必须具有返回类型 void* 并接受 size_t 类型的形参.
+
+<li>
+类成员 operator delete 函数必须具有返回类型 void, 它可以定义为接受单个 void* 类型形参, 也可以定义为接受两个形参, 即 void* 和 size_t 类型.
+
+<li>
+除非类是某继承层次的一部分, 否则形参 size_t 不是必需的. 当 delete 指向继承层次中类型的指针, 指针可以指向基类对象, 也可以指向派生类对象. 派生类对象的大小一般比基类对象大. 如果基类有 virtual 析构函数, 传给 operator delete 的大小将根据删除指针所指对象的动态类型而变化. 如果基类没有 virtual 析构函数, 那么, 通过基类指针删除指向派生类对象的指针的行为, 跟往常一样是未定义的.
+
+<li>
+这些函数隐式地为静态函数, 不必显示地将它们声明为 static. new 和 delete 只能直接访问所属类的静态成员
+
+<li>
+定义成员 operator new[] he  operator delete[] 来管理类类型的数组, 如果这些 operator 函数存在, 编译器就使用它们代替全局版本.
+
+<li>
+类成员 operator new[] 必须具有返回类型 void*, 并且接受的第一个形参类型为 size_t. 勇表示存储特类型给定数目元素的数组的字节数值自动初始化操作符的size_t形参.
+
+<li>
+类成员 operator delete[] 必须具有返回类型 void, 并且第一个形参为 void* 类型, 用表示数组存储起始位置的值自动初始化操作符的 void* 形参.
+
+<li>
+类的操作符 delete[] 也可以有两个形参, 第二个形参为 size_t. 如果提供了附加形参, 由编译器用数组所需存储量的字节数自动初始化这个形参.
+
+</ul>
+<li>
+如果类定义了自己的new和delete, 类的用户就可以通过使用全局作用域确定操作符, 强制 new 或 delete 表达式使用全局的库函数
+<pre class="brush: c++">
+Type *p = ::new Type;
+::delete p;
+</pre>
+
+<ul>
+<li>
+如果用 new 表达式调用全局 operator new 函数分配内存, 则delete表达式也应调用全局 operator delete函数.
+
+</ul>
+</ul>
+
+<h1 id="toc_2">18.2 运行时类型识别 </h1>
+<ul>
+<li>
+运行时类型识别(RTTI), 通过两个操作符提供 RTTI
+
+<ul>
+<li>
+typeid 操作符, 返回指针或引用所指对象的实际类型
+
+<li>
+dynamic_cast 操作符, 将基类类型的指针或引用安全地转换为派生类型的指针或引用.
+
+</ul>
+<li>
+对于带虚函数的类, 在运行时执行 RTTI 操作符, 对于其他类型, 在编译时计算 RTTI 操作符.
+
+<li>
+只要有可能, 定义和使用虚函数比直接接管类型管理好得多.
+
+<li>
+如果 dynamic_cast 失败,, 指针类型则返回0值, 引用类型则抛出 bad_cast 类型的异常.
+
+<li>
+在条件中执行 dynamic_cast 保证了转换和其结果测试在一个表达式中进行.
+<pre class="brush: c++">
+if(Derived *derivedPtr = dynamic_cast&lt;Derived*&gt;(basePtr))
+{
+	// 使用派生类指针
+}
+else
+{
+	// 使用基类指针
+}
+</pre>
+
+<li>
+dynamic_cast 转换引用
+<pre class="brush: c++">
+dynamic_cast&lt;Type&amp;&gt;(val)
+</pre>
+
+<li>
+typeid 表示式: typeid(e)
+
+<ul>
+<li>
+e 是任意表达式或者类型名.
+
+</ul>
+<li>
+如果表达式的类型是类类型且该类包含一个或多个虚函数, 则表达式的动态类型可能不同于它的静态编译时类型.
+
+<li>
+typeid操作符可以与任何类型的表达式一起使用, 内置类型的表达式以及常量都可以用作 typeid 操作符的操作数. 如果操作数不是类类型或者是没有虚函数的类, 则typeid操作符指出操作数的静态类型; 如果操作数定义了至少一个虚函数的类类型, 则在运行时计算类型.
+
+<li>
+typeid操作符的结果是名为type_info的标准库类型的对象引用.
+<pre class="brush: c++">
+Base *bp;
+Derived *dp;
+if(typeid(*bp) == typeid(*dp))
+{ /* ... */ }
+if(typeid(*bp) == typeid(Derived))
+{ /* ... */ }
+</pre>
+
+<ul>
+<li>
+注释操作数事先要对指针解引用.
+
+</ul>
+<li>
+如果指针p的值为0, 那么, 如果p的类型是带虚函数的指针, 则typeid(*p)抛出一个bad_typeid异常, 如果p的类型没有定义任何虚函数, 则结果与p的值是不相关的.
+
+<li>
+type_info 类的确切定义随编译器而变化, 但标准至少有如下操作:
+
+<ul>
+<li>
+t1 == t2
+
+<li>
+t1 != t2
+
+<li>
+t.name()
+
+<li>
+t1.befer(t2)
+
+</ul>
+<li>
+type_info 类有虚析构函数, 创建 type_info 对象的唯一办法是使用 typeid 操作符, 这是因为其默认构造函数和复制构造函数以及赋值操作符都定义为 private.
+
+<li>
+type_Info 类的name()函数唯一的保证是每个类型返回唯一的字符串.
+
+</ul>
+
+<h1 id="toc_3">18.3 类成员的指针</h1>
+<ul>
+<li>
+类成员指针: 获取特定成员的指针
+<pre class="brush: c++">
+class Screen{
+public:
+	typedef std::string::size_type index;
+	char get() const;
+	char get(index ht, index wd) const;
+private:
+	std::string contents;
+	index cursor;
+	index height, width;
+}
+</pre>
+
+<ul>
+<li>
+contents成员的指针的完全类型为 string Screen::*
+<pre class="brush: c++">
+string Screen::*ps_Screen = &amp;Screen::contents;
+</pre>
+
+</ul>
+<li>
+成员函数的指针必须在三个方面与它所指函数的类型相匹配:
+
+<ol>
+<li>
+函数形参的类型和数目, 包括成员是否为 const;
+
+<li>
+返回类型
+
+<li>
+所属类的类型
+<pre class="brush: c++">
+char (Screen::*pmf)() = &amp;Screen::get;
+</pre>
+
+</ol>
+<li>
+为成员指针使用别名
+<pre class="brush: c++">
+typedef char (Screen::*Action)(Screen::index, Screen::index) const;
+</pre>
+
+<li>
+.* 和 -&gt;* 是两个新的操作符, 可以使用成员指针. 这两个操作符的左操作数必须是类类型的对象或类类型的指针, 右操作数则是该类型的成员指针. 前者从对象或引用获取成员, 后者从对象的指针获取成员
+<pre class="brush: c++">
+char (Scree::*pmf)() const = &amp;Screen::get;
+Screen myScreen;
+char c1 = myScree.get();
+char c2 = (myScreen.*pmf)();
+Screen *pScreen = &amp;myScreen;
+c1 = pScreen-&gt;get();
+c2 = (pScreen-&gt;*pfm)();
+
+char (Screen::*pfm2)(Screen::index, Screen::index) const;
+pmf2 = &amp;Screen::get;
+Screen myScreen;
+char c1 = myScreen.get(0, 0);
+char c2 = (myScreen.*pmf2)(0, 0);
+
+Screen::index Screen::*pindex = &amp;Screen::width;
+Screen::index ind2 = myScreen.*pindex;
+</pre>
+
+<li>
+函数指针和成员函数指针的一个公共用途是, 将它们存储在函数表中, 函数表是函数指针的集合, 在运行时从中选择给定调用
+<pre class="brush: c++">
+class Screen {
+public:
+	Screen&amp; home();
+	Screen&amp; forward();
+	Screen&amp; back();
+	Screen&amp; up();
+	Screen&amp; down();
+
+	typedef Screen&amp; (Screen::*Action)();
+	static Action Menu[];		// 函数表
+public:
+	enum Dirctions {HOME, FORWARD, BACK, UP, DOWN};
+	Screen&amp; move(Directions);
+};
+
+Screen::Action Screen::Menu[] = { &amp;Scree::home,
+								  &amp;Scree::forward,
+								  &amp;Scree::back,
+								  &amp;Scree::up,
+								  &amp;Scree::down}
+
+Screen&amp; Screen::move(Directions cm)
+{
+	(this-&gt;*Menu[cm])();
+	return *this;
+}
+</pre>
+
+</ul>
+
+<h1 id="toc_4">18.4 嵌套类 </h1>
+<ul>
+<li>
+外围类和嵌套类的对象是互相独立的
+
+<li>
+嵌套类的名字在其外围类的作用域中可见, 但在其他类作用域或者定义外围类的作用域不可见
+
+<li>
+外围类对嵌套类的成员没有特殊访问权, 并且嵌套类对其外围类的成员也没有特殊访问权
+
+<li>
+嵌套类定义了其外围类的一个类型成员, 外围类的public, protected, private 访问标号决定了该类型的访问
+
+<li>
+在其类外部定义的嵌套类成员, 必须定义在定义外围类的同一作用域中.
+<pre class="brush: c++">
+template &lt;class Type&gt; Queue&lt;Type&gt;::QueueItem::QueueItem(const Type &amp;t) : item(t), next(0) {}
+</pre>
+
+<li>
+在外围类定义体的外部定义整个嵌套类, 防止外围类的用户看见嵌套类的实现代码
+<pre class="brush: c++">
+template &lt;class Type&gt; class Queue {
+private:
+	struct QueueItem;	// 嵌套类 QueueItem 的前向声明
+	QueueItem* head;
+	QueueItem* item;
+}
+
+template &lt;class Type&gt;
+struct Queue&lt;Type&gt;::QueueItem {
+	QueueItem(const Type&amp; t) : item(t), next(0) { }
+	Type item;
+	QueueItem* next;
+};
+</pre>
+
+<li>
+嵌套类静态成员定义需要放在外层作用域中.
+<pre class="brush: c++">
+template &lt;class Type&gt;
+int Queue&lt;Type&gt;::QueueItem::static_mem = 1024;
+</pre>
+
+<li>
+外围作用域的对象与其嵌套类型的对象之间没有联系.
+
+<li>
+嵌套类可以直接引用外围类的静态成员, 类型名和枚举成员, 只是需要作用域确定操作符.
+
+<li>
+实例化外围类的时候不会自动实例化类模板的嵌套类. 只有当需要完整类类型的情况下使用嵌套类本身的时候, 才会实例化嵌套类. 例如
+<pre class="brush: c++">
+Queue&lt;int&gt; qi;
+</pre>
+
+<ul>
+<li>
+int 实例化了 Queue 模板, 但没有实例化 QueueItem&lt;int&gt; 类型. head 和 tail 只是指向 QueueItem&lt;int&gt; 的指针, 所以不需要实例化.
+
+<li>
+当在 Queue&lt;int&gt; 的成员函数里对 head 和 item 解引用的时候, 才会实例化 QueueItem&lt;int&gt; 类.
+
+</ul>
+<li>
+当处理类成员声明的时候, 所用的任意名字必须在使用之前出现. 当处理定义的时候, 整个嵌套类和外围类均在作用域中.
+<pre class="brush: c++">
+class Outer {
+public:
+	struct Inner {
+		void process (const Outer&amp;);	// 可以, 关联至未完成类, 因为这是一个引用, 可以绑定至不完整类.
+		Inner2 val;	// 错误, Outer::Inner2 不在范围内, 还没看到 Inner2 声明
+	};
+	class Inner2 {
+	public:
+		Inner2(int i = 0) : val(i) { } // 可以
+		// 可以, 在封闭的类完成后才编译process的定义
+		void process(const Outer &amp;out) { out.handle(); }
+	private:
+		int val;
+	};
+
+	void handle() const;
+};
+</pre>
+
+<ul>
+<li>
+直到看到了外围类中的其余声明之后, 编译器才处理嵌套类中构造函数和process成员的定义.
+
+</ul>
+<li>
+可以使用作用域操作符访问 handler 的全局版本
+<pre class="brush: c++">
+class Inner2 {
+public:
+	void process(const Outer&amp; out) { ::handle(out); }
+};
+</pre>
+
+</ul>
+
+<h1 id="toc_5">18.5 联合: 节省空间的类</h1>
+<ul>
+<li>
+一个 union 对象可以有多个数据成员, 但在任何时刻, 只有一个成员可以有值. 当将值赋给union对象的一个成员的时候, 其他所有成员都变为未定义的.
+
+<li>
+为 union 对象分配的存储的量至少与包含其最大数据成员的一样多. 一个 union 定义了一个新的类型.
+<pre class="brush: c++">
+union TokenValue {
+	char cval;
+	int ival;
+	double dval;
+};
+</pre>
+
+<li>
+union 可以指定保护标记使成员成为公用的, 私有的或者受保护的. 默认 union 成员为 public 成员
+
+<li>
+union 可以定义成员函数, 包括构造函数和析构函数, 但是 union 不能作为基类, 因此成员函数不能为虚函数
+
+<li>
+union 不能具有静态数据成员或引用成员, 如果一个类定义了构造函数, 析构函数或赋值操作符, 其也不能作为union的成员.
+
+<li>
+默认情况下 union 对象是未初始化的, 可以用与显式初始化简单类对象一样的方法显式初始化 union 对象, 但是其只能为第一个成员提供初始化式, 该初始化式必须括在一对花括号中.
+<pre class="brush: c++">
+TokenValue first_token = { 'a' };
+TokenValue last_token;
+TokenValue *pt = new TokenValue;
+</pre>
+
+<li>
+可以使用成员操作符(.和-&gt;)访问union类型对象的成员
+<pre class="brush: c++">
+last_token.cval = 'z';
+pt-&gt;ival = 42;
+</pre>
+
+<ul>
+<li>
+使用 union 对象时, 我们必须总是知道 union 对象中当前存储的是什么类型的值. 通过错误的数据成员检索 union 对象中的值, 可能会导致程序崩溃或者其他不正确的程序行为.
+
+</ul>
+<li>
+避免通过错误成员访问 union 值的最佳办法是, 定义一个单独的对象跟踪 union 中存储了什么值. 这个附加对象称为 union 的判别式(discriminant), 如下面嵌套union的例子
+
+<li>
+union 经常用作嵌套类型
+<pre class="brush: c++">
+class Token {
+	enum TokenKind { INT, CHAR, DBL };
+	TokenKind tok;
+	union {
+		char cval;
+		int ival;
+		double dval;
+	} val;
+};
+
+Token token;
+switch(token.tok) {
+case Token::INT:
+	token.val.ival = 42; break;
+case Token::CHAR:
+	token.val.cval = 'a'; break;
+case Token::DBL:
+	token.val.dval = 3.14; break;
+}
+</pre>
+
+<li>
+匿名联合 --- 不用于定义对象的未命名union. 匿名 union 的成员的名字出现在外围作用域中. 因为匿名union不提供访问其成员的途径, 所以将成员作为定义匿名union的作用域的一部分直接访问.
+<pre class="brush: c++">
+class Token {
+	enum TokenKind { INT, CHAR, DBL };
+	TokenKind tok;
+	union {
+		char cval;
+		int ival;
+		double dval;
+	};
+};
+
+Token token;
+switch(token.tok) {
+case Token::INT:
+	token.ival = 42; break;
+case Token::CHAR:
+	token.cval = 'a'; break;
+case Token::DBL:
+	token.dval = 3.14; break;
+}
+</pre>
+
+<li>
+匿名 union 不能有私有成员或受保护成员, 也不能定义成员函数.
+
+</ul>
+
+<h1 id="toc_6">18.6 局部类</h1>
+<ul>
+<li>
+可以在函数体内定义类, 这样的类称为局部类(local class), 该类型只在定义它的局部作用域中可见
+
+<li>
+局部类的所有成员(包括函数)必须完全定义在类定义体内部.
+
+<li>
+不允许局部类声明static成员
+
+<li>
+局部类只能访问外围作用域中定义的类型名, static变量和枚举成员, 不能使用定义该类的函数中的变量.
+
+<li>
+外围函数对局部类的私有成员没有特殊访问权, 当然, 局部类可以把外围函数设为友元. 通常局部类的所有成员都为 public 成员.
+
+<li>
+局部类定义体中的名字查找方式与其他类的相同. 类成员声明中所用的名字必须在名字使用之前出现在作用域中, 成员定义中所用的名字可以出现在局部类作用域的任何地方. 没有确定为类成员的名字首先在外围局部作用域中进行查找, 然后在包围函数本身的作用域中查找.
+
+<li>
+可以将一个类嵌套在局部类内部, 嵌套类定义可以出现在局部类定义体之外, 但是嵌套类必须在定义局部类的同一作用域中定义. 嵌套类的名字必须用外围类的名字进行限定, 并且嵌套类的声明必须出现在局部类的定义中.
+<pre class="brush: c++">
+void foo()
+{
+	class Bar {
+	public:
+		// ...
+		class Nested;	// 声明嵌套类
+	};
+	class Bar::Nested {
+		// ...
+	};
+}
+</pre>
+
+<li>
+嵌套类的所有成员必须在嵌套类本身定义体内部定义.
+
+</ul>
+
+<h1 id="toc_7">18.7 固有的不可移植的特征</h1>
+<ul>
+<li>
+特殊的类数据成员, 位域(bit-field), 保存特定的位数
+
+<li>
+位域在内存中的布局是机器相关的.
+
+<li>
+位域必须是整数数据类型, 可以是 signed 或 unsigned. 通过在成员名后面接一个冒号以及指定位数的常量表达式, 指出一个成员是位域
+<pre class="brush: c++">
+typedef unsigned int Bit;
+class File
+{
+	Bit mode: 2;
+	Bit modified: 1;
+	Bit prot_owner: 3;
+	Bit prot_group: 3;
+	Bit prot_world: 3;
+};
+</pre>
+
+<li>
+通常最好将位域设为 unsigned 类型, 存储在 signed 类型中的位域的行为由实现定义
+
+<li>
+用于类的其他数据成员相同的方式访问位域, 例如作为类的 private 成员的位域只能从成员函数的定义和类的友元中访问.
+<pre class="brush: c++">
+void File::write()
+{
+	modified = 1;
+}
+</pre>
+
+<li>
+使用内置按位操作符操纵超过一位的位域
+<pre class="brush: c++">
+enum { READ = 01, WRITE = 02 };
+int main() 
+{
+	File myFile;
+	myFile.mode != READ;
+	if ( myFile.mode &amp; READ)
+		cout &lt;&lt; "myFile.mode READ is set \n";
+}
+</pre>
+
+<li>
+定义了位域成员的类通常也定义一组内联成员函数来测试和设置位域的值
+<pre class="brush: c++">
+inline int File::isRead() { return mode &amp; READ; }
+inline int File::isWrite() { return mode &amp; WRITE; }
+</pre>
+
+<li>
+地址操作符 (&amp;) 不能应用于位域, 位域也不能是类的静态成员
+
+<li>
+volatile 的确切含义与机器相关, 它限定的值由程序本身直接控制之外的过程所控制. 用与 const 限定符相同的方式使用 volatile 限定符.
+<pre class="brush: c++">
+volatile int display_register;
+volatile Task* cur_task;
+</pre>
+
+<li>
+类可以将成员函数定义为 volatile. volatile 对象只能调用 volatile 成员函数
+
+<li>
+与 const 一样, 只能将 volatile 对象的地址赋给指向 volatile 的指针, 或者将指向 volatile 类型的指针复制给指向 volatile 的指针. 只有当引用为 volatile 时, 我们才可以使用 volatile 对象对引用进行初始化.
+
+<li>
+合成的复制控制不适用于 volatile 对象.
+
+<ul>
+<li>
+不能将 volatile 对象传递给普通引用或const引用
+
+<li>
+如果类希望允许复制 volatile 对象, 或者, 类希望允许从 volatile 操作数或对 volatile 操作数进行复制, 它必须定义自己的复制构造函数和/或赋值操作符版本
+<pre class="brush: c++">
+class Foo{
+public:
+	Foo(const volatile Foo&amp;);
+	Foo&amp; operator=(volatile const Foo&amp;);
+	Foo&amp; operator=(volatile const Foo&amp;) volatile;
+};
+</pre>
+
+<li>
+上面代码表示可以任何种类的Foo对象进行复制或赋值: 普通 Foo 对象, const Foo 对象, volatile Foo 对象, const volatile Foo 对象
+
+</ul>
+<li>
+调用其他语言编写的代码时, 必须声明用其他语言编写的函数的名字, 该声明必须指定返回类型和形参表. C++ s使用链接提示(linkage directive)指出任意非C++函数所用的语言.
+
+<li>
+链接有两种形式: 单个或复合的. 链接指示不能出现在类定义或函数定义的内部, 它必须出现在函数的第一次声明上.
+<pre class="brush: c++">
+extern "C" size_t strlen(const char*);
+extern "C" {
+	int strcmp(const char*, const char*);
+	char* strcat(char*, const char*);
+}
+</pre>
+
+<li>
+可以将多重声明形式应用于整个头文件, 链接提示可以嵌套
+<pre class="brush: c++">
+extern "C" {
+#include &lt;string.h&gt;
+}
+</pre>
+
+<li>
+C++从C函数库继承而已来的函数, 不是必须定义为C函数. 决定使用C还是C++实现, 是每个C++实现的事情. 
+
+<li>
+通过对函数定义使用链接提示, 使得用其他语言编写的程序也可以使用C++函数
+<pre class="brush: c++">
+extern "C" double calc(double dparm) { /* ... */ }
+</pre>
+
+<ul>
+<li>
+用链接提示定义的函数的每个声明都必须使用相同的链接提示.
+
+</ul>
+<li>
+支持其他的语言, extern "Ada", extern "FORTRAN" 等
+
+<li>
+有时需要在C和C++中编译同一源文件, 当编译C++时, 自动定义预处理器名 __cplusplus, 因此可有如下代码
+<pre class="brush: c++">
+#ifdef __cplusplus
+extern "C"
+#endif
+int strcmp(const char*, const char*);
+</pre>
+
+<li>
+链接提示与函数重载之间的相互作用依赖于目标语言. C++保证支持的唯一语言是C. C语言不支持函数重载. 在一组重载函数中只能为一个C函数指定链接提示
+<pre class="brush: c++">
+// 错误的, 不能有两个同名的重载C函数指定链接提示
+extern "C" void print(const char*);
+extern "C" void print(int);
+</pre>
+
+<ul>
+<li>
+在C++程序中, 重载C函数很常见, 但是, 重载集合中的其他函数必须都是C++函数.
+
+</ul>
+<li>
+为了声明用其他程序设计语言编写的函数的指针, 必须使用链接提示
+<pre class="brush: c++">
+extern "C" void (*pf)(int);
+</pre>
+
+<ul>
+<li>
+不能将 C函数的指针初始化或赋值为C++函数的指针, 反之亦然.
+
+</ul>
+<li>
+使用链接提示的时候, 它应用与函数和任何函数指针, 作为返回类型或形参类型使用:
+<pre class="brush: c++">
+extern "C" void f1(void(*)(int))
+</pre>
+
+<ul>
+<li>
+f1和其形参都是C函数. 链接提示应用于该函数指针以及f1.
+
+<li>
+只能通过类型别名来将C函数指针传递给C++函数
+<pre class="brush: c++">
+extern "C" typedef void FC(INT);
+// f2 是C++函数, 参数为C函数指针.
+void f2(FC*);
+</pre>
+
+</ul>
+</ul>
+
+    </div>
+</body>
+</html>

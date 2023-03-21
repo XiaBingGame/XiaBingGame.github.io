@@ -1,0 +1,214 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../../style.css">
+<title>Dot3Bump</title>
+<meta http-equiv="Content-Type" content="text/html; charset=cp936">
+</head>
+<body>
+
+<ul>
+<li>
+loadResources() 介绍了如何遍历已初始化的资源组中的一个资源路径, 并创建一个资源组
+
+<ul>
+<li>
+ResourceGroupManager::getResourceGroups()
+
+<li>
+ResourceGroupManager::getResourceLocations()
+
+<li>
+ResourceLocation::archive 数据成员
+
+<li>
+Archive::getName()
+
+<li>
+ResourceGroupManager::createResourceGroup()
+
+<li>
+ResourceGroupManager::addResourceLocation()
+
+<li>
+ResourceGroupManager::initialiseResourceGroup()
+
+<li>
+ResourceGroupManager::loadResourceGroup()
+
+<li>
+ResourceGroupManager::destroyResourceGroup()
+
+</ul>
+<li>
+旋转: roll-Z轴, pitch-X轴, yaw-Y轴
+
+<li>
+SceneNode::detachAllObjects() 卸载所有挂接对象
+
+<li>
+SceneManager::getEntity() 根据名称得到实体指针
+
+<li>
+SceneNode::getAttachedObject() 得到其挂接的对象
+
+<li>
+SceneNode::getAttachedObjectIterator() 得到其挂接对象容器的迭代
+
+<li>
+SceneManager::createBillboardSet() 创建公告集
+
+<li>
+BIllboardSet::setMaterialName, createBillboard 设置材质, 创建公告
+
+<li>
+Billboard::setColour() 设置颜色
+
+<li>
+SceneManager::createLight() 创建光源, Light::setPosition, setDiffuseColour, setSpecularColour
+
+</ul>
+
+<ul>
+<li>
+材质脚本
+
+<ul>
+<li>
+公告板的材质 Examples/Flare
+
+<ul>
+<li>
+无光照, 场景混合为添加模式, 禁止深度写入, 散色光为vertexcolour(顶点颜色), 纹理单元为 flare.png
+
+</ul>
+<li>
+Examples/BumpMapping/MultiLight
+
+<ul>
+<li>
+第一个通道 ambient
+
+<ul>
+<li>
+该通道用于提供信息给 light 通道
+
+<li>
+关联顶点着色程序定义 Ogre/BasicVertexPrograms/AmbientOneTexture
+
+<li>
+定义了两个自动参数 worldViewProj, ambient
+
+<li>
+Ogre/BasicVertexPrograms/AmbientOneTexture
+
+<ul>
+<li>
+关联 Example_Basic.cg
+
+<li>
+Example_Basic.cg
+
+<ul>
+<li>
+输入 顶点位置, 纹理坐标
+
+<li>
+输出 视觉坐标, 纹理坐标, 环境颜色(白色)
+
+</ul>
+</ul>
+</ul>
+<li>
+第二个通道 perlight
+
+<ul>
+<li>
+设置环境颜色为黑色
+
+<li>
+iteration once_per_light 设置每个光源都进行一次操作
+
+<li>
+scene_blend add
+
+<li>
+Examples/BumpMapVP 顶点着色程序定义
+
+<ul>
+<li>
+设置参数 lightPosition, worldViewProj
+
+<li>
+Example_BumpMapping.cg
+
+<li>
+输出视觉空间位置, 纹理坐标, 切线副法线法线构成旋转矩阵转换的光线方向.
+
+</ul>
+<li>
+Examples/BumpMapFP 片段着色程序定义
+
+<ul>
+<li>
+lightDiffuse 第一个光源的散射光颜色
+
+<li>
+Example_BumpMapping.cg
+
+<ul>
+<li>
+输入 纹理坐标, 转换后的光线方向
+
+<li>
+根据该光线方向对纹理采样, 而后将采样后的值从范围[0.0, 1.0]转换到[-1.0, 1.0], 最后采样后的值与单元化的光线方向点乘, 而后乘以光的散射颜色
+
+</ul>
+</ul>
+<li>
+Examples/BumpMapVPShadowRcv  纹理阴影接收器程序(texture shadow receiver program)
+
+<ul>
+<li>
+lightPosition, worldViewProj, worldMatrix, texViewProj
+
+<li>
+Example_BumpMapping.cg
+
+<li>
+输入 position, normal, uv, tangent 输出 oPosition, uvProj, oUV, oTSLightDir
+
+<li>
+oUV 为世界空间的坐标乘以纹理矩阵得到的结果, oTSLightDir 同上
+
+</ul>
+<li>
+Examples/BumpMapFPShadowRcv 附加的纹理阴影接收器程序(Additive texture shadow receiver program)
+
+<ul>
+<li>
+lightDiffuse
+
+<li>
+Example_BumpMapping.cg
+
+<li>
+输入 uvproj, uv, TSlightDir 输出 颜色
+
+<li>
+首先转换后的光线方向进行扩展, 对纹理进行采样后扩展颜色值, 根据阴影纹理采样得到其值
+
+<li>
+阴影 * 散射光颜色 * (扩展颜色和光线的点乘)
+
+</ul>
+<li>
+纹理单元 normalmap NMBumpsOut.png, 颜色操作为 replace
+
+</ul>
+</ul>
+</ul>
+</ul>
+
+</body>
+</html>

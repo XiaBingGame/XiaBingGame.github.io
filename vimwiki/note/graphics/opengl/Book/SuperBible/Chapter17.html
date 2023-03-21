@@ -1,0 +1,159 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../../style.css" />
+    <title>Chapter17</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<h1 id="toc_1">颜色转换</h1>
+<h2 id="toc_1.1">Grayscale</h2>
+<ul>
+<li>
+缩放值分别为 0.299, 0.587, 0.114
+
+<li>
+gl_FragColor
+
+<li>
+缩放值之和大于1则过度曝光, 小于1则曝光不足.
+
+</ul>
+<h2 id="toc_1.2">Sepia Tone</h2>
+<ul>
+<li>
+给图像一个老旧的西部图像色彩.
+
+</ul>
+<h2 id="toc_1.3">Inversion</h2>
+<ul>
+<li>
+求反即可
+
+</ul>
+<h2 id="toc_1.4">Heat Signature</h2>
+<ul>
+<li>
+光谱描述从黑色到蓝色到绿色到红色.
+
+<li>
+一般情况, 热度值要在顶点作为一致变量或者顶点属性传递给着色器.
+
+<li>
+本例使用一维纹理根据灰度值进行查找.
+
+</ul>
+<h2 id="toc_1.5">Dependent Texture Lookups</h2>
+<ul>
+<li>
+现在可以自己逐片段计算纹理坐标.
+
+<li>
+注意有些OpenGL实现可能有一个dependency链条长度的硬件限制.
+
+</ul>
+<h2 id="toc_1.6">Per-Fragment Fog</h2>
+<ul>
+<li>
+在片段着色器中计算雾因子和执行混合.
+
+<li>
+mix 函数用于混合
+
+<li>
+着色器尽可能常量值, 这样可以让着色器更快.
+
+</ul>
+
+<h1 id="toc_2">Image Processing</h1>
+<ul>
+<li>
+如果 OpenGL 版本大于2.0, 且支持 ARB_texture_non_power_of_two 扩展, 则纹理可不使用2的幂次方大小.
+
+<li>
+这里使用 glCopyTexImage2D 取的内容在窗口中心且和纹理大小一致.
+
+<li>
+片段着色器根据纹理坐标查找3x3的区域样本. 而后应用八个不同的偏移值查找周边八个点. 最后执行一些filter得到新的颜色用于中心点.
+
+<li>
+Blur, Sharpen, Dilation and Erosion, Edge Detection
+
+<ul>
+<li>
+三个常用的边缘检测法为 Laplacian, Sobel, Prewitt
+
+<li>
+Sobel和Prewitt法为gradient filters, 在每个颜色通道强度的第一个derivative中检测变化
+
+<li>
+Laplacian, 检测第二个derivative的zero-crossing, 即为强度变化剧烈的地方.
+
+</ul>
+</ul>
+
+<h1 id="toc_3">光照</h1>
+<ul>
+<li>
+带颜色求和的分离镜面颜色, 以及用于镜面指数的指数方程纹理.
+
+<li>
+同时使用顶点着色器和片段着色器. 顶点用于设置需要在线或三角形上插值的数据, 如法线和光线向量, 片段着色器则做大部分的工作产生最终的颜色.
+
+</ul>
+<h2 id="toc_3.1">散射着色 </h2>
+<ul>
+<li>
+散射颜色在线上和三角形上变化不快, 所以最好在顶点着色器计算.
+
+</ul>
+<h2 id="toc_3.2">Multiple Specular Lights</h2>
+
+<h1 id="toc_4">Procedural Texture Mapping</h1>
+<ul>
+<li>
+对于 precedural texture mapping, 不需要执行纹理加载和纹理查找. 而是算法性描述纹理的样子.
+
+<li>
+缺点: 你所表达纹理的复杂度与片段着色器的复杂度相同. 
+
+</ul>
+<h2 id="toc_4.1">Checkerboard Texture</h2>
+<ul>
+<li>
+3D 黑白棋, 类似于从一个交替的黑白立方体上切割.
+
+<li>
+mod
+
+<li>
+step
+
+<li>
+mix
+
+</ul>
+<h2 id="toc_4.2">Beach Ball Texture</h2>
+<ul>
+<li>
+smoothstep
+
+</ul>
+<h2 id="toc_4.3">Toy Ball Texture</h2>
+
+    </div>
+</body>
+</html>

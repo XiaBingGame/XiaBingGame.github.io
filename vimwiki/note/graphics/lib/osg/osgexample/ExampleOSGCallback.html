@@ -1,0 +1,60 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../../style.css" />
+    <title>ExampleOSGCallback</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="../index.html">首页</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<ul>
+<li>
+演示各种回调
+
+<li>
+对于 osg::Drawable 有 osg::Drawable::DrawCallback, osg::DrawableUpdateCallback, osg::DrawableUpdateCallback
+
+<ul>
+<li>
+osg::Drawable::setUpdateCallback, osg::Drawable::setCullCallback, osg::Drawable:setDrawCallback
+
+</ul>
+<li>
+osgDB::Registry::ReadFileCallback: 文件读取回调
+
+<ul>
+<li>
+重写 readNode 函数
+<pre c++>
+    virtual osgDB::ReaderWriter::ReadResult readNode(const std::string&amp; fileName, const osgDB::ReaderWriter::Options* options)
+    {
+        std::cout&lt;&lt;"before readNode"&lt;&lt;std::endl;
+        // note when calling the Registry to do the read you have to call readNodeImplementation NOT readNode, as this will
+        // cause on infinite recusive loop.
+        osgDB::ReaderWriter::ReadResult result = osgDB::Registry::instance()-&gt;readNodeImplementation(fileName,options);
+        std::cout&lt;&lt;"after readNode"&lt;&lt;std::endl;
+        return result;
+    }
+</pre>
+
+</ul>
+<li>
+osgDB::Registry::instance()-&gt;setReadFileCallback 设置文件读取回调
+
+<li>
+相机可以设置更新和事件回调
+
+</ul>
+
+    </div>
+</body>
+</html>

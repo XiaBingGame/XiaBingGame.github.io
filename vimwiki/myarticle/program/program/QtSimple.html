@@ -1,0 +1,82 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../style.css" />
+    <title>QtSimple</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="../index.html">首页</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<div id="使用 Qt 与 Visual C++ 2008 创建应用程序"><h1 id="使用 Qt 与 Visual C++ 2008 创建应用程序" class="header"><a href="#使用 Qt 与 Visual C++ 2008 创建应用程序">使用 Qt 与 Visual C++ 2008 创建应用程序</a></h1></div>
+
+<p>
+目的: 学会如何使用 Visual C++ 命令提示和生成文件项目创建一个简单的Qt应用程序
+步骤: 
+</p>
+<ol>
+<li>
+安装 Qt libraries for windows(VS 2008), 该文件下载地址 <a href="http://qt.nokia.com/downloads,">http://qt.nokia.com/downloads,</a> 选择 LGPL. 还可在该地址下载 Qt SDK for Windows, qt-vs-addin.
+
+<li>
+增加环境变量 QTDIR, 其值为Qt的安装目录, 例如: D:\Qt-4.4.3. 修改环境变量 Path, 将 Qt的"bin"目录添加至其内.
+
+<li>
+在一个新的目录里创建 Hello.cpp 文件. 代码如下:<br />
+<pre c++>
+#include "QApplication"  
+#include "QPushButton"  
+  
+int main(int argc, char *argv[])  
+{  
+    QApplication app(argc, argv);  
+    QPushButton hello("Hello world");  
+    hello.resize(100, 30);  
+  
+    hello.show();  
+    return app.exec();  
+}
+</pre>
+
+<li>
+启动 Visual Studio 2008 命令提示, 使用磁盘符号和cd命令移动至 hello.cpp 文件所在的目录
+
+<li>
+键入 如下的命令<br /&gt;
+<pre>
+qmake -project -0 hello.pro
+qmake hello.pro
+nmake
+</pre>
+
+<li>
+这样就在debug目录中生成了文件 hello.exe
+
+<li>
+如果要使用 Visual Studio Express IDE, 还需要进行一些步骤: 选择菜单"工具&gt;选项&gt;项目和解决方案>VC++目录", 在包含文件中增加"\((QTDIR)\include", "\)(QTDIR)\include\QtCore", "\((QTDIR)\include\QtGui". 在库文件中增加 "\)(QTDIR)\lib".
+
+<li>
+创建一个新的项目("文件&gt;新建&gt;项目&gt;Visual C++&gt;常规&gt;生成文件项目"), 名称为"HelloQt"
+
+<li>
+选择菜单"项目&gt;属性>配置属性>NMake", 生成命令行中写入"qmake -project &amp;&amp; qmake &amp;&amp; nmake release-all", 输出中则写"release\HelloQt.exe"
+
+<li>
+添加新文件"HelloQt.cpp", 输入上面的代码
+
+<li>
+使用快捷键 "Ctrl-F5" 或者菜单"调试&gt;开始执行(不调试)", 则生成了 HelloQt.exe
+
+</ol>
+
+    </div>
+</body>
+</html>

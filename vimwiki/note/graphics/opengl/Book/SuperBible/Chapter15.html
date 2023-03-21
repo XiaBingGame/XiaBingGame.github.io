@@ -1,0 +1,646 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../../style.css" />
+    <title>Chapter15</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<ul>
+<li>
+函数
+
+<ul>
+<li>
+glCreateShader/glCreateProgram --- 创建着色器和程序对象
+
+<li>
+glShaderSource/glCompileShader --- 指定着色器和编译着色器
+
+<li>
+glAttachShader/glDetachShader/glLinkProgram --- 连接和断开着色器, 链接着色器
+
+<li>
+glUseProgram --- 在程序间切换
+
+<li>
+glUniform* --- 指定一个 uniform 变量
+
+<li>
+glGetShaderInfoLog/glGetProgramInfoLog --- 得到错误和警告信息
+
+</ul>
+</ul>
+
+<h1 id="toc_1">固定的顶点处理 </h1>
+<ul>
+<li>
+开始于一系列顶点属性作为输入, 如对象空间位置, 法线, 主颜色和辅助颜色, 纹理坐标. 每个顶点处理的最终结果为裁剪空间的位置, 正面和背面的主颜色和辅助颜色, 雾坐标, 纹理坐标和点大小.
+
+</ul>
+<h2 id="toc_1.1">顶点变换</h2>
+<ul>
+<li>
+乘以模型视图矩阵再乘以投影矩阵得到裁剪空间的位置.
+
+<li>
+每个顶点的法线也会被变换. 在法线被重缩放和单元化之后, 乘以模型视图矩阵的反转倒置矩阵.(the inverse transpose of the modelview matrix)
+
+</ul>
+<h2 id="toc_1.2">光照</h2>
+<ul>
+<li>
+输入顶点颜色, 法线和位置. 输出为主颜色和辅助颜色(有时分为前面和背面的颜色).
+
+</ul>
+<h2 id="toc_1.3">纹理坐标生成和变换 </h2>
+<ul>
+<li>
+生成纹理坐标或使用顶点关联纹理坐标
+
+<li>
+应用纹理矩阵
+
+</ul>
+<h2 id="toc_1.4">Clipping</h2>
+<ul>
+<li>
+裁剪视图锥之外的顶点
+
+<li>
+生成图元与视图锥相交的顶点. 而后给该顶点分配颜色, 纹理坐标和其他顶点属性.
+
+</ul>
+
+<h1 id="toc_2">固定的片段处理 </h1>
+<ul>
+<li>
+输入为一个片段和其关联的数据, 关联数据有一系列的值, 如一个或多个纹理坐标, 主和辅助颜色, 雾坐标. 结果为单个颜色, 该颜色用于之后的逐片段操作, 包括深度测试和混合.
+
+</ul>
+<h2 id="toc_2.1">纹理应用和环境 </h2>
+<ul>
+<li>
+根据片段的纹理坐标和其主颜色作为输入, 输出为新的主颜色. 可受如下影响: 允许哪个纹理单元, 绑定哪个纹理数据, 纹理环境设置的纹理函数.
+
+</ul>
+<h2 id="toc_2.2">颜色求和</h2>
+<ul>
+<li>
+输入为主颜色和辅助颜色. 输出为单个颜色.
+
+<li>
+输出结果颜色的alpha值总为输入主颜色的alpha值.
+
+</ul>
+<h2 id="toc_2.3">雾应用 </h2>
+<ul>
+<li>
+片段颜色和一个常量的雾颜色根据一个计算的雾因子进行混合.
+
+</ul>
+<h2 id="toc_2.4">反锯齿应用 </h2>
+<ul>
+<li>
+如果属于一个图元的片段允许smoothing, 则其关联数据的一部分为一个coverage值. 大多数情况该值为1.0, 但在平滑点, 线, 或多边形边上的片段, 则该coverage为0.0和1.0之间. 片段的alpha值乘以该coverage值, 以及之后的混合则产生这些图元的平滑边.
+
+</ul>
+
+<h1 id="toc_3">In With the New</h1>
+<h2 id="toc_3.1">Programmable Vertex Shaders</h2>
+<ul>
+<li>
+输入为顶点和它们所有的属性. 输出为纹理坐标, 颜色, 点大小, 雾坐标
+
+</ul>
+<h3 id="toc_3.1.1">替换顶点变换</h3>
+<ul>
+<li>
+至少要输出一个裁剪空间的顶点位置. 通常乘以模型视觉矩阵和投影矩阵.
+
+</ul>
+<h3 id="toc_3.1.2">替换光照</h3>
+<ul>
+<li>
+可以根据各种信息配置顶点颜色.
+
+</ul>
+<h3 id="toc_3.1.3">替换纹理坐标处理</h3>
+<ul>
+<li>
+如果不需要纹理坐标生成, 则不需要在顶点着色器中进行这个处理.
+
+</ul>
+<h2 id="toc_3.2">Fixed Functionality Glue</h2>
+<ul>
+<li>
+在顶点和片段着色器之间还有一些固定功能的阶段, 如 clipping stage.
+
+<li>
+clipping添加和移除顶点, 而后除以W坐标产生单元化的设备坐标. 再进行视口变换和深度范围变换产生最终的窗口空间坐标. 此时到了光栅化阶段.
+
+<li>
+光栅化阶段负责得到一个图元处理后的顶点, 而后转换成片段. 该阶段产生了片段去填充图元, 以及插值得到所有的颜色和纹理坐标. 这样每个片段可以分配到一个合理的值.
+
+<li>
+根据一个图元顶点之间的距离有多远, 其片段数和顶点数的比率就有多高. 对于高度分形化和很远的物体, 你可能发现一个三角形所有三个顶点映射至相同的单个片段上. 
+
+<li>
+光栅化还负责根据指定的宽度制作出线条, 以及根据指定的大小制作出点. 也许对点和多边形应用点画模式. 在smooth的点,线, 多边形的边上生成 partial coverage values. 而后在反锯齿应用中乘以片段的alpha值. 而且根据请求, 光栅化阶段剔除前面或者背面的多边形, 以及应用深度偏移.
+
+<li>
+对于点, 线, 多边形, 光栅化还生成用于bitmap和pixel rectangels的片段(用glDrawPixels绘制). 然而这些图元并不来源于通常的顶点, 相反, 插值后的数据分配至片段上, 根据当前光栅化的位置采用这些值.
+
+</ul>
+<h2 id="toc_3.3">Programmable Fragment Shaders</h2>
+<h3 id="toc_3.3.1">替换纹理</h3>
+<ul>
+<li>
+大多数纹理状态在片段着色器外部设置. 
+
+<li>
+纹理坐标0不限于在纹理图像0上索引, 你可以混合和匹配不同纹理的坐标. 使用相同纹理但是不同的坐标, 或相同的坐标但是不同的纹理, 或在着色器中即时计算一个纹理坐标.
+
+<li>
+有着色器进行颜色和纹理结果的组合.
+
+</ul>
+<h3 id="toc_3.3.2">替换颜色求和</h3>
+<ul>
+<li>
+主颜色和辅助颜色之和
+
+</ul>
+<h3 id="toc_3.3.3">替换雾 </h3>
+<ul>
+<li>
+根据公式基于雾坐标和某些常量值计算出雾因子.
+
+</ul>
+
+<h1 id="toc_4">OpenGL Shading Language: A First Glimpse</h1>
+<h1 id="toc_5">Managing GLSL Shaders</h1>
+<h2 id="toc_5.1">着色器对象</h2>
+<ul>
+<li>
+两个类型的对象, shader对象和program对象.
+
+</ul>
+<h3 id="toc_5.1.1">创建和删除 </h3>
+<pre c++>
+	GLuint myVertexShader   = glCreateShader(GL_VERTEX_SHADER);
+	GLuint myFragmentShader = glCreateShader(GL_FRAGMENT_SHADER);
+
+	glDeleteShader(myVertexShader);
+	glDeleteShader(myFragmentShader);
+</pre>
+<ul>
+<li>
+这里的删除命令表示用于将来的删除, 当该对象不再使用的时候再删除.
+
+</ul>
+<h3 id="toc_5.1.2">指定着色器文本</h3>
+<ul>
+<li>
+着色器对象的目标就是接受一个着色器文本并编译它.
+<pre c++>
+	GLchar *myStringPtrs[1];
+	myStringPtrs[0] = vertexShaderText;
+	glShaderSource(myVertexShader, 1, myStringPtrs, NULL);
+	myStringPtrs[0] = fragmentShaderText;
+	glShaderSource(myFragmentShader, 1, myStringPtrs, NULL);
+</pre>
+
+<li>
+glShaderSource 设置接收多个字符串. 如果字符串非0结尾, 则第四个参数应该传递一个长度.
+
+</ul>
+<h3 id="toc_5.1.3">编译着色器</h3>
+<pre c++>
+	glCompileShader(myVertexShader);
+	glCompileShader(myFragmentShader);
+</pre>
+<ul>
+<li>
+log可以在开发你的GLSL应用中作为一个工具使用.
+<pre c++>
+	glCompileShader(myVertexShader);
+	glGetShaderiv(myVertexShader, GL_COMPILE_STATUS, &amp;success);
+	if (!success)
+	{
+		GLchar infoLog[MAX_INFO_LOG_SIZE];
+		glGetShaderInfoLog(myVertexShader, MAX_INFO_LOG_SIZE, NULL, infoLog);
+		fprintf(stderr, “Error in vertex shader compilation!\n”);
+		fprintf(stderr, “Info log: %s\n”, infoLog);
+	}
+</pre>
+
+<li>
+事先得到 info log 的字符串大小.
+<pre c++>
+	glGetShaderiv(myVertexShader, GL_INFO_LOG_LENGTH, &amp;infoLogSize);
+</pre>
+
+</ul>
+
+<h1 id="toc_6">程序对象</h1>
+<ul>
+<li>
+该对象作为shader object的容器. 将它们连接至单个可执行文件.
+
+</ul>
+<h2 id="toc_6.1">创建和删除 </h2>
+<pre c++>
+	GLuint myProgram = glCreateProgram();
+	...
+	glDeleteProgram(myProgram);
+</pre>
+<h2 id="toc_6.2">连接和断开</h2>
+<pre c++>
+	glAttachShader(myProgram, myVertexShader);
+	glAttachShader(myProgram, myFragmentShader);
+
+	glDetachShader(myProgram, myVertexShader);
+	glDetachShader(myProgram, myFragmentShader);
+</pre>
+<ul>
+<li>
+你可以连接多个相同类型的着色器对象至你的程序对象. 这使得可以在多个程序对象中共享函数库.
+
+</ul>
+<h2 id="toc_6.3">链接程序</h2>
+<pre c++>
+	glLinkProgram(myProgram);
+</pre>
+<ul>
+<li>
+查询是否链接成功
+<pre c++>
+	glLinkProgram(myProgram);
+	glGetProgramiv(myProgram, GL_LINK_STATUS, &amp;success);
+	if (!success)
+	{
+		GLchar infoLog[MAX_INFO_LOG_SIZE];
+		glGetProgramInfoLog(myProgram, MAX_INFO_LOG_SIZE, NULL, infoLog);
+		fprintf(stderr, “Error in program linkage!\n”);
+		fprintf(stderr, “Info log: %s\n”, infoLog);
+	}
+</pre>
+
+</ul>
+<h2 id="toc_6.4">验证程序</h2>
+<pre c++>
+	glValidateProgram(myProgram);
+	glGetProgramiv(myProgram, GL_VALIDATE_STATUS, &amp;success);
+	if (!success)
+	{
+		GLchar infoLog[MAX_INFO_LOG_SIZE];
+		glGetProgramInfoLog(myProgram, MAX_INFO_LOG_SIZE, NULL, infoLog);
+		fprintf(stderr, “Error in program validation!\n”);
+		fprintf(stderr, “Info log: %s\n”, infoLog);
+	}
+</pre>
+<h2 id="toc_6.5">使用程序</h2>
+<pre c++>
+	glUseProgram(myProgram);
+</pre>
+<ul>
+<li>
+禁止着色器
+<pre c++>
+	glUseProgram(0);
+</pre>
+
+<li>
+查询当前的程序对象句柄
+<pre c++>
+	currentProgObj = glGetIntegerv(GL_CURRENT_PROGRAM);
+</pre>
+
+</ul>
+
+<h1 id="toc_7">变量</h1>
+<ul>
+<li>
+变量名可以使用任意字母(大小写敏感), 数字, 下划线. 不能以数字开头, 不能开始于 gl_.
+
+</ul>
+<h2 id="toc_7.1">基本类型</h2>
+<ul>
+<li>
+void, bool, int, float, bvec2, bvec3, bvec4, ivec2, ivec3, ivec4, vec2, vec3, vec4, mat2 or mat2x2, mat3 or mat3x3, mat4 or mat4x4, mat2x3, mat2x4, mat3x2, mat3x4, mat4x2, mat4x3, sampler1D, sampler2D, sampler3D, samplerCube, sampler1DShadow, sampler2DShadow.
+
+<li>
+sampler*D --- 一个由内置纹理函数使用的带有特定目的的常量. 用于关联一个具体的*D纹理. 其可以仅被声明为一个uniform或者函数参数.
+
+<li>
+sampler*DShadow --- 用于关联至一个有阴影比较的 *D 深度纹理的常量,
+
+</ul>
+<h2 id="toc_7.2">结构体 </h2>
+<ul>
+<li>
+定义时可以声明一个实例, 所以之后声明.
+<pre c++>
+	struct surface {
+		float indexOfRefraction;
+		float reflectivity;
+		vec3 color;
+	float turbulence;
+	} myFirstSurf;
+
+	surface mySecondSurf;
+</pre>
+
+<li>
+使用 = 将一个结构赋值给另一个结构. 还可使用 ==, != 进行比较. 使用 . 访问成员.
+
+<li>
+结构允许数组成员, 但数组必须有具体的大小. GLSL不允许 bit fields, 不允许结构体的定义中含有另一个结构体的定义.
+
+</ul>
+<h2 id="toc_7.3">数组</h2>
+<ul>
+<li>
+不需要声明数组大小, 只要该数组永远被一个常量整数表达式索引. 否则你必须声明一个大小.
+
+<li>
+另外当声明数组为函数参数或返回值或结构体成员时, 必须声明数组的显式大小.
+
+<li>
+length() 方法可以用于返回一个数组的大小.
+
+</ul>
+<h2 id="toc_7.4">Qualifiers</h2>
+<ul>
+<li>
+变量声明可以有类型修饰符.
+
+<li>
+const --- 声明时初始化. 作用于函数调用参数时表示不能在函数中写入该参数.
+
+<li>
+attribute --- 只读的每个顶点的数据. 仅在顶点着色器中使用. 数据来自于当前顶点的状态或来自于顶点数组. 必须声明为全局的. 必须为浮点标量(scalar),向量,矩阵. 不能为数组和结构体.
+
+<li>
+uniform --- 在着色器执行中为常量. 在着色器外初始化. 一个uniform被当前使用的顶点和片段着色器共享, 必须声明为全局的.
+
+<li>
+varying --- 顶点着色器的输出, 例如颜色, 纹理坐标. 对应于片段着色器的只读插值输入. 一个 varying 必须声明为全局的. 必须为浮点标量, 向量, 矩阵, 也许为一个数组, 但不能为一个结构体.
+
+<li>
+centroid varying --- 和 varying 相同. 但当不使用多重采样时, 则在片段中心求解插值. 如果使用多重采样, 则在被光栅化的图元内部位置求解centroid varying.
+
+<li>
+invariant --- 和顶点着色器的输出(如varying和内置变量)一起使用,  以及任意匹配片段着色器的 varying 输入以表明计算的值必须在不同着色器中一致的. 如果所有的数据流和控制流相同, 则写入一个invariant 变量, 编译器则会保证不同着色器的结果都相同.  这会牺牲潜在的优化. 如非必要则不使用该修饰符.
+
+<li>
+in --- 用于一个函数调用的参数, 表示仅为输入, 在被调用函数中进行的改变不影响调用函数的该值. 当没有任何修饰符出现时, 这是函数参数的默认行为. 
+
+<li>
+out --- 在函数调用中表示该参数仅为输出.
+
+<li>
+inout --- 表示该参数为输入和输出.
+
+</ul>
+<h2 id="toc_7.5">内置变量</h2>
+<ul>
+<li>
+顶点着色器变量
+
+<ul>
+<li>
+gl_Color, gl_SecondaryColor, gl_Normal, gl_Vertex, gl_MultiTexCoordn, gl_FogCoord, gl_Position, gl_ClipVertex, gl_PointSize, gl_FrontColor, gl_BackColor, gl_FrontSecondaryColor, gl_BackSecondaryColor, gl_TexCoord[], gl_FogFragCoord.
+
+</ul>
+<li>
+片段着色器变量
+
+<ul>
+<li>
+gl_Color, gl_SecondaryColor, gl_TexCoord[], gl_FogFragCoord, gl_FragCoord(只读输入, 含有窗口空间的x, y, z, 1/w). gl_FrontFacing, gl_PointCoord(二维坐标, 在point sprite中范围[0.0, 0.0]到[1.0, 1.0], 仅在点图元中且允许GL_POINT_SPRITE时定义)
+
+<li>
+gl_FragColor(输出), gl_FragData[](任意数据数组的输出, 用于glDrawBuffer, 不能用于和 gl_FragColor组合), gl_FragDepth(输出, 表示深度, 用于之后的逐像素操作. 如果不写入, 则使用固定功能的深度代替.) 
+
+</ul>
+</ul>
+<h1 id="toc_8">表达式 </h1>
+<h2 id="toc_8.1">操作符 </h2>
+<pre>
+()
+[]
+.
+++ --
++ - !
+* /
++ -
+&lt;&gt; &lt;= &gt;= == !=
+&amp;&amp; || ^^   最后一个为 XOR
+?:
+= += -= *= /=
+,
+</pre>
+<h2 id="toc_8.2">数组访问</h2>
+<h2 id="toc_8.3">构造函数 </h2>
+<ul>
+<li>
+用于初始化变量. 尤其是多成分的数据类型, 包括结构体和数组. 函数名等于类型名.
+<pre c++>
+	vec3 myNormal = vec3(0.0, 1.0, 0.0);
+</pre>
+
+<li>
+构造函数还可用于作为表达式
+<pre c++>
+	greenTint = myColor + vec3(0.0, 1.0, 0.0);
+</pre>
+
+<li>
+单个标量值可以赋值给一个向量的所有成员
+<pre c++>
+	ivec4 myColor = ivec4(255);  // all 4 components get 255
+</pre>
+
+<li>
+可以在构造函数中混合和匹配标量, 向量, 矩阵.
+<pre c++>
+	vec4 myVector1 = vec4(x, vec2(y, z), w);
+	vec2 myVector2 = vec2(myVector1);       // z, w are dropped
+	float myFloat = float(myVector2);       // y dropped
+</pre>
+
+<li>
+矩阵以列主序的顺序构造, 如果你提供了单个标量值, 则该值用于矩阵的对角元素, 而其他元素都设为0.
+<pre c++>
+	// all of these are same 2x2 identity matrix
+	mat2 myMatrix1 = mat2(1.0, 0.0, 0.0, 1.0);
+	mat2 myMatrix2 = mat2(vec2(1.0, 0.0), vec2(0.0, 1.0));
+	mat2 myMatrix3 = mat2(1.0);
+	mat2 myMatrix4 = mat2(mat4(1.0)); // takes upper 2x2 of the 4x4
+</pre>
+
+<li>
+你可以使用构造函数转换不同的标量类型. 这里没有隐式或者显式的类型转换
+<pre c++>
+	float myFloat = 4.7;
+	int myInt = int(myFloat);  // myInt = 4
+</pre>
+
+<li>
+数组可以通过在构造函数中数组每个元素一个值来初始化.
+<pre c++>
+	ivec2 cursorPositions[3] = ivec2[3]((0, 0), (10, 20), (15, 40));
+	ivec2 morePositions[3] = ivec2[]((0, 0), (10, 20), (15, 40)); 
+</pre>
+
+<li>
+结构的初始化通过提供与结构定义相同顺序和相同类型的参数来实现.
+<pre c++>
+	struct surface {
+		float indexOfRefraction;
+		float reflectivity;
+		vec3 color;
+		float turbulence;
+	};
+	surface mySurf = surface(ior, refl, vec3(red, green, blue), turb);
+</pre>
+
+</ul>
+<h2 id="toc_8.4">成员选择符(Component Selectors)</h2>
+<ul>
+<li>
+{x, y, z, w}, {r, g, b, a}, {s, t, p, q}
+<pre c++>
+	vec3 myVector = {0.25, 0.5, 0.75};
+	float myR = myVector.r;   // 0.25
+	vec2 myYZ = myVector.yz;  // 0.5, 0.75
+	float myQ = myVector.q;   // ILLEGAL!! accesses component beyond vec3
+	float myRY = myVector.ry; // ILLEGAL!! mixes two notations
+</pre>
+
+<li>
+可以使用 component selector 重排序或复制成员.
+<pre c++>
+	vec3 myZYX = myVector.zyx;   // reverse order
+	vec4 mySSTT = myVector.sstt; // replicate s and t twice each
+</pre>
+
+<li>
+还可将 component selector 放在赋值左边作为一个写入mask, 表示那些成员被修改.
+<pre c++>
+	vec4 myColor = vec4(0.0, 1.0, 2.0, 3.0);
+	myColor.x = -1.0;               // -1.0, 1.0, 2.0, 3.0
+	myColor.yz = vec2(-2.0, -3.0);  // -1.0, -2.0, -3.0, 3.0
+	myColor.wx = vec2(0.0, 1.0);    // 1.0, -2.0, -3.0, 0.0
+	myColor.zz = vec2(2.0, 3.0);    // ILLEGAL!!
+</pre>
+
+<li>
+还可以使用下标访问向量和矩阵成员.
+
+<li>
+对于矩阵, 提供了一个数组索引访问对应的矩阵列将其作为一个向量. 第二个数组索引则访问对应的向量成员.
+<pre c++>
+	mat3 myMatrix = mat3(1.0);
+	vec3 myFirstColumn = myMatrix[0]; // first column: 1.0, 0.0, 0.0
+	float element21 = myMatrix[2][1]; // last column, middle row: 0.0
+</pre>
+
+</ul>
+
+<h1 id="toc_9">控制流 </h1>
+<h2 id="toc_9.1">循环</h2>
+<ul>
+<li>
+for, while, do/while 循环. 可以使用 continue 和 break.
+
+</ul>
+<h2 id="toc_9.2">if/else</h2>
+<h2 id="toc_9.3">discard</h2>
+<ul>
+<li>
+片段着色器有一个特殊的控制流机制称之为 discard. 其终止当前片段着色器的执行. 所有之后的per-fragment阶段被略过, 且该片段不写入帧缓存.
+<pre c++>
+	// e.g., perform an alpha test within your fragment shader
+	if (color.a &lt; 0.9)
+		discard;
+</pre>
+
+</ul>
+<h1 id="toc_10">函数</h1>
+<ul>
+<li>
+函数用于模块化着色器代码. 所有的着色器必须定义一个main函数.
+
+<li>
+结构体和数组都允许作为函数参数和返回值类型. 数组参数或返回值在函数声明和定义中包含带有大小的数组名.
+
+<li>
+允许函数重载
+
+<li>
+不允许递归函数.
+
+<li>
+大概有50个内置函数提供了所有类型的有用计算. 包括简单的算术到三角计算.
+
+</ul>
+<h2 id="toc_10.1">纹理查找函数</h2>
+<pre c++>
+	vec4 texture1D(sampler1D sampler, float coord [, float bias] )
+	vec4 texture1DProj(sampler1D sampler, vec2 coord [, float bias] )
+	vec4 texture1DProj(sampler1D sampler, vec4 coord [, float bias] )
+	vec4 texture1DLod(sampler1D sampler, float coord, float lod)
+	vec4 texture1DProjLod(sampler1D sampler, vec2 coord, float lod)
+	vec4 texture1DProjLod(sampler1D sampler, vec4 coord, float lod)
+	vec4 texture2D(sampler2D sampler, vec2 coord [, float bias] )
+	vec4 texture2DProj(sampler2D sampler, vec3 coord [, float bias] )
+	vec4 texture2DProj(sampler2D sampler, vec4 coord [, float bias] )
+	vec4 texture2DLod(sampler2D sampler, vec2 coord, float lod)
+	vec4 texture2DProjLod(sampler2D sampler, vec3 coord, float lod)
+	vec4 texture2DProjLod(sampler2D sampler, vec4 coord, float lod)
+	vec4 texture3D(sampler3D sampler, vec3 coord [, float bias] )
+	vec4 texture3DProj(sampler3D sampler, vec4 coord [, float bias] )
+	vec4 texture3DLod(sampler3D sampler, vec3 coord, float lod)
+	vec4 texture3DProjLod(sampler3D sampler, vec4 coord, float lod)
+	vec4 textureCube(samplerCube sampler, vec3 coord [, float bias] )
+	vec4 textureCubeLod(samplerCube sampler, vec3 coord, float lod)
+	vec4 shadow1D(sampler1DShadow sampler, vec3 coord [, float bias] )
+	vec4 shadow2D(sampler2DShadow sampler, vec3 coord [, float bias] )
+	vec4 shadow1DProj(sampler1DShadow sampler, vec4 coord, [, float bias] )
+	vec4 shadow2DProj(sampler2DShadow sampler, vec4 coord, [, float bias] )
+	vec4 shadow1DLod(sampler1DShadow sampler, vec3 coord, float lod)
+	vec4 shadow2DLod(sampler2DShadow sampler, vec3 coord, float lod)
+	vec4 shadow1DProjLod(sampler1DShadow sampler, vec4 coord, float lod)
+	vec4 shadow2DProjLod(sampler2DShadow sampler, vec4 coord, float lod)
+</pre>
+<ul>
+<li>
+"Proj"版本在查找之前在纹理坐标上执行一个透视除法. 除数为坐标向量最后一个成员.
+
+<li>
+"Lod"版本, 仅在顶点着色器中可用, 指定在哪个mipmap level-of-detail(LOD)去采样. 非"Lod"版本则是在基LOD上采样. 片段着色器可以仅使用non-"Lod"版本, 当其如常根据纹理坐标推导计算出mipmap LOD. 然而, 片段着色器可以提供一个添加的bias添加至计算后的LOD, 这个bias参数不允许在顶点着色器中使用.
+
+<li>
+"shadow"版本执行一个深度纹理比较作为查找的一部分.
+
+</ul>
+
+    </div>
+</body>
+</html>

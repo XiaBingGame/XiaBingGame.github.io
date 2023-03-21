@@ -1,0 +1,180 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../../style.css">
+<title>total</title>
+<meta http-equiv="Content-Type" content="text/html; charset=cp936">
+</head>
+<body>
+
+<h3 id="toc_0.0.1">01_Block</h3>
+<p>
+	这里使用阴影压平矩阵来实现阴影, 见函数 m3dGetPlaneEquation, m3dMakePlanarShadowMatrix
+</p>
+<h3 id="toc_0.0.2">02_bounce</h3>
+<p>
+	glRect 的使用
+</p>
+<h3 id="toc_0.0.3">02_glrect</h3>
+<p>
+	同上
+</p>
+<h3 id="toc_0.0.4">03_lines</h3>
+<p>
+	线的绘制
+</p>
+<h3 id="toc_0.0.5">03_linesw</h3>
+<p>
+	glGetFloatv(GL_LINE_WIDTH_RANGE, fSizes);
+</p>
+<h3 id="toc_0.0.6">03_lstipple</h3>
+<p>
+	glLineStipple(factor, pattern); 第一个字节表示pattern内每个位重复的次数
+</p>
+<h3 id="toc_0.0.7">03_lstrips</h3>
+<p>
+	螺旋线
+</p>
+<h3 id="toc_0.0.8">03_points</h3>
+<p>
+	螺旋点
+</p>
+<h3 id="toc_0.0.9">03_pointz</h3>
+<p>
+	glPointSize 函数 设置点的大小
+</p>
+<h3 id="toc_0.0.10">03_pstipple</h3>
+<p>
+	多边形点画, glPolygonStipple
+</p>
+<h3 id="toc_0.0.11">03_scissor</h3>
+<p>
+	glScissor 设置裁剪区域
+</p>
+<h3 id="toc_0.0.12">03_single</h3>
+<p>
+	计时器函数的使用 glutTimerFunc
+</p>
+<h3 id="toc_0.0.13">03_star</h3>
+<p>
+	glEdgeFlag	设置边缘标记
+</p>
+<h3 id="toc_0.0.14">03_stencil</h3>
+<p>
+	设置stencil函数和操作
+</p>
+<h3 id="toc_0.0.15">03_triangle</h3>
+<p>
+	glBegin(GL_TRIANGLE_FAN);
+</p>
+<h3 id="toc_0.0.16">04_atom</h3>
+<p>
+	模拟星球
+</p>
+<h3 id="toc_0.0.17">04_atom2</h3>
+<p>
+	模拟星球, 透视投影
+</p>
+<h3 id="toc_0.0.18">04_ortho</h3>
+<p>
+	glFrontFace(GL_CW); 的使用
+</p>
+<h3 id="toc_0.0.19">04_perspct</h3>
+<p>
+	透视投影
+</p>
+<h3 id="toc_0.0.20">04_solar</h3>
+<p>
+	带光照模拟星球
+</p>
+<h3 id="toc_0.0.21">04_SphereWorld</h3>
+<p>
+	GLFrame 模拟相机和物体
+</p>
+<h3 id="toc_0.0.22">04_transform</h3>
+<p>
+	m3dRotationMatrix44 自定函数
+</p>
+<h3 id="toc_0.0.23">05_ambient</h3>
+<p>
+	顶点数组和颜色数组的使用
+</p>
+<h3 id="toc_0.0.24">05_jet</h3>
+<p>
+	不带光照
+</p>
+<h3 id="toc_0.0.25">05_litjet</h3>
+<p>
+	带光照
+</p>
+<h3 id="toc_0.0.26">05_shadow</h3>
+<p>
+	阴影压平矩阵
+</p>
+<h3 id="toc_0.0.27">05_shinyJet</h3>
+<p>
+	带镜面光的飞机
+</p>
+<h3 id="toc_0.0.28">05_sphereworld</h3>
+<p>
+	带阴影的球面世界
+</p>
+<h3 id="toc_0.0.29">05_spot</h3>
+<p>
+	可见聚焦光的实现
+</p>
+<h3 id="toc_0.0.30">05_triangle</h3>
+<p>
+	三角形, 着色平滑模式
+</p>
+<h3 id="toc_0.0.31">06_fogged</h3>
+<p>
+	带雾的球体世界
+</p>
+<h3 id="toc_0.0.32">06_motionblur</h3>
+<p>
+	累积缓存
+</p>
+<h3 id="toc_0.0.33">06_multisample</h3>
+<p>
+	多重采样
+</p>
+<h3 id="toc_0.0.34">06_reflection</h3>
+<p>
+	实现镜面反射要点
+		1. 混合
+		2. 镜面的物体正面方向改为 GL_CW
+		3. 镜面物体更改光的位置
+		4. 注意不透明物体和可以反射的物体的绘制顺序
+</p>
+<h3 id="toc_0.0.35">06_smoother</h3>
+<p>
+	点和线的反锯齿
+</p>
+<h3 id="toc_0.0.36">06_sphereworld</h3>
+<p>
+	模板测试用于阴影, 以免重复在阴影处绘制
+</p>
+<h3 id="toc_0.0.37">07_bitmaps</h3>
+<p>
+	glBitmap
+</p>
+<h3 id="toc_0.0.38">07_imageload</h3>
+<p>
+	glDrawPixels
+</p>
+<h3 id="toc_0.0.39">07_imaging</h3>
+<p>
+	图像操作, 卷积, 缩放, 颜色表, Histongram 等等
+</p>
+<h3 id="toc_0.0.40">07_Operations</h3>
+<p>
+	各种像素操作
+</p>
+<h3 id="toc_0.0.41">08_pyramid</h3>
+<p>
+	纹理操作
+</p>
+
+</body>
+</html>

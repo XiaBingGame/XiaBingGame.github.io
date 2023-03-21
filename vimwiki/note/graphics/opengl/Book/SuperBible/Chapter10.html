@@ -1,0 +1,515 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../../style.css" />
+    <title>Chapter10</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<ul>
+<li>
+主要函数
+
+<ul>
+<li>
+gluSphere/gluCylinder/gluDisk --- 绘制球体, 圆台, 磁盘
+
+<li>
+glMap/glEvalCoord --- 使用 maps 渲染贝塞尔曲线和曲面
+
+<li>
+glMapGrid/glEvalMesh --- 使用求值器简化曲面映射
+
+<li>
+gluNewBurbsRenderer/gluBeginSurface/gluNurbsSurface/gluEndSurface/gluDeleteNurbsRenderer
+
+<li>
+gluBeginTrim/gluPwlCurve/gluEndTrim --- 创建 trimming curves
+
+<li>
+gluTessBeginPolygon/gluTessEndPolygon --- 分格化 concave 和 convex 多边形
+
+</ul>
+</ul>
+
+<h1 id="toc_1">内置的面</h1>
+<h2 id="toc_1.1">Setting Quadric States</h2>
+<ul>
+<li>
+你可以创建一个二次对象, 并设置状态. 这样绘制面的时候可以选择这个对象来实现状态的设定.
+
+<li>
+创建和删除二次对象
+<pre c++>
+	GLUquadricObj *pObj;
+	// . . .
+	pObj = gluNewQuadric();   // Create and initialize Quadric
+	// Set Quadric rendering Parameters
+	// Draw Quadric surfaces
+	// . . .
+	gluDeleteQuadric(pObj);   // Free Quadric object
+</pre>
+
+<li>
+设置二次绘制风格
+<pre c++>
+	void gluQuadricDrawStyle(GLUquadricObj* obj, GLenum drawStyle);
+</pre>
+
+<ul>
+<li>
+drawStyle 的值可以是 GLU_FILL, GLU_LINE, GLU_POINT, GLU_SILHOUETTE(类似于wireframe, 但是不绘制多边形的 adjoining edges).
+
+</ul>
+<li>
+是否生成法线
+<pre c++>
+	void gluQuadricNormals(GLUquadricObj* pbj, GLenum normals);
+</pre>
+
+<ul>
+<li>
+GLU_NONE 没有法线, GLU_SMOOTH, GLU_FLAT.
+
+</ul>
+<li>
+设置法线朝内还是朝外.
+<pre c++>
+	void gluQuadricOrientation(GLUquadricObj* obj, GLenum orientation);
+</pre>
+
+<ul>
+<li>
+GLU_OUTSIDE, GLU_INSIDE
+
+<li>
+一般表面为逆时针方向, 朝外的. 对于 disk, 其面朝向Z轴的正方向.
+
+</ul>
+<li>
+生成纹理坐标
+<pre c++>
+	void gluQuadricTexture(GLUquadricObj* obj, GLenum textureCoords);
+</pre>
+
+<ul>
+<li>
+GLU_TRUE, GLU_FALSE.
+
+<li>
+纹理均匀包住球体和圆台, disk中心为纹理中心, 纹理的边沿着disk的边映射.
+
+</ul>
+</ul>
+<h2 id="toc_1.2">绘制二次对象</h2>
+<ul>
+<li>
+绘制球体
+<pre c++>
+	void gluSphere(GLUQuadricObj* obj, GLdouble radius, GLint slices, GLint stacks);
+</pre>
+
+<ul>
+<li>
+slice 可以看成经度, stack 可以看成维度. 这里是有Z轴指向南北极.
+
+</ul>
+<li>
+圆台同样沿着z轴进行绘制
+<pre c++>
+	void gluCylinder(GLUquadricObj* obj, GLdouble baseRadius, GLdouble topRadius, GLdouble height, GLint slices, GLint stacks);
+</pre>
+
+<li>
+绘制 disk, disk 绘制于xy 平面内.
+<pre c++>
+	void gluDisk(GLUquadricObj* obj, GLdouble innerRadius, GLdouble outerRadius, GLint slices, GLint loops);
+</pre>
+
+</ul>
+
+<h1 id="toc_2">贝塞尔曲线和曲面</h1>
+<h2 id="toc_2.1">参数表达</h2>
+<ul>
+<li>
+曲线的order为控制点的数量. 曲线的degree为曲线的order减去1. order为系数的数量, degree为参数的最大指数值.
+
+</ul>
+<h2 id="toc_2.2">连续性 </h2>
+<ul>
+<li>
+连续性的四个类别: none, C0(positional), C1(tangential), C2(curvature).
+
+</ul>
+
+<h1 id="toc_3">求值器</h1>
+<h2 id="toc_3.1">一个2D曲线</h2>
+<ul>
+<li>
+首先设置一个曲线的控制点
+<pre c++>
+// The number of control points for this curve
+	GLint nNumPoints = 4;
+	GLfloat ctrlPoints[4][3]= {{  -4.0f, 0.0f, 0.0f},    // Endpoint
+		{ -6.0f, 4.0f, 0.0f},     // Control point
+		{  6.0f, -4.0f, 0.0f},    // Control point
+		{  4.0f, 0.0f, 0.0f }};   // Endpoint
+</pre>
+
+<li>
+glMap1f 用于创建我们曲线的映射.
+<pre c++>
+	glMap1f(GL_MAP1_VERTEX_3,   // Type of data generated
+		0.0f,                       // Lower u range
+		100.0f,                     // Upper u range
+		3,                          // Distance between points in the data
+		nNumPoints,                 // Number of control points
+		&amp;ctrlPoints[0][0]);         // Array of control points
+</pre>
+
+<li>
+允许 GL_MAP1_VERTEX_3
+
+<li>
+glEvalCoord 产生顶点
+<pre c++>
+	// Use a line strip to “connect the dots”
+	glBegin(GL_LINE_STRIP);
+	for(i = 0; i &lt;= 100; i++)
+	{
+		// Evaluate the curve at this point
+		glEvalCoord1f((GLfloat) i);
+	}
+	glEnd();
+</pre>
+
+</ul>
+
+<h2 id="toc_3.2">求解一个曲线 </h2>
+<ul>
+<li>
+通过 glMapGrid 函数设置一个网格. 表示创建一个沿着u域均匀放置的点. 而后我们调用glEvalMesh根据图元类型(GL_LINE 或 GL_POINTS)连接点.
+<pre c++>
+	// Use higher level functions to map to a grid, then evaluate the
+	// entire thing.
+	// Map a grid of 100 points from 0 to 100
+	glMapGrid1d(100,0.0,100.0);
+	// Evaluate the grid, using lines
+	glEvalMesh1(GL_LINE,0,100);
+</pre>
+
+</ul>
+
+<h2 id="toc_3.3">一个3D面 </h2>
+<pre c++>
+	// Sets up the Bezier
+	// This actually only needs to be called once and could go in
+	// the setup function
+	glMap2f(GL_MAP2_VERTEX_3,     // Type of data generated
+		0.0f,                         // Lower u range
+		10.0f,                        // Upper u range
+		3,                            // Distance between points in the data
+		3,                            // Dimension in u direction (order)
+		0.0f,                         // Lower v range
+		10.0f,                        // Upper v range
+		9,                            // Distance between points in the data
+		3,                            // Dimension in v direction (order)
+		&amp;ctrlPoints[0][0][0]);        // array of control points
+
+	// Enable the evaluator
+	glEnable(GL_MAP2_VERTEX_3);
+	// Use higher level functions to map to a grid, then evaluate the
+	// entire thing.
+	// Map a grid of 10 points from 0 to 10
+	glMapGrid2f(10,0.0f,10.0f,10,0.0f,10.0f);
+	// Evaluate the grid, using lines
+	glEvalMesh2(GL_LINE,0,10,0,10);
+</pre>
+<h1 id="toc_4">光照和法线向量 </h1>
+<ul>
+<li>
+要使得表面自动生成法线, 只需要 glEvalMesh2使用GL_FILL参数, 并允许 GL_AUTO_NORMAL.
+<pre c++>
+	glEvalMesh2(GL_FILL,0,10,0,10);
+	glEnable(GL_AUTO_NORMAL);
+</pre>
+
+</ul>
+
+<h1 id="toc_5">NURBS</h1>
+<ul>
+<li>
+NURBS 表示 non-uniform rational B-spline.
+
+</ul>
+<h2 id="toc_5.1">从贝塞尔曲线到B-样条</h2>
+<ul>
+<li>
+对于贝塞尔曲线来说, 3个或4个控制点有良好的连续性.
+
+<li>
+B-样条, 运作原理类似于贝塞尔曲线, 但曲线被分割成很多段, 每个段的形状仅受最近的四个控制点的影响.
+
+</ul>
+<h2 id="toc_5.2">Knots</h2>
+<ul>
+<li>
+对于 NURBS 来说, 还可以修改任意段其控制点的作用, 这样可以产生需要的平滑度. 这通过一系列被称之为knots的值来实现.
+
+<li>
+每个控制点定义两个knot, knot值的范围为u, v的参数域且非降序的. knot的值决定了控制点在u/v空间范围内的影响.
+
+<li>
+u,v域的中间值有最大的影响.
+
+<li>
+每个控制点沿着u/v参数域有其自身的一个影响曲线. knot sequence 定义了点在该域内的影响强度. 如果一个kont值重复, 则位于该参数值附近的点有更大的影响. 该knot值的重复被称之为 knot multiplicity. 更高的 knot multiplicity 则表示在该区域内降低了曲线或曲面的曲率.
+
+</ul>
+<h2 id="toc_5.3">创建一个 NURBS 面 </h2>
+<ul>
+<li>
+首先创建一个 NURBS 对象.
+<pre c++>
+	// NURBS object pointer
+	GLUnurbsObj *pNurb = NULL;
+	...
+	...
+	// Set up the NURBS object
+	pNurb = gluNewNurbsRenderer();
+	...
+	// Do your NURBS things...
+	...
+	...
+	// Delete the NURBS object if it was created
+	if(pNurb)
+		gluDeleteNurbsRenderer(pNurb);
+</pre>
+
+</ul>
+<h2 id="toc_5.4">NURBS属性 </h2>
+<pre c++>
+	// Set sampling tolerance
+	gluNurbsProperty(pNurb, GLU_SAMPLING_TOLERANCE, 25.0f);
+	// Fill to make a solid surface (use GLU_OUTLINE_POLYGON to create a
+	// polygon mesh)
+	gluNurbsProperty(pNurb, GLU_DISPLAY_MODE, (GLfloat)GLU_FILL);
+</pre>
+<h2 id="toc_5.5">定义表面</h2>
+<ul>
+<li>
+通过传递一个控制点数组和knot序列数组给 gluNurbsSurface 函数来完成其定义. 且用 gluBeginSurface 和 gluEndSurface 包括这个函数.
+<pre c++>
+	// Render the NURB
+	// Begin the NURB definition
+	gluBeginSurface(pNurb);
+	// Evaluate the surface
+	gluNurbsSurface(pNurb,  // Pointer to NURBS renderer
+		8, Knots,            // No. of knots and knot array u direction
+		8, Knots,            // No. of knots and knot array v direction
+		4 * 3,               // Distance between control points in u dir.
+		3,                   // Distance between control points in v dir.
+		&amp;ctrlPoints[0][0][0],// Control points
+		4, 4,                // u and v order of surface
+		GL_MAP2_VERTEX_3);   // Type of surface
+	// Done with surface
+	gluEndSurface(pNurb);
+
+	// Mesh extends four units -6 to +6 along x and y axis
+	// Lies in Z plane
+	//                 u  v  (x,y,z)
+	GLfloat ctrlPoints[4][4][3]= {{{  -6.0f, -6.0f, 0.0f},    // u = 0,   v = 0
+		{  -6.0f, -2.0f, 0.0f},    //        v = 1
+		{   -6.0f,  2.0f, 0.0f},   //        v = 2
+		{   -6.0f,  6.0f, 0.0f}},  //        v = 3
+		{{  -2.0f, -6.0f, 0.0f},    // u = 1    v = 0
+		{   -2.0f, -2.0f, 8.0f},   //        v = 1
+		{   -2.0f,  2.0f, 8.0f},   //        v = 2
+		{   -2.0f,  6.0f, 0.0f}},  //        v = 3
+		{{   2.0f, -6.0f, 0.0f },   // u =2     v = 0
+		{    2.0f, -2.0f, 8.0f },  //        v = 1
+		{    2.0f,  2.0f, 8.0f },  //        v = 2
+		{    2.0f,  6.0f, 0.0f }}, //        v = 3
+		{{   6.0f, -6.0f, 0.0f},    // u = 3    v = 0
+		{    6.0f, -2.0f, 0.0f},   //        v = 1
+		{    6.0f,  2.0f, 0.0f},   //        v = 2
+		{    6.0f,  6.0f, 0.0f}}}; //        v = 3
+	// Knot sequence for the NURB
+	GLfloat Knots[8] = {0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 1.0f, 1.0f, 1.0f};
+</pre>
+
+</ul>
+<h2 id="toc_5.6">Trimming</h2>
+<pre c++>
+	// Outside trimming points to include entire surface
+	GLfloat outsidePts[5][2] = /* counterclockwise */
+		{{0.0f, 0.0f}, {1.0f, 0.0f}, {1.0f, 1.0f}, {0.0f, 1.0f}, {0.0f, 0.0f}};
+	// Inside trimming points to create triangle shaped hole in surface
+	GLfloat insidePts[4][2] = /* clockwise */
+		{{0.25f, 0.25f}, {0.5f, 0.5f}, {0.75f, 0.25f}, { 0.25f, 0.25f}};
+	...
+	...
+	...
+	// Render the NURB
+	// Begin the NURB definition
+	gluBeginSurface(pNurb);
+	// Evaluate the surface
+	gluNurbsSurface(pNurb,  // Pointer to NURBS renderer
+		8, Knots,            // No. of knots and knot array u direction
+		8, Knots,            // No. of knots and knot array v direction
+		4 * 3,               // Distance between control points in u dir.
+		3,                   // Distance between control points in v dir.
+		&amp;ctrlPoints[0][0][0],// Control points
+		4, 4,                // u and v order of surface
+		GL_MAP2_VERTEX_3);   // Type of surface
+	// Outer area, include entire curve
+	gluBeginTrim (pNurb);
+	gluPwlCurve (pNurb, 5, &amp;outsidePts[0][0], 2, GLU_MAP1_TRIM_2);
+	gluEndTrim (pNurb);
+	// Inner triangular area
+	gluBeginTrim (pNurb);
+	gluPwlCurve (pNurb, 4, &amp;insidePts[0][0], 2, GLU_MAP1_TRIM_2);
+	gluEndTrim (pNurb);
+	// Done with surface
+	gluEndSurface(pNurb);
+</pre>
+<ul>
+<li>
+在 gluBeginTrim/gluEndTrim内, 你可以指定任意数量的曲线形成一个闭合环. 你还可以使用 gluNurbsCurve 定义一个 trimming区域或者 trimming 区域的一部分. 该 trimming 曲线必须在单元参数u和v空间的范围内. 即表示整个u/v域缩放至[0.0, 1.0].
+
+<li>
+gluPwlCurve 定义了一个逐段的线性曲线.
+
+<li>
+内部剪切的内容, 其为顺时针方向. 外部剪切的内容, 为逆时针方向.
+
+</ul>
+<h2 id="toc_5.7">NURBS Curves</h2>
+<ul>
+<li>
+使用 gluNurbsCurve 实现 NURBS surface trimming.
+
+</ul>
+
+<h1 id="toc_6">Tessellation</h1>
+<h2 id="toc_6.1">The Tessellator</h2>
+<ul>
+<li>
+创建和销毁
+<pre c++>
+	GLUtesselator *pTess;
+	pTess = gluNewTes();
+	. . .
+	// Do some tessellation
+	. . .
+	gluDeleteDess(pTess);
+</pre>
+
+<li>
+分格化步骤
+
+<ol>
+<li>
+创建分格化对象
+
+<li>
+设置分格化状态和回调
+
+<li>
+开始一个多边形
+
+<li>
+开始一个contour
+
+<li>
+填充分格化对象表示该contour的顶点
+
+<li>
+结束该contour
+
+<li>
+如果还有更多的contour, 则回到步骤4
+
+<li>
+结束多边形
+
+</ol>
+</ul>
+<h2 id="toc_6.2">Tessellator Callbacks</h2>
+<ul>
+<li>
+注册回调的函数
+<pre c++>
+	void gluTessCallback(GLUTesselator *tobj, GLenum which, void (*fn)());
+</pre>
+
+<li>
+可注册回调: GLU_TESS_BEGIN, GLU_TESS_END, GLU_TESS_VERTEX
+
+<ul>
+<li>
+GLU_TESS_BEGIN 表示在每次新图元开始的时候调用该函数.
+
+</ul>
+</ul>
+<h2 id="toc_6.3">指定顶点数据</h2>
+<ul>
+<li>
+要开始之前第三步中的多边形, 你调用下面的函数,
+<pre c++>
+	void gluTessBeginPolygon(GLUTesselator* tobj, void *data);
+</pre>
+
+<ul>
+<li>
+可以传递任意用户自定义的数据, 通常为NULL.
+
+</ul>
+<li>
+第八步, 完成多边形
+<pre c++>
+	void gluTessEndPolygon(GLUTesselator *tobj);
+</pre>
+
+<li>
+下面的函数确定轮廓
+<pre c++>
+	void gluTessBeginContour(GLUTesselator *tobj);
+	void gluTessEndContour(GLUTesselator *tobj);
+</pre>
+
+<li>
+在轮廓内添加顶点形成轮廓.
+<pre c++>
+	void gluTessVertex(GLUTesselator *tobj, GLdouble v[3], void *data);
+</pre>
+
+<ul>
+<li>
+v 为实际的顶点. data 用于传递给 GLU_VERTEX 指定的回调函数.
+<pre c++>
+	gluTessProperty(pTess, GLU_TESS_WINDING_RULE, GLU_TESS_WINDING_ODD);
+</pre>
+
+</ul>
+<li>
+这个调用用于告知 tessellator 如何确定要填充和不要填充的区域. GLU_TESS_WINDING_ODD 为默认值.
+
+</ul>
+
+    </div>
+</body>
+</html>

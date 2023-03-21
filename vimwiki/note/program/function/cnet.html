@@ -1,0 +1,347 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../style.css">
+<title>cnet</title>
+<meta http-equiv="Content-Type" content="text/html; charset=cp936">
+</head>
+<body>
+
+<h1 id="toc_1">控件</h1>
+<ul>
+<li>
+控件的共同属性: Name, Enabled, Font, BackColor, ForeColor, Image, Location, Size, Visible
+
+<li>
+Button
+
+<ul>
+<li>
+事件: Click
+
+</ul>
+<li>
+CheckedBox
+
+<ul>
+<li>
+属性: Items, MultiColumn, ColumnWidth, CheckOnClick, Sorted, CheckedItems, Text, CheckedIndices, Sorted, CheckedItems
+
+</ul>
+<li>
+ContextMenu
+
+<ul>
+<li>
+属性: MenuItem
+
+<li>
+方法: 
+
+<li>
+MenuItem
+
+<ul>
+<li>
+方法: MergetMenu, CloneMenu(可复制主菜单), Add
+
+</ul>
+</ul>
+<li>
+ErrorProvider
+
+<ul>
+<li>
+属性: BlinkRate, Icon, BlinkStyle
+
+<li>
+方法: SetError(), SetIconAlignment(), SetIconPadding()
+
+</ul>
+<li>
+Form
+
+<ul>
+<li>
+方法: Close, Visible
+
+<li>
+事件: Load
+
+</ul>
+<li>
+GroupBox
+
+<ul>
+<li>
+属性: Text
+
+</ul>
+<li>
+ImageList
+
+<ul>
+<li>
+属性: Images 
+
+</ul>
+<li>
+Label
+
+<ul>
+<li>
+属性: Text
+
+</ul>
+<li>
+ListView
+
+<ul>
+<li>
+属性: MultiSelect, HideSelection, HoverSelection, LabelEdit, LabelWrap, RightToLeft, Scrollable, FullRowSelect, GridLines, LargeImageList, SmallImageList. Columns, Items, SelectedItems
+
+<li>
+ListViewItem
+
+<ul>
+<li>
+属性: SubItems
+
+</ul>
+<li>
+Items
+
+<ul>
+<li>
+属性: Count
+
+<li>
+方法: Insert, Remove
+
+</ul>
+</ul>
+<li>
+MainMenu
+
+<ul>
+<li>
+属性: ShortCut, Checked, RadioChecked(组菜单)
+
+<li>
+事件: Click
+
+</ul>
+<li>
+NotifyIcon
+
+<ul>
+<li>
+属性: ContextMenu(菜单), Icon, Text(提示), Visible
+
+</ul>
+<li>
+OpenFileDialog
+
+<ul>
+<li>
+属性: Filter, FileName
+
+<li>
+方法: ShowDialog
+
+</ul>
+<li>
+PictureBox
+
+<ul>
+<li>
+属性: Image, SizeMode
+
+</ul>
+<li>
+ProgressBar
+
+<ul>
+<li>
+属性: Minimum, Maximum, Value, Step
+
+</ul>
+<li>
+RichTextBox
+
+<ul>
+<li>
+属性: Text, Dock, Cursor
+
+<li>
+方法: SaveFile, LoadFile, Cut, Copy, Paste
+
+<li>
+事件: MouseMove, KeyUp
+
+<li>
+RichTextBoxStreamType
+
+<ul>
+<li>
+PlainText
+
+</ul>
+</ul>
+<li>
+SaveFileDialog
+
+<ul>
+<li>
+属性: Filter, FileName
+
+<li>
+方法: ShowDialog
+
+</ul>
+<li>
+StatusBar
+
+<ul>
+<li>
+属性: Dock(位置), Panels(设置面板), ShowPanels, SizingGrip
+
+<li>
+StatusBarPanel
+
+<ul>
+<li>
+属性: Stype(可设置为文本), Text, Width, 
+
+</ul>
+</ul>
+<li>
+TabControl
+
+<ul>
+<li>
+属性: DrawMode, ImageList, ItemSize, Multiline, RowCount, SelectIndex, SelectedTab, ShowToolTips, SizeMode, TabPages(设置页)
+
+<li>
+方法: Add, Remove
+
+</ul>
+<li>
+TextBox
+
+<ul>
+<li>
+属性: PasswordChar
+
+</ul>
+<li>
+ToolBar
+
+<ul>
+<li>
+属性: Appearance(外观), AutoSize, BorderStyle, Bottom, BottonSize, ContextMenu, Cursor, Divider, DropDownArrow, ImageList, ImageSize, ShowToolTips, TextAlign, Wrappable, Dock, Buttons(可设置按钮)
+
+<li>
+事件: ButtonClick(可用于判断是哪个按钮处理)
+
+</ul>
+<li>
+ToolBarButton
+
+<ul>
+<li>
+属性: DropDownMenu, Enabled, ImageIndex(可在Form Load 中设置), Parent, PartialPush, Pushed, Style, Text, TooltipText, Visible
+
+</ul>
+<li>
+ToolTip
+
+<ul>
+<li>
+属性: Active, AutomaticDelay, AutoPopDelay, ReshowDelay, ShowAlays
+
+<li>
+方法: SetToolTip
+
+</ul>
+<li>
+TreeView
+
+<ul>
+<li>
+属性: BorderStyle, CheckBox, ImageIndex, ImageList, Indent(缩进), ItemHeight, LabelEdit, Nodes, PathSeparator, Scrollable, SelectedImageIndex, SelectedNode, ShowLines, ShowPlusMinus, ShowRootLines, Sorted, TopNode, VisibleCount, SelectedNode
+
+<li>
+方法: CollapseAll, ExpandAll, GetNodeAt, GetNodeCount, Select
+
+<li>
+事件: AfterExpand, AfterCollapse
+
+<li>
+TreeNode
+
+<ul>
+<li>
+属性: BackColor, Bounds, Checked, FirstNode, ForeColor, FullPath, Handle, ImageIndex, Index, IsEditing, IsExpanded, IsSelected, IsVisible, LastNode, NextNode, NextVisibleNode, NodeFont, Nodes, Parent, PrevNode, PreVisibleNode, SelectedImageIndex, Tag, Text, TreeView
+
+<li>
+方法: Clone, Collapse, Expand, ExpandAll, GetNodeCount, Remove, Toggle
+
+</ul>
+</ul>
+</ul>
+
+<h1 id="toc_2">类</h1>
+<ul>
+<li>
+Application
+
+<ul>
+<li>
+方法: Exit
+
+</ul>
+<li>
+Cursor
+
+<ul>
+<li>
+属性: Position
+
+</ul>
+<li>
+DialogResult
+
+<ul>
+<li>
+常量: Retry, CanceG
+
+</ul>
+<li>
+Int32
+
+<ul>
+<li>
+方法: ToString, Parse
+
+</ul>
+<li>
+MessageBox
+
+<ul>
+<li>
+方法: Show
+
+</ul>
+<li>
+string
+
+<ul>
+<li>
+方法: Length, Trim, SubString
+
+</ul>
+</ul>
+
+</body>
+</html>

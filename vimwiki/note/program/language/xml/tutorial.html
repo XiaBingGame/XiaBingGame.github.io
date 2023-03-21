@@ -1,0 +1,834 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../style.css" />
+    <title>tutorial</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<h1 id="toc_1">XML 教程</h1>
+<h2 id="toc_1.1">XML 树 </h2>
+<ul>
+<li>
+XML 文档必定含有一个根元素.
+
+</ul>
+
+<h2 id="toc_1.2">XML 语法规则</h2>
+<ul>
+<li>
+所有的XML元素必须有一个关闭tag, 和html的<p&gt;不同.
+
+<li>
+XML Tags 为大小写敏感的
+
+<li>
+XML 元素必须正确地嵌套.
+
+<li>
+XML 属性值必须用引号括起来.
+<pre xml>
+&lt;note date="12/11/2007"&gt;
+	&lt;to&gt;Tove&lt;/to&gt;
+	&lt;from&gt;Jani&lt;/from&gt;
+&lt;/note&gt;
+</pre>
+
+<li>
+Entity References
+
+</ul>
+<ul>
+<li>
+注释 &lt;!-- This is a comment --&gt;
+<table>
+<tr>
+<th>
+&nbsp;
+</th>
+<th>
+&nbsp;
+</th>
+</tr>
+<tr>
+<td>
+&amp;it;
+</td>
+<td>
+&lt;
+</td>
+</tr>
+<tr>
+<td colspan="2">
+&amp;gt;
+</td>
+</tr>
+<tr>
+<td>
+&amp;amp;
+</td>
+<td>
+&amp;
+</td>
+</tr>
+<tr>
+<td>
+&amp;apos;
+</td>
+<td>
+'
+</td>
+</tr>
+<tr>
+<td>
+&amp;quot;
+</td>
+<td>
+""
+</td>
+</tr>
+</table>
+
+<li>
+XML 保留空格
+
+<li>
+XML 存储新行为LF
+
+</ul>
+
+<h2 id="toc_1.3">XML Element</h2>
+<ul>
+<li>
+一个 XML Element 为开始tag到结束tag之间的内容
+
+<li>
+其可包含
+
+<ul>
+<li>
+其他 element
+
+<li>
+文本
+
+<li>
+属性
+
+<li>
+以上的组合.
+
+</ul>
+<li>
+空 XML 元素
+<pre xml>
+&lt;book&gt;&lt;/book&gt;
+</pre>
+
+<ul>
+<li>
+可以写成如下格式
+<pre xml>
+&lt;book /&gt;
+</pre>
+
+</ul>
+<li>
+XML 命名规则
+
+<ul>
+<li>
+可以包含字母, 数字, 其他字符
+
+<li>
+不能以数字或者标点符号开始
+
+<li>
+不能以xml开始
+
+<li>
+不能包含空格
+
+</ul>
+<li>
+命名最佳做法
+
+<ul>
+<li>
+名称可解释: &lt;first_name&gt;, &lt;last_name&gt;
+
+<li>
+名称尽可能短: &lt;book_title&gt; 而非 &lt;the_title_of_the_book&gt;
+
+<li>
+避免"-"
+
+<li>
+避免"."
+
+<li>
+避免":"
+
+</ul>
+<li>
+命名风格
+
+</ul>
+<ul>
+<li>
+如果你选择了一个命名风格, 最好坚持.
+<table>
+<tr>
+<th>
+风格
+</th>
+<th>
+例子
+</th>
+<th>
+描述
+</th>
+</tr>
+<tr>
+<td>
+小写
+</td>
+<td>
+&lt;firstname&gt;
+</td>
+<td>
+所有字母小写 
+</td>
+</tr>
+<tr>
+<td>
+大写
+</td>
+<td>
+&lt;FIRSTNAME&gt;
+</td>
+<td>
+所有字母大写 
+</td>
+</tr>
+<tr>
+<td>
+下划线 
+</td>
+<td>
+&lt;first_name&gt;
+</td>
+<td>
+下划线分隔单词 
+</td>
+</tr>
+<tr>
+<td>
+Pascal case
+</td>
+<td>
+&lt;FirstName&gt;
+</td>
+<td>
+每个单词第一个字母大写 
+</td>
+</tr>
+<tr>
+<td>
+Camel case
+</td>
+<td>
+&lt;firstName&gt;
+</td>
+<td>
+除了第一个单词, 每个单词第一个字母大写 
+</td>
+</tr>
+</table>
+
+<li>
+如果XML和数据库关联, 则应和数据库命名规则保持一致.
+
+</ul>
+
+<h2 id="toc_1.4">XML 属性 </h2>
+<ul>
+<li>
+XML 元素可以有属性.
+
+<li>
+可以提供非数据一部分的信息.
+<pre xml>
+&lt;file type="gif"&gt;computer.gif&lt;/file&gt;
+</pre>
+
+<li>
+XML 属性必须被引号括起来, 单引号双引号都可以, 如果属性值含双引号, 可以用单引号括起来, 叶可以使用 Entity References
+
+<li>
+XML 可以使用元素, 也可以换成属性.
+
+<li>
+避免使用属性
+
+<ul>
+<li>
+属性不能有多个值
+
+<li>
+属性不能包含树结构
+
+<li>
+属性不易扩展
+
+</ul>
+<li>
+属性用于和数据不相关的信息.
+
+<li>
+用于 Metadata的XML属性. 分配给元素的ID引用.
+<pre xml>
+&lt;messages&gt;
+  &lt;note id="501"&gt;
+    &lt;to&gt;Tove&lt;/to&gt;
+    &lt;from&gt;Jani&lt;/from&gt;
+    &lt;heading&gt;Reminder&lt;/heading&gt;
+    &lt;body&gt;Don't forget me this weekend!&lt;/body&gt;
+  &lt;/note&gt;
+  &lt;note id="502"&gt;
+    &lt;to&gt;Jani&lt;/to&gt;
+    &lt;from&gt;Tove&lt;/from&gt;
+    &lt;heading&gt;Re: Reminder&lt;/heading&gt;
+    &lt;body&gt;I will not&lt;/body&gt;
+  &lt;/note&gt;
+&lt;/messages&gt;
+</pre>
+
+<ul>
+<li>
+metadata(数据的数据)应该存储为属性, 而数据则存储为元素.
+
+</ul>
+</ul>
+
+<h2 id="toc_1.5">XML 名称空间</h2>
+<ul>
+<li>
+使用名字前缀解决名字冲突问题.
+<pre xml>
+&lt;h:table&gt;
+  &lt;h:tr&gt;
+    &lt;h:td&gt;Apples&lt;/h:td&gt;
+    &lt;h:td&gt;Bananas&lt;/h:td&gt;
+  &lt;/h:tr&gt;
+&lt;/h:table&gt;
+
+&lt;f:table&gt;
+  &lt;f:name&gt;African Coffee Table&lt;/f:name&gt;
+  &lt;f:width&gt;80&lt;/f:width&gt;
+  &lt;f:length&gt;120&lt;/f:length&gt;
+&lt;/f:table&gt; 
+</pre>
+
+<li>
+名称空间由 xmins 属性定义. 语法为 xmlns:prefix="URI"
+<pre xml>
+&lt;root&gt;
+
+&lt;h:table xmlns:h="http://www.w3.org/TR/html4/"&gt;
+  &lt;h:tr&gt;
+    &lt;h:td&gt;Apples&lt;/h:td&gt;
+    &lt;h:td&gt;Bananas&lt;/h:td&gt;
+  &lt;/h:tr&gt;
+&lt;/h:table&gt;
+
+&lt;f:table xmlns:f="http://www.w3schools.com/furniture"&gt;
+  &lt;f:name&gt;African Coffee Table&lt;/f:name&gt;
+  &lt;f:width&gt;80&lt;/f:width&gt;
+  &lt;f:length&gt;120&lt;/f:length&gt;
+&lt;/f:table&gt;
+
+&lt;/root&gt; 
+</pre>
+
+<ul>
+<li>
+当一个元素定义了名字空间, 所有有相同前缀的子元素都关联至该相同的名称空间.
+
+<li>
+名称空间可以定义域根元素.
+<pre xml>
+&lt;root xmlns:h="http://www.w3.org/TR/html4/"
+xmlns:f="http://www.w3schools.com/furniture"&gt;
+
+&lt;h:table&gt;
+  &lt;h:tr&gt;
+    &lt;h:td&gt;Apples&lt;/h:td&gt;
+    &lt;h:td&gt;Bananas&lt;/h:td&gt;
+  &lt;/h:tr&gt;
+&lt;/h:table&gt;
+
+&lt;f:table&gt;
+  &lt;f:name&gt;African Coffee Table&lt;/f:name&gt;
+  &lt;f:width&gt;80&lt;/f:width&gt;
+  &lt;f:length&gt;120&lt;/f:length&gt;
+&lt;/f:table&gt;
+
+&lt;/root&gt; 
+</pre>
+
+<li>
+名字空间的URI并不被分析器用来查找信息.
+
+</ul>
+<li>
+Uniform Resource Identifier (URI) --- 为一个字符串,  用于联系一个网络资源.
+
+<ul>
+<li>
+常用URI为 Uniform Resource Locator (URL)
+
+<li>
+其他不常用的URI有 Universal Resource Name (URN)
+
+</ul>
+<li>
+默认名字空间 --- 用于避免所有子元素使用前缀. 语法如下
+<pre>
+xmlns="namespaceURI" 
+</pre>
+
+<ul>
+<li>
+带有HTML表格信息的XML
+<pre xml>
+&lt;table xmlns="http://www.w3.org/TR/html4/"&gt;
+  &lt;tr&gt;
+    &lt;td&gt;Apples&lt;/td&gt;
+    &lt;td&gt;Bananas&lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/table&gt; 
+</pre>
+
+</ul>
+<li>
+实际使用的名字空间.
+
+<ul>
+<li>
+XSLT 为一个XML语言, 可用于变换 XML 文档为其他格式, 如 HTML.
+
+<li>
+非HTML tags的tags带有前缀xsl. 由名字空间识别: xmlns:xsl="<a href="http://www.w3.org/1999/XSL/Transform"">http://www.w3.org/1999/XSL/Transform"</a>
+<pre xml>
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+
+&lt;xsl:stylesheet version="1.0"
+xmlns:xsl="http://www.w3.org/1999/XSL/Transform"&gt;
+
+&lt;xsl:template match="/"&gt;
+&lt;html&gt;
+&lt;body&gt;
+  &lt;h2&gt;My CD Collection&lt;/h2&gt;
+  &lt;table border="1"&gt;
+    &lt;tr&gt;
+      &lt;th style="text-align:left"&gt;Title&lt;/th&gt;
+      &lt;th style="text-align:left"&gt;Artist&lt;/th&gt;
+    &lt;/tr&gt;
+    &lt;xsl:for-each select="catalog/cd"&gt;
+    &lt;tr&gt;
+      &lt;td&gt;&lt;xsl:value-of select="title"/&gt;&lt;/td&gt;
+      &lt;td&gt;&lt;xsl:value-of select="artist"/&gt;&lt;/td&gt;
+    &lt;/tr&gt;
+    &lt;/xsl:for-each&gt;
+  &lt;/table&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+&lt;/xsl:template&gt;
+
+&lt;/xsl:stylesheet&gt; 
+</pre>
+
+</ul>
+</ul>
+
+<h2 id="toc_1.6">XML 编码</h2>
+<ul>
+<li>
+XML 文档可以包含 国际字符, 所以要指定其使用的编码.
+
+<li>
+字符编码
+
+<ul>
+<li>
+Unicode, 有两个变种 UTF-8, UTF-16.  UTF = Universal character set Transformation Format.
+
+<li>
+UTF-8: 网络标准.
+
+</ul>
+<li>
+XML 编码
+
+<ul>
+<li>
+第一行称之为 prolog, 可选的, 通常包含XML版本号. 可包含编码. UTF-8 为默认编码.
+<pre xml>
+&lt;?xml version="1.0"?&gt; 
+&lt;?xml version="1.0" encoding="UTF-8"?&gt; 
+</pre>
+
+</ul>
+</ul>
+
+<h2 id="toc_1.7">查看 XML 文件</h2>
+<ul>
+<li>
+查看一个无效的XML文件. 报错.
+
+</ul>
+
+<h2 id="toc_1.8">用CSS显示XML</h2>
+<ul>
+<li>
+在头部链接至一个css文件.
+<pre xml>
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;?xml-stylesheet type="text/css" href="cd_catalog.css"?&gt;
+</pre>
+
+<li>
+推荐使用 XSLT 显示XML.
+
+</ul>
+
+<h1 id="toc_2">XML 验证</h1>
+<h2 id="toc_2.1">XML 文档类型</h2>
+<ul>
+<li>
+Well Formed 的XML文档
+
+<ul>
+<li>
+一个文档有正确的语法被称为"Well Formed"
+
+<li>
+语法规则如下:
+
+<ul>
+<li>
+XML 文档必须有一个根元素
+
+<li>
+XML 元素必须有一个关闭tag
+
+<li>
+XML tags为大小写敏感
+
+<li>
+XML 元素必须正确地嵌套
+
+<li>
+XML 属性值必须被引号括起来.
+
+</ul>
+</ul>
+<li>
+有效的XML文档
+
+<ul>
+<li>
+一个有效的XML文档并非等同于"well formed"XML文档.
+
+<li>
+第一条规则只用于 well formed 文档
+
+<li>
+第二条规则是有效文档必须遵守的规则.
+
+<li>
+定义XML合法元素和属性的规则常被称为文档定义, 或者文档schemes.
+
+</ul>
+<li>
+何时使用文档定义
+
+<ul>
+<li>
+提供一个文档合法元素和属性其参考的最简单方法的参考.
+
+<li>
+提供许多用户可以分享的参考.
+
+<li>
+提供了标准化
+
+</ul>
+<li>
+何时不使用文档定义
+
+<ul>
+<li>
+试验XML, 很小的XML文件, 创建文档定义很费时.
+
+<li>
+如果你开发应用, 在添加文档定义之前等待其规则稳定下来.
+
+</ul>
+<li>
+文档定义
+
+<ul>
+<li>
+可以使用的不同文档定义:
+
+<ul>
+<li>
+The original Document Type Definition (DTD)
+
+<li>
+The newer, and XML based, XML Schema
+
+</ul>
+</ul>
+</ul>
+
+<h2 id="toc_2.2">XML 验证器 </h2>
+<ul>
+<li>
+使用 XML 验证器对你的XML进行语法检查
+
+<li>
+XML文档中的错误会中止你的XML应用, 对于XML, 错误是不允许的.
+
+</ul>
+
+<h2 id="toc_2.3">XML DTD</h2>
+<ul>
+<li>
+一个XML文档有正确的语法则被称为"Well Formed"
+
+<li>
+一个XML 用DTD验证通过则为"Well Formed"和"Valid"
+
+<li>
+一个"有效"的XML文档是一个"well formed"XML文档, 也遵守DTD规则.
+<pre xml>
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+&lt;!DOCTYPE note SYSTEM "Note.dtd"&gt;
+&lt;note&gt;
+&lt;to&gt;Tove&lt;/to&gt;
+&lt;from&gt;Jani&lt;/from&gt;
+&lt;heading&gt;Reminder&lt;/heading&gt;
+&lt;body&gt;Don't forget me this weekend!&lt;/body&gt;
+&lt;/note&gt;
+</pre>
+
+<ul>
+<li>
+上面的例子关联至一个外部DTD文件.
+
+</ul>
+<li>
+DTD的目的是定义一个XML文档的结构.啊定义以下合法元素的结构.
+<pre xml>
+&lt;!DOCTYPE note
+[
+&lt;!ELEMENT note (to,from,heading,body)&gt;
+&lt;!ELEMENT to (#PCDATA)&gt;
+&lt;!ELEMENT from (#PCDATA)&gt;
+&lt;!ELEMENT heading (#PCDATA)&gt;
+&lt;!ELEMENT body (#PCDATA)&gt;
+]&gt;
+</pre>
+
+<ul>
+<li>
+!DOCTYPE note --- 文档根元素为note
+
+<li>
+!ELEMENT note --- note元素包含四个元素
+
+<li>
+!ELEMENT to --- to元素的类型为 "#PCDATA"
+
+<li>
+... 如上
+
+<li>
+#PCDATA 表示可分析的文本数据.
+
+</ul>
+<li>
+使用DTD用于 Entity Declaration
+
+<ul>
+<li>
+doctype 声明也可用于定义特殊字符和字符串, 用于以下文档
+<pre xml>
+&lt;?xml version="1.0" encoding="UTF-8"?&gt;
+
+&lt;!DOCTYPE note [
+&lt;!ENTITY nbsp "&amp;#xA0;"&gt;
+&lt;!ENTITY writer "Writer: Donald Duck."&gt;
+&lt;!ENTITY copyright "Copyright: W3Schools."&gt;
+]&gt;
+
+&lt;note&gt;
+&lt;to&gt;Tove&lt;/to&gt;
+&lt;from&gt;Jani&lt;/from&gt;
+&lt;heading&gt;Reminder&lt;/heading&gt;
+&lt;body&gt;Don't forget me this weekend!&lt;/body&gt;
+&lt;footer&gt;&amp;writer;&amp;nbsp;&amp;copyright;&lt;/footer&gt;
+&lt;/note&gt; 
+</pre>
+
+<li>
+一个 entity 有三个部分:　an ampersand (&amp;), an entity name, and a semicolon (;).
+
+</ul>
+</ul>
+
+<h2 id="toc_2.4">XML Schema</h2>
+<ul>
+<li>
+Schema 描述XML文档的结构.
+<pre class="brush: xml">
+&lt;xs:element name="note"&gt;
+
+&lt;xs:complexType&gt;
+  &lt;xs:sequence&gt;
+    &lt;xs:element name="to" type="xs:string"/&gt;
+    &lt;xs:element name="from" type="xs:string"/&gt;
+    &lt;xs:element name="heading" type="xs:string"/&gt;
+    &lt;xs:element name="body" type="xs:string"/&gt;
+  &lt;/xs:sequence&gt;
+&lt;/xs:complexType&gt;
+
+&lt;/xs:element&gt;
+</pre>
+
+<ul>
+<li>
+&lt;xs:element name="note"&gt; --- 定义一个被称为"note"的元素
+
+<li>
+&lt;xs:complexType&gt; --- 表示"note"元素是一个复杂类型.
+
+<li>
+&lt;xs:sequence&gt; --- 表示该复杂类型是一个序列
+
+<li>
+&lt;xs:element name="to" type="xs:string"&gt;  --- "to"元素是一个字符串类型
+
+<li>
+... 同上
+
+</ul>
+<li>
+XML Schemas 支持数据类型.
+
+</ul>
+
+<h1 id="toc_3">XML JavaScript</h1>
+<h2 id="toc_3.1">XMLHttpRequest对象</h2>
+<ul>
+<li>
+XMLHttpRequest 对象用于和场景后的服务器交换数据
+
+<li>
+作用
+
+<ul>
+<li>
+无需重载页面就可以更新网页
+
+<li>
+页面加载后从服务器中请求数据
+
+<li>
+页面加载后从服务器中接收数据
+
+<li>
+在后台向服务器发送数据
+
+</ul>
+<li>
+要了解更多, 学习 XML DOM 教程
+
+<li>
+所有现代浏览器都有一个内置的 XMLHttpRequest 对象, 语法如下:
+<pre class="brush: xml">
+xmlhttp = new XMLHttpRequest();
+</pre>
+
+</ul>
+
+<h2 id="toc_3.2">XML Parser</h2>
+<ul>
+<li>
+所有现代浏览器有一个内置的 XML Parser. 一个XML Parser 可以将 XML 文档转换至一个 XML DOM 对象(可以由JavaScript操作的对象).
+
+</ul>
+<h3 id="toc_3.2.1">分析一个XML文档</h3>
+<pre class="brush: JavaScript">
+if (window.XMLHttpRequest)
+  {// code for IE7+, Firefox, Chrome, Opera, Safari
+  xmlhttp=new XMLHttpRequest();
+  }
+else
+  {// code for IE6, IE5
+  xmlhttp=new ActiveXObject("Microsoft.XMLHTTP");
+  }
+xmlhttp.open("GET","books.xml",false);
+xmlhttp.send();
+xmlDoc=xmlhttp.responseXML; 
+</pre>
+<h3 id="toc_3.2.2">分析一个XML字符串 </h3>
+<pre class="brush: JavaScript">
+txt="&lt;bookstore&gt;&lt;book&gt;";
+txt=txt+"&lt;title&gt;Everyday Italian&lt;/title&gt;";
+txt=txt+"&lt;author&gt;Giada De Laurentiis&lt;/author&gt;";
+txt=txt+"&lt;year&gt;2005&lt;/year&gt;";
+txt=txt+"&lt;/book&gt;&lt;/bookstore&gt;";
+
+if (window.DOMParser)
+  {
+  parser=new DOMParser();
+  xmlDoc=parser.parseFromString(txt,"text/xml");
+  }
+else // Internet Explorer
+  {
+  xmlDoc=new ActiveXObject("Microsoft.XMLDOM");
+  xmlDoc.async=false;
+  xmlDoc.loadXML(txt);
+  } 
+</pre>
+<h3 id="toc_3.2.3">Access Across Domain</h3>
+<ul>
+<li>
+现代浏览器不允许跨域访问.
+
+<li>
+如果想要加载网页和XML文件, 两者则必须位于同一个服务器.
+
+</ul>
+<h2 id="toc_3.3">XML DOM</h2>
+
+    </div>
+</body>
+</html>

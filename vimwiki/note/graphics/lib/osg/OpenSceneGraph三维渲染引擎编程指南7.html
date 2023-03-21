@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../../style.css">
+<title>OpenSceneGraph��ά��Ⱦ������ָ��7</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</head>
+<body>
+
+<div id="第7章 场景图形的工作机制 "><h1 id="第7章 场景图形的工作机制 ">第7章 场景图形的工作机制 </h1></div>
+<ul>
+<li>
+使用 OSG 的智能指针的两个条件:
+
+<ul>
+<li>
+用户的类派生自 Referenced
+
+<li>
+使用智能指针模板 osg::ref_ptr&lt;class T&gt;
+
+</ul>
+<li>
+osg::NodeVisitor 类
+
+<ul>
+<li>
+主要有 apply() 和 accept(), apply() 决定了遍历的方式, 如可以获得各个节点的属性, 也可以修改各个节点的属性, 这完全取决于 apply() 函数的实现. 可重写 apply() 函数, 调用 accept() 函数可以关联需要访问的节点, 通过重载 apply() 函数来实现自己的功能
+
+<li>
+遍历的类型有
+<pre c++>
+enum VisitorType
+{
+	NODE_VISITOR = 0, // 节点访问器
+	UPDATE_VISITOR, // 更新访问器
+	EVENT_VISITOR, // 事件访问器
+	COLLECT_VISITOR, // 遮挡节点访问器
+	CULL_VISITOR // 拣选访问器
+};
+</pre>
+
+<li>
+遍历的模式包括:
+<pre c++>
+enum TraversalMode
+{
+	TRAVERSE_NODE, // 仅传递到当前节点
+	TRAVERSE_PARENT, // 传递给当前节点及父节点
+	TRAVERSE_ALL_CHILDREN, // 传递给场景中所有的节点及其子节点
+	TRAVERSE_ACTIVE_CHILDREN // 传递给场景中所有的活动节点及其子节点
+};
+</pre>
+
+</ul>
+<li>
+在应用程序中定义自己的访问器主要包括以下步骤:
+
+<ul>
+<li>
+继承自 osg::NodeVisitor 类写一个新类, 重载其中的 apply() 方法, 添加自己的代码实现相应的功能
+
+<li>
+在应用程序中调用 accept() 方法关联相应的将诶点, 启动访问器遍历.
+
+</ul>
+<li>
+在 OSG 中, 设置有 osg::Node, osg::Drawable, osg::Camera 等的回调
+
+<ul>
+<li>
+osg::Node 可以在 OSG 执行更新和拣选遍历时进行回调; 而 osg::Drawable 可以在拣选和绘制遍历时进行回调; osg::Camera 可以在更新遍历时进行回调.
+
+<li>
+osg::NodeCallback 类中, 有个关键操作 operator(), 回调的操作代码都在其中.
+
+<li>
+主要的关联方法:
+
+<ul>
+<li>
+setUpdateCallback();
+
+<li>
+setCullCallback();
+
+<li>
+setDrawCallback();
+
+<li>
+setDrawCallback();
+
+<li>
+setEventCallback();
+
+<li>
+setReadFileCallback();
+
+<li>
+setWriteFileCallback();
+
+</ul>
+</ul>
+<li>
+osgViewer 库支持多线程模式, 每一个线程均独立地运行拣选及绘制遍历. OSG 没有为线程的安全性增设内存锁, 要求只在拣选及绘制遍历的时域之外修改场景图形. 为避免拣选和绘制的冲突, 在 frame() 外修改场景, 如下:
+<pre c++>
+while(!viewer-&gt;done())
+{
+	viewer-&gt;frame();
+}
+</pre>
+
+<ul>
+<li>
+注意: osgViewer 的多线程模式允许用户程序主循环不必等到绘制遍历结束就可以继续运行. 即 Viewer::frame() 方法在绘制遍历仍未结束时就可以返回. 即上一帧的绘制遍历和下一帧的更新遍历可能在时间上有重合.
+
+<li>
+可通过 osg::Object::setDataVariance() 方法解决该问题.
+<pre c++>
+enum osg::Object::DataVariance
+{
+	DYNAMIC,
+	STATIC,
+	UNSPECIFIED
+}
+</pre>
+
+<li>
+OSG 确保绘制遍历所在的 DYNAMIC 节点和数据处理完成后才返回.
+
+</ul>
+</ul>
+
+<div id="第7章 场景图形的工作机制 -第8章 场景图形管理"><h2 id="第8章 场景图形管理">第8章 场景图形管理</h2></div>
+<ul>
+<li>
+OSG 中, 包含 SimpleViewer, Viewer 和 CompositeView 3 大视口类
+
+<li>
+osg::Camera 类
+
+<ul>
+<li>
+void setViewMatrixAsLookAt(const osg::Vec3d&amp; eye, const osg::Vec3d&amp; center, const osg::Vec3d &amp;up)
+
+<li>
+void getViewMatrixAsLookAt(osg::Vec3d&amp; eye, osg::Vec3d&amp; center, osg::Vec3d &amp;up, double lookDDistance=1.0)
+
+<li>
+void getViewMatrixAsLookAt(osg::Vec3f&amp; eye, osg::Vec3f&amp; center, osg::Vec3f &amp;up, double lookDDistance=1.0)
+
+</ul>
+<li>
+两种透视投影: 
+
+<ul>
+<li>
+透视视景体
+
+<ul>
+<li>
+void setProjectionMatrixAsFrustum(double left, double right, double bottom, double top, double zNear, double zFar)
+
+<li>
+bool getProjectionMatrixAsFrustum(double &amp;left, double &amp;right, double &amp;bottom, double &amp;top, double &amp;zNear, double &amp;zFar)
+
+</ul>
+<li>
+对称透视视景体
+
+<ul>
+<li>
+void setProjectionMatrixAsPerspective(double fovy, double asperctRatio, double zNear, double zFar)
+
+<li>
+void getProjectionMatrixAsPerspective(double &amp;fovy, double &amp;asperctRatio, double &amp;zNear, double &amp;zFar)
+
+</ul>
+</ul>
+<li>
+正交投影: 略过
+
+<li>
+视口变换函数: void setViewport(), getViewport()
+
+<li>
+裁剪平面 osg::Scissor, osg::ClipPlane
+
+<ul>
+<li>
+osg::ClipPlane
+
+<ul>
+<li>
+setClipPlane() --- 设置裁剪平面
+
+<li>
+setClipPlaneNum(unsigned int num) / unsigned int getClipPlaneNum() const
+
+</ul>
+<li>
+osg::Scissor ---视口裁剪平面举行
+
+<ul>
+<li>
+void setScissor()
+
+</ul>
+</ul>
+<li>
+清除背景颜色: void setClearColor, getClearColor
+
+<li>
+各种缓存信息:
+
+<ul>
+<li>
+void setColorMask(osg::ColorMask* colorMask)
+
+<li>
+void setColorMask(bool red, bool green, bool blue, bool alpha)
+
+<li>
+const ColorMask* getColorMask() const
+
+<li>
+ColorMask* getColorMask()
+
+</ul>
+<li>
+osgViewer::Viewer 继承自 osgViewer::View 类和 osg::Viewer::ViewerBase 类
+
+<ul>
+<li>
+哦是g::View 主要用来管理所有相机视图. 它包含一个主相机和N个从属相机, 如果 View 仅有一个主相机, 则该主相机用来负责控制和渲染场景视图, 如果包含从属相机, 则主相机用来负责控制和渲染场景视图. 如果包含从属相机, 则主相机用来负责控制管理视图, 从属相机用于渲染场景.
+
+<li>
+osgViewer::View: 可以挂接事件, 处理事件, 并负责创建相机和创建图形环境窗口
+
+<li>
+osgViewer::ViewerBase: 具有管理渲染的线程, 负责设置线程模式, 启动相关线程等功能.
+
+<li>
+osgGA::GUIActionAdapter: GUI 动作适配器, 用来向系统发送一些请求, 以实现一些特定的操作
+
+</ul>
+<li>
+WindowingSystemInterface 类得到系统窗口接口
+
+<li>
+多视图的管理是通过 osgViewer::CompositeViewer 类来实现的, 该类负责多个视图的管理及同步工作
+
+<li>
+osgGA 库是 OSG 的一个附加的工具库, 它为用户提供各种事件处理及操作处理.
+
+<ul>
+<li>
+osgGA::GUIEvenetHandler 类主要提供了窗口的 GUI 事件接口, 它使用 osgGA::GUIEventAdapter 实例来接受更新, 使用 osgGA::GUIActionAdapter 实例向系统发出请求
+
+</ul>
+<li>
+osgGA 还包括很多操作器, 主要包含一个基类 osgGA::MatrixManipulator 和它的一些派生类, 主要用于矩阵变换和事件处理
+
+<li>
+viewer 默认使用 osgGA::TrackballManipulator 操作器, 可以修改为其他的操作器
+<pre c++>
+	viewer-&gt;setCameraManipulator(new osgGA::TerrainManipulator());
+</pre>
+
+<li>
+预定义的事件处理器:
+
+<ul>
+<li>
+HelpHandler
+
+<li>
+StatsHandler
+
+<li>
+WindowSizeHandler
+
+<li>
+ThreadingHandler
+
+<li>
+RecordCameraPathHandler
+
+<li>
+LODScaleHandler
+
+<li>
+ScreenCaptureHandler
+
+</ul>
+<li>
+编写自己的事件处理器
+
+<ul>
+<li>
+编写一个新类继承自 osgGA::GUIEventHandler 类
+
+<li>
+重载成员函数 handle(), 在 osgGA::GUIEventHandler 中, 该函数原型为
+<pre>
+	virtual bool handle(const GUIEventAdapter&amp;, GUIActionAdapter&amp;)
+</pre>
+
+<li>
+将事件处理器压入处理器列表
+
+</ul>
+<li>
+抓图
+<pre c++>
+image-&gt;readPixels(0, 0, width, height, GL_RGB, GL_UNSIGNED_BYTE);
+</pre>
+
+<ul>
+<li>
+最好在 osg:;Camera::DrawCallback 中执行 readPixels
+
+</ul>
+<li>
+编写自定义场景漫游操作器的主要步骤如下:
+
+<ul>
+<li>
+编写一个继承自 osgGA::GUIEventHandler类的新类.
+
+<li>
+重载 handle() 及相关矩阵变换函数, 注意在 handle() 中添加合适的事件处理函数, 并指定执行相关的动作.
+
+<li>
+进行碰撞检测
+
+<li>
+关联操作器到当前视图场景中
+<pre c++>
+viewer-&gt;setCameraManipulator(camera);
+</pre>
+
+</ul>
+<li>
+osgGA::AnimationPathManipulator: 路径动画
+
+<li>
+路径漫游主要步骤:
+
+<ul>
+<li>
+创建一个 osgGA::AnimationPathManipulator
+
+<li>
+关联需要的路径
+
+<li>
+设置当前视图场景操作器, 关联该动画路径操作器
+
+</ul>
+<li>
+相交运算 osgUtil::Intersector 类, osgUtil::LineSegmentIntersector
+<pre c++>
+osgUtil::LineSegmentIntersector::Intersections intersections;
+viewer-&gt;computeIntersections(x, y, intersections);
+for(osgUtil::LineSegmentIntersector::Intersections::iterator hitr = intersections.begin(); hitr != intersections.end(); ++hitr)
+{
+	os &lt;&lt; "Mouse in World X:" &lt;&lt; hitr-&gt;getWorldIntersectPoint().x() &lt;&lt; " Y:" &lt;&lt; hitr-&gt;getWorldIntersectPoint().y() &lt;&lt; " Z: " &lt;&lt; hitr-&gt;getWorldIntersectPoint().z() &lt;&lt; std::endl;
+}
+</pre>
+
+<li>
+osgUtil::PolytopeIntersector: 拾取附近的封闭多面体区域
+
+<li>
+osgUtil::PlaneIntersector: 平面的相交运算
+
+<li>
+osgUtil::IntersectionVisitor : 交集访问器
+
+</ul>
+
+<div id="第9章 OSG 文字"><h1 id="第9章 OSG 文字">第9章 OSG 文字</h1></div>
+<ul>
+<li>
+osgText 主要包含类: FadeText, Font, font3D, VectorUInt, String, Text, Text3D, TextBase
+
+<li>
+osgText::Text 类成员函数
+
+<ul>
+<li>
+void setColor
+
+<li>
+void setPosition
+
+<li>
+void setAxisAlignment
+
+<li>
+void setCharacterSizeMode
+
+<li>
+void setFontResolution
+
+<li>
+void setAlignment
+
+<li>
+void setLayout
+
+<li>
+void setDrawMode
+
+<li>
+void setBackdropType
+
+<li>
+void setColorGradientMode
+
+</ul>
+<li>
+osgText::Font 类, 管理字体
+
+<ul>
+<li>
+readFontFile
+
+</ul>
+<li>
+添加文字的主要步骤:
+
+<ul>
+<li>
+创建一个 Font 字体对象, 并读取字体
+
+<li>
+创建一个 osgText::Text 对象, 设置文字的属性, 同时关联字体
+
+<li>
+调用 addDrawable() 方法将 Text 实例添加到一个 Geode 实例
+
+</ul>
+<li>
+osgText::Text3D 类
+
+<ul>
+<li>
+深度信息函数: void setCharacterDepth(float)
+
+</ul>
+</ul>
+
+<div id="第10章 OSG 动画与声音 "><h1 id="第10章 OSG 动画与声音 ">第10章 OSG 动画与声音 </h1></div>
+<ul>
+<li>
+osg::AnimationPath 类
+
+<li>
+路径动画默认有以下3种动画模式
+<pre c++>
+enum LoopMode
+{
+	SWING,
+	LOOP,
+	NO_LOOPING
+}
+</pre>
+
+<ul>
+<li>
+setLoopMode(), getLoopMode()
+
+<li>
+得到动画持续的时间函数: getFirstTime(), getLastTime()
+
+</ul>
+<li>
+osg::AnimationPathCallback 类
+
+<ul>
+<li>
+执行速度 void setTimeMultiplier(double multiplier), getTimeMultiplier()
+
+<li>
+reset(), setPause(bool pause), getPause()
+
+</ul>
+<li>
+帧动画
+
+<ul>
+<li>
+osg::Sequence
+
+</ul>
+<li>
+骨骼动画 osgCal
+
+</ul>
+
+</body>
+</html>

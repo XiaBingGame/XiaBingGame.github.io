@@ -1,0 +1,297 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../style.css" />
+    <title>从入门到实践</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="../index.html">首页</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<ul>
+<li>
+字符串的 title() 方法
+
+<li>
+del 可以删除列表元素
+
+<li>
+pop() 可以删除列表任意位置的元素, remove() 用来删除你不知道位置只知道值的元素
+
+<li>
+sorted() 可以对元素进行临时排序
+
+<li>
+reverse() 列表翻转
+
+<li>
+列表解析
+<pre>
+squares = [ value**2 for value in range(1,11) ]
+</pre>
+
+<ul>
+<li>
+表达式 value**2 求平方
+
+<li>
+for 循环给表达式提供值.
+
+</ul>
+<li>
+列表复制
+<pre>
+friend_foods = my_foods[:]
+</pre>
+
+<li>
+传递任意数量的实参
+<pre>
+def make_pizza(*toppings):
+	"""打印顾客点的所有配料"""
+	print(toppings)
+	
+make_pizza('pepperoni')
+make_pizza('mushroom', 'gree peppers', 'extra cheese')
+</pre>
+
+<ul>
+<li>
+参数用星号 python 则会将其封入一个元组中.
+
+<li>
+python 先匹配位置实参和关键字实参, 再将剩下的实参匹配可变数量实参.
+
+</ul>
+<li>
+使用任意数量的关键字实参
+<pre>
+def build_profile(first, last, **user_info):
+	"""创建一个字典, 其中包含我们知道的有关用户的一切"""
+	profile = {}
+	profile['first_name'] = first
+	profile['last_name'] = last
+	for key, value in user_info.items():
+		profile[key] = value
+	return profile
+</pre>
+
+<li>
+导入特定的函数
+<pre>
+from module_name import function_name
+from module_name import function0, function1, function2
+</pre>
+
+<li>
+as 别名
+<pre>
+from module_name import function_name as fn
+import module_name as mn
+</pre>
+
+<li>
+导入模块所有函数
+<pre>
+from module_name import *
+</pre>
+
+<li>
+创建类
+<pre>
+class Dog():
+	def __init__(self, name, age):
+		self.name = name
+		self.age = age
+	def sit(self):
+		print(self.name.title() + ' is now sitting. ')
+	def roll_over(self):
+		print(self.name.title() + ' rolled over!')
+</pre>
+
+<li>
+Python2.7 创建类要多一个 object
+<pre>
+	class ClassName(object):
+		...
+</pre>
+
+<li>
+继承
+<pre>
+class Car():
+	...
+
+class ElectricCar(Car):
+	def __init__(self, make, model, year):
+		super().__init__(make, model, year)
+</pre>
+
+<li>
+Python 2.7 的继承
+<pre>
+class Car(Object):
+	...
+	
+class ElectricCar(Car):
+	def __init__(self, make, model, year):
+		super(ElectricCar, self).__init__(make, model, year)
+</pre>
+
+<li>
+可以重写父类的方法
+
+<li>
+导入类
+<pre>
+from car import Car
+</pre>
+
+<li>
+读取文件
+<pre>
+with open('pi_digits.txt') as file_object:
+	contents = file_object.read()
+	print(contents)
+</pre>
+
+<li>
+逐行读取
+<pre>
+filename = 'pi_digits.txt'
+
+with open(filename) as file_object:
+	for line in file_object:
+		print(line)
+</pre>
+
+<li>
+获取文件中每行内容的列表
+<pre>
+filename = 'pi_digits.txt'
+
+with open(filename) as file_object:
+	lines = file_object.readlines()
+	
+for line in lines:
+	print(line.rstrip())
+</pre>
+
+<li>
+写入空文件
+<pre>
+filename = 'programming.txt'
+
+with open(filename, 'w') as file_object:
+	file_object.write('I love programming.')
+</pre>
+
+<li>
+ZeroDivisionError
+
+<li>
+try 代码成功执行的代码放到 else 代码块中
+<pre>
+while True:
+	...
+	try:
+		answer = int(first_number) / int(second_number)
+	except ZeroDivisionError:
+		print('You can't divide by 0!')
+	else:
+		print(answer)
+</pre>
+
+<li>
+FileNotFoundError
+
+<li>
+json 模块
+
+<ul>
+<li>
+json.dump() 接受两个实参: 要存储的数据以及可以存储数据的文件对象
+<pre>
+import json
+
+number = [2, 3, 5, 7, 11, 13]
+
+filename = 'numbers.json'
+with open(filename, 'w') as f_obj:
+	json.dump(numbers, f_obj)
+</pre>
+
+<li>
+读取
+<pre>
+import json
+
+filename = 'numbers.json'
+with open(filename) as f_obj:
+	number = json.load(f_obj)
+
+print(number)
+</pre>
+
+</ul>
+<li>
+unittest 模块
+<pre>
+import unittest
+from name_function import get_formatted_name
+
+class NamesTestCase(unittest.TestCase):
+	def test_first_last_name(self):
+		formatted_name = get_formatted_name('janis', 'joplin')
+		self.assertEqual(formatted_name, 'Janis Joplin')
+		
+unittest.main()
+</pre>
+
+<ul>
+<li>
+类名可以随意取名, 但要包含 Test, 继承自 unittest.TestCase 类
+
+<li>
+所有 test_ 打头的方法都会自动运行
+
+</ul>
+<li>
+常用的断言方法
+
+<ul>
+<li>
+assertEqual
+
+<li>
+assertNotEqual
+
+<li>
+assertTrue
+
+<li>
+assertFalse
+
+<li>
+assertIn
+
+<li>
+assertNotIn
+
+</ul>
+<li>
+如果你的 TestCase 类中包含方法 SetUp(), python 将先运行它, 而后在运行各个以 test_ 开头的方法
+
+</ul>
+
+    </div>
+</body>
+</html>

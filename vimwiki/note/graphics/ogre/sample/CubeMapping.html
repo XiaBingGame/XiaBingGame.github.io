@@ -1,0 +1,112 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../../style.css">
+<title>CubeMapping</title>
+<meta http-equiv="Content-Type" content="text/html; charset=cp936">
+</head>
+<body>
+
+<ul>
+<li>
+目的：显示立方体映射(cube mapping)，还可以设置物体镜面映射出周围的景色
+
+<li>
+该例中实体的镜面映射是通过设置对象的材质material脚本实现的, 见材质"Examples/DynamicCubeMap" 
+
+<ul>
+<li>
+在脚本中设置了env_map cubic_reflect 和 cubic_texture属性
+
+<li>
+cubic_texture dyncubemap combinedUVW
+
+<ul>
+<li>
+表示使用纹理"dyncubemap"实现立体纹理, 该纹理手工创建的
+
+<li>
+combinedUVW 在产生镜面反射的立体纹理中是必需的
+
+</ul>
+<li>
+env_map cubic_reflection
+
+<ul>
+<li>
+该脚本表示自动生成纹理坐标的类型
+
+</ul>
+</ul>
+<li>
+如何创建手工纹理, 并且手工纹理添加监听器
+
+<ul>
+<li>
+创建一个相机, 用于生成渲染到手工纹理的内容
+
+<ul>
+<li>
+其 FOVy 为90度, AspectRatio 为 1.0, FixedYawAxis 为假
+
+</ul>
+<li>
+创建手工纹理
+
+<ul>
+<li>
+TextureManager::createManual(), 注意其类型为 TU_RENDERTARGET, 注意创建手工纹理之后, 退出程序之前记得删除该手工纹理, 即方法 TextureManager::remove()
+
+<li>
+Texture::getBuffer() 遍历该立体纹理的六个缓存
+
+<ul>
+<li>
+该方法可以返回该纹理的像素缓存. 其中 +X (0), -X (1), +Y (2), -Y (3), +Z (4), -Z (5) 
+
+</ul>
+<li>
+HardwarePixelBuffer::getRenderTarge() 从缓存中得到渲染目标, 返回的是RenderTexture*类型
+
+<li>
+Ogre::RenderTarget::addViewport() 给该渲染目标添加视图(用相机确定), 本例将相机观察到的结果渲染到纹理中
+
+<li>
+Viewport::setOverlaysEnabled() 告知该 viewport 是否需要显示 overlay 对象
+
+<li>
+RenderTarget::addListener() 该渲染目标添加监听器, 用于在渲染之前和之后回调. 该方法注册你自己的 RenderTargetListener 类, 有利于在"正常"的系统渲染操作之前或之后添加你自己的手工渲染命令
+
+</ul>
+<li>
+渲染目标监听器每帧调用的函数
+
+<ul>
+<li>
+RenderTargetListener::preRenderTargetUpdate
+
+<ul>
+<li>
+在 RenderTarget 渲染之前调用. 即所有该target上的任意视图进行渲染之前调用该事件
+
+<li>
+可以在该方法内进行手工渲染操作, 注意target上的视图会自动清空背景内容, 除非你关闭该功能
+
+<li>
+根据参数中的立体纹理六个不同的缓存设置相机的角度, RenderTargetEvent::source() 函数表示是哪个缓存进行渲染
+
+</ul>
+<li>
+postRenderTargetUpdate
+
+<ul>
+<li>
+在该target上的viewport内容渲染完毕之后调用, 可进行更多的手工渲染操作
+
+</ul>
+</ul>
+</ul>
+</ul>
+
+</body>
+</html>

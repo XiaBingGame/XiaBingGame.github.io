@@ -1,0 +1,134 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../../style.css">
+<title>Demoniak3DNode</title>
+<meta http-equiv="Content-Type" content="text/html; charset=cp936">
+</head>
+<body>
+
+<ul>
+<li>
+scene
+
+<ul>
+<li>
+属性: name--用于XML脚本引用; archive_filename -- 用于所有数据的zip文件, 不支持avi, 3d文件只能用o3mdl; use_ppu--物理库
+
+<li>
+元素:　picking--允许选中物体, wait_screen--加载时图像, window_size, infos--场景信息, infos_color, background_color, global_ambient_light, background_image, check_hardware_caps--检测是否支持某特性, fog, ref_grid_color, nx_gravity--物理仿真的重力, nv_sli--控制nvdia显卡的sti运行模式
+<pre>
+&lt;scene
+	name=""
+	archive_filename=""
+	screenshots_dir=""
+	display_fps="FALSE"
+	show_ref_grid="FALSE"
+	vsync="TRUE"
+	clear_color_buffer="TRUE"
+	use_ppu="TRUE"
+	use_window_offset="TRUE"
+	warm_up_caches_cycles="1"
+	nx_physics_simulation="FALSE"
+	nx_collision_detection="TRUE"
+	display_elapsed_time="FALSE" 
+	display_texture_memory_occupation="FALSE" 
+	display_all_statistics="FALSE" 
+	display_hyperion_logo="TRUE"
+	make_screenshots="FALSE"
+	dump_lua_vm_stack="FALSE"  &gt;
+	
+	&lt;background_color
+		r="0.3" 
+		g="0.3" 
+		b="0.3" /&gt;
+		
+	&lt;infos_color
+		r="1.0" 
+		g="1.0" 
+		b="0.0" /&gt;
+			
+	&lt;background_image
+		image="" /&gt;
+
+	&lt;check_hardware_caps
+		glsl="FALSE" 
+		dot3="FALSE" 
+		cube_mapping="FALSE"
+		vbo="FALSE"
+		shader_model_1_1="FALSE"
+		shader_model_2_0="FALSE"
+		shader_model_3_0="FALSE"
+		shader_model_4_0="FALSE" 
+		num_texture_units="2" 
+		s3tc="FALSE" 
+		nvidia="FALSE" 
+		ati="FALSE" 
+		npot_rect="FALSE" 
+		npot="FALSE" 
+		fbo="FALSE" 
+		fp_tex="FALSE" 
+		vs_tex_samplers="0" 
+		pvs_tex_samplers="4" 
+		ati_3dc="FALSE" 
+		error_message="FALSE" /&gt;
+			
+	&lt;fog
+		color_r="1.0" 
+		color_g="1.0" 
+		color_b="1.0" 
+		color_a="1.0" 
+		type="EXP2" 
+		start="0.0" 
+		end="1.0" 
+		density="0.002" 
+		active="FALSE" /&gt;
+	
+	&lt;global_ambient_light
+		r="0.1" 
+		g="0.1" 
+		b="0.1" 
+		a="1.0" /&gt;
+	
+	&lt;infos
+		title="Title: Hyperion Demo" 
+		author="Author: The oZone3D Team" 
+		date="Date: Unknown" 
+		description="Description: Hyperion Demo" /&gt;
+	
+	&lt;picking
+		active="FALSE" 
+		script="" /&gt;
+
+	&lt;window_size
+		width="1024" 
+		height="768" 
+		width_offset="0" 
+		height_offset="0" 
+		fullscreen="FALSE" /&gt;
+		
+	&lt;ref_grid_color
+		r="0.4" 
+		g="0.4" 
+		b="0.4" /&gt;
+		
+	&lt;wait_screen
+		image="" /&gt;
+		
+	&lt;nx_gravity
+		x="0.0" 
+		y="-9.81" 
+		z="0.0" /&gt;
+		
+	&lt;nv_sli 
+		active="TRUE" 
+		mode="AFR" /&gt;		
+		
+&lt;/scene&gt;
+</pre>
+
+</ul>
+</ul>
+
+</body>
+</html>

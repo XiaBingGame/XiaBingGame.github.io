@@ -1,0 +1,1598 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../../style.css" />
+    <title>djongo_example</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///D:/Documents/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<ul>
+<li>
+数据库设置: <a href="https:&#47;&#47;docs.djangoproject.com&#47;">https://docs.djangoproject.com/</a> en/1.8/topics/install/#database-installation
+
+<li>
+带版本号安装: pip install Django==1.8.6
+
+<li>
+检测版本号
+<pre>
+&gt;&gt;&gt; import django
+&gt;&gt;&gt; django.VERSION
+</pre>
+
+<li>
+创建一个项目: 
+<pre>
+django-admin startproject mysite
+</pre>
+
+<li>
+settings.py 常见设置
+
+<ul>
+<li>
+DEBUG 是否显示错误页面， 发布时关闭
+
+<li>
+ALLOWED_HOSTS
+
+<li>
+INSTALLED_APPS --- 激活哪些应用
+
+<li>
+MIDDLEWARE_CLASSES
+
+<li>
+ROOT_URLCONF --- root URL模式
+
+<li>
+DATABASES
+
+<li>
+LANGUAGE_CODE
+
+</ul>
+<li>
+一个应用常见内容
+
+<li>
+python manage.py startapp blog
+<pre>
+    __init__.py
+    admin.py
+    migrations/
+        __init__.py
+    models.py
+    tests.py
+    views.py
+</pre>
+
+<ul>
+<li>
+admin.py --- 管理页面注册模型的地方
+
+<li>
+migrations --- 数据库迁移
+
+<li>
+models.py --- 数据模型
+
+<li>
+tests.py --- 测试
+
+<li>
+views.py --- 应用逻辑, 每个视图接收一个 HTTP 请求, 处理它, 并返回一个 response
+
+</ul>
+</ul>
+
+<div id="设计博客数据 schema"><h2 id="设计博客数据 schema">设计博客数据 schema</h2></div>
+<ul>
+<li>
+模型为 django.db.models.Model 的派生类, 每个属性表示一个数据库域, models.py 内的每个模型都会创建一个表, Django 会提供你一个接口通过数据库查询该模型的数据
+<pre python>
+from django.db import models 
+from django.utils import timezone
+from django.contrib.auth.models import User
+class Post(models.Model):
+    STATUS_CHOICES = (
+        ('draft', 'Draft'),
+        ('published', 'Published'),
+    )
+    title = models.CharField(max_length=250)
+    slug = models.SlugField(max_length=250, 
+                            unique_for_date='publish')
+    author = models.ForeignKey(User,
+                               related_name='blog_posts')
+    body = models.TextField()
+    publish = models.DateTimeField(default=timezone.now)
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+    status = models.CharField(max_length=10, 
+                              choices=STATUS_CHOICES,
+                              default='draft')
+    class Meta:
+        ordering = ('-publish',)
+    def __str__(self):
+        return self.title
+</pre>
+
+<ul>
+<li>
+title: CharField 对应于 SQL 数据库的 VARCHAR 列
+
+<li>
+slug: 常用于 URLs, 为仅包含字母, 数字, 下划线, 连字符的短标签。该域用于 SEO 友好的 URLs. 添加 unique_for_date 参数, 这样使用日期和slug构造URLs, 避免相同日期的文章使用相同的slug
+
+<li>
+author: 该域 ForeignKey. 定义了多对一的关系. 表示每个post只能由一个用户书写, 但一个用户可以写多个post. 这里会用主键的关系模型创建数据库的一个foreign key. 这里使用Django 认证系统的User模型, 定义了 User 到 Post 的相反关系.
+
+<li>
+body: 数据库的 TEXT 列
+
+<li>
+publish: 何时发布, 使用 now 方法
+
+<li>
+created: 何时创建, auto_now_add 自动保存
+
+<li>
+updated: 何时更新, audo_now 自动更新
+
+<li>
+status: 使用了 choices 参数
+
+<li>
+Meta 类, 包含 metadata. 
+
+</ul>
+<li>
+更多其他的域: <a href="https:&#47;&#47;docs.djangoproject.com&#47;en&#47;1.8&#47;ref&#47;models&#47;fields&#47;">https://docs.djangoproject.com/en/1.8/ref/models/fields/</a>
+
+<li>
+python3 仅使用 _<em>str</em>_() 方法, _<em>unicoe</em>_() 方法不再用
+
+<li>
+由于我们使用日期, 所以安装 pytz 模块. 提供了 timezone 定义.
+
+<li>
+不使用 time zone 支持: settings.py 里面设置 USE_TZ 为 False.
+
+</ul>
+
+<div id="激活你的应用 "><h2 id="激活你的应用 ">激活你的应用 </h2></div>
+<ul>
+<li>
+settings.py 修改
+<pre python>
+INSTALLED_APPS = (
+    'django.contrib.admin',
+    'django.contrib.auth',
+    'django.contrib.contenttypes',
+    'django.contrib.sessions',
+    'django.contrib.messages',
+    'django.contrib.staticfiles',
+    'blog',
+)
+</pre>
+
+</ul>
+<div id="数据库迁移 "><h2 id="数据库迁移 ">数据库迁移 </h2></div>
+<ul>
+<li>
+使用 <a href="migrate.html">migrate</a> 命令, 用于安装应用的迁移
+
+<li>
+sqlmigrate 命令使用迁移并返回SQL, 但不运行它们
+
+<li>
+Meta 类的 db_table 属性可以设置表名
+
+<li>
+在你的模型域内设置 primary_key=True 可以改变自动创建模型主键的行为
+<pre>
+python manage.py makemigrations blog
+python manage.py sqlmigrate blog 0001
+python manage.py migrate
+</pre>
+
+<li>
+如果你编辑你的 models.py 文件, 用于添加, 删除, 或改变已有模型的域, 或者添加新的模型, 你需要使用 makemigrations 创建一个新的迁移. 而后使用 migrate 命令同步
+
+</ul>
+
+<div id="创建管理者网站 "><h2 id="创建管理者网站 ">创建管理者网站 </h2></div>
+<ul>
+<li>
+ django.contrib.admin
+
+</ul>
+<div id="创建一个超级用户 "><h2 id="创建一个超级用户 ">创建一个超级用户 </h2></div>
+<pre python>
+python manage.py createsuperuser
+</pre>
+<ul>
+<li>
+127.0.0.1:8000/admin/
+
+</ul>
+
+<div id="为你的管理网站添加模型 "><h2 id="为你的管理网站添加模型 ">为你的管理网站添加模型 </h2></div>
+<ul>
+<li>
+修改blog应用的admin.py
+<pre python>
+from django.contrib import admin
+from .models import Post
+admin.site.register(Post)
+</pre>
+
+<li>
+在管理页面添加 Post.
+
+</ul>
+
+<div id="自定义管理页面模型的显示方式"><h2 id="自定义管理页面模型的显示方式">自定义管理页面模型的显示方式</h2></div>
+<ul>
+<li>
+修改 blog 应用的 admin.py
+<pre python>
+from django.contrib import admin
+from .models import Post
+class PostAdmin(admin.ModelAdmin):
+    list_display = ('title', 'slug', 'author', 'publish', 
+                    'status')
+admin.site.register(Post, PostAdmin)
+</pre>
+
+<li>
+用于管理页面如何显示模型, 如何交互
+
+<li>
+list_display 要显示的域
+<pre python>
+class PostAdmin(admin.ModelAdmin):
+    list_display = ('title', 'slug', 'author', 'publish',  
+                       'status')
+    list_filter = ('status', 'created', 'publish', 'author')
+    search_fields = ('title', 'body')
+    prepopulated_fields = {'slug': ('title',)}
+    raw_id_fields = ('author',)
+    date_hierarchy = 'publish'
+    ordering = ['status', 'publish']
+</pre>
+
+<li>
+更多的改变, 包含过滤, 搜索栏, 日期层次, 排序列. 新post输入标题slug域自动填充(prepopulated_fields), 改变了作者的选择方式(不再下拉框)
+
+</ul>
+
+<div id="QuerySet 和管理器"><h2 id="QuerySet 和管理器">QuerySet 和管理器</h2></div>
+<ul>
+<li>
+Object-relational Mapper(ORM)
+
+<li>
+模型 API: <a href="https:&#47;&#47;docs.djangoproject.com&#47;en&#47;1.8&#47;ref&#47;models&#47;">https://docs.djangoproject.com/en/1.8/ref/models/</a>
+
+</ul>
+
+<div id="创建对象"><h2 id="创建对象">创建对象</h2></div>
+<pre>
+python manage.py shell
+</pre>
+<pre>
+&gt;&gt;&gt; from django.contrib.auth.models import User
+&gt;&gt;&gt; from blog.models import Post
+&gt;&gt;&gt; user = User.objects.get(username='admin')
+&gt;&gt;&gt; Post.objects.create(title='One more post',
+                    slug='one-more-post',
+                    body='Post body.',
+                    author=user)
+&gt;&gt;&gt; post.save()
+</pre>
+<ul>
+<li>
+get() 方法从数据库得到单个对象
+
+<li>
+创建一个 Post 实例
+
+<li>
+保存
+
+<li>
+也可以直接在数据库创建对象
+<pre>
+Post.objects.create(title='One more post', slug='one-more-post', 
+body='Post body.', author=user)
+</pre>
+
+</ul>
+<div id="更新对象"><h2 id="更新对象">更新对象</h2></div>
+<pre>
+&gt;&gt;&gt; post.title = 'New title'
+&gt;&gt;&gt; post.save()
+</pre>
+<ul>
+<li>
+改变标题
+
+</ul>
+
+<div id="返回对象"><h2 id="返回对象">返回对象</h2></div>
+<ul>
+<li>
+每个 django 模型至少有一个管理器, 默认管理器为 objects. 可以使用 all() 方法
+<pre>
+&gt;&gt;&gt; all_posts = Post.objects.all()
+</pre>
+
+</ul>
+
+<div id="使用 filter() 方法"><h2 id="使用 filter() 方法">使用 filter() 方法</h2></div>
+<ul>
+<li>
+使用管理器的 filter() 方法
+<pre>
+Post.objects.filter(publish__year=2015)
+Post.objects.filter(publish__year=2015, author__username='admin')
+Post.objects.filter(publish__year=2015)\
+             filter(author__username='admin')
+</pre>
+
+<li>
+访问相关模型的域也可以用两个下划线(author__username).
+
+</ul>
+
+<div id="使用 exclude()"><h2 id="使用 exclude()">使用 exclude()</h2></div>
+<ul>
+<li>
+exclude() 方法
+<pre python>
+Post.objects.filter(publish__year=2015)\
+            .exclude(title__startswith='Why')
+</pre>
+
+</ul>
+
+<div id="使用 order_by()"><h2 id="使用 order_by()">使用 order_by()</h2></div>
+<pre python>
+Post.objects.order_by('title')
+Post.objects.order_by('-title')
+</pre>
+<ul>
+<li>
+默认升序
+
+</ul>
+
+<div id="删除对象"><h2 id="删除对象">删除对象</h2></div>
+<pre python>
+post = Post.objects.get(id=1)
+post.delete()
+</pre>
+
+<div id="何时执行获取 QuerySet"><h2 id="何时执行获取 QuerySet">何时执行获取 QuerySet</h2></div>
+<ul>
+<li>
+遍历
+
+<li>
+slice, 如 Post.objects.all()[:3]
+
+<li>
+pickle 或 cache
+
+<li>
+reptr() 或 len()
+
+<li>
+显式调用 list()
+
+<li>
+测试条件
+
+</ul>
+
+<div id="创建管理器的模型"><h2 id="创建管理器的模型">创建管理器的模型</h2></div>
+<ul>
+<li>
+创建自定义管理器, 返回所有的 post, 包含发布状态
+
+<li>
+两种方法: 添加额外的管理器方法或修改初始管理器 QuerySets.
+
+<li>
+博客应用的 models.py 文件
+<pre python>
+class PublishedManager(models.Manager):
+    def get_queryset(self):
+        return super(PublishedManager,  
+                     self).get_queryset()\
+                          .filter(status='published')
+class Post(models.Model):
+    # ...
+    objects = models.Manager() # The default manager.
+    published = PublishedManager() # Our custom manager.
+</pre>
+
+<li>
+执行查询
+<pre python>
+Post.published.filter(title__startswith='Who') 
+</pre>
+
+</ul>
+
+<div id="创建列表和内容视图 "><h2 id="创建列表和内容视图 ">创建列表和内容视图 </h2></div>
+<ul>
+<li>
+应用的 views.py
+<pre python>
+from django.shortcuts import render, get_object_or_404
+from .models import Post
+def post_list(request):
+    posts = Post.published.all()
+    return render(request,
+                  'blog/post/list.html',
+                  {'posts': posts})
+</pre>
+
+<li>
+render 方法: request, 模板地址, 模板使用的变量
+<pre python>
+def post_detail(request, year, month, day, post):
+    post = get_object_or_404(Post, slug=post,
+                                   status='published',
+                                   publish__year=year,
+                                   publish__month=month,
+                                   publish__day=day)
+    return render(request,
+                  'blog/post/detail.html',
+                  {'post': post})
+</pre>
+
+<ul>
+<li>
+根据指定 slug 和日期获取 Post
+
+</ul>
+</ul>
+
+<div id="添加视图的 URL 模式"><h2 id="添加视图的 URL 模式">添加视图的 URL 模式</h2></div>
+<ul>
+<li>
+博客应用的 urls.py
+<pre python>
+from django.conf.urls import url
+from . import views
+urlpatterns = [
+    # post views
+    url(r'^$', views.post_list, name='post_list'),
+    url(r'^(?P&lt;year&gt;\d{4})/(?P&lt;month&gt;\d{2})/(?P&lt;day&gt;\d{2})/'\
+        r'(?P&lt;post&gt;[-\w]+)/$',
+        views.post_detail, 
+        name='post_detail'),
+]
+</pre>
+
+<ul>
+<li>
+第二个模式有四个参数: year, month, day, post(单词和破折号组成)
+
+</ul>
+<li>
+修改网站的 urls.py
+<pre python>
+from django.conf.urls import include, url
+from django.contrib import admin
+urlpatterns = [
+    url(r'^admin/', include(admin.site.urls)),
+    url(r'^blog/', include('blog.urls',
+                           namespace='blog',
+                           app_name='blog')),
+]
+</pre>
+
+</ul>
+<div id="模型的 Canonical URLs"><h2 id="模型的 Canonical URLs">模型的 Canonical URLs</h2></div>
+<ul>
+<li>
+使用 post_detail 为 Post 模型构建 canonical URL
+
+<li>
+可用 get_absolute_url() 方法返回一个 cannonical URL
+
+<li>
+使用 reverse() 方法, 根据名称和可选参数构建 URLs
+<pre python>
+from django.core.urlresolvers import reverse
+Class Post(models.Model):
+    # ...
+    def get_absolute_url(self):
+        return reverse('blog:post_detail',
+                       args=[self.publish.year,
+                             self.publish.strftime('%m'),
+                             self.publish.strftime('%d'),
+                             self.slug])
+</pre>
+
+<li>
+strftime() 方法会添加字母'0'
+
+<li>
+在模板中使用 get_absolute_url() 方法
+
+</ul>
+
+<div id="创建模板"><h2 id="创建模板">创建模板</h2></div>
+<pre>
+templates/
+    blog/
+        base.html
+        post/
+            list.html
+            detail.html
+</pre>
+<ul>
+<li>
+base.html 包含网站主要的 HTML结构, 内容分割为主内容区域和侧边栏
+
+<li>
+tag: {% tag %}
+
+<li>
+变量和模板过滤器
+<pre>
+ {{ variable }} 
+  {{ variable|filter }}
+</pre>
+
+<li>
+内置的模板 tag 和过滤器: <a href="https:&#47;&#47;docs.djangoproject.com&#47;en&#47;1.8&#47;ref&#47;templates&#47;builtins&#47;">https://docs.djangoproject.com/en/1.8/ref/templates/builtins/</a>
+
+<li>
+base.html
+<pre html>
+{% load staticfiles %}
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+  &lt;title&gt;{% block title %}{% endblock %}&lt;/title&gt;
+  &lt;link href="{% static "css/blog.css" %}" rel="stylesheet"&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;div id="content"&gt;
+    {% block content %}
+    {% endblock %}
+  &lt;/div&gt;
+  &lt;div id="sidebar"&gt;
+    &lt;h2&gt;My blog&lt;/h2&gt;
+      &lt;p&gt;This is my blog.&lt;/p&gt;
+  &lt;/div&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</pre>
+
+<ul>
+<li>
+load staticfiles --- 加载 django.contrib.staticfiles 应用的 staticfiles 模板 tags. 这样你可以使用 { % static % } 模板过滤器
+
+<ul>
+<li>
+在你的博客应用的 static/ 目录下, 拷贝网站项目相同位置的 static 文件
+
+</ul>
+<li>
+block tag, 在该区域内定义一个 block, 通过 title 和 content 定义它
+
+</ul>
+<li>
+post/list.html 
+<pre html>
+{% extends "blog/base.html" %}
+{% block title %}My Blog{% endblock %}
+{% block content %}
+  &lt;h1&gt;My Blog&lt;/h1&gt;
+  {% for post in posts %}
+    &lt;h2&gt;
+      &lt;a href="{{ post.get_absolute_url }}"&gt;
+        {{ post.title }}
+      &lt;/a&gt;
+    &lt;/h2&gt;
+    &lt;p class="date"&gt;
+      Published {{ post.publish }} by {{ post.author }}
+    &lt;/p&gt;
+    {{ post.body|truncatewords:30|linebreaks }}
+  {% endfor %}
+{% endblock %}
+</pre>
+
+<ul>
+<li>
+extends 继承该模板
+
+<li>
+基模板的 block 表示在其他地方扩展的块内容
+
+<li>
+使用了两个模板过滤器: truncatewords 和linebreaks(转换换行)
+
+<li>
+可以连接许多的过滤器
+
+</ul>
+<li>
+post/detail.html
+<pre html>
+{% extends "blog/base.html" %}
+{% block title %}{{ post.title }}{% endblock %}
+{% block content %}
+  &lt;h1&gt;{{ post.title }}&lt;/h1&gt;
+  &lt;p class="date"&gt;
+    Published {{ post.publish }} by {{ post.author }}
+  &lt;/p&gt;
+  {{ post.body|linebreaks }}
+{% endblock %}
+</pre>
+
+</ul>
+
+<div id="添加分页"><h2 id="添加分页">添加分页</h2></div>
+<ul>
+<li>
+修改博客应用的 views.py 的 post_list 视图
+<pre python>
+from django.core.paginator import Paginator, EmptyPage,\
+                                  PageNotAnInteger
+def post_list(request):
+    object_list = Post.published.all()
+    paginator = Paginator(object_list, 3) # 3 posts in each page
+    page = request.GET.get('page')
+    try:
+        posts = paginator.page(page)
+    except PageNotAnInteger:
+        # If page is not an integer deliver the first page
+        posts = paginator.page(1)
+    except EmptyPage:
+        # If page is out of range deliver last page of results
+        posts = paginator.page(paginator.num_pages)
+    return render(request,
+                  'blog/post/list.html',
+                  {'page': page,
+                   'posts': posts})
+</pre>
+
+<ul>
+<li>
+Paginator 每页显示多少
+
+<li>
+使用 GET 参数获取当前的页号
+
+<li>
+page() 方法获取当前页面
+
+</ul>
+<li>
+博客应用的模板文件夹创建一个新的文件 pagination.html
+<pre html>
+&lt;div class="pagination"&gt;
+  &lt;span class="step-links"&gt;
+    {% if page.has_previous %}
+      &lt;a href="?page={{ page.previous_page_number }}"&gt;Previous&lt;/a&gt;
+    {% endif %}
+    &lt;span class="current"&gt;
+      Page {{ page.number }} of {{ page.paginator.num_pages }}.
+    &lt;/span&gt;
+      {% if page.has_next %}
+        &lt;a href="?page={{ page.next_page_number }}"&gt;Next&lt;/a&gt;
+      {% endif %}
+  &lt;/span&gt;
+&lt;/div&gt;
+</pre>
+
+<li>
+blog/post/list.html 添加
+<pre html>
+{% block content %}
+  ...
+  {% include "pagination.html" with page=posts %}
+{% endblock %}
+</pre>
+
+<ul>
+<li>
+上面演示了包含其他模板文件的方法
+
+<li>
+with page=posts, 直接设置了变量, 可以同时获得 view.py 里面 render 函数内的变来那个
+
+</ul>
+</ul>
+
+<div id="使用基于类的视图"><h2 id="使用基于类的视图">使用基于类的视图</h2></div>
+<ul>
+<li>
+定义你自己的视图为类方法, 视图基类 View, 该基类处理 HTTP 方法的分发以及其他功能.
+
+<li>
+改变 post_list 视图, 使用 Django 提供的 ListView 类, 该类允许你列出任意类型的对象列表.
+
+<li>
+修改 views.py
+<pre python>
+from django.views.generic import ListView
+class PostListView(ListView):
+    queryset = Post.published.all()
+    context_object_name = 'posts'
+    paginate_by = 3
+    template_name = 'blog/post/list.html'
+</pre>
+
+<ul>
+<li>
+使用具体的 QuerySet 替代返回所有的对象, 如果不定义 queryset 属性, 我们可以设置 model = Post, 此时 Django 则会为我们建立 Post.objects.all() QuerySet.
+
+<li>
+使用上下文变量 posts 表示查询结果, 原先默认的变量为 object_list
+
+<li>
+每页只显示三篇文章.
+
+<li>
+自定义模板, 如果不设置默认模板, 默认为使用 blog/post_list.html
+
+</ul>
+<li>
+修改博客应用的 urls.py
+<pre python>
+urlpatterns = [
+    # post views
+    # url(r'^$', views.post_list, name='post_list'),
+    url(r'^$', views.PostListView.as_view(), name='post_list'),
+    url(r'^(?P&lt;year&gt;\d{4})/(?P&lt;month&gt;\d{2})/(?P&lt;day&gt;\d{2})/'\
+        r'(?P&lt;post&gt;[-\w]+)/$',
+        views.post_detail, 
+        name='post_detail'),
+]
+</pre>
+
+<ul>
+<li>
+ListView 通过 page_obj 传递选定的页面, 该变量保存选定的页面
+
+<li>
+修改 post_list.html
+<pre html>
+{% include "pagination.html" with page=page_obj %}
+</pre>
+
+</ul>
+</ul>
+
+<div id="第2章 给你的博客增加高级功能 "><h1 id="第2章 给你的博客增加高级功能 ">第2章 给你的博客增加高级功能 </h1></div>
+<div id="第2章 给你的博客增加高级功能 -通过 e-mail 分享 posts"><h2 id="通过 e-mail 分享 posts">通过 e-mail 分享 posts</h2></div>
+<ul>
+<li>
+实现该功能需要做的事情
+
+<ul>
+<li>
+创建一个表单填充他们的名字和e-mail, e-mail 收信人, 可选的评论
+
+<li>
+创建一个视图处理发送的内容并发送 e-mail
+
+<li>
+在 urls.py 中添加一个 URL 模式用于该视图
+
+<li>
+创建一个模板显示表单
+
+</ul>
+</ul>
+
+<div id="第2章 给你的博客增加高级功能 -通过 e-mail 分享 posts-在 Django 内创建表单 "><h3 id="在 Django 内创建表单 ">在 Django 内创建表单 </h3></div>
+<ul>
+<li>
+Django form 框架
+
+<ul>
+<li>
+两个基类: Form(构建基本表单), ModelForm(创建或更新模型实例的表单)
+
+</ul>
+<li>
+创建一个 forms.py (在blog应用内), 对于每个应用, 表单最好单独放在 forms.py 内
+
+<ul>
+<li>
+CharFiled 对应的是 text 类型表单, &lt;input type="text"&gt; HTML 元素
+
+<li>
+每个 field 类型都有一个默认的 widget 决定该 field 如何在 HTML 内显示, 我们可以通过修改 widget 属性来覆盖该默认的 widget.
+
+<li>
+comment 使用 Textarea widget 代替默认的 widget, 其为 &lt;textarea&gt; HTML 元素.
+
+<li>
+email field 会验证输入的邮件地址是否有效.
+<pre python>
+from django import forms
+
+class EmailPostForm(forms.Form):
+    name = forms.CharField(max_length=25)
+    email = forms.EmailField()
+    to = forms.EmailField()
+    comments = forms.CharField(required=False,
+                               widget=forms.Textarea)
+</pre>
+
+</ul>
+<li>
+更多的表单域 <a href="https:&#47;&#47;docs.djangoproject.com&#47;en&#47;1.8&#47;ref&#47;forms&#47;fields&#47;">https://docs.djangoproject.com/en/1.8/ref/forms/fields/</a>
+
+<li>
+创建一个新的视图处理表单和发送email成功提交后的内容.
+<pre python>
+def post_share(request, post_id):
+    # Retrieve post by id
+    post = get_object_or_404(Post, id=post_id, status='published')
+
+    if request.method == 'POST':
+        # form was submitted
+        form = EmailPostForm(request.POST)
+        if form.is_valid():
+            # Form fields passed validation
+            cd = form.cleaned_data
+            # ... send email
+    else:
+        form = EmailPostForm()
+    return render(request, 'blog/post/share.html',
+                {'post': post,
+                'form': form})
+</pre>
+
+<ul>
+<li>
+我们使用相同的视图处理刚初始化的表单和正在处理中的提交表单, 根据方法来区分两者
+
+<li>
+is_valid() 方法会验证该表单, 可通过 form.errors 查看验证错误列表.
+
+<li>
+cleaned_data 是一个表单域和它们值的字典内容.
+
+</ul>
+</ul>
+
+<div id="第2章 给你的博客增加高级功能 -通过 e-mail 分享 posts-通过 Django 发送 e-mails"><h3 id="通过 Django 发送 e-mails">通过 Django 发送 e-mails</h3></div>
+<ul>
+<li>
+通过 Django 发送邮件很简单, 首先你需要有一个本地 SMTP 服务器或定一个外部 STMP 服务器的配置, 这些通过项目 settings.py 文件来添加如下设置来实现.
+
+<ul>
+<li>
+EMAIL_HOST: SMTP 服务器 host, 默认为 localhost
+
+<li>
+EMAIL_PORT: 默认 25
+
+<li>
+EMAIL_HOST_USER: SMTP 服务器的用户名
+
+<li>
+EMAIL_HOST_PASSWORD: STMP 服务器的密码
+
+<li>
+EMAIL_USE_TLS: 是否需要一个 TLS 安全连接
+
+<li>
+EMAIL_USE_SSL: 是否需要一个隐式的 TLS 安全连接
+
+</ul>
+<li>
+如果没有本地 SMTP 服务器, 你还可以使用你 email 供应商的 SMTP 服务器
+<pre>
+EMAIL_HOST = 'smtp.gmail.com'
+EMAIL_HOST_USER = 'your_account@gmail.com'
+EMAIL_HOST_PASSWORD = 'your_password'
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+
+EMAIL_HOST = 'smtp.126.com'
+EMAIL_HOST_USER = 'summericeyl@126.com'
+EMAIL_HOST_PASSWORD = '************'
+EMAIL_PORT = 25
+EMAIL_USE_TLS = True
+</pre>
+
+<ul>
+<li>
+gmail 的例子
+
+</ul>
+<li>
+验证
+<pre>
+&gt;&gt;&gt; from django.core.mail import send_mail
+&gt;&gt;&gt; send_mail('Django mail', 'This e-mail was sent with Django.', 'summericeyl@126.com', ['summericeyl@gmail.com'], fail_silently=False)
+</pre>
+
+<ul>
+<li>
+测试成功
+
+<li>
+send_mail() 参数有主题, 消息, 发送者, 接收者列表
+<pre python>
+from django.core.mail import send_mail
+def post_share(request, post_id):
+    # Retrieve post by id
+    post = get_object_or_404(Post, id=post_id, status='published')
+    sent = False
+    if request.method == 'POST':
+        # Form was submitted
+        form = EmailPostForm(request.POST)
+        if form.is_valid():
+            # Form fields passed validation
+            cd = form.cleaned_data
+            post_url = request.build_absolute_uri(
+                                          post.get_absolute_url())
+            subject = '{} ({}) recommends you reading "{}"'.
+format(cd['name'], cd['email'], post.title)
+            message = 'Read "{}" at {}\n\n{}\'s comments: {}'.
+format(post.title, post_url, cd['name'], cd['comments'])
+            send_mail(subject, message, 'admin@myblog.com',  
+[cd['to']])
+            sent = True
+    else:
+        form = EmailPostForm()
+    return render(request, 'blog/post/share.html', {'post': post,
+                                                    'form': form,
+                                                    'sent': sent})
+</pre>
+
+<li>
+get_absolute_url() 可以获得 post 的地址
+
+<li>
+request.build_absolute_uri() 构建一个完整的地址
+
+</ul>
+<li>
+新的 url 模式
+<pre python>
+urlpatterns = [
+    # ...
+    url(r'^(?P&lt;post_id&gt;\d+)/share/$', views.post_share,
+        name='post_share'),
+]
+</pre>
+
+<li>
+share.html
+<pre html>
+{% extends "blog/base.html" %}
+{% block title %}Share a post{% endblock %}
+{% block content %}
+  {% if sent %}
+    &lt;h1&gt;E-mail successfully sent&lt;/h1&gt;
+    &lt;p&gt;
+      "{{ post.title }}" was successfully sent to {{ cd.to }}.
+    &lt;/p&gt;
+  {% else %}
+    &lt;h1&gt;Share "{{ post.title }}" by e-mail&lt;/h1&gt;
+    &lt;form action="." method="post"&gt;
+      {{ form.as_p }}
+      {% csrf_token %}
+      &lt;input type="submit" value="Send e-mail"&gt;
+    &lt;/form&gt;
+  {% endif %}
+{% endblock %}
+</pre>
+
+<ul>
+<li>
+可以表单或者成功的消息
+
+<li>
+&lt;form action="." method="post"&gt; 表示表单通过 POST 方法提交
+
+<li>
+as_p 告诉表单他的域以 HTML 段落&lt;p&gt; 元素来渲染. 还可以用 as_ul 或 as_table 形式来渲染.
+
+<li>
+如果想渲染每个域, 可以用如下形式
+<pre html>
+{% for field in form %}
+  &lt;div&gt;
+    {{ field.errors }}
+    {{ field.label_tag }} {{ field }}
+  &lt;/div&gt;
+{% endfor %}
+</pre>
+
+<li>
+{% csrf_token %} 模板标签引入一个隐藏域, 其有自动生成的 token, 可以避免 Cross-Site request forgery(CSRF) 攻击, 关于这方面的信息可以看 <a href="https:&#47;&#47;en.wikipedia.org&#47;wiki&#47;Cross-site_request_forgery">https://en.wikipedia.org/wiki/Cross-site_request_forgery</a>
+
+<li>
+其会生成如下的内容
+<pre html>
+&lt;input type='hidden' name='csrfmiddlewaretoken' value='26JjKo2lcEtYkGoV9z4XmJIEHLXN5LDR' /&gt;
+</pre>
+
+</ul>
+<li>
+注意在所有通过 POST 提交的表单中包含 csrf_token 标签
+
+<li>
+编辑 detail.html 模板, 添加链接分享文章的 URL, 在  <img src="../../../../../D:\Documents\Dropbox\Dropbox\Documents\Vimwiki\note\program\language\python\djongo/ post.body" alt="linebreaks " /> 变量之后设置
+<pre html>
+&lt;p&gt;
+  &lt;a href="{% url "blog:post_share" post.id %}"&gt;
+    Share this post
+  &lt;/a&gt;
+&lt;/p&gt;
+</pre>
+
+<ul>
+<li>
+通过 {% url %} 模板标签动态构建 URL
+
+</ul>
+</ul>
+
+<div id="第2章 给你的博客增加高级功能 -通过 e-mail 分享 posts-创建博客的评论系统 "><h3 id="创建博客的评论系统 ">创建博客的评论系统 </h3></div>
+<ul>
+<li>
+需要做的事情
+
+<ul>
+<li>
+创建一个模型保存评论
+
+<li>
+创建一个表单提交评论并验证输入数据
+
+<li>
+增加一个视图处理该表单并保存新的表单至数据库
+
+<li>
+编辑 post detail 模板显示评论列表, 以及添加新评论的表单
+<pre python>
+class Comment(models.Model):
+    post = models.ForeignKey(Post, related_name='comments')
+    name = models.CharField(max_length=80)
+    email = models.EmailField()
+    body = models.TextField()
+    created = models.DateTimeField(auto_now_add=True)
+    updated = models.DateTimeField(auto_now=True)
+    active = models.BooleanField(default=True)
+    class Meta:
+        ordering = ('created',)
+    def __str__(self):
+        return 'Comment by {} on {}'.format(self.name, self.post)
+</pre>
+
+<li>
+通过外键关联至单个文章
+
+<li>
+如果你没有定义 related_name, 则通过模型名称的小写形式+_set 构成一个变量名表示管理器, 如 comment_set
+
+<li>
+学习多对一的关系: <a href="https:&#47;&#47;docs.djangoproject.com&#47;en&#47;1.8&#47;topics&#47;db&#47;examples&#47;many_to_one&#47;">https://docs.djangoproject.com/en/1.8/topics/db/examples/many_to_one/</a>
+
+<li>
+active 可以用来控制不合适的评论
+
+</ul>
+<li>
+在管理页面上加入 Comment 管理
+<pre python>
+from .models import Post, Comment
+class CommentAdmin(admin.ModelAdmin):
+    list_display = ('name', 'email', 'post', 'created', 'active')
+    list_filter = ('active', 'created', 'updated')
+    search_fields = ('name', 'email', 'body')
+admin.site.register(Comment, CommentAdmin)
+</pre>
+
+<li>
+由于需要动态构建表单, 因此本例使用 ModelForm 基类构建表单
+<pre python>
+from .models import Comment
+class CommentForm(forms.ModelForm):
+    class Meta:
+        model = Comment
+        fields = ('name', 'email', 'body')
+</pre>
+
+<ul>
+<li>
+为了从一个模型创建一个表单, 我们需要指出哪个模型构建该表单, 可在 Meta 类中指出
+
+<li>
+显示指定哪些域需要显示在表单中.
+
+</ul>
+</ul>
+
+<div id="第2章 给你的博客增加高级功能 -通过 e-mail 分享 posts-创建博客的评论系统 -在视图中处理 ModelFroms"><h4 id="在视图中处理 ModelFroms">在视图中处理 ModelFroms</h4></div>
+<ul>
+<li>
+修改 post_detail 视图
+<pre python>
+from .models import Post, Comment
+from .forms import EmailPostForm, CommentForm
+def post_detail(request, year, month, day, post):
+    post = get_object_or_404(Post, slug=post,
+                                   status='published',
+                                   publish__year=year,
+                                   publish__month=month,
+                                   publish__day=day)
+    # List of active comments for this post
+    comments = post.comments.filter(active=True)
+    if request.method == 'POST':
+        # A comment was posted
+        comment_form = CommentForm(data=request.POST)
+        if comment_form.is_valid():
+            # Create Comment object but don't save to database yet
+            new_comment = comment_form.save(commit=False)
+            # Assign the current post to the comment
+            new_comment.post = post
+            # Save the comment to the database
+            new_comment.save()
+    else:
+        comment_form = CommentForm()                               
+    return render(request,
+                  'blog/post/detail.html',
+                  {'post': post,
+                   'comments': comments,
+                   'comment_form': comment_form})
+</pre>
+
+<ul>
+<li>
+Comment 通过 related_name 属性定义了 Post 的 comments 管理器
+
+<li>
+本例通过 commit=False 可以先获取模型实例, 但不保存至数据库内, 修改后再保存
+
+<li>
+new_comment.post = post 将一个评论分配给一个 post
+
+</ul>
+</ul>
+<div id="第2章 给你的博客增加高级功能 -通过 e-mail 分享 posts-创建博客的评论系统 -在 detail 模板中添加评论 "><h4 id="在 detail 模板中添加评论 ">在 detail 模板中添加评论 </h4></div>
+<ul>
+<li>
+步骤
+
+<ul>
+<li>
+显示该文章的评论总数
+
+<li>
+显示评论列表
+
+<li>
+显示用于提交新评论的表单
+
+</ul>
+<li>
+在 content 块中添加如下内容
+<pre html>
+{% with comments.count as total_comments %}
+  &lt;h2&gt;
+    {{ total_comments }} comment{{ total_comments|pluralize }}
+  &lt;/h2&gt;
+{% endwith %}
+</pre>
+
+<ul>
+<li>
+执行 comments.count() 函数
+
+<li>
+{% with %} 允许我们给一个变量赋值
+
+<li>
+pluralize 表示根据 total_comments 的值来添加后缀, 这里表示是否添加s,如果是中文则不需要使用
+
+</ul>
+<li>
+添加评论列表
+<pre html>
+{% for comment in comments %}
+  &lt;div class="comment"&gt;
+    &lt;p class="info"&gt;
+      Comment {{ forloop.counter }} by {{ comment.name }}
+      {{ comment.created }}
+    &lt;/p&gt;
+    {{ comment.body|linebreaks }}
+  &lt;/div&gt;
+{% empty %}
+  &lt;p&gt;There are no comments yet.&lt;/p&gt;
+{% endfor %}
+</pre>
+
+<li>
+新评论
+<pre html>
+{% if new_comment %}
+  &lt;h2&gt;Your comment has been added.&lt;/h2&gt;
+{% else %}
+  &lt;h2&gt;Add a new comment&lt;/h2&gt;
+  &lt;form action="." method="post"&gt;
+    {{ comment_form.as_p }}
+    {% csrf_token %}
+    &lt;p&gt;&lt;input type="submit" value="Add comment"&gt;&lt;/p&gt;
+  &lt;/form&gt;
+{% endif %}
+</pre>
+
+<li>
+可以在管理页面中通过 active 状态隐藏某些评论
+
+</ul>
+
+<div id="第2章 给你的博客增加高级功能 -通过 e-mail 分享 posts-添加 tagging 功能"><h3 id="添加 tagging 功能">添加 tagging 功能</h3></div>
+<ul>
+<li>
+第三方 Django tagging 应用, django-taggit 是一个可重复使用的应用, 其提供了 Tag 模型, 并易于添加 tags 给任意模型, 源码地址位于 <a href="https:&#47;&#47;github.com&#47;alex&#47;django-taggit">https://github.com/alex/django-taggit</a>
+
+<li>
+通过 pip 安装: pip install django-taggit==0.17.1, 在 settings.py 文件里添加该应用, 'taggit'
+
+<li>
+blog 应用的模型内添加 TaggableManager 管理器
+<pre python>
+from taggit.managers import TaggableManager
+class Post(models.Model):
+    # ...
+    tags = TaggableManager()
+</pre>
+
+<ul>
+<li>
+该管理器允许你从Post对象中添加, 接收, 移除 tags.
+
+</ul>
+<li>
+开始数据库迁移
+<pre>
+&gt;&gt;&gt; from blog.models import Post
+&gt;&gt;&gt; post = Post.objects.get(id=1)
+&gt;&gt;&gt; post.tags.add('music', 'jazz', 'django')
+&gt;&gt;&gt; post.tags.all()
+[&lt;Tag: jazz&gt;, &lt;Tag: django&gt;, &lt;Tag: music&gt;]
+&gt;&gt;&gt; post.tags.remove('django')
+&gt;&gt;&gt; post.tags.all()
+[&lt;Tag: jazz&gt;, &lt;Tag: music&gt;]
+</pre>
+
+<li>
+html 代码添加
+<pre html>
+&lt;p class="tags"&gt;Tags: {{ post.tags.all|join:", " }}&lt;/p&gt;
+</pre>
+
+<li>
+根据 tag 列出列表
+<pre python>
+from taggit.models import Tag
+def post_list(request, tag_slug=None):
+    object_list = Post.published.all()
+    tag = None
+    if tag_slug:
+        tag = get_object_or_404(Tag, slug=tag_slug)
+        object_list = object_list.filter(tags__in=[tag])
+    paginator = Paginator(object_list, 3) # 3 posts in each page
+    page = request.GET.get('page')
+    try:
+        posts = paginator.page(page)
+    except PageNotAnInteger:
+        # If page is not an integer deliver the first page
+        posts = paginator.page(1)
+    except EmptyPage:
+        # If page is out of range deliver last page of results
+        posts = paginator.page(paginator.num_pages)
+    return render(request, 'blog/post/list.html', {'page': page,
+                                                   'posts': posts,
+                                                   'tag': tag})
+</pre>
+
+<li>
+修改 urls.py
+<pre python>
+url(r'^$', views.post_list, name='post_list'),
+# url(r'^$', views.PostListView.as_view(), name='post_list'),
+url(r'^tag/(?P&lt;tag_slug&gt;[-\w]+)/$', views.post_list, 
+    name='post_list_by_tag'), 
+</pre>
+
+<li>
+修改 list.html
+<pre html>
+{% include "pagination.html" with page=posts %}
+
+
+{% if tag %}
+  &lt;h2&gt;Posts tagged with "{{ tag.name }}"&lt;/h2&gt;
+{% endif %}
+
+
+&lt;p class="tags"&gt;
+  Tags: 
+  {% for tag in post.tags.all %}
+    &lt;a href="{% url "blog:post_list_by_tag" tag.slug %}"&gt;
+      {{ tag.name }}
+    &lt;/a&gt;
+    {% if not forloop.last %}, {% endif %}
+  {% endfor %}
+&lt;/p&gt;
+</pre>
+
+</ul>
+
+<div id="第2章 给你的博客增加高级功能 -通过 e-mail 分享 posts-添加 tagging 功能-推荐类似文章"><h4 id="推荐类似文章">推荐类似文章</h4></div>
+<ul>
+<li>
+要实现该功能, 我们需要作如下工作:
+
+<ul>
+<li>
+返回当前 post 的所有标签
+
+<li>
+根据这些标签得到所有文章
+
+<li>
+排除掉当前文章
+
+<li>
+如果有两个或多个文章有相同的标签数, 推荐最近的文章
+
+<li>
+限制我们想要推荐的文章数
+
+</ul>
+<li>
+修改 views.py 内容
+<pre python>
+from django.db.models import Count
+
+# detail 部分
+
+# List of similar posts
+post_tags_ids = post.tags.values_list('id', flat=True)
+similar_posts = Post.published.filter(tags__in=post_tags_ids)\
+                              .exclude(id=post.id)
+similar_posts = similar_posts.annotate(same_tags=Count('tags'))\
+                            .order_by('-same_tags','-publish')[:4]
+</pre>
+
+<ul>
+<li>
+Count 聚合函数生成一个计算出来的域 same_tags, 表示被共享的标签数量
+
+<li>
+根据共享的标签数量降序排序, 发布日期排序
+
+</ul>
+<li>
+在评论部分之前
+<pre html>
+&lt;h2&gt;Similar posts&lt;/h2&gt;
+{% for post in similar_posts %}
+  &lt;p&gt;
+    &lt;a href="{{ post.get_absolute_url }}"&gt;{{ post.title }}&lt;/a&gt;
+  &lt;/p&gt;
+{% empty %}
+  There are no similar posts yet.
+{% endfor %}
+</pre>
+
+<li>
+tag 管理器的 api:  <a href="http:&#47;&#47;django-taggit.readthedocs.org&#47;en&#47;latest&#47;api">http://django-taggit.readthedocs.org/en/latest/api</a>
+
+</ul>
+
+<div id="第3章 扩展你的博客应用"><h1 id="第3章 扩展你的博客应用">第3章 扩展你的博客应用</h1></div>
+<ul>
+<li>
+目标
+
+<ul>
+<li>
+创建自定义模板标签和过滤器
+
+<li>
+添加 sitemap 和一个文章 feed
+
+<li>
+使用 Solr 和 Haystack 构建一个搜索引擎
+
+</ul>
+</ul>
+<div id="第3章 扩展你的博客应用-3.1 创建自定义模板标签和过滤器 "><h2 id="3.1 创建自定义模板标签和过滤器 ">3.1 创建自定义模板标签和过滤器 </h2></div>
+<ul>
+<li>
+Django 提供了一些内置的模板标签, 如 {% if %}, {% block %} 之类, 关于内置标签可以看文档  <a href="https:&#47;&#47;docs.djangoproject.com&#47;en&#47;1.8&#47;ref&#47;templates&#47;builtins&#47;">https://docs.djangoproject.com/en/1.8/ref/templates/builtins/</a>
+
+<li>
+你还可以创建自己的模板标签
+
+</ul>
+<div id="第3章 扩展你的博客应用-3.1 创建自定义模板标签和过滤器 -3.1.1 创建自定义模板标签 "><h3 id="3.1.1 创建自定义模板标签 ">3.1.1 创建自定义模板标签 </h3></div>
+<ul>
+<li>
+辅助函数
+
+<ul>
+<li>
+simple_tag: 处理数据并返回一个字符串
+
+<li>
+inclusion_tag: 处理数据并返回一个渲染的模板
+
+<li>
+assignment_tag: 处理数据并在上下文中设置一个变量
+
+</ul>
+<li>
+模板标签应该做用于应用范围内
+
+<ul>
+<li>
+创建文件夹 templatetags, 并在其内创建空文件 _<em>init</em>_.py, 创建另外一个文件 blog_tags.py
+
+</ul>
+<li>
+首先看如何使用 simple_tag
+<pre python>
+from django import template
+register = template.Library()
+from ..models import Post
+@register.simple_tag
+def total_posts():
+    return Post.published.count()
+</pre>
+
+<ul>
+<li>
+默认注册函数名称, 如果你想为其注册其他的名字, 可用如下方法
+<pre python>
+@register.simple_tag(name='my_tag')
+</pre>
+
+<li>
+需要重启 Django 开发服务器才能应用新的模板标签和过滤器
+
+</ul>
+<li>
+html 中需要使用 {% load %} 加载这些模板
+<pre html>
+{% load blog_tags %}
+{% load staticfiles %}
+&lt;!DOCTYPE html&gt;
+&lt;html&gt;
+&lt;head&gt;
+  &lt;title&gt;{% block title %}{% endblock %}&lt;/title&gt;
+  &lt;link href="{% static "css/blog.css" %}" rel="stylesheet"&gt;
+&lt;/head&gt;
+&lt;body&gt;
+  &lt;div id="content"&gt;
+    {% block content %}
+    {% endblock %}
+  &lt;/div&gt;
+  &lt;div id="sidebar"&gt;
+    &lt;h2&gt;My blog&lt;/h2&gt;
+    &lt;p&gt;This is my blog. I've written {% total_posts %} posts so far.&lt;/
+p&gt;
+  &lt;/div&gt;
+&lt;/body&gt;
+&lt;/html&gt;
+</pre>
+
+<li>
+这样做的好处是你可以执行 QuerySet 或处理任意数据并在模板中显示结果
+
+<li>
+现在我们创建另一个 tag, 用来在侧边栏显示最近的文章, 这时我们使用 inclusion tag, 其可以渲染一个模板, 由你的模板 tag 返回上下文变量
+<pre python>
+@register.inclusion_tag('blog/post/latest_posts.html')
+def show_latest_posts(count=5):
+    latest_posts = Post.published.order_by('-publish')[:count]
+    return {'latest_posts': latest_posts}
+</pre>
+
+<li>
+latest_posts.html 模板
+<pre html>
+&lt;ul&gt;
+{% for post in latest_posts %}
+  &lt;li&gt;
+    &lt;a href="{{ post.get_absolute_url }}"&gt;{{ post.title }}&lt;/a&gt;
+  &lt;/li&gt;
+{% endfor %}
+&lt;/ul&gt;
+</pre>
+
+<li>
+修改 base.html
+<pre html>
+&lt;div id="sidebar"&gt;
+  &lt;h2&gt;My blog&lt;/h2&gt;
+  &lt;p&gt;This is my blog. I've written {% total_posts %} posts so far.&lt;/p&gt;
+    
+  &lt;h3&gt;Latest posts&lt;/h3&gt;
+  {% show_latest_posts 3 %}
+&lt;/div&gt;
+</pre>
+
+<li>
+接下来创建一个 assignment 标签, 该标签类似于 simple tags, 但其在给定变量中存储结果, 我们使用该 tag 来显示评论最多的文章
+<pre python>
+from django.db.models import Count
+@register.assignment_tag
+def get_most_commented_posts(count=5):
+    return Post.published.annotate(
+               total_comments=Count('comments')
+           ).order_by('-total_comments')[:count]
+</pre>
+
+<ul>
+<li>
+使用 annotate() 函数用于查询聚合,使用 Count() 聚合函数, 这样我们在 total_comments 域保存了每篇文章的评论数.
+
+<li>
+此外Django 除了提供 Count 函数, 还提供了 Avg, Max, Min, Sum 函数, 这方面的函数可见  <a href="https:&#47;&#47;docs.djangoproject.com&#47;en&#47;1.8&#47;topics&#47;db&#47;aggregation&#47;">https://docs.djangoproject.com/en/1.8/topics/db/aggregation/</a>
+
+</ul>
+<li>
+侧边栏添加
+<pre html>
+&lt;h3&gt;Most commented posts&lt;/h3&gt;
+{% get_most_commented_posts as most_commented_posts %}
+&lt;ul&gt;
+{% for post in most_commented_posts %}
+  &lt;li&gt;
+    &lt;a href="{{ post.get_absolute_url }}"&gt;{{ post.title }}&lt;/a&gt;
+  &lt;/li&gt;
+{% endfor %}
+&lt;/ul&gt;
+</pre>
+
+<ul>
+<li>
+{% template_tag as variable %} 将模板计算的结果保存在变量内
+
+</ul>
+</ul>
+
+<div id="第3章 扩展你的博客应用-3.1 创建自定义模板标签和过滤器 -3.1.2 创建自定义模板过滤器"><h3 id="3.1.2 创建自定义模板过滤器">3.1.2 创建自定义模板过滤器</h3></div>
+<ul>
+<li>
+格式可能为 <img src="../../../../../D:\Documents\Dropbox\Dropbox\Documents\Vimwiki\note\program\language\python\djongo/ variable" alt="my_filter " />, <img src="../../../../../D:\Documents\Dropbox\Dropbox\Documents\Vimwiki\note\program\language\python\djongo/ variable" alt="myfilter:"foo" " />, <img src="../../../../../D:\Documents\Dropbox\Dropbox\Documents\Vimwiki\note\program\language\python\djongo/ variable" alt="filter1" filter2  />
+
+</ul>
+
+    </div>
+</body>
+</html>

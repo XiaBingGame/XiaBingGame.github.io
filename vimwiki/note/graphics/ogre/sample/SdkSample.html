@@ -1,0 +1,221 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../../style.css">
+<title>SdkSample</title>
+<meta http-equiv="Content-Type" content="text/html; charset=cp936">
+</head>
+<body>
+
+<ul>
+<li>
+类 SdkSample
+
+<ul>
+<li>
+基类 Sample, SdkTrayListener
+
+<li>
+数据成员<br />
+<pre c++>
+		Ogre::Viewport* mViewport;    		// main viewport
+		Ogre::Camera* mCamera;        		// main camera
+		SdkTrayManager* mTrayMgr;     		// tray interface manager
+		SdkCameraMan* mCameraMan;     		// basic camera controller
+		ParamsPanel* mDetailsPanel;   		// sample details panel
+		bool mCursorWasVisible;				// was cursor visible before dialog appeared
+		bool mDragLook;                     // click and drag to free-look
+</pre>
+
+</ul>
+<li>
+类 SdkTrayManager
+
+<ul>
+<li>
+基类 SdkTrayListener, Ogre::ResourceGroupListene
+
+</ul>
+<li>
+类 SdkTrayListener
+
+<ul>
+<li>
+七个虚拟函数表示 tray 事件<br />
+<pre c++>
+		virtual void buttonHit(Button* button) {}
+		virtual void itemSelected(SelectMenu* menu) {}
+		virtual void labelHit(Label* label) {}
+		virtual void sliderMoved(Slider* slider) {}
+		virtual void checkBoxToggled(CheckBox* box) {}
+		virtual void okDialogClosed(const Ogre::DisplayString&amp; message) {}
+		virtual void yesNoDialogClosed(const Ogre::DisplayString&amp; question, bool yesHit) {}
+</pre>
+
+</ul>
+<li>
+类 ResourceGroupListener
+
+<ul>
+<li>
+该类为基本类, 用于在资源组加载过程中指示加载进程. 资源组加载包裹两个阶段: 从声明中创建资源和加载资源
+
+<li>
+ResourceGroupManager::initialiseResourceGroup 分析脚本, 进行组归纳
+
+<li>
+加载资源的事件序列为
+
+<ul>
+<li>
+resourceGroupScriptingStarted 
+
+<ul>
+<li>
+纯虚函数. 当资源组开始分析脚本时触发该事件
+
+</ul>
+<li>
+scriptParseStarted (*) 
+
+<ul>
+<li>
+分析脚本之时触发该事件
+
+</ul>
+<li>
+scriptParseEnded (*) 
+
+<li>
+resourceGroupScriptingEnded 
+
+<li>
+resourceGroupLoadStarted 
+
+<li>
+resourceLoadStarted (*) 
+
+<li>
+resourceLoadEnded (*) 
+
+<li>
+worldGeometryStageStarted (*) 
+
+<ul>
+<li>
+链接世界几何体时触发
+
+</ul>
+<li>
+worldGeometryStageEnded (*) 
+
+<li>
+resourceGroupLoadEnded 
+
+<li>
+resourceGroupPrepareStarted 
+
+<li>
+resourcePrepareStarted (*) 
+
+<li>
+resourcePrepareEnded (*) 
+
+<li>
+resourceGroupPrepareEnded
+
+</ul>
+<li>
+如果 OGRE_THREAD_SUPPORT为1, 则该类为线程安全的
+
+</ul>
+</ul>
+
+<ul>
+<li>
+类 OverlayElement
+
+<ul>
+<li>
+在一个Overlay上显示的2D元素的抽象定义, 不是所有的 OverlayElement类的实例都可以直接添加至Overlay, 除了 OverlayContainer 的实例, OverlayContainer 对象可包含任意 OverlayElement.
+
+<li>
+使用 OverlayManager 管理 OverlayElements, OverlayManger 负责实例化/删除元素, 也接受扩展的新类型element
+
+<li>
+该类具有扩展性, 所以其基类之一为 StringInterface, 用于设置通用的参数列表
+
+<li>
+其内有一系列静态数据成员的类型为 OverlayElementCommands::Cmd(*), 这些类型为 ParamCommand 的派生类, 用于 gets/sets 参数
+
+<li>
+成员函数
+
+<ul>
+<li>
+updatePositionGeometry --- 当element的位置更新时触发该函数
+
+<li>
+updateTextureGeometry --- 当element的纹理坐标UV更新时触发
+
+<li>
+addBaseParameters --- 每个类都有其自己的参数词典. 用于加自身类的参数词典. 派生类在调用该方法之前需调用其自身的createParamDictionary函数
+
+<ul>
+<li>
+首先调用基类 StringInterface::getParamDictionary 得到 ParamDictionary 对象
+
+<li>
+而后调用 ParamDictionary::addParameter 添加各参数定义以及其 get/set 命令
+
+</ul>
+<li>
+setDimension --- 根据 mMatricsMode 设置 mPixelWidth/mPixelHeight 或者 mWidth/mHeight. 之后调用 _positionsOutOfDate
+
+<li>
+setPosition --- 更新 mPixelLeft/mPixelRight 或者 mLeft/mRight. 
+
+<li>
+_get(<strong>)系列方法 --- 得到m(</strong>), 得到该Element与屏幕的相对距离(0.0-1.0)
+
+<li>
+_set(<strong>)系列方法 --- 参数为Element与屏幕的相对距离(0.0-1.0), 设置m(</strong>)和mPixel(*)
+
+<li>
+setMaterialName 方法 --- 通过 MaterialManager的getByName方法得到Material对象指针, 而后调用方法load,并禁止光照和深度检测
+
+<li>
+重载的 Renderable 函数
+
+<ul>
+<li>
+getMaterial
+
+<li>
+getWorldTransforms
+
+<li>
+_positionsOutOfDate
+
+<li>
+getSquaredViewDepth
+
+</ul>
+<li>
+_update方法--- 重新计算mLeft等参数, 调用_updateFromParent, 计算出 mClippingRegion, 调用 updatePositionGeometry 和 updateTextureGeometry
+
+<li>
+_notifyParent方法 --- 设置父Element和最终Overlay
+
+<li>
+_notifyZOrder方法 --- 当父Overlay的Zorder发生变化时通知元素, Overlay 有 Zorder, 但是 OverlayElement 没有 Zorder
+
+<li>
+_updateRenderQueue 方法 --- 调用 RenderQueue::addRenderable 方法将该 OverlayElement 加入渲染序列
+
+</ul>
+</ul>
+</ul>
+
+</body>
+</html>

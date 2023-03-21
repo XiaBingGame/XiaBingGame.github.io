@@ -1,0 +1,356 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../style.css" />
+    <title>UltiSnips</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<ul>
+<li>
+只有当 compatible 选项没有设置时该插件才可用.
+
+</ul>
+<h2 id="toc_0.1">描述</h2>
+<h3 id="toc_0.1.1">要求</h3>
+<ul>
+<li>
+如果不能自动检测Python版本, 则修改全局变量 UltiSnipsUsePythonVersion
+<pre>
+To use python version 2.x: &gt;
+   let g:UltiSnipsUsePythonVersion = 2
+
+To use python version 3.x: &gt;
+   let g:UltiSnipsUsePythonVersion = 3
+</pre>
+
+</ul>
+
+<h2 id="toc_0.2">设置和命令 </h2>
+<h3 id="toc_0.2.1">命令</h3>
+<ul>
+<li>
+g:UltiSnipsEditSplit --- 定义编辑窗口如何打开
+
+<li>
+g:UltiSnipsSnippetsDir --- 定义私有snippet定义文件存储的位置.
+
+<li>
+UltiSnipsAddFiletypes 可合并其他 snippet 文件类型用于当前缓存.
+<pre>
+:UltiSnipsAddFiletypes rst.lua
+</pre>
+
+<ul>
+<li>
+上面表示编辑一个rst文件时, 想使用lua的snippet时, 这样设置. 这里点号和次序都很重要.
+<pre>
+:UltiSnipsAddFiletypes rails.ruby
+:UltiSnipsAddFiletypes ruby.programming
+</pre>
+
+<li>
+上面代码的优先级则为 rails &gt; ruby &gt; programming &gt; all
+
+</ul>
+</ul>
+<h3 id="toc_0.2.2">触发器 </h3>
+<ul>
+<li>
+默认值如下:
+<pre>
+   g:UltiSnipsExpandTrigger               &lt;tab&gt;
+   g:UltiSnipsListSnippets                &lt;c-tab&gt;
+   g:UltiSnipsJumpForwardTrigger          &lt;c-j&gt;
+   g:UltiSnipsJumpBackwardTrigger         &lt;c-k&gt;
+</pre>
+
+<li>
+为了模拟 TextMate, 可以在vimrc文件中添加下面设置:
+<pre>
+   let g:UltiSnipsExpandTrigger="&lt;tab&gt;"
+   let g:UltiSnipsJumpForwardTrigger="&lt;tab&gt;"
+   let g:UltiSnipsJumpBackwardTrigger="&lt;s-tab&gt;"
+</pre>
+
+</ul>
+<h4 id="toc_0.2.2.1">使用你自己的触发器函数 </h4>
+<ul>
+<li>
+可以直接映射的函数
+<pre>
+   g:UltiSnipsExpandTrigger        &lt;--&gt; UltiSnips_ExpandSnippet
+   g:UltiSnipsJumpForwardTrigger   &lt;--&gt; UltiSnips_JumpForwards
+   g:UltiSnipsJumpBackwardTrigger  &lt;--&gt; UltiSnips_JumpBackwards
+</pre>
+
+<li>
+如果 g:UltiSnipsExpandTrigger 和 g:UltiSnipsJumpForwardTrigger 设置相同的值, 则实际使用函数 UltiSnips_ExpandSnippetOrJump.
+
+<li>
+对应的变量和函数为
+<pre>
+UltiSnips_ExpandSnippet       --&gt; g:ulti_expand_res (0: fail, 1: success)
+UltiSnips_ExpandSnippetOrJump --&gt; g:ulti_expand_or_jump_res (0: fail,
+                                                    1: expand, 2: jump)
+UltiSnips_JumpForwards        --&gt; g:ulti_jump_forwards_res (0: fail, 1: success)
+UltiSnips_JumpBackwards       --&gt; g:ulti_jump_backwards_res (0: fail, 1: success)
+</pre>
+
+<li>
+你可以定义自己的函数
+<pre>
+   let g:ulti_expand_or_jump_res = 0 "default value, just set once
+   function! Ulti_ExpandOrJump_and_getRes()
+     call UltiSnips_ExpandSnippetOrJump()
+     return g:ulti_expand_or_jump_res
+   endfunction
+</pre>
+
+<ul>
+<li>
+而后使用如下映射
+<pre>
+	inoremap &lt;NL&gt; &lt;C-R&gt;=(Ulti_ExpandOrJump_and_getRes() &gt; 0)?"":IMAP_Jumpfunc('', 0)&lt;CR&gt;
+</pre>
+
+<li>
+此时, 如果在当前位置不能expand或者jump, 则调用另一个可用函数 IMAP_Jumpfunc('', 0).
+
+</ul>
+</ul>
+<h4 id="toc_0.2.2.2">Python模块的路径 </h4>
+<ul>
+<li>
+你可以直接使用UltiSnip的Python模块写python函数.
+
+<li>
+UltiSnip的python实现路径存储在g:UltiSnipsPythonPath变量中, 其在加载时自动设置.
+
+<li>
+下面是expand一个snippets的例子函数
+<pre>
+   function! s:Ulti_ExpandSnip()
+   Python &lt;&lt; EOF
+   import sys, vim
+   new_path = vim.eval("expand('g:UltiSnipsPythonPath')")
+   sys.path.append(new_path)
+   from UltiSnips import UltiSnips_Manager
+   UltiSnips_Manager.expand()
+   EOF
+   return ""
+   endfunction
+</pre>
+
+</ul>
+
+<h3 id="toc_0.2.3">Snippet 的查找路径 </h3>
+<ul>
+<li>
+一个snippet目录必须为 'runtimepath' 选项中定义的一个目录的子目录.
+
+<li>
+变量 g:UltiSnipsSnippetDirectories 定义了 Snippet 目录的名称列表. 缺省值如下:
+<pre>
+g:UltiSnipsSnippetDirectories          ["UltiSnips"]
+</pre>
+
+<li>
+设置默认 Snippet 目录
+<pre>
+let g:UltiSnipsSnippetDirectories=["UltiSnips", "mycoolsnippets"]
+</pre>
+
+<li>
+在buffer中设置变量 b:UltiSnipsSnippetDirectories 可高于上面全局变量的优先级.
+
+<li>
+默认是相反次序遍历, 如果想改变这个, 可设置下面的变量
+<pre>
+let g:UltiSnipsDontReverseSearchPath="1"
+</pre>
+
+<li>
+无论何时触发, 首先检查 snippet 是否被修改, 而后重新加载. 可用下面的设置来修改.
+<pre>
+let g:UltiSnipsDoHash=0
+</pre>
+
+<li>
+UltiSnips-adding-snippets 解释了对于给定文件类型, 哪些文件被分析.
+
+</ul>
+
+<h3 id="toc_0.2.4">关于选择模式的警告 </h3>
+<ul>
+<li>
+对于可打印字符在选择模式中的映射可能会混淆用户. 最好选择 :xmap 和 :smap 用于可打印字符的映射. 在映射定义之后则使用 :sunmap
+
+<li>
+UltiSnips 使用选择模式标记snippets中的制表位(tabstops)用于覆写. 已有的 Visual+Select 模式映射会有干扰. 所以 UltiSnips 会发出 :sunmap 命令移除所有用于可打印字符的选择模式映射. 如果不想要这个行为, 可以使用下面的设置.
+<pre>
+let g:UltiSnipsRemoveSelectModeMappings = 0
+</pre>
+
+<li>
+下面的命令取消所有选择模式的映射. 除了:smap命令所列出所有完整定义中的字符串"somePlugin"或字符串"otherPlugin"都包含的映射.
+<pre>
+	let g:UltiSnipsRemoveSelectModeMappings = 1
+	let g:UltiSnipsMappingsToIgnore = [ "somePlugin", "otherPlugin" ]
+</pre>
+
+</ul>
+
+<h3 id="toc_0.2.5">函数</h3>
+<ul>
+<li>
+UltiSnips_AddSnippet: 添加新的 Snippet.
+
+<li>
+UltiSnips_Anon: 添加一个匿名 snippet.
+
+<li>
+UltiSnips_SnippetsInCurrentScopea: 等价于 snipmate 的 GetSnipsInCurrentScope 函数. 仅返回snippets的词典.
+
+</ul>
+
+<h2 id="toc_0.3">语法</h2>
+<ul>
+<li>
+演示如何编写你自己的snippets和snippet定义语法.
+
+</ul>
+<h3 id="toc_0.3.1">添加 snippets</h3>
+<ul>
+<li>
+迭代遍历目录, 查找匹配如下模式的文件: ft.snippets, ft_<strong>.snippets, ft/</strong>. ft则为当前文档的文件类型. * 可以匹配任意字符串.
+
+<li>
+'all'文件类型用于所有的文件.
+
+<li>
+UltiSnips 理解 Vim 的带点号文件语法, 例如定义一个用于 CUDA C++ 框架的带点号文件类型, "set ft=cuda.cpp", 则UltiSnips会查找用于cuda以及cpp的snippets, 并激活.
+
+<li>
+UltiSnips 不理解 snippet 文件名的多文件类型, 所以一个 "cuda.cpp.snippets" snippet文件并不匹配 "cuda" 或 "cpp" 文件类型, 也就是对于 cuda.cpp 文件类型其也不会被激活.
+
+<li>
+extends 指令提供了一种方式组合 snippet 文件. 当 snippet 文件中含有 extends 指令, 则表示其包含这些指令所表示的 snippets.
+<pre>
+	extends ft1, ft2, ft3
+</pre>
+
+<li>
+以#开头的句子表示注释.
+
+<li>
+关键字 snippet 和 endsnippet 用于表示一段 snippet.
+<pre>
+    snippet if "if ... then (if)"
+    if ${2:[[ ${1:condition} ]]}; then
+            ${0:#statements}
+    fi
+    endsnippet
+</pre>
+
+<li>
+起始行以如下形式
+<pre>
+	snippet tab_trigger [ "description" [ options ] ]
+	snippet "tab trigger" [ "description" [ options ] ]
+	snippet !tab trigger! [ "description" [ options ] ]
+	snippet !"tab trigger"! [ "description" [ options ] ]
+</pre>
+
+<ul>
+<li>
+option 控制 snippet 的行为, 其字符可以组合成一个单词.
+
+<ul>
+<li>
+! --- 覆盖前面有相同 tab trigger 已定义的 snippets.
+
+<li>
+b --- 行的起始. 拥有这个选项的snippet只有在tab trigger是这行的第一个单词才会expand. 换句话, 仅有空白字符在 tab trigger 之前, 才expand. 默认行为是在任何位置expand snippet, 无需考虑之前的非空白字符.
+
+<li>
+i --- expand 该snippet无需考虑之前的字符. 即可以在单词的中间expand.
+
+<li>
+w --- 只有当 tab trigger 的开始匹配一个单词的边界, 末尾匹配一个单词的边界. 单词字符由 'iskeyword' 设置定义. 使用这个选项, 在带有标点的 tab trigger 上允许expansion, 且不会expand加上更大单词的后缀.
+
+<li>
+r --- tab trigger 看成一个 python 正则表达式. 正则表达式必须被引号括住(或者由其他字符括住).
+
+<li>
+t --- 如果一个 snippet 定义包含有 leading tab 字符, 默认 UltiSnip expand 该tab字符遵从于Vim的'shiftwidth', 'softtabstop', 'expandtab' 和 'tabstop' 缩进设置. 如果设置了该选项, 则UltiSnips忽略Vim的设置且如常插入tab字符.
+
+<li>
+s --- 在跳转到下一个tabstop之前, 立即移除在行尾光标之前的空白符.
+
+</ul>
+</ul>
+</ul>
+<h4 id="toc_0.3.1.1">特殊字符</h4>
+<ul>
+<li>
+", {, $, \, ' 如果要使用这些字符, 需要用'\'反转.  
+
+</ul>
+
+<h3 id="toc_0.3.2">可见的占位符</h3>
+<ul>
+<li>
+${VISUAL} --- 占位符, 可被一个选择的文本expanded. 该占位符可以包含默认的文本
+<pre>
+	${VISUAL:default text}
+</pre>
+
+<li>
+${VISUAL} 还可以定义一个变换
+<pre>
+	${VISUAL:default/search/replace/option}.
+</pre>
+
+<li>
+例子
+<pre>
+snippet t
+&lt;tag&gt;${VISUAL:inside text/should/is/g}&lt;/tag&gt;
+endsnippet
+</pre>
+
+<ul>
+<li>
+表示在选择模式下, 替换 should 为 &lt;tag&gt;is&lt;tag&gt;
+
+<li>
+插入模式则是直接插入 &lt;tag&gt;inside text&lt;/tag&gt;
+
+</ul>
+</ul>
+
+<h3 id="toc_0.3.3">Interpolation</h3>
+<h4 id="toc_0.3.3.1">Shellcode</h4>
+<ul>
+<li>
+Snippets 可以包含 shellcode
+
+</ul>
+
+    </div>
+</body>
+</html>

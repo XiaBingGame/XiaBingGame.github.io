@@ -1,0 +1,70 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../../style.css" />
+    <title>ExampleOSGAnimationmakepath</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="../index.html">首页</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<ul>
+<li>
+META_Object --- 可以创建当前类的克隆相关函数
+
+<li>
+osgAnimation::Vec4LinearSampler --- 线性采样器
+
+<ul>
+<li>
+设置 osgAnimation::Vec4KeyframeContainer
+
+</ul>
+<li>
+new osgAnimation::Vec3CubicBezierSampler
+
+<li>
+osg::Timer::instance()-&gt;tick --- 获取时间
+
+<li>
+osg::StateSet::getAttribute() --- 可以获取某个属性, 比如 osg::Material
+
+<li>
+osg::Material::setDiffuse() --- 设置材质颜色
+
+<li>
+AnimtkStateSetUpdateCallback 
+
+<ul>
+<li>
+该类从 osg::StateSet::Callback 派生而来, 主要重写 operator()(osg::StateSet* state, osg::NodeVisitor* nv) 方法
+
+<li>
+随时间更新材质
+
+<li>
+实现 vec4 变量的线性插值, 通过 osgAnimation::Vec4LinearSampler 实现
+
+</ul>
+<li>
+AnimtkUpdateCallback 用于更新 osg::MatrixTransform
+
+<li>
+MakePathTimeCallback --- 根据时间增加几何体.
+
+<li>
+线性插值更改颜色, 贝塞尔曲线更改位置.
+
+</ul>
+
+    </div>
+</body>
+</html>

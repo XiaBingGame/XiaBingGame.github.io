@@ -1,0 +1,125 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../style.css" />
+    <title>OpenGLShadingLanguage</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<h1 id="toc_1">第9章 模拟固定管线功能</h1>
+<h2 id="toc_1.1">9.1 变换</h2>
+<ul>
+<li>
+顶点位置变换至裁剪坐标
+<pre glsl>
+uniform mat4 MVPmatrix;	// 模型视图投影矩阵
+// ...
+
+in vec4 MCVertex;
+// ...
+
+a(); // 一个不会修改 gl_Position, MVP 或 MCVertext 的函数.
+
+// ...
+// 变换顶点至裁剪控件
+gl_Position = MVP * MCVertex;
+</pre>
+
+<ul>
+<li>
+增加 invariant 限定符.
+<pre glsl>
+uniform mat4 MVPmatrix;	// 模型视图投影矩阵
+// ...
+
+invariant gl_Position;
+in vec4 MCVertex;
+// ...
+
+a(); // 一个不会修改 gl_Position, MVP 或 MCVertext 的函数.
+
+// ...
+// 变换顶点至裁剪控件
+gl_Position = MVP * MCVertex;
+</pre>
+
+</ul>
+<li>
+计算视觉坐标
+<pre glsl>
+uniform mat4 MVMatrix;
+// ...
+vec4 ecPosition;
+vec3 ecPosition3;
+// ...
+
+// 变换顶点至视觉坐标
+if (NeedEyePosition)
+{
+	ecPosition = MVMatrix * MCVertex;
+	ecPosition3 = (vec3(ecPosition)) / ecPosition.w;
+}
+</pre>
+
+<li>
+将法线变换至视觉坐标
+<pre glsl>
+uniform mat3 NormalMatrix;
+// ...
+
+in vec3 MCNormal;
+// ...
+
+vec3 normal;
+normal = NormalMatrix * MCNormal;
+</pre>
+
+<li>
+单元化法线
+<pre glsl>
+normal = normalize(normal);
+</pre>
+
+<ul>
+<li>
+如果发送的法线始终为单元长度, 模型视图矩阵始终为一致缩放的矩阵. 则可以使用 rescaling, 以避免单元化的昂贵计算.
+<pre glsl>
+uniform float NormalScale;
+// ...
+
+normal = normal * NormalScale;
+</pre>
+
+</ul>
+<li>
+纹理坐标的变化
+<pre glsl>
+uniform TextureMatrix[MaxTextureCoords];
+// ...
+
+in vec4 MultiTexCoord0;
+out vec4 TexCoord[MaxTexCoord];
+
+TexCoord[0] = TextureMatrix[0] * MultiTexCoord0;
+</pre>
+
+</ul>
+
+<h2 id="toc_1.2">9.2 光源</h2>
+
+    </div>
+</body>
+</html>

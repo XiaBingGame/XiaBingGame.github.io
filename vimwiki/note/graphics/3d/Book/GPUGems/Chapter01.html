@@ -1,0 +1,46 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../../style.css" />
+    <title>Chapter01</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+<!--
+	<ul id="top-nav">
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+-->	
+</div>
+</div>
+    <div class="content">
+    
+<h1 id="toc_1">Chapter 1. Generating Complex Procedural Terrains Using the GPU</h1>
+<h2 id="toc_1.1">1.1 Introduction</h2>
+
+<h2 id="toc_1.2">1.3 地形生成系统概览</h2>
+<ul>
+<li>
+世界分割为 1x1x1 的块, 每块内部有 32x32x32 个 voxels.
+
+<li>
+使用 300 个左右的 vertex buffers 池动态分配给当前视锥体内可见的块, 越近的块有越高的优先级, 优先级低的块优先排除出去
+
+<li>
+不是所有的块都包含多边形, 每一个块生成之后, 通过 stream-out query 询问 GPU 是否包含多边形. 如不含多边形, 则标记为"empty", 切将其放入不会生成的列表中.(个人认为应当是每块分割成32x32x32, 而后询问每个小块是否含多边形)
+
+<li>
+每一帧内, 我们排序所有的 vertex buffer(从前至后), 根据需要生成新的块时, 最远的块移除出去. 最后, 我们从前至后的顺序渲染以排序的块.
+
+</ul>
+<h3 id="toc_1.2.1">1.3.1 在一个地形块内生成多边形</h3>
+
+    </div>
+</body>
+</html>

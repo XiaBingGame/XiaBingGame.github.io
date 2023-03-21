@@ -1,0 +1,390 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../style.css" />
+    <title>python tutorial</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<h1 id="toc_1">2. 使用 Python 解释器 </h1>
+<h2 id="toc_1.1">2.1 启动解释器 </h2>
+<ul>
+<li>
+通过CMD的 python 启动解释器
+
+<li>
+可通过 python -c command [arg] ... 来启动解释器. 建议用单引号括起 command
+
+<li>
+可通过 python -m module [arg] ... 执行模块的源码文件, 当作脚本使用.
+
+<li>
+如果使用脚本文件, 可在脚本之前传递 -i 来进入交互模式
+
+</ul>
+<h3 id="toc_1.1.1">2.1.1 参数传递 </h3>
+<ul>
+<li>
+启动解释器后, 脚本名和额外参数会在 sys 模块中分配给 argv 变量. 可以通过 import sys 来访问这个列表. 列表长度至少为1. 如果无脚本和参数, 则 sys.argv[0] 为空字符串. 如果脚本名为'-'(表示标准输入), 则 sys.argv[0] 设置为'-'. 当使用 -c command 的时候, sys.argv[0] 设置为 '-c'. 当使用 -m module 时,  sys.argv[0] 设置为模块的全名.
+
+</ul>
+<h3 id="toc_1.1.2">2.1.2 交互模式</h3>
+<ul>
+<li>
+该模式中通过primary prompt提示下一个命令, 使用符号(&gt;&gt;&gt;). 其使用 secondary prompt 提示后续的行, 使用符号(...).
+
+</ul>
+
+<h2 id="toc_1.2">2.2 解释器和其环境 </h2>
+<h3 id="toc_1.2.1">2.2.1 错误处理</h3>
+<ul>
+<li>
+错误发生时, 解释器会打印错误信息和stack trace. 在交互模式中其返回值primary prompt. 如果输入来自于文件, 则在打印stack trace之后使用非零退出码退出. 一些错误会无条件退出且带一个非零退出码. 所有错误信息写入标准错误流.
+
+<li>
+输入中断符(Control-C或Del)会取消输入返回值primary prompt, 如果命令正在执行, 则引起 KeyboardInterrupt 异常.
+
+</ul>
+<h3 id="toc_1.2.2">2.2.2 可执行的Python脚本</h3>
+<ul>
+<li>
+Windows 系统没有可执行模式, 双击 .py 或 .pyw 文件即可.
+
+</ul>
+<h3 id="toc_1.2.3">2.2.3 源码编码</h3>
+<ul>
+<li>
+可能使用非 ASCII 编码
+<pre class="brush: python">
+# -*- coding: encoding -*-
+</pre>
+
+<li>
+可用编码见 7.8
+
+<li>
+例子
+<pre class="brush: python">
+# -*- coding: iso-8859-15 -*-
+
+currency = u"€"
+print ord(currency)
+</pre>
+
+</ul>
+<h3 id="toc_1.2.4">2.2.4 交互的启动文件 </h3>
+<ul>
+<li>
+设置环境变量 PYTHONSTARTUP 为含启动命令的文件名.
+
+<li>
+如果你想要从当前目录中读取一个额外的启动文件, 你可以使用代码在全局启动文件中变成这个内容.
+<pre class="brush: python">
+if os.path.isfile('.pythonrc.py'): execfile('.pythonrc.py')
+</pre>
+
+<li>
+如果你想要在脚本中使用启动文件, 则需要在脚本中显示设置
+<pre class="brush: python">
+import os
+filename = os.environ.get('PYTHONSTARTUP')
+if filename and os.path.isfile(filename):
+    execfile(filename)
+</pre>
+
+</ul>
+<h3 id="toc_1.2.5">2.2.5 模块的定制 </h3>
+<ul>
+<li>
+两个定制的hook: sitecustomize 和 usercustomize
+
+<li>
+为了看其如何工作, 首先查找你的用户 site-packages 目录, 启动python运行如下代码
+<pre class="brush: python">
+&gt;&gt;&gt; import site
+&gt;&gt;&gt; site.getusersitepackages()
+'/home/user/.local/lib/python2.7/site-packages'
+</pre>
+
+<li>
+现在可以在该目录中创建usercustomize.py文件, 除非你使用 -s 选项启动python来禁止这个自动导入.
+
+<li>
+sitecustomize 工作方式相同, 但其通常由计算机管理员在全局的 site-packages目录中创建, 且在 usercustomize 之前导入.
+
+</ul>
+
+<h1 id="toc_2">3. Python 的一个非正式介绍</h1>
+<ul>
+<li>
+以#开始的行表示注释. 可位于行首, 空格或代码后.
+
+</ul>
+<h2 id="toc_2.1">3.1 使用 Python 作为一个恶计算器 </h2>
+<h3 id="toc_2.1.1">3.1.1 数字</h3>
+<ul>
+<li>
+操作符: +, -, *, /
+
+<li>
+= 用于赋值
+
+<li>
+一个值可以同时赋值给多个变量, 如 x = y = z = 0
+
+<li>
+变量使用之前必须被定义.
+
+<li>
+有浮点数时, 整数会转换成浮点数
+
+<li>
+支持复数, 虚数使用后缀j或J. 写成 (real + imagj), 或者由 complex(real, imag) 函数创建.
+
+<li>
+如果要获取虚数z的实数和虚数部分, 可使用 z.real 和 z.imag
+
+<li>
+float(), int(), long() 可以用于数字类型相互转换.
+
+<li>
+交互模式中, 最后一个变量为 _, 表示继续计算结果.
+
+</ul>
+<h3 id="toc_2.1.2">3.1.2 字符串 </h3>
+<ul>
+<li>
+单引号或双引号括起来的内容.
+
+<li>
+print 函数可以产生更可读的输出结果.
+
+<li>
+字符串最后一个字符为反斜号表示还有字符串在后面.
+
+<li>
+输出多行还可以使用 """ 或者 ''' 来括起来. 其内不需要使用 \n 来换行, 其内不会自动转换escape符.
+
+<li>
+字符串可以使用 + 操作符连接起来, 例如 word = 'Help' + 'A'. 还可以使用 * 操作符来重复, 例如 word*5
+
+<li>
+相邻字面字符串可以自动连接起来, 例如 'str''ing'
+
+<li>
+可以使用下标指定字符串的一个字符. 可以使用 slice notation 表示, 例如 word[4], word[0:2], word[2:4], word[:2], word[2:], 下标得到的字符串不能被赋值. 索引还可以是负数, 表示从右边开始计数.
+
+<li>
+内置函数 len() 返回字符串长度
+
+</ul>
+<h3 id="toc_2.1.3">3.1.3 Unicode 字符串 </h3>
+<ul>
+<li>
+Unicode 对象, 可以用于存储和操作 Unicode 数据.
+
+<li>
+在脚本中每个字符可以有一个 ordinal.
+
+<li>
+创建一个字符: u'Hello World!'
+
+<li>
+可以有一个特殊字符: u'Hello\u0020World !'
+
+<li>
+之前用'ur'则表示使用 Raw-Unicode-Escape编码, 只有当u前面有非偶数的反斜号才起作用.
+
+<li>
+内置的函数 unicode() 可以访问所有注册的Unicode codecs(COders 和 DECoders), 默认编码为 ASCII. 当Unicode字符串打印时, 写入文件或由str()转换时, 会使用默认编码转换.
+
+<li>
+encode() 方法可以将 unicode 字符串转换至8位字符串.
+
+<li>
+可以使用 unicode() 方法将字符串转换至特定编码
+
+</ul>
+<h3 id="toc_2.1.4">3.1.4 列表</h3>
+<ul>
+<li>
+列表可以将值组合至一个变量中. 组成为方括号内逗号分隔的值组合在一起. 例如: a = ['spam', 'eggs', 100, 1234]
+
+<li>
+索引从0开始, 可以sliced.
+
+<li>
+下标得到的单个值可以被改变.
+
+<li>
+slice得到的列表也可以被赋值.
+
+<li>
+内置函数 len() 返回长度
+
+<li>
+列表可以嵌套.
+
+</ul>
+<h2 id="toc_2.2">3.2 例子</h2>
+<ul>
+<li>
+print 可以输出多个表达式, 多个表达式之间由逗号分隔. 逗号还可以避免输出有换行.
+
+</ul>
+
+<h1 id="toc_3">4 更多控制流的工具</h1>
+<h2 id="toc_3.1">4.1 if语句</h2>
+<ul>
+<li>
+if, elif, else
+
+</ul>
+<h2 id="toc_3.2">4.2 for语句</h2>
+<ul>
+<li>
+python的for语句遍历任意sequence(列表或字符串)的元素
+<pre class="brush: python">
+words = ['cat', 'window', 'defenestrate']
+for w in words:
+	print w, len(w)
+</pre>
+
+</ul>
+<h2 id="toc_3.3">4.3 range() 函数</h2>
+<ul>
+<li>
+迭代数字序列. range()
+<pre class="brush: python">
+&gt;&gt;&gt; range(10)
+[0, 1, 2, 3, 4, 5, 6, 7, 8, 9]
+&gt;&gt;&gt; range(5, 10)
+[5, 6, 7, 8, 9]
+&gt;&gt;&gt; range(0, 10, 3)
+[0, 3, 6, 9]
+&gt;&gt;&gt; range(-10, -100, -30)
+[-10, -40, -70]
+
+&gt;&gt;&gt; a = ['Mary', 'had', 'a', 'little', 'lamb']
+&gt;&gt;&gt; for i in range(len(a)):
+...     print i, a[i]
+...
+</pre>
+
+<li>
+使用函数 enumerate() 更便利.
+
+</ul>
+<h2 id="toc_3.4">4.4 break 和 continue 语句, 以及循环上的else语句</h2>
+<ul>
+<li>
+break 语句, 用于跳出 for 和 while 循环.
+
+<li>
+循环的 else 语句, 当列表结束迭代或条件为假时, 执行该语句.
+
+<ul>
+<li>
+该 else 语句类似于 try 语句的else语句, 当其没有异常发生时则运行else语句. loop的else语句则表示当没有break发生时, 运行else语句.
+
+</ul>
+<li>
+continue 语句同C语言.
+
+</ul>
+<h2 id="toc_3.5">4.5 pass 语句</h2>
+<ul>
+<li>
+pass 语句表示什么也不干. 常用语创建最小类
+<pre class="brush: python">
+class MyEmptyClass:
+	pass
+</pre>
+
+<li>
+另外常用于占位符, 位于函数内或者条件体内, 表示待实现.
+
+</ul>
+<h2 id="toc_3.6">4.6 定义函数</h2>
+<ul>
+<li>
+def 定义一个函数
+
+<li>
+函数内第一行可以是string literal, 其为函数的文档字符串, 或docstring.
+<pre class="brush: python">
+def fib(n):
+	"""Print a Fibonacci series up to n."""
+	a, b = 1, 1
+	while a &lt; n:
+		print a,
+		a, b = b, a+b
+
+fib(2000)
+</pre>
+
+<li>
+所有在函数内分配的变量将其值存储于本地符号表中. 变量的引用首先在本地符号表中查找, 而后在封闭其的函数本地查找表中查找, 而后在全局符号表中查找, 最后在内置名称表中查找.
+
+<li>
+全局变量不能直接在函数内赋值.
+
+<li>
+一个函数调用的实际参数其将被引入被调用函数的本地符号表中.
+
+<li>
+一个函数定义将在当前符号表中引入一个函数名, 函数名称的值被解释器看成一个用户定义的函数类型. 该值可以分配给其他的名称.
+<pre class="brush: python">
+f = fib
+f(100)
+</pre>
+
+<li>
+如果一个函数没有return语句, 其返回的是None.
+
+<li>
+return 语句如果没有参数, 则返回 None.
+
+</ul>
+<h2 id="toc_3.7">4.7 函数定义的更多内容 </h2>
+<ul>
+<li>
+函数定义可以有可变数量的参数, 这里有三种形式, 可以组合在一起.
+
+</ul>
+<h3 id="toc_3.7.1">4.7.1 默认的参数值 </h3>
+<ul>
+<li>
+指定一个或多个参数的默认值
+<pre class="brush: python">
+def ask_ok(prompt, retries=4, complaint='Yes or no, please!'):
+    while True:
+        ok = raw_input(prompt)
+        if ok in ('y', 'ye', 'yes'):
+            return True
+        if ok in ('n', 'no', 'nop', 'nope'):
+            return False
+        retries = retries - 1
+        if retries &lt; 0:
+            raise IOError('refusenik user')
+        print complaint
+</pre>
+
+</ul>
+
+    </div>
+</body>
+</html>

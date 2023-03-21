@@ -1,0 +1,616 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../../../style.css">
+<title>RealTimeRendering14</title>
+<meta http-equiv="Content-Type" content="text/html; charset=cp936">
+</head>
+<body>
+
+<h1 id="toc_1">Chapter 14 Accelleration Algorithms</h1>
+<ul>
+<li>
+见图14.1, 大多数物体因为大小或者位置而不可见, 需要做一些工作来确定其为这种情况.  在没有使用技术减少需要计算地绝对数量的话, 无论Z-buffering还是ray tracing都不能处理类似的模型. 因此, 永远需要Acceleration algorithms.
+
+<li>
+许多这类算法的核心基于spatial data structures, 而后使用 culling techniques, 这些算法查找哪些物体可见以及需要将其看成更远的物体. level of detail技术可以减少保留物体的渲染复杂度. 最后, 简略介绍渲染巨大模型的系统和点渲染算法.
+
+</ul>
+
+<h2 id="toc_1.1">14.1 Spatial Data Structures</h2>
+<ul>
+<li>
+一个spatial data structure其在一些n维空间中组织几何体, 只有二维和三维结构用于这本书, 但其概念可轻易地扩展至更高维度. 这些数据结构可用于加速查询(query)关于集合实体是否overlap. 类似的查询可用于更广的种种操作, 例如在intersection testing和ray tracing期间的culling algorithm. 以及用于collision detection.
+
+<li>
+spatial data structure常为层次的, 即意味着, 最顶层封装了其下面的层, 以及其依次封装其下的层. 该结构为嵌套和递归性质. 
+
+<li>
+一些常用的spatial data structure类型为 bounding volume hierarchies(BVHs). 其变种有 binary space partitioning(BSP) trees, quadtree, and octree. BSP tree和octree为基于空间subdivision的数据结构. 例如, 所有叶子节点的空间联合就是场景完整的空间.  叶子节点空间体不相互重叠, 除了较少常用的结构, 如loose octrees. 大多数BSP tree的变种为irregular, 其空间可更任意地子划分. 而octree为regular, 及以一致的方式分割空间.一个bounding volum hierarchy, 并不为空间子划分结构, 其封装围绕几何体的空间区域, BVH无需封装所有的空间.
+
+<li>
+scene graph(场景图), 该数据结构为模型之间的关系.
+
+</ul>
+
+<h3 id="toc_1.1.1">14.1.1 Bounding Volume Hierarchies</h3>
+<ul>
+<li>
+bounding volume(BV)为封装物体集的空间体. 其形状有球体, axies-aligned bounding boxes(AABBs), oriented bounding boxes(OBBs), k-DOPs(见章节16.2的定义), BV在渲染图像上并无帮助, 其为被围绕物体在空间中的代理, 用于加速渲染, 选择, 其他的计算和查阅.
+
+<li>
+本书介绍Cormen[201]的算法.
+
+<li>
+考虑一个k-ary tree, 即一棵树其每个节点有k个子节点. 一个树只能有一个节点(根节点)高度为0, 根节点的叶子节点高度为1, 如此以下. 平衡树其所有叶子节点的高度为h或h-1. 一般来说, 平衡树的高度h为[logk n], n为树中节点的总数量.
+
+<li>
+完全树其所有叶子节点有相同高度h. 完全树的一些属性如下, 节点的总数量可以计算为几何的累积求和:
+
+</ul>
+<p>
+公式14.1
+</p>
+
+<ul>
+<li>
+叶子节点 l = k的h次方. 内部节点的数量i, i = n - l = (k^h - 1) / (k-1). 假设已知叶子节点l, 则总的节点 n = i + l = (kl-1)/(k-1). 对于一个二叉树, k = 2, 则 n = 2l - 1. 注意更高的k使得树有更低的高度, 即意味着需要更少的步骤遍历这棵树, 但其需要在每个节点上做更多的工作. 二叉树常为最简单的选择, 也有较好的性能. 然而 有些证据表示更高的k(例如 k = 4 或 k = 8)对某些应用程序给出较好的性能. 例如k=2时沿着较长的轴(axis)子划分, k=4时沿着两个最长的轴子划分, k=8时沿着所有的轴子划分. 对于其他的k很难形成一个最优化的树.
+
+<li>
+BVHs在执行各种查阅时性能卓越的. 例如, 假设一个ray应当和一个场景相交, 且返回第一个相交的物体. 使用BVH, 其在根上开始测试. 如果ray在其BV没有相交, 则ray和所有包含在BV内的几何体不相交. 否则, 继续递归测试. 只要一个BV不和ray相交, 则测试可以在BVH的子树上终止. 如果该ray和一个叶子节点的BV相交, 则该ray重新测试与该节点的几何相交.
+
+<li>
+当遍历树的时候所发现最近的物体所需要的增加数据为距离和identity. 当前最近的距离还可用于在遍历时剔除(cull)树. 如果和一个BV相交, 但其距离在最近的距离之外, 则可丢弃该BV. 正常在没有测试的情况下我们不知道一个BV的哪个孩子为最近的. 所以我们需要以任意顺序测试所有的孩子. 正如所见到的, BSP tree其可以保证front-to-back顺序. 然而, 二分(binary)的BVHs也可以做到这点, 其跟踪轴用于分割物体集为两个子集[132].
+
+<li>
+BVHs也可用于动态场景(dynamic scenes)[1050]. 当一个BV中的物体移动时, 简单地检查其是否还在其父亲的BV内, 如果还在, 则BVH仍有效, 否则, 移除物体节点和重计算父节点的BV. 而后该节点从根上递归向后插入该树中. 另一种方法为增长其父的BV以使得其拥有子节点, 而后当需要时向上递推. 两种方法, 树都会变得不平衡和无效率. 另一种方法则是放置一个BV在一段时间上物体的移动限制周边. 其称之为temporal bounding volume[4], 例如, 一个钟摆可以有一个bounding box封装其运动的整个空间体.
+
+<li>
+为了创建一个BVH, 首先能够计算的是围绕一个物体集紧身的BV. 该主题在页面732章节16.3中. 而后, 实际的BVs层次可以创建. 关于这个的策略可见页802的章节17.3.1.
+
+</ul>
+
+<h3 id="toc_1.1.2">14.1.2 BSP Trees</h3>
+<ul>
+<li>
+二元空间划分树(binary space partitioning trees), 缩写为BSP trees. 其有两个不同的变体, 分别为 axis-aligned 和 polygon-aligned. 树的创建为使用一个平面将空间划分成两部分, 而后排序几何体进入两个空间中. 可以递归进行划分. 这些树有一个有趣的性质, 如果这些树以某种确定的方式遍历, 则树的几何体内容在任意的point of view(观察点)上, 都是按照front-to-back排序的. 这个排序对于axis-aligned为近似的, 对于polygon-aligned BSPs 为精确的.
+
+</ul>
+
+<h4 id="toc_1.1.2.1">Axis-Aligned BSP Trees</h4>
+<ul>
+<li>
+创建一个axis-aligned BSP tree方法如下. 首先, 整个场景封装在一个axis-aligned bounding box(AABB)中, 其思路为递归子划分该box为更小的box. 现在, 我们将一个box看成在任意的recursion level上, 选择该box的一个轴, 生成一个垂直的平面划分该空间为两个box. 一些方案(scheme)修正该划分平面以使得能够划分box为确切的两半; 另一些则允许该平面的位置变化.
+
+<li>
+有几种方式处理物体和平面的相交, 例如, 其可以在该树此时的level存储该物体, 或者两个子box都有该成员, 或由该平面切分成两个分离的物体. 在该树level上存储其有个优点为在该树中只有该物体的一个拷贝, 其使得可以直接删除物体, 被splitting plane相交的物体其暂住在上层的树中, 这种方法趋向于无效率的. 当所有的物体向下渗透(percolate)了一个或多个叶子节点时, 将相交的物体放置在所有的子树中可以给予较大物体更紧的连接. 只是它们会相互重叠. 此时使用mailboxing scheme(也称之为timestamping)来标记在渲染一个帧时, 物体何时第一次遇到, 例如, 带有帧号(the number of the frame). 当物体在另一个叶子节点再次遇到时, 则检查mailbox, 如果其在该帧已经发送给屏幕, 则忽略该物体. 这里一个缺点为大型物体需要复制进许多叶子节点, 耗费时间和内存. 更重要的是, 每个物体的timestame需要被读写, 因而导致内存cache无效, 导致明显的减速.
+
+<li>
+每个子box包含一些物体, 且重复 plane-splitting 程序. 递归子划分每个AABB直到满足某些标准时停止该进程. 见图14.3的一个axis-aligned BSP tree例子.
+
+<li>
+splitting plane的轴和放置对于最大化效率很重要, 其中一个策略为循环轴来分割节点的box, 在根上, box永远沿着x轴分割, 其子则沿着y轴分割, 其孙则沿着z轴分割. 然后循环往复. 使用这种策略的BSP树有时被称为k-d树[1099]. 另一个策略则发现该box最大的一边, 而后沿着该方向分割box. 例如, box最大的一边在y方向上, 则分割面为 y = d, d为一个标量常量. 几何可能性理论(见章节16.4)可用于确定近似最优化的轴和分割位置. 其思路尽可能避免分割物体, 以及查找两个字节点一起最小化一个子节点中物体数量和surface面积的乘积或子节点的平均宽度.
+
+<li>
+Aila and Miettinen[4]发表了一个有效的BSP管理 scheme用于大型场景. 该系统执行lazy evaluation, 只有那些可见的节点被划分. 其避免划分世界中永远不可见的那部分来节省工作, 其还在许多帧上扩展该subdivision代价.只有那些比当前节点更小的物体被压至更下的层中. 而更大的物体(由它们的对角线长度评定)保留为节点的直接孩子. 如果一个BSP节点中小物体的数量为10或更大的树, 则该节点子划分. 几何可能性理论用于确定一个近最优化的split axis和位置. 使用Mailboxing可允许一个物体被一个split plane切割为多个节点. 该方法可避免小物体居住在BSP树中更上面的层中, 当其不可能进一步帮助时其也可终止子划分.
+
+<li>
+rough front-to-back 排序为如何使用 axis-aligned BSP树的一个例子. 其对occlusion culling算法有用(见章节14.6和章节18.3.6). 以及为了减少像素着色器的代价, 其最小化像素过度绘制(overdraw)(见章节15.4.5). 假设一个被称为N的节点正在遍历. N则为当前遍历起点的根节点, 检查N的splitting plane, 以及树在平面viewer所在的一边继续递归遍历. 只有当树的一半完全遍历, 我们才遍历另一边. 这个遍历并不会给出一个精确的front-to-back排序, 这是由于叶子节点的内容并没有排序, 以及物体可能在多个节点中. 然而其给出了一个粗糙的front-to-back排序. 当和viewer位置比较时通过开始遍历节点平面的另一边, 可以得到一个粗糙的back-to-front排序. 这对于透明排序很有用(见章节5.7). 这个遍历还可用于测试ray和场景几何体的相交. 只需要将ray的起点和viewer的位置交换. 另一种使用法为在view frustum culling(章节14.3).
+
+</ul>
+
+<h4 id="toc_1.1.2.2">Polygon-Aligned BSP Trees</h4>
+<ul>
+<li>
+BSP的另一种类型为plygon-aligned形式[1, 366, 367, 428]. 当以一个精确的排序次序渲染静态或刚体几何体时, 该数据结构特别有用. 该算法流行于游戏中, 如Doom. 其还偶尔使用, 如用于collision detection(见章节17.2).
+
+<li>
+在这种方案中, 选择一个多边形作为divider, 将空间分割为两半. 在根上, 选择一个多边形, 平面在该多边形上将场景中剩余的多边形划分为两个集合. 然和与平面相交的多边形沿着相交线被划分为两个分离的块. 在该划分平面的两个一半空间中, 再选择一个多边形作为divider, 其只划分所在一半空间中的多边形. 递归进行该工作直到所有的多边形在BSP树中. 创建一个有效的polygon-aligned BSP tree为一个耗时的过程, 类似的树通常计算一次且存储起来以重新使用. 这种类型的BSP树可见图14.4.
+
+<li>
+最好形成一个平衡树. 有许多策略用于查找用于分割的多边形以给出很好的平衡树. 一个简单的侧路为 least-crossed criterion[366]. 首先随机地选择若干的候选多边形. 该多边形其平面分割最少. 对于一个1000个多边形的场景测试, James[597]根据经验每个split操作只需要五个多边形用于测试就可以得到一个很好的树.
+
+<li>
+polygon-sligned BSP树有一些有用的属性. 对于一个给定的view, 可以严格地从后向前(或从前向后)遍历该结构.  其可用于painter算法用于渲染场景, 所有的物体以从后向前的顺序绘制, 不再需要Z-buffer.
+
+<li>
+图14.4显示了一个遍历的顺序. 具体可见图.
+
+</ul>
+
+<h3 id="toc_1.1.3">14.1.3 Octrees</h3>
+<ul>
+<li>
+octree类似于axis-aligned BSP tree. 一个box同时沿着所有三个轴分割, 而且该分割点必须位于box的中心, 其创建了八个新的box. 其使得结构regular, 让一些查阅更加有效率.
+
+<li>
+通过封装整个场景至一个最小的axis-aligned box来构造一个octree. 递归剩下的步骤, 当满足终止条件时结束. 和axis-aligned BSP树一样, 这些条件包括递归最大深度, 或一个box中有一固定数目的图元[1098, 1099]. 当满足条件时, 该算法绑定图元至该box且终止递归. 另外, 其沿着主轴使用三个平面子划分box, 因此形成八个大小一样的box. 每个新的box在进行测试, 看其是否需要再进一步划分为2x2x2更小的box. 其可用二维来描述, 这时数据结构成为quadtree. quadtree为octree其在二维上的等价形式, 只是忽略了第三个轴. 
+
+<li>
+Octree可以以和axis-aligned BSP trees相同的方式使用, 以及可以处理相同类型的查阅. 它们还可以用于occlusion culling算法(见章节14.6.2). 一个BSP树可以给出和一个octree相同的空间划分. octree其不需要存储一些其他更灵活的BSP树结构所需要的信息. 例如分割平面的位置. 但axis-aligned BSP 树仍然更有效率, 这是因为更好的平面位置比额外的内存代价和遍历时间更重要. 这里没有最有效率的方案, 其依赖于内部几何体的性质, 如何访问结构的使用模式, 以及运行代码的硬件结构. 通常内存的位置(locality)和level of cache-friendliness为最重要的因素.
+
+<li>
+在上面的描述中, 物体永远存储在叶子节点中; 因此, 确定的物体存储在多于一个的叶子节点. 另一个选择为放置物体在一个包围整个物体的最小box中. 例如图14.5中的右上星形物体其应当放在第二张图中右上的box中. 但其有很显著的缺点, 例如, 一个(小)物体位于octreee的中心, 则会将该物体放在最顶层(最大)的节点中. 这是无效率的, 这是由于一个微小物体被封装整个场景的box所界限(bounded). 一个解决方法为分割该物体, 但这会导致更多的图元. 另一种解决方法为在每个叶子节点中放置一个指针指向该物体, 则会失去效率以及使得octree编辑更困难.
+
+<li>
+Ulrich 发表了第三个解决方案, loose octrees[1279]. 其基本思想为loose octree和ordinary octree相同, 但是每个box大小的选择很宽松. 如果ordinary box一边的长度为l, 则使用kl代替, 其k &gt; 1. 这里图14.6中的k = 1.5. 注意这些box的中心点仍然相同. 通过使用更大的boxes, 和splitting plane相交的物体数量减少了. 所以物体可以放在octree中更低的层中. 一个物体永远只插入一个octree节点中, 所以从octree中删除为不重要的(trivial).使用k = 2有一些优点, 首先, 插入删除物体为O(1), 知道物体的大小意味着立即知道能够成功地插入该物体的octreelevel, 使其完全适应进一个loose box. 物体的矩心确定其放置哪个loose octree box. 这种结构可使得其很好的用于bounding dynamic objects, 其代价为某些BV的效率, 以及在遍历该结构时失去了强排序顺序. 此外, 通常物体在帧与帧之间移动很轻微, 所以之前的box在下一帧仍有效, 只有该octree中一小部分的运动物体需要更新每个帧.
+
+</ul>
+
+<h3 id="toc_1.1.4">14.1.4 Cache-Oblivious and Cache-Aware Representations</h3>
+<ul>
+<li>
+由于内存系统带宽和CPU计算能力之间的缺口逐年增长, 所以带caching的算法设计和空间数据结构非常重要. 在这个章节中, 我们将介绍cache-aware(或cacheconscious)和cache-oblivious空间数据结构. 一个cache-aware表示法假设cache块的大小已知, 因此我们可以优化其用于特定的架构(architecture). 作为对比, 一个cache-oblivious算法其设计可用于所有类型的cache大小, 以及跨平台.
+
+<li>
+为了创建一个cache-aware数据结构, 你必须首先查明用于你架构的cache block大小. 也许64个字节. 例如, 此时试图最小化你的数据结构的大小. 举例, Ericson[315]显示了它如何充分的使用32位用于一个k-d树节点. 其中该节点的32位值中有两个最重要的位. 这两个位可以表示4个类型: 一个叶子节点, 内部节点被被分为三个axes中的一个.  对于叶子节点, 上面的30位位指向一个物体列表的指针; 对于内部节点, 他们表示一个浮点(稍微低精度)的split value. 因此, 其可能在单个64字节的cache block存储一个四层深度15个节点的二叉树, (第16个节点指示哪个孩子存在以及它们位于哪里). 在他的书中可以查看细节, 关键概念为数据的访问有相当大地改进, 主要是通过确保干净地打包其结构至cache边界.
+
+<li>
+对于树, 一个流行和简单的cache-oblivious ordering位van Emde Boas Layout[32, 315, 1296]. 假设我们有一个树, T, 高度为h, 其目标为计算出树中节点的cache-oblivious layout或ordering. 让我们定义T的van Emde Boas layout位v(T). 递归地定义该结构, 树中单个节点的layout为节点自身. 如果T中有多于一个的节点, 该树则在高度上分割为一半[h/2](下中括号), 放置上面的[h/2]层进树中记为T0, 以及孩子子树从T0的叶子节点开始记为T1, ..., Tn, 树的递归属性描述如下:
+
+</ul>
+<p>
+公式14.2
+</p>
+
+<ul>
+<li>
+注意所有的字数Ti, 0 &lt;= i &lt;= n, 都通过上面的递归定义. 例如T1也要在其高度的一半上分割, 见图14.7.
+
+<li>
+通常来说, 通过两个步骤创建一个cache-oblivious layout: clustering and ordering of the cluster. 对于van Emde Boas layout, 有子树给出clustering, 以及ordering隐含在创建的顺序中. Yoon[1395, 1396]开发了技术其具体设计用efficient bounding bolume hierarchies 和 BSP树. 他们开发了一个可能性模型, 以及考虑了一个父树和其子树之间的locality, 以及spatial locality. 其思路为当访问一个parent的时候, 最小化cache misses. 通过确保其孩子的访问为廉价的. 更进一步, 紧密靠在一起的节点分组为在次序上更紧密. 开发的一个贪婪算法, 其cluster节点有最高的可能性. 这样由于没有改变底层的算法, 所以其可以获取性能更大的提升. 其仅为BVH中节点的排序.
+
+</ul>
+
+<h3 id="toc_1.1.5">14.1.5 Scene Graphs</h3>
+<ul>
+<li>
+BVHs, BSP树, 以及八叉树都使用某种类型的树作为它们基本的数据结构; 它们的不同处在于他们如何划分空间并存储结合体. 在层次方式中它们也存储几何物体, 没有更多其他的. 然而, 渲染一个三维场景不仅仅只有几何体. 动画控制, 可见性, 以及其他的元素都要使用一个scene graph来执行. 这是一个面向用户的树结构, 其扩展了纹理, 变换, level of detail, 渲染状态(例如材质属性), 光源, 以及其他所发现合适的. 场景图由一棵树表示, 以及该树为深度优先的顺序遍历以渲染该场景. 例如, 一个光源放置在内部节点上, 其仅影响其子树的内容. 另一个例子为当在树中遇到一个材质, 该材质可应用于其节点子树中的所有几何体, 或者被孩子的设置所覆盖. 可见页688图14.26显示了场景图中如何支持不同的levels of detail. 从某种意义上来说, 每个图形应用使用某种形式的场景图, 即使该图仅仅为一个根节点及用于显示的其孩子列表.
+
+<li>
+物体动画的一个方式为在树内部节点中变化变换. 场景图实现其变换该节点子树的整个内容. 这是由于变换可以放在任何内部节点中, 则可完成层次动画(hierarchical animation).
+
+<li>
+当几个节点指向相同的孩子节点时, 该树结构成为一个 directed acyclic graph(DAG)[201]. 该术语acyclic以为其必然不包含任何循环或周期. 通过方向, 用一条边以某种顺序连接两个节点, 例如从父节点到子节点. 场景图常为DAGs, 这是由于它们允许用于instantiation, 例如, 当我们想要制作一个物体的一些拷贝(实例-instance), 而不需要复制其几何体. 见图14.8所示, 两个内部节点应用不同的变换至它们的子树, 使用instance节省内存, 以及GPUs可以通过API调用快速地渲染一个instance的多个拷贝(见章节15.4.2).
+
+<li>
+当物体在场景中移动时, 必须更新场景图, 这点可以通过在树结构上递归调用来完成. 从根到叶子的方向来更新变换. 矩阵以这种遍历顺序相乘和存储在相关节点中. 然而, 变换更新了, BVs则过时了. 因此从叶子到根的方向来更新BVs. 一个相当宽松的树结构则会使这些任务复杂, 所以常避免DAGs结构, 或者使用DAGs的有限形式, 即只有叶子节点被共享. 见Eberly的书[294]以查看该课题的更多信息.
+
+<li>
+场景图自己可以用于提供一些计算的效率. 场景图中的一个节点常有一个bounding volume(BV), 以及其常相当地小于一个BVH. 场景图的一个叶子存储几何体, 然而, 其常允许编码该几何体为任意所想要的空间数据结构. 所以一个叶子可以有一整个BSP树存储一车辆几何体.
+
+<li>
+意识到完全不相关的效率方案可以和一个场景图一起使用非常重要. 其想法为spatialization, 使用不同的数据结构扩大用户的场景图(例如, BSP树, BVH等). 这些数据结构用于不同的任务, 流入快速地culling或picking. 大多数模型所位于的叶子节点可被共享, 所以一个额外的空间效率结构代价相当地低.
+
+<li>
+另一个场景图相关的概念为OpenGL中的display list, 物体放入一个专用的display list结构以预编译为某种更有效率的形式来渲染. 场景图中一个节点的物体可以放入一个display list用于便利和速度.
+
+</ul>
+
+<h2 id="toc_1.2">14.2 Culling Techniques</h2>
+<ul>
+<li>
+这里介绍三个culling技术, backface culling, view frustum culling, occlusion culling
+
+<li>
+对于实现于硬件的culling算法, 我们有时只能设置 enable/disable, 或者设置一些culling function的参数. 对于完全控制的culling算法, 程序员可以在应用程序阶段(CPU)实现该算法.
+
+<li>
+理想的culling 算法为仅发送确定的图元可见集(exact visible set- EVS)通过管线. 在本书中, 定义EVS为部分或完全可见的所有图元. 一个类似的数据结构用于理想 culling为 aspect graph, 其EVS可以从该数据结构中提取(extract). 当然, 创建类似的数据结构为理论上可能. 由于其糟糕的时间复杂度, 所以实际的算法为发现一个 potentially visible set(PVS), 其为EVS的预期. 如果PVS完全包含EVS, 则只有不可见的几何体被抛弃, 该PVS则称为保守的. 一个PVS也可以是近似的, 其不完全包含EVS. 这种类型的PVS也许会生成不正确的图像, 目标为使得这些错误尽可能地小. 由于保守PVS永远生成正确的图像, 所以其更有用. 如何估计, 例如一个算法可能在不同的粒度上考虑几何体. 多边形, 整个物体, 或物体集, 当发现一个PVS, 其使用Z-buffer渲染, 其分解成最终的逐像素可见性[185].
+
+<li>
+在接下来的章节中, 我们处理backface和clustered backface culling, hierarchical view frustum culling, portal culling, detail culling, 以及 occlusion culling.
+
+</ul>
+
+<h3 id="toc_1.2.1">14.2.1 Backface Culling</h3>
+<ul>
+<li>
+不可见部分对最终图像没有贡献. 物体的背面不需要去处理. 这种类型的culling可以一次完成整个组, 因此称之为 clustered backface culling.
+
+<li>
+所有的背面多边形为实体不透明物体中可以在进一步处理中剔除掉的部分, 假设相机在物体外面, 其没有穿透进物体(近裁剪平面). 投影多边形朝向里面的一致朝向多边形为背面多边形, 即屏幕空间的逆时针方式. 这个测试可通过计算多边形的法线来实现, n = (V1 - V0) x (V2 - V0). 这个法线可为 (0, 0, a) 或 (0, 0, -a), 其中 a &gt; 0. 如果负的z轴指向屏幕内, 则第一个结果为正面多边形. 该测试还可以公式化为多边形有符号区域的计算(见章节 A.5.4). 在screen-mapping程序完成(geometry stage中)之后可以实现上述culling test. 其会减少光栅化的加载, 但是会增加geometry stage的加载, 这是由于其要完成背面的计算.
+
+<li>
+另外一种方法为使用多边形所在平面任意一点到viewer位置的向量与平面法线的点乘, 小于0表示其为背面, 否则为正面. 其等同于计算从viewer位置到多边形所在平面的有符号距离(见章节A.5.2), 如果符号为正, 则多边形正面, 否则负面, 注意其假设法线已被单元化. 这些culling技术可见图14.10的描述.
+
+<li>
+在文章"Backface Culling Snags"[105]中, Blinn 指出两个测试几何上相同. 在屏幕空间中执行的测试, 眼睛会被转换为(0, 0, ∞),因此点乘只有屏幕空间中多边形向量的z成分. 屏幕空间中的测试更加安全, 这是由于边缘处的多边形在眼空间稍微的朝向后面, 而在屏幕空间则稍微的朝向前面. 这是由于眼空间坐标舍去了屏幕空间中的整数像素或子像素坐标.
+
+<li>
+使用类似OpenGL或DirectX的API, 通常和一些函数控制backface culling, 如允许backface或frontface culling, 或者都禁止. 注意镜像变换会使得背面多边形为正面多边形. 最后, 注意DirectX Shader Model 3.0 介绍了一个register, 其使得像素着色器程序知道多边形的那一边可见. 在这之前, 正确的显示两面多边形主要方式为渲染它们两次. 首先提出背面, 而后剔除正面, 以及反转法线.
+
+<li>
+常见的误解为背面剔除可以减少要渲染多边形数量的一半. 但对于某些类型模型未必能有这么高的收获, 例如墙壁, 地板, 天花板. 还有地形渲染中大部分多边形可见.
+
+<li>
+由CPU通过一个简单测试决定多边形集是否通过管线的技术称之为 clustered backface culling算法. 许多类似算法使用的基本概念为normal cone[1173]. 对于一个表面的一部分, 创建一个truncated cone, 其包含所有的法线方向和所有的点, 见图14.11的例子, 正如所见, 由一个法线和一个半角α以及一个锚点a定义了一个cone, 该cone包含了所有的多边形和点, 见图14.11的右部分. 其显示了viewer可以看到该部分surface的正面cone. 以及背面cone.具体可以看一些研究者的研究[612, 704, 1103]. 类似的技术在现代GPU上不怎么有用, 但是可用于剔除背面的地形tile.
+
+</ul>
+
+<h2 id="toc_1.3">14.3 Hierarchical View Frustum Culling</h2>
+<ul>
+<li>
+检查bounding volume(BV)是否与view frustum相交, 如相交, 则其内物体发送给渲染管线. 具体可见章节16.14的不同bounding volumes和view frustum相交测试的方法.
+
+<li>
+通过使用空间数据结构, 可以层次地应用这种类型的culling[179]. 对于一个bounding volume hierarchy(BVH), 一个先序遍历[201]其从根节点开始这个工作, 每个节点的BV与frustum进行测试. 如果该节点的BV在frustum之外, 则不需要再进一步处理该节点, 其子节点必然也在view之外. 如果BV完全在frustum内部, 其内容必然完全在frustum内部. 继续遍历, 但对于余下的子树不再需要进一步的frustum测试. 如果frustum和BV相交, 则继续遍历以及对其孩子进行测试. 当发现一个叶子节点相交时, 其内容(例如, 它的几何体)发送通过管线.叶子节点的图元不保证在view frustum内部. view frustum culling的一个例子可见图14.12所示. 其也可能是用多个BV测试用于一个物体或cell. 例如, 如果一个围绕一个cell的球形BV被发现与frustum重叠, 当知道box比球更小的时候, 其也许值得执行更精确的box/frustum测试[1145].
+
+<li>
+对于"frustum相交"情况的有用优化为继续跟踪看BV完全在哪个frustum planes之内. 这个信息, 完全存储为bitmask(位标识). 可以传递给intersector用于该BV其孩子的测试. 只有那些相交的平面需要再次和其孩子进行测试. 以这种方式, 根BV测试六个frustum planes, but as BVs come into view the number of plane/BV tests done at each child will go down.
+
+<li>
+view frustum culling在application stage(CPU)上操作, 意味着GPU上的加载可以减少. 对于大型场景或一定的相机视图, 只有一小部分的场景也许可见, 只有该部分需要发送通过渲染管线. view frustum culling技术可以利用场景中的空间一致性, 旖旎为物体可以位置靠近, 封装于一个BV中, 以及附近的BVs也许可以分层地集中起来(clustered hierarchically). 
+
+<li>
+其他胜过BVH的空间数据结构也可用于view frustum culling.  其包含了八叉树和binary space partitioning(BSP) tree[1099]. 当渲染动态场景时, 这些方法不够弹性. 其需要较长时间更新结构里的对应物体. 但对于静态物体, 这些方法的执行胜过BVH. 也可使用 hybird 方法, 其使用BV紧紧地包围八叉树节点的内容. 另外的方法则用单独的结构用于动态物体.
+
+<li>
+简单地使用polygon-aligned BSP树用于view frustum culling. 如果包含场景的该box可见, 此时则测试根节点的splitting plane. 如果该平面和frustum相交(发现frustum的两个角在平面的不同边上[见章节16.10]). 此时遍历BSP树的所有分支. 如果view frustum完全在平面的一边, 则平面另一边则被剔除. 轴对齐的BSP树和八叉树也可简单地使用. 从根开始遍历树,以及在遍历过程中测试树中的每个box. 如果一个box在frustum外部, 则终止该分支的遍历.
+
+<li>
+对于 view frustum culling, 有一个简单技术其利用frame-to-frame coherency. 如果某帧中发现一个BV在frustum某个确定平面之外, 则(假设viewer移动并不快速)其下一帧也可能在平面之外. 如果一个BV在某确定平面之外, 则BV存储其平面索引. 在接下来的帧中, 当遍历时遇到该BV时, 其存储的平面首先测试, 这样可期望平均速度的增加[48].
+
+<li>
+如果在帧到帧的过程中, 限制viewer一次只沿着一个轴平移和旋转, 则可利用这点用于更快的frustum culling. 当一个BV被发现在frustum平面之外, 则在BV中存储平面到该BV的距离., 当viewer只平移时, 则更新到BV的距离. 相对于原生的view frustum culler, 其可提供客观的加速[48].
+
+</ul>
+
+<h2 id="toc_1.4">14.4 Portal Culling</h2>
+<ul>
+<li>
+对于建筑的模型, Airey[5, 6]在1990年首先介绍了portal culling, Teller and Sequin[1258, 1259]与Teller和Hanrahan[1260]构造了更有效率和更复杂的算法用于portal culling. 对于所有的portal-culling算法, 墙壁看成室内场景的巨大occluder. Portal culling为occlusion culling的一个类型. 通过每个portal, 该occlusion算法使用一个view frustum culling机制(例如门或窗口). 当走过一个portal时, 降低减少frustum使得其紧密地适应portal. 因此该算法看起来为view frustum culling的一个扩展, 在portal其view frustum之外的物体都被抛弃.
+
+<li>
+Portal-culling以某种方式预处理场景, 场景被划分为cells, 其常对应于房间和建筑中的过道(hallways). 连接相邻房屋的门和窗口称之为portals. 一个cell中的每个物体和墙壁存储在一个数据结构中, 其关联至该cell. 我们也在相邻的cells和portals上存储信息, 在相邻图中连接它们. Teller发表了用于计算该图[1259]的算法. 该技术对于现代复杂场景自动化其处理极端困难, 则是由于其手动完成cell的定义和图的创建.
+
+<li>
+Luebke and Georges[79]使用一个简单的方法, 其仅仅要求少量的预处理. 所需要的信息仅为关联每个cell的数据结构, 如上所述. 渲染类似场景步骤如下:
+	1. 找出cell V, 其为viewer(eye)所处的地方.
+	2. 初始化一个二维bounding box P到屏幕的矩形上.
+	3. 使用view frustum culling, 渲染cell v中的几何体, 该frustum为viewer所发出的, 也通过矩形P(初始化为整个场景).
+	4. 在V其相邻的portals上递归. 对于当年cell的每个可见portal, 投影该portal至屏幕上以发现该投影的二维轴对齐围绕盒(two-dimensional axis-aligned bounding box, BB). 计算P和BB的逻辑相交.
+	5. 对于每个相交, 如果其为空, 则通过该portal相连的cell不可见, 省略该cell. 如果不为空, 则相邻cell的内容可以再次由viewer的frustum通过矩形相交处cull.
+	6. 如果想见不为空, 则该相邻的相邻cell也许可见. 则重用第三个步骤和与BB相交的P. 每个物体当期渲染时也许为打上标签, 以避免渲染该物体多于一次.
+
+<li>
+一个值得实现的优化为使用stencil buffer用于更精确的culling. 由于和一个AABB一起, portals常被过高估计, 实际的portal可能更小. 可使用stencil buffers将实际portal的外面mask away光栅化(例如, 纹理和深度测试). 类似地, 类似地, 可设置一个围绕该portal的scissor rectangle用于accelerator以增加性能[4]. 当处理观察通过多个portals的透明物体时, stencil 和 scissor特别有用. 该物体应当每个portal只渲染一次以便正确执行透明; 在一个portal中多次渲染相同物体会给出一个不正确的结果.
+
+<li>
+portal culling算法如图14.13描述的例子, viewer或eye位于cell E中, 因此渲染它的内容. 其相邻的cells为C和F, 原始的frustum看不到到cell D的portal, 因此略过其进一步的处理. cell F可见, 减小缩小view frustum以使得其通过portal连接到F. 此时使用该缩小的frustum渲染F的内容. 此时, 检查F的相邻cells, G在该缩小的frustum上不可见, 略过它. H可见, 再次缩小frustum以通过H的portal. 而后渲染H的内容. H没有邻居需要访问. 现在, 递归回返至cell C. 缩小frustum以使得其适应C的portal, 而后接下来就是C中的物体渲染. 最后, 没有更多的portal需要渲染, 渲染完成.
+
+<li>
+见图14.14为portals使用的另一个视图, 这种类型的portal culling还可用于修建planar reflection(见章节9.3)的内容. 左图显示在上方观看该建筑物, 白线显示了frustum如果经过每个portal缩小. 红线则由一个镜子的反射frustum创建. 实际的图见右边. 
+
+<li>
+mirror reflection可以通过变换viewer来有效地创建. 当要渲染所通过portal的cell内容时.
+
+</ul>
+
+<h2 id="toc_1.5">14.5 Detail Culling</h2>
+<ul>
+<li>
+detail culling其为牺牲质量换取速度的技术. 这是因为当viewer运动时小的细节对于场景最终的图像作用不大. 当物体停止之时, 常禁用detail culling. 考虑一个物体的bounding volume, 该BV投影至投影平面, 则可计算投影的像素面积, 如果像素的数量低于用户定义的门槛值, 则物体省略进一步的处理. 因为这个原因, detail culling有时称为screen-size culling. detail culling还可以在场景图上层次地执行. geometry 和 rasterizer stage都可以从这个算法中得到好处.  注意其可以实现为简单的LOD技术(见章节14.7), 其LOD为整个模型, 其他的LOD为空物体(empty object).
+
+</ul>
+
+<h2 id="toc_1.6">14.6 Occlusion Culling</h2>
+<ul>
+<li>
+正如我们所见, 我们可以通过称为Z-buffer的硬件结构(见章节2.4)解决可见性. 但该法并不是非常smart的机制. 例如viewer看向10个球体所组成的一条线, 如图14.15所示. 从该视点渲染图像则会只显示一个球体, 虽然所有球体都会光栅化且比较Z-buffer, 以及到时可能写入颜色缓存和Z-buffer. 图14.15的中间部分显示了该场景在该给定视点的depth complexity. depth complexity关联至每个像素被重写多少次. 对于本例, 球的中间部分要绘制10次, 其中9次写入都是不需要的. 密集居住模型中的描述情况. 这种类型的布局(configuration)可见于实际场景, 如热带雨林, 引擎, 摩天大厦内部. 图14.16可见一个Manhattan-style城市的例子.
+
+<li>
+给定前面章节中的例子, 可用类似的算法成为 occlusion culling algorithms. 这是由于它们视图剔除(避免绘制)那些被遮蔽的物体, 即被场景中其他物体掩藏住的物体. 最理想的occlusion culling算法为只选择可见的物体.有效地occlusion culling其背后的思路为早期执行简单的测试以剔除隐藏物体集. 某种意义上说, backface culling为occlusion culling的一个简单形式.
+
+<li>
+这里有occlusion culling算法的两种主要形式, 名为 point-based 和 cell-based. 见图14.17的描述. Point-based visibility为在单个观察位置上, 哪些可见. cell-based visibility, 其不可见为cell上任意点都看不见该物体. cell-base visibility的优点为一旦计算出用于该cell的结果, 其可用于接下的几个帧, 只要viewer位于该cell中. 但是其比point-based visibility计算更费时. 因此其常在预处理步骤中执行. 注意, point-base和cell-based visibility常与point和area light source比较, 对于一个物体要想不可见, 其必须在umbra region中, 即, 完全遮蔽的.
+
+<li>
+还可分类occlusion culling算法为在图像空间中, 物体空间中, 光线空间中操作. Image-space算法于某些投影之后在二维中执行可见性测试. 而 object-space算法则使用原始的三维物体, 其与Ray-space[90, 91, 685]法则在一个dual space中执行它们的测试. 有兴趣的每个点(常为二维的)在该dual space转换为一个ray.这个思路使得测试更简单, 更精确, 或在该空间中更有效率.
+
+<li>
+图14.18显示了occlusion culling算法一个类型的伪代码. 函数为 isOcclude, 常被称为 visibility test. 检查物体是否被遮蔽. G为要被渲染的几何物体集. Or(r为下标大写形式)为occlusioin representation, P为潜在的occluder集, 其可和Or结合. 依赖于特别的算法, Or 表示某种类型的occlusion信息, Or在开始设为空, 之后处理所有的物体(经过了view frustum culling test的物体).
+
+<li>
+考虑一个具体的物体. 首先, 我们测试该物体是否被遮蔽, 这点有关于Or. 如果你被遮蔽, 则不再进行进一步处理. 如果该物体不能确定为被遮蔽, 则渲染该物体, 该物体添加至P, 如果P中物体的数量足够多, 则合并这些物体至Or. P中的每个物体都可作为occluder. 
+
+<li>
+注意到occlusion culling 算法的主要部分, 其性能依赖于物体绘制的顺序, 粗略地根据眼睛的距离从前向后排序物体的类似数据, 可以提升性能.
+
+</ul>
+
+<h3 id="toc_1.6.1">14.6.1 Hardware Occlusion Queries</h3>
+<ul>
+<li>
+通过使用特殊的渲染模式, 现代GPU支持occlusion culling. 当一个多边形集和Z-buffer的当前内容比较之时, 用户可以查询硬件以发现它们是否可见. 这些多边形常形成一个更复杂物体的bounding volume(例如, 一个box或k-DOP). 如果这些多边形都不可见, 则物体可以被剔除. 硬件中其实现为光栅化多边形中, query和比较它们的深度值与Z-buffer值. 生成这些多边形可见的像素数量n, 如果n为0, 则所有的多边形被遮蔽. 因此, 该occlusion queries操作应该在图像空间(image space)中. 类似的queries可被hierarchical Z-buffer算法使用.
+
+<li>
+如果像素计数 n = 0, 以及相机位置不在该 bounding volume 之内, 则整个bounding volume完全被遮蔽, 以及其内包含的物体可以安全地抛弃. 如果 n &gt; 0, 则一小部分的像素没有通过该测试, 如果n小于设置的一个像素门槛值, 则可丢弃该物体, 这是由于其可能不会对最终的图像产生太多作用. 以质量换取速度. 另一种用法则是让n确定物体的LOD(见章节14.7). 如果n非常小, 则物体非常少的部分可见, 所以可以使用更少细节的LOD.
+
+<li>
+如果发现该bounding volume为obscured(被遮掩的), 我们可以通过避免发送该复杂物体至渲染管线赢得性能. 然而, 如果测试失败, 我们则因为花费额外的时间测试该bounding volume损失了性能.
+
+<li>
+这样的技术下, 如果没有任何occlusion culling, 则性能报告浪费到原始性能的两倍[1143]. 对于大型城市场景或建筑物内部, 则可获得更高的性能.
+
+<li>
+一个查询的等待时间(latency)常常相对长; 常常, 在这个时间内可以渲染数百或数千个多边形(见章节18.3.5更多latency的介绍). 因此, 该GPU-based occlusion culling法是值得的, 尤其当围绕盒包(bounding boxes)含大量数目的物体, 以及发生相对大数量的occlusion.
+
+<li>
+在HP's VISUALIZE fx硬件上(circa2000), 自动创建bounding box, queried这些bounding box 用于足够长的显示列表[213]. 使用更紧凑的bounding box可以加速渲染. Bartz[69]在机械的CAD模型(即物体内部常常很复杂)使用k-DOPs(26-DOPs)提升了帧率的百分之五十.
+
+<li>
+该GPU的occlusion query可以使用其作为基本的构建块, 以用于一些算法. Meifiner[851]在一个分层的设置中使用occlusion queries. 在一个分层的数据结构中表示该场景, 例如一个BVH或octree. 首先, view frustum culling用于查找不完全在view frustum之外的节点. 而后这些都是有序的, 这是基于节点的中心点(例如, 围绕盒的中心), 次序为front-to-back. 渲染最近的叶子节点, 其无需对frame buffer进行occlusion测试. 使用 occlusion query, 测试接下来物体的BVs. 如果一个BV可见, 则递归地测试其内容, 或渲染其内容. Klosowski and Silva 开发了一个 constant-frame-rate算法, 其使用了一个称为prioritized-layered projection算法[674]的occlusion culling 算法, 然而, 首先其不为 conservative(保守的) algorithm, 它牺牲了图像质量以保证有常量帧率. 其次, 他们开发了一个该算法的conservative版本, 其使用了 occlusion queries[674].
+
+<li>
+由图形硬件执行的上述研究有一系列限制: 当执行了一个occlusion query(其限制为一个布尔值), 该GPU的执行停止直到query的结果被返回. 现代GPU已采用一个模型, CPU可以发送任意数量的queries至GPU. 而后定期地检查以查看是否有结果可以利用.  对于它的部分, GPU执行每个query, 并将结果放置进一个queue中, 该queue由GPU检查. 以及CPU可以连续地向下发送queries或者不需要停下来的实际可渲染物体.
+
+<li>
+如何有效率地使用一个queue of queries模型为研究的一个活跃区域. 问题是一个query必须在某些实际的几何体已被渲染至屏幕之后执行. 所以该bounding box tested  更可能被遮蔽, 但CPU需要留下来等待query的结果. 在其他的最优化中, Sekulic[1145]推荐采用 temporal coherence 的优势, 测试物体用于 occlusion, 但是在下一帧才开始检查结果. 如果物体发现在前一帧中被遮蔽, 则在该帧中不渲染, 但是其需要再次测试occlusion. 这给予了一个近似的occlusion test, 这是由于一个物体可见但不是渲染于一个帧, 以及其有很高的帧率, 所以这个问题不是很严重.
+
+<li>
+对于之前帧可见的物体则有很聪明的做法. 首先, 使用物体自身用于该query: 正常渲染该物体, 同时还发送一个query用于可见性. 这个技术可以避免需要渲染该test bounding box自身. 接下来, 可见的物体不需要每帧都要发送(issue) query, 一个可见物体每几帧进行用于occlusion的测试, 因此每帧需要处理更少的occlusion queries, 在很小的代价下, 偶尔的渲染一个可能发现已被遮蔽的物体.
+
+<li>
+Bittner 和 Wimmer[92, 1360]希望避免任何来自 temporal coherence的错误, 同时还得到这个方法的好处. 他们的方法开始于遍历一个层次且有效率的的结构, 以front-to-back的顺序渲染物体, 在他们的方案中, 只有叶子节点保有物体, 测试叶子节点和之前隐藏的内部节点用于occlusion. 比较帧与帧之间的可见性状态(visibility states). 其变化可能会导致进一步的层次结构更新以及叶子节点的渲染. 不考虑事实有时候也使用该方法query内部节点, 作者, 该方法保证总的queries次数不会大于叶子节点的数量. 该技术的最主要优点为节省大量的渲染时间, 主要因为可发现其内部节点都为被遮蔽的.
+
+<li>
+值得在一个帧中执行的queries数量为受限的, 以及每个query都会花费一些时间. 就本身而言, queries 应当在最可能被遮蔽的物体上执行. Kovaleik and Socher[694]当应用程序运行的时候, 其收集了用于某个物体在若干帧上queries的运行统计, 帧的数量表示当一个物体被发现隐藏时, 其影响在后面时间时间里有多频繁的进行它的occlusion测试. 即意味着, 物体可见则可能保持可见, 其测试频率减少. 如果可能, 隐藏的物体则会每帧进行测试. 由于这些物体很可能从occlusion queries获益, Guthe等人[470]同样探测(explore)执行一个运行统计分析(running statistical analysis), 以及它们的系统可适应于地下的GPU.
+
+<li>
+有两个问题: (1)不知道渲染的场景是否需要occlusion cull. (2)确定哪些物体集当做occluder. 渲染的第一个在frustum中的物体必须可见, 所以花费queries在它们身上非常浪费.
+
+<li>
+尽管如此, 硬件occlusion query系统已被证明很有用, 尤其是当depth complexity很高时. 统计的方法可以跟踪是否以及何时occlusion testing 可能会有效率. 所以他们有很好的adaptive properties. 该基于occlusion query上的基本构建块(basic building block)的系统为目前为止现代GPU常用的occlusion culling方案.
+
+</ul>
+
+<h3 id="toc_1.6.2">14.6.2 Hierarchical Z-Buffering</h3>
+<ul>
+<li>
+层次地Z-buffering(HZB), 由Greene[450, 452]开发的算法其在occlusion culling研究上有重要的影响, 虽然这里描述的CPU-side形式很少使用, 但是该算法为GPU硬件Z-culling的基础(章节18.3.7). 
+
+<li>
+该算法在一个octree中维护场景模型, 以及帧的Z-buffer为一个图像金字塔(image pyramid), 我们也成为Z-pyramid --- 该算法在图像空间中操作. 这个octree其允许场景的occluded regions的hierarchical culling, 以及Z-pyramid允许各自图元和bounding volume的hierarchical Z-buffering. Z-pyramid为这个算法的occlusion representation, 这些数据结构例子可见图14.19. 可以利用任意方法来组织一个octree中的场景图元. 虽然Greene[450]推荐一个具体的算法以避免分配小的图元至一个大的octree节点上.
+
+<li>
+现在我们将描述Z-pyramid如何维护, 以及其如何用于加速culling. Z-pyramid的最好层(finest level, highest-resolution)为简单地一个标准Z-buffer. 在所有其他的层中, 每个z值为其相邻更好层里对应2x2窗口中最远的z值. 因此, 每个z值表示该屏幕一个正方形区域中的最远值. 无论何时在z-buffer中重写z值, 其传播至z-pyramid中更粗糙的层, 递归直至图像金字塔的最顶层, 即只有一个z值留下. Pyramid结构见图14.20的描述.
+
+<li>
+执行octree节点的hierarchical culling如下: 以一个粗糙的 front-to-back 次序遍历octree节点. 使用一个扩展的occlusion query(章节14.6.1)测试该octree的围绕盒对于Z-pyramid的结果. 我们开始测试最粗糙的Z-pyramid cell, 其封装了该box的屏幕投影. 在该cell中其box的最近深度(Znear)和Z-pyramid比较, 如果Znear更远, 则该box则被知道为被遮蔽的. 而后继续在Z-pyramid中向下递归测试, 直到该box发现被遮蔽, 或者到达Z-pyramid的底层.即此时知道该box为可见的. 对于可见的octree boxes, 继续在octree中递归向下测试, 以及最终渲染可能可见的几何体至hierarchical Z-buffer. 完成这个以至于接下来的测试可以使用之前渲染物体的occluding power.
+
+</ul>
+
+<h3 id="toc_1.6.3">14.6.3 Other Occlusion Culling Techniques</h3>
+<ul>
+<li>
+hierarchical occlusion map(HOM)算法[1402, 1403], 类似于 hierarchical Z-buffer, 其为允许hierarchical image-space culling的一个方式. 不同于HZB, 其提供使用approximate occlusion culling的能力. 每帧构建一个hierarchical depth buffer用于occlusion testing. 在每个level上使用一个不透明的门槛来确定物体是否因为可见而绘制. 如果仅有物体的一小部分可见则该物体剔除掉. 做过一个CPU-driven系统, 该算法已过时.
+
+<li>
+自从1995年开始, occlusion horizons的思路开始用于计算机游戏. Wonka 和 schmalstieg[1369]以及Downs[277]讨论了两个变种. 该类型的算法常用于有效率地渲染都市场景, 即为城市和农村. 从前到后渲染类似的场景, 可以跟踪到地平线被绘制, 然和发现在当前地平线之后和之下的物体都可以剔除掉. 不过用于城市的该算法已过时, Fiedler[342]发表了一个基于地平线的occlusion culling scheme用于远山场景, 该方案在基于GPU的地形渲染系统中实现.
+
+<li>
+该occlusion horizon算法为 point-based. 有时优先选择cell-based visibility, 但通常其计算比point-based visibility更复杂. Wonka[1370]发表了Occluder shrinking算法, 其可使用point-based occlusion算法生成一个cell-based visibility. 主要通过在场景中收缩(shrinking)所有occluder一定量来扩展validity of point visibility. 他们还发表了 frustum growing[1371, 1372], 其常用于连接occluder shrinking. 假定viewer可以以一定的速度移动和变换方位, 可以创建一个增长的(grown)frustum来包含view位置和方位中所有可能的变化.
+
+<li>
+Schaufler[1117]使用shafts(章节16.15)用于occlusion culling. 其用于可见性预处理以用于步行通过城市场景. 像occluder shrinking, 其设计为cell-based, 以及使用有趣的技术来fuse occluder. 通过确定哪些cells被完全遮蔽, 一大堆的cell和他们的几何体可以快速的被剔除掉.
+
+<li>
+一个称为"instant visibility"的算法使用occluder shrinking和frustum growing来即时计算visibility, 同时在另一台机器上完成渲染[1371]. 其基本思路为在一个visibility server上平行地计算visibility至渲染管线, 可能在本地网络上有一个不同的计算机连接至一个显示host. 在resulting system中, 当visibility server计算用于之后帧的visibility, 该display host连续的渲染新的帧. 因此, 一个visibility在每帧的开始时准备, 以及没有任何等待时间直接传入渲染管线. 随着今天的多核架构, 类似的lookahead(预先做准备) scheme变得更加有用. 分配多于一个的渲染帧至visibility计算可以用于改进的visilibity solutions. 通过分离visibility计算和渲染, 该instant visibility系统组合了在线visibility处理和cell-based visibility的优点. Koltun[684]发表了另一个用于cell-based visibility的算法, 他们注意到可以用一个更简单的occluder来替代多个occluder的联合(fusion), 该简单occluder尽可能的覆盖它们. 类似的替代称为a virtual occluder.
+
+<li>
+Aila and Miettinen[3, 4]实现了 incremental occlusion map(IOM), 他们组合了一些有新技术的不同已存算法. 他们的实现可以以很好的帧率处理动态场景. 然而这是一个复杂的系统.
+
+</ul>
+
+<h2 id="toc_1.7">14.7 Level of Detail</h2>
+<ul>
+<li>
+level of detail(LODs)的基本思想为当一个物体对于渲染的图像起作用越来越小时, 其使用简单的版本.
+
+<li>
+Fog, 章节10.15中所描述的, 其常和LOD一起使用. 当进入不透明物体时, 允许我们完全地跳过一个物体的渲染, 同样, 该fogging机制也可用于实现 time-critical 渲染(见章节14.7.3), 其主要通过移动远截平面靠近viewer来完成. 使得物体早期就可被剔除掉, 以及可以达到更快的渲染以保持帧率上升.
+
+<li>
+一些物体, 类似球体, 贝塞尔面, subdivision surface, levels of detail作为它们几何描述的一部分, 其底下的几何体为曲面的, 以及一个单独的LOD控制确定其如何tessellate为可显示的多边形. 见章节13.6.4的算法用于修改tessellation的质量用于parametric surface以及subdivision surfaces.
+
+<li>
+通常, LOD算法由三个主要部分组成, 分别名为 generation, selection, switching. LOD generation为生成一个模型不同细节的不同representation. 在章节12.5中有讨论简化方法其可用于生成所想要数量的LOD. 另一个方法为手动生成有不同数量三角形的模型. selection机制可以基于一些标准选择一个level of detail model. 例如在屏幕上的估计面积. 最后, 我们需要从一个level of detail 变化至另一个level of detail, 该处理可以用术语 LOD switching. 见本章节中不同的LOD switching 和 selection 机制.
+
+<li>
+LOD背后的思路还可以应用模型的其他方面, 或者即时是渲染方法的使用. 更低的level of detail模型还可以使用更低质量的纹理和着色器, 从而进一步节省内存和计算时间[164]. 可以根据距离, 重要度, 或其他因子简化着色器自身[959, 996]. Kajiya[618]发表了一个hierarchy of scale显示surface lighting models如何overlap(部分重叠, 重叠) texture mapping methdos, 其依次 overlap 几何细节. 另一个技术为可以使用更少的骨头用于远方物体的skinning操作.
+
+<li>
+当静止物体相对遥远时, 可以使用impostors(见章节10.7.1)以很小的代价来表示他们[806]. 其他的surface渲染方法, 例如 bump 或 relief mapping, 可用于简化一个模型的表达. 图14.21给出了一个例子. Teixeira[1257]讨论了如何使用GPU来bake normal maps到surface上. 最重要的缺点为简化技术会导致轮廓是去他们的弯曲形状.  Loviscach[797]发表了一个沿着轮廓边缘extruding(挤压) fins方法来创建弯曲的边缘.
+
+<li>
+Lengyel[764, 765]提出了使用范围技术(the range of techniques)表示一个物体的一个例子. 在这个研究中, 当极端靠近毛发时, 有几何表示毛发, 而后远一点则有alpha blending polyline表示, 而后由volume texture "shell"的混合表示, 最后则变成一个纹理图. 见图14.22. 知道何时以及如何能够从一个建模和渲染技术集转换为另一个以增加最大的帧率和质量仍未研究的技术(art)和开放区域.
+
+</ul>
+
+<h3 id="toc_1.7.1">14.7.1 LOD Switching</h3>
+<ul>
+<li>
+当从一个LOD切换至另一个LOD时, 一个突变的模型代替常常会很明显. 这个差别称之为popping. 
+
+</ul>
+
+<h4 id="toc_1.7.1.1">Discrete Geometry LODs</h4>
+<ul>
+<li>
+在LOD算法最简单的类型中, 其不同的representation为包含不同数量图元相同物体的模型. 这个算法非常适合现代图形硬件[801], 这是由于单独的静止meshes可以存储于GPU中, 以及被重用(见章节18.3.4和章节12.4.5). 更多细节的LOD则有更高数量的图元. 图14.23中显示了一个物体三个LODs的例子. 该图也显示了到viewer不同距离的不同LODs. 当前帧使用一个确定的LOD, 在下一帧中, 选择机制选择了另一个LOD, 以及立即使用用于渲染. 这种类型的LOD法通常为最糟糕的.
+
+</ul>
+
+<h4 id="toc_1.7.1.2">Blend LODs</h4>
+<ul>
+<li>
+概念上, switch的一个明显方法为在一个很短的时间段内, 线性混合两个LODs. 不过渲染一个物体的两个LODs会比只渲染一个LODs更加昂贵, 某种意义上违背了LODs的意愿. 但是由于LOD切换只花费很少的时间, 且不是同时所有物体切换, 所以其质量的改进值得这个代价.
+
+<li>
+假设LODs之间的转变, 如LOD1和LOD2, LOD1为正在渲染的当前LOD, 这个问题为如何以合理的方式渲染和混合LODs, 写入单独的offscreen目标而后混合他们, 其代价昂贵的, 以及有其自己的问题.
+
+<li>
+Giegl and Wimmer[394]发表了一个混合方法其运作实际上简单且易于实现. 首先, 不透明地绘制LOD1至帧缓存(包括颜色和Z), 而后渐渐显出LOD2, 其主要是通过增加它的alpha值从0到1, 以及使用"over"混合模式, 见章节5.7中的描述. 当LOD2完全显示不透明时, 其转为当前LOD, 以及LOD1消失. 该允许显示或消失的LOD渲染时应当允许z-test和禁止z-write. 以避免后面绘制的远方物体绘制在渲染该faded LOD的结果之上. 在所有不透明内容之后, 以有序地顺序简单地绘制所有faded LODs, 其通常也用于透明物体. 注意在转变过程的中间, 不透明地渲染所有LODs.  Mittring[887]讨论了类似的方法, 除了screen-door transparency(可能在subpixel level)用于版本之间dissolve.
+
+</ul>
+
+<h4 id="toc_1.7.1.3">Alpha LODs</h4>
+<ul>
+<li>
+完全避免popping的一个简单方法为 alpha LODs. 这个技术可以仅仅使用其自身, 或者联合其他的LOD switching技术. 其在原始的model或者最简单的可见LOD上使用. 当用于LOD选择的metric(度量)(例如, 到物体的距离)增加, 则物体的整个透明度增加(α减少), 以及当它到达完全透明时(α = 0.0)物体消失, 这个发生于metric值大于用户定义的不可见门槛值. 也可以定义另一个门槛值用于物体何时开始透明. 当达到不可见门槛值时, 只要metric值大于门槛值, 则物体完全不发送经过管线. 当物体已经不可见, 以及它的metric降低至小于不可见门槛值, 则减少它的透明度, 并重新开始可见.
+
+<li>
+优点为其比discrete geometry LOD法更连续, 且当物体不可见时可以获得性能. 图14.24显示了alpha LODs的一个例子.
+
+<li>
+使用alpha透明的一个问题就是要根据深度进行排序, 以确保正确的进行透明混合. 为了渐隐远处植物, Whatley[1350]讨论了如何使用noise texture用于户外的透明. 其有一个dissolve的效果, 当距离增加时, 物体上更多的纹素消失. 其质量不如alpha fade, 但是该透明不需要排序.
+
+</ul>
+
+<h4 id="toc_1.7.1.4">CLODs and Geomorph LODs</h4>
+<ul>
+<li>
+关于mesh simplification的处理可以用于创建一个复杂物体的不同LOD模型. 用于执行这个简化的算法可见章节12.5.1的讨论. 一种方法创建一个不连续的LODs集, 而后像之前那样使用. 然而, 边塌缩为一个有趣的属性, 其允许制作LODs之间转变的其它方式.
+
+<li>
+在每个边塌缩执行之后, 一个模型其多边形会少两个. 如果该处理可以animate, 则有原始模型和其轻微简化版本之间的平滑转变. 对于每个边塌缩, 单个顶点连接进另一个顶点中. 一系列边塌缩上, 一系列顶点移动连接进其他的顶点中. 通过存储边塌缩系列, 该处理可以反转过来, 所以简化版本可以变成更复杂的版本. 边塌缩的反转称之为一个顶点拆分(vertex split), 所以可以根据所选择LOD值代表的可见多边形数量来精确地改变物体的level of detail. 例如在100米处的物体, 其模型由1000个多边形组成, 而移动到101米处, 则可能有998个多边形组成. 类似的方案称之为连续的LOD技术. 不是所有的模型在CLOD流中看起来很好, 尤其其渲染比单个多边形更加快速时. 如果需要削减场景中若干相同物体, 则每个CLOD物体需要指定自身特定的三角形集, 这是由于它不会和其他的相匹配.
+
+<li>
+在vertex split中, 一个顶点变成两个顶点, 意味着, 复杂模型上的每个顶点来自于更简单版本中的某些顶点. Geomorph LODs[50]为由simplification所创建的不连续模型集, 以及其维护顶点之间的连通性. 当切换一个复杂模型到一个更简单的模型, 该复杂模型的顶点为它们原始位置和更简单版本位置之间的插值. 当该转变完成之后, 更简单的LOD模型用于表示该物体. 见图14.25的一个转变例子. 这里可以看出geomorph的一些优点, 预先选择静态模型可以有高的质量, 以及很容易地转换为多边形meshes; 还可避免popping. 缺点为其每个顶点需要插值, 而CLOD不使用插值, 所以从不改变其顶点集的位置. 另一个确定为物体总是显示为不断变化地, 看起来为distracting(令人注意的). 尤其是那些纹理的物体(textured objects). Sander 和 Mitchell[1107]描述了一个系统, geomorphing用于连接静态的, GPU-resident 顶点和index buffer.
+
+<li>
+一个相关的思路称之为fractional tessellation, 在类似的scheme中, 可以设置用于曲面的tessellation factor为任意浮点数字, 以及可避免popping. Fractional tessellation 可以用于贝塞尔patch, 以及 dispacement mapping primitives. 见章节13.6.2更多的细节.
+
+</ul>
+
+<h3 id="toc_1.7.2">14.7.2 LOD Selection</h3>
+<ul>
+<li>
+用于 LOD selection 的技术也可以用于选择好的occluder用于occlusion culling 算法.
+
+<li>
+通常, 求解一个metric或者称为benefit function用于当前视点(viewpoint)和物体的位置. 该metric值挑选(pick)一个合适的LOD, 该metric基于物体bounding volume(BV)的投影面积或者viewpoint到物体的距离. benefit function的值记为r, 见章节13.6.4如何快速地估计一个线条在屏幕上的投影.
+
+</ul>
+
+<h4 id="toc_1.7.2.1">Range-Based</h4>
+<ul>
+<li>
+选择一个LOD常用的方法为关联一个物体不同的LOD到不同的范围内. 最详细细节的LOD其范围为0到某个用户定义的值r1, 接下来的范围为r1到r2, 且r2&gt;r1. 之后都是如此. 一个场景图中4个不同LOD以及它们的范围和它们对应的节点, 可见图14.26.
+
+</ul>
+
+<h4 id="toc_1.7.2.2">Projected Area-Based</h4>
+<ul>
+<li>
+另一个常用语LOD selection的metric为bounding volume的投影面积(或者一个估计值). 这里我们显示如何估计透视投影中球体和箱子在投影面积内像素的数量, 以及显示如何有效率的近似一个多边形的固定角.
+
+<li>
+从球体开始, 随着距离增加, 物体投影的大小减少. 我们定义球的中心位置c和半径r, viewer则位于v, 查看方向为单元化向量d. 所以距离为 d*(c-v), 我们还假设view到近截平面的距离为n, 当物体位于近截平面时其为原始大小. 投影球体的半径估计, 投影球体半径的估计其投影面积为 πp. 更高的值用于选择更多细节的LOD.
+
+</ul>
+<p>
+公式12.3
+</p>
+
+<ul>
+<li>
+实际上通常简单地使用一个bounding sphere围绕一个bounding box. 但薄的或者平坦的物体其投影面积会经常明显的变化. Schmalstieg和Tobler开发了一个快速的程序用于计算一个box的投影面积[1130]. 其思路为分类(classification)相机的视点以及相关box. 然后使用这个分类来确定哪个投影的顶点包含在投影box的轮廓内.通过查找表(LUT)完成这个处理. 使用这些顶点, 可以通过使用910页的技术来计算面积. 这个分类可以归类三个主要的情况, 见图14.28. 实际上, 通过确定视点定位围绕盒平面的那一面来完成分类, 为了效率, 该视点(viewpoint)变换为该box的坐标系统, 所以该分类只需要比照. 比赛的结果放入一个bismask中, 其可用于索引LUT. 该LUT确定多少个顶点在边缘由该viewpoint可以看到, 而后其他的查找用于发现轮廓顶点. 而后他们投影至屏幕, 计算出面积. 可在网上找到该算法的源代码.
+
+<li>
+为了选择一个occluder, Coorg和Teller[199]估计该多边形对着的固定角. 其可用于LOD selection, 他们的近似法为:
+
+</ul>
+<p>
+公式14.4
+</p>
+
+<ul>
+<li>
+a为多边形的面积, n为多边形的法线, v为观察(view)方向向量, d为viewpoint到多边形中心的向量. v和n假设为单元化. 该几何体可见图14.29. r值越高, 则benefit越高, 固定角近似估计该benefit, 这是由于面积越大, 其值越大. 且与到多边形的距离成反比. 当viewer看上多边形的"head-on"则可达到最大值. 且当多边形发现和view方向之间夹角越大, 其值越小. 但是该属性对于occluder selection最有用, 对LOD selection则不然.
+
+</ul>
+
+<h4 id="toc_1.7.2.3">Hysteresis</h4>
+<ul>
+<li>
+当用于确定LOD的metric逐帧围绕某值ri变化时, 会发生不必要的popping. 会发生来回反复的循环. 其可通过某些围绕ri值的hysteresis来解决[661, 1079]. 其可见图14.30用于一个range-based LOD的描述, 但可应用于任意类型. 当r增加时只用上面一行的LOD范围, 当r减少时, 只用下面一行的.
+
+</ul>
+
+<h4 id="toc_1.7.2.4">Other Selection Methods</h4>
+<ul>
+<li>
+在投影面积之外, Punkhouser和Sequin[371]建议使用物体的重要性, 运动(motion), hysteresis(迟滞), 以及焦点. viewer的关注焦点为一个重要的因素. 例如, 体育游戏里, 会给予最多的关注在球上, 所以其他的角色可以有相对低的levels of detail[661].
+
+<li>
+根据应用程序, 其他的策略也许富有成效的. 可以使用overall visibility, 例如, 透过浓密的叶子所看到的近处物体可以使用较低的LOD渲染. 更全局的metric也可能使用. 例如限制高细节的LOD数量以便于能在给定的多边形预算内[661]. 在下一章节可以看到该主题更多的内容. 其他的因素有visibility , colors, textures. 感知的(perceptual)metric也可以用于选择一个LOD[1051].
+
+</ul>
+
+<h3 id="toc_1.7.3">14.7.3 Time-Critical LOD Rendering</h3>
+<ul>
+<li>
+渲染系统常想要常量的帧率. 实际上, 其涉及到"hard real time" 或 time-critical. 给定一个时间量, 例如说30ms, 在其内完成其任务(例如, 渲染一个图像), 当时间到达时, 系统停止处理. 现在可以用LOD表示的场景中物体来完成这个hard real-time渲染算法.
+
+<li>
+Funkhouser 和 Sequin[371]发表了启发式的算法, 其修改适应用于场景中所有可见物体的level of detail的选择(selection)以满足常量帧率的要求. 这个算法为可预期的, 其根据所需要的帧率和哪些物体可见来选择可见物体的LOD, 类似的一个算法可与一个 reactive 算法形成对比, 其选择基于渲染上一帧的时间.
+
+<li>
+例如一个物体成为O, 其渲染的level of detail称为L, 则给出(O, L)用于一个物体的每个LOD, 定义两个启发式, 一个启发式估计在一个确定的level of detail上渲染一个物体的代价: Cost(O, L). 另一个估计在一个确定的level of detail上渲染所能获得的benefit: Benefit(O, L). 该benefit函数估计在确定LOD一个物体图像能做出的贡献.
+
+<li>
+假设物体所在或所相交的视图平截头体(view frustum)成为S. 则该算法背后的主要思路为优化用于物体的LODs的选择, 其S使用了启发式地选择函数. 尤其, 我们想要最大化
+
+</ul>
+<p>
+公式14.5
+</p>
+
+<ul>
+<li>
+且其有限制
+
+</ul>
+<p>
+公式14.6
+</p>
+
+<ul>
+<li>
+换句话, 我们想要在所希望帧率内选择物体的leve of detail以给出"最好的图像".
+
+<li>
+cost函数和benefit函数都很难定义, 因此他们执行于所有的情况下. 可以通过不同viewing参数下多次LOD的渲染时间来估计cost函数, 见章节14.7.2的不同benefit函数, 实际上, 物体BV的投影面积常足够作为一个benefit函数.
+
+<li>
+最后, 我们将讨论如何选择用于场景中该物体的level of detail. 首先, 我们注意如下: 对于某些viewpoint, 一个场景也许太复杂, 使得不能够保持所需的帧率. 为了解决这个, 我们可以定义一个LOD用于在每个最低detail level的物体, 其为简单地一个不带图元的物体. 例如我们避免渲染该物体[371]. 使用这个技巧, 我们只渲染最重要的物体以及略过不重要的物体. 
+
+<li>
+为了选择用于一个场景"最好的"LODs. 公式14.5可以在公式14.6的限制下最优化. 这个为一个 NP-complete问题, 即意味着要正确地解决这个问题, 唯一要做的事情就是测试所有不同的组合并选择出最好的组合. 这对于任意类型的算法来说都不可能. 一个更简单更可能的方法为使用一个贪婪(greedy)算法, 该算法试图最大化用于每个物体的其值 = Benefit(O, L) / cost(O, L), 该算法处理在 view frustum 内的所有物体, 且降序选择渲染物体. 例如, 首先是最高值的物体. 如果一个物体在多于一个LOD上有相同的值, 则选择渲染有最高benefit的LOD. 该算法运行时间为 O(nlogn),  以及其可以产生一个解决方案(solution)至少有最好的一半好[371, 372]. Funkhouser和Sequin还利用frame-to-frame的一致性用于加速其值的排序.
+
+<li>
+关于LOD管理的更多信息和LOD管理与portal culling的组合可见 Funkhouser的博士论文[372]. Maciel 和 Shirley[806]则组合了LOD和imposter, 并发表了一个用于渲染户外场景的近似常量时间算法. 其通用的思路为使用一个物体的不同表达的层次体系. 以某种方式遍历该树在给定的确定时间量里给出最好的图像. Mason和Blake[824]发表了一个 incremental hierarchical LOD selection 算法. 再一次, 一个物体的不同表达(representation)可以是任意的. Eriksson[317]发表了一个hierarchical level of details[HLODs], 使用这个, 一个场景可以以常量帧率渲染, 或者渲染可以界定渲染的错误. Wimmer 和 Schmalstieg发表了一个分析的公式, 可以挑选(selecting)多边形数量的平衡选择(balanced choices)用于连续的level of detail[1357]. 他们使用Lagrange multipliers解决相同的问题, 其Funkhouser 和 Sequin解决用于管理静态LODs[371].
+
+</ul>
+
+<h2 id="toc_1.8">14.8 Large Model Rendering</h2>
+<ul>
+<li>
+到目前为止, 都暗示渲染的模型都适应计算机的主存. 但永远都不会是这种情况. 一个例子为渲染地球模型. 我们使用一些嵌套的数据结构. 通常使用一个quadtree-like(类似四叉树)数据结构以包括地球的surface[228, 330]. 在叶子节点中使用不同的数据结构, 这一点依赖于它的内容. 同样, 为了维护合理的帧率, 只有将要进入view的区域在他们需要之前从硬盘里读页. Aliage[17, 18, 1]组合了一些算法用于极大的场景. 章节3.2.5讨论了clip-mapping, 一个相关的技术管理大型纹理. Dietrich[255]提供了一个非常好的概述著作在该领域.
+
+</ul>
+
+<h2 id="toc_1.9">14.9 Point Rendering</h2>
+<ul>
+<li>
+1985年里, Levoy 和 Whitted 写了一个开创的技术报告[766]建议使用点作为新的图元渲染每个事物. 其一般的想法为使用一个点的大集合表示一个surface并渲染它们. 在之后的pass中, 执行Gaussian filtering以填充渲染点之间的空隙. Gaussian filter的半径依赖于surface上点的密度. 以及屏幕上的投影密度. Levoy 和 Whitted 在VAX-11/780上实现他们的系统, 但直到15年后他们的point-based渲染再次变得引人关注. 再次兴起的原因一为计算力的水平, 二为可以使用激光范围扫描器[768]获取非常大的模型. 类似的模型初始化表示为不相互连接的三维点. Rusinkiewicz 和 Levoy 发表了一个系统称之为 QSplat[1091], 其使用球的层次体系表示一个模型. 这个层次体系还可用于分层的backface 和 view frustum culling, 以及 level of detail 渲染. 压缩该树中的节点以便于能够渲染由数百万点组成的场景, 渲染一个点为带一个半径的形状, 称之为一个 splat. 可以使用的不同splat形状为正方形(squares), 不透明的圆(circle), 以及模糊的(fuzzy)圆. 见图14.31的例子. 也许在树中的任意level上停止渲染. 在该level的节点渲染为与该节点球体有相同半径的splats. 所以构建该bounding sphere hierarchy以使得在所有level桑看不到holes. 由于树的遍历可以在任意level停止, 所以可以通过在合适的level上停止遍历得到互动的帧率. 当用户停止移动, 可以反复提纯渲染的质量知道到达层次体系的叶子. Pfister[1009]发表了一个surfel的一个surface元素. 一个surfel也为一个point-based图元. 使用一个octree存储采样的surfel(位置, 发现, 过滤的纹素). 在渲染中, 该surfels投影至屏幕上, 而后使用一个visibility splatting算法以填充产生的任何hole.
+
+<li>
+Baerentzen[53]讨论了使用一个point-based模型作为一个代替用于远方的物体. 当模型中的一个三角形只有一个像素或更小的大小. 点可以更快地渲染, 这是由于其没有任何三角形要设置和插值. Botsch[130]使用一个deferred shading技术及一个elliptical weighted average(EWA) filter以有效地提供高质量结果.
+
+</ul>
+
+</body>
+</html>

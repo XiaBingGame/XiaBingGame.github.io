@@ -1,0 +1,56 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../../../style.css" />
+    <title>ch01</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="../index.html">首页</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<div id="第一章 简介 "><h1 id="第一章 简介 " class="header"><a href="#第一章 简介 ">第一章 简介 </a></h1></div>
+<ul>
+<li>
+传统的 IP 地址: 前1-2个字节表示某个机构, 接下来的字节表示特定子网, 最后一个字节表示特定机器或服务.
+
+<li>
+特殊 IP 地址段:
+
+<ul>
+<li>
+127.-.-.-: 用于与同一机器上的一些其他服务或程序交互. 主要用 "127.0.0.1"
+
+<li>
+10.-.-.-, 172.16~31.-.-, 192.168.-.-: 私有子网, 用于构建组织内部网络
+
+</ul>
+<li>
+路由(routing): 根据目的IP地址选择将IP数据包发往何处.
+
+<li>
+操作系统结合 IP 地址和掩码来表示子网
+
+<li>
+网络数据包包含一个"不分组"(DF, Don't Fragment)的标记, 在源计算机和目的计算机之间的某条物理网络无法容纳太大的数据包时, 发送者可以通过这个标记选择是否进行分组
+
+<ul>
+<li>
+UDP 不会设置 DF 标记, 无论传输多少数据, 所有数据包都能到达接收方
+
+<li>
+TCP 可能会设置 DF 标记, 避免不断被分组, 使会话效率低下.
+
+</ul>
+</ul>
+
+    </div>
+</body>
+</html>

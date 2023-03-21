@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../../style.css">
+<title>OpenSceneGraph��ά��Ⱦ������ָ��3</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</head>
+<body>
+
+<ul>
+<li>
+3大基本类节点: Node, Geode, Group
+
+<li>
+获取节点的父节点指针, getParent()
+
+<li>
+Billboard
+
+<ul>
+<li>
+有三种模式: POINT_ROT_EYE, POINT_ROT_WORLD, AXIAL_ROT
+
+</ul>
+<li>
+osg::PositionAttitudeTransform 是一个位置变换节点, 提供模型的位置变换, 大小缩放, 原点位置以及坐标系变换
+
+<ul>
+<li>
+主要方法: setPosition, getPosition, setAttitude, getAttituede, setScale, getScale, setPivotPoint, getPivotPoint(原点)
+
+</ul>
+<li>
+osg::MatrixTransform
+
+<ul>
+<li>
+主要方法: setMatrix, preMult, postMult, getInverseMatrix.
+
+</ul>
+<li>
+osg::AutoTransform 继承自 osg::Transform, 使节点自动对齐于摄像机或屏幕, 用于显示不变化的文字或者其他标识
+
+<ul>
+<li>
+三种对齐模式: NO_ROTATION, RATATE_TO_SCREEN, ROTATE_TO_CAMERA.
+
+</ul>
+<li>
+osg::Switch 开关节点, 可以有选择的进行渲染, 如果想要实现允许或者禁止各种开关节点的渲染, 需要调用节点更新回调或者节点访问器来控制其渲染状态
+
+<ul>
+<li>
+主要成员函数有: 
+
+<ul>
+<li>
+setNewChildDefaultValue() --- 新加节点的初始值
+
+<li>
+getNewChildDefaultValue()
+
+<li>
+setValue(unsigned int pos, bool value) // 设置索引为 pos 的值
+
+<li>
+getValue(unsigned int pos) const;
+
+<li>
+setChildValue()
+
+<li>
+getChildValue()
+
+<li>
+setAllChildrenOff()
+
+<li>
+setAllChildrenOn()
+
+<li>
+setSingleChildOn()
+
+</ul>
+</ul>
+<li>
+当一个物体进入不透明的雾化区域时, 完全可以不用绘制物体, 和LOD一起使用.
+
+<ul>
+<li>
+osg::LOD 有两个派生类, 分别为 osg::PagedLOD, osgSim::Imposter
+
+<li>
+LOD 计算视点到物体包围盒中心的距离来确定 LOD, 还可以根据屏幕像素大小来切换
+<pre c++>
+enum CenterMode
+{
+	USE_BOUNDING_SPHERE_CENTER,
+	USER_DEFINED_CENTER
+}
+enum RnageMode
+{
+	DISTANCE_FROM_EYE_POINT,
+	PIXEL_SIZE_ON_SCREEN
+}
+</pre>
+
+</ul>
+<li>
+osg::PagedLOD --- 实现动态分页加载, 根据视点来加载所需要的, 该节点还可以包含 LOD 节点, 其与 osg::LOD 节点的区别在于, osg::LOD 节点存在于一个文件之中, osg::PagedLOD 的每个节点都是磁盘中的文件, 可以根据需要来加载这些文件, 加载过程中有单独的线程负责实时调度及加载.
+
+<ul>
+<li>
+分页细节层次主要是用来处理大规模的数据, 在地形和 GIS 方面有广泛的应用. 可以把模型进行预处理, 在渲染场景时, 再根据需要来实时加载需要的数据以及卸载无用的数据.
+
+<li>
+osg::LOD 节点存在于一个文件中, 而 PagedLOD 节点只提供索引的作用, 每个 LOD 节点存在于磁盘文件中, 但不把文件存在于一个文件中.
+
+</ul>
+<li>
+替代节点
+
+<ul>
+<li>
+osgSim::impostor 继承自 osg::LOD 节点, 也是一种布告板, 通过从当前视点将一个复杂物体对象绘制到一幅图像纹理上创建的, 其中渲染的图像纹理映射到布告板上.
+
+<li>
+成员函数: setImpostorThreshold(float distance)
+
+</ul>
+<li>
+目前遮挡裁剪算法主要有两种: 分别是基于点的遮挡和基于单元的遮挡裁剪.
+
+<ul>
+<li>
+基于点的可见性: 从单个视点位置看到所有的物体.
+
+<li>
+基于单元的可见性: 针对一个方体或者圆体单元进行可见性判断.
+
+</ul>
+<li>
+osg::OccluderNode 主要采用的是基于点的遮挡算法, 但节点本身不具备遮挡能力, 因此, 在判断时需要指定一个者当面: void setOccluder(ConvexPlanarOccluder* occluder)
+
+<li>
+坐标系节点: osg::CoordinateSystemNode, 是一个场景的对象关联一个坐标系统, 常用坐标系统有 WKT, PROJ4, USGS, 通常与 osg::EllipsoidModel 节点一起使用. osg::EllipsoidModel 节点主要用来模拟天体. osg::EllipsoidModel 节点还有一个作用是实现经纬度与坐标之间的转换.
+
+<ul>
+<li>
+WKT 坐标系
+
+</ul>
+</ul>
+
+
+<div id="第4章 OSG中几何体的绘制 "><h1 id="第4章 OSG中几何体的绘制 ">第4章 OSG中几何体的绘制 </h1></div>
+<ul>
+<li>
+osg::Vec2, osg::Vec3, osg::Vec4 用于保存纹理坐标, 顶点, 法线, 颜色
+
+<li>
+使用顶点索引对象 osg::DrawElementsUInt 保存顶点索引, 使用颜色索引 osg::TemplateIndexeArray 保存颜色
+
+<li>
+Drawable 类是一个抽象类, 其派生类有:
+
+<ul>
+<li>
+osg::DrawPixels, osg::Geometry, osg::ShapeDrawable, osgParticle::ParticleSystem, osgParticle::PrecipitationEffect::PrecipitationDrawable, osgShadow::OccluderGeometry, osgShadow::ShadowVolumeGeometry, osgSim::ImpostorSprite, osgText::TextBase
+
+<li>
+osg::DrawPixels 类(主要封装了 OpenGL 中 glDrawPixels() 的功能)
+
+<li>
+osg::Geometry 类(绘制几何体的类)
+
+<li>
+osg::ShapeDrawable(封装了一些已经定义好的几何体, 不需要坐标即可直接调用, 如长方体, 正方体, 球体等)
+
+</ul>
+<li>
+osg::PrimitiveSet 类继承自 osg::Object 虚基类, 其派生类有 osg::DrawArrayLengths, osg::DrawArrays, osg::DrawElements, 而从 osg::DrawElements 派生 osg::DrawElementsUByte, osg::DrawElementsUnit, osg::DrawElementsUShort
+
+<ul>
+<li>
+封装了 opengl 的绘图基元, 如点, 三角形
+
+</ul>
+<li>
+DrawArrays 的基本用法: osg::DrawArrays::DrawArrays(GLenum mode, GLint first, GLsizei count);
+
+<li>
+osg::Geometry 类有三大类方法
+
+<ul>
+<li>
+指定向量数据, 通过如下函数实现
+
+<ul>
+<li>
+void setVertexArray(Array* array)	// 设置顶点数组
+
+<li>
+void setVertexData(const ArrayData&amp; arrayData)  // 设置顶点数组数据
+
+<li>
+void setVertexIndices(IndexArray* array)	// 设置顶点索引数组
+
+<li>
+void setNormalArray(Array* array) // 设置法线数组
+
+<li>
+void setNormalData(const ArrayData&amp; arrayData)	// 设置法线数组数据
+
+<li>
+void setColorArray(Array* array)	// 设置颜色数组
+
+<li>
+void setColorIndices(IndexArray* array)	// 设置颜色索引数组
+
+<li>
+void setColorData(const ArrayData&amp; arrayData)	// 设置颜色数组数据
+
+<li>
+void setTexCoordArray(unsigned int uint, Array* array)	// 设置颜色数组, 第一个参数是纹理单元
+
+<li>
+void setTexCoordData(unsigned int index, const ArrayData&amp; arrayData)	// 设置颜色数组数据
+
+<li>
+void setTexCoordIndices(unsigned int unit, IndexArray* array)	// 设置颜色索引数组
+
+</ul>
+<li>
+设置绑定方式, 数据绑定主要有两项, 法线和颜色
+
+<ul>
+<li>
+void setNormalBinding(AttributeBinding ab):
+
+<li>
+void setColorBinding(AttributeBinding ab):
+
+<li>
+主要绑定方式: BIND_OFF, BIND_OVERALL, BIND_PER_PRIMITIVE_SET, BIND_PER_PRIMITIVE, BIND_PER_VERTEX
+
+</ul>
+<li>
+数据解析, 采用何种方式渲染几何体
+
+<ul>
+<li>
+bool addPrimitiveSet(PrimitiveSet* primitiveset)
+
+</ul>
+</ul>
+<li>
+绘制并渲染几何体主要有如下3大步骤:
+
+<ul>
+<li>
+创建各种向量数据
+
+<li>
+实例化一个几何体对象
+
+<li>
+加入叶节点并渲染
+
+</ul>
+<li>
+常用的几何体有
+
+<ul>
+<li>
+osg::Box
+
+<li>
+osg::Capsule
+
+<li>
+osg::Cone
+
+<li>
+osg::Cylinder
+
+<li>
+osg::HeightField
+
+<li>
+osg::InfinitePlane
+
+<li>
+osg::Sphere
+
+<li>
+osg::TriangleMesh
+
+<li>
+要渲染这些几何体, 其必须要与 osg::Drawable 关联, 可以使用 osg::Drawable 类的派生类 osg::ShapeDrawable 
+
+</ul>
+<li>
+网格化类 osg::TessellationHints
+
+<ul>
+<li>
+预定义几何体对象的精细程度, 对圆柱, 圆锥都很有意义
+
+<li>
+可细分的几何体对象: Box, Capsule, Cone, Cylinder, Sphere
+
+</ul>
+<li>
+凹多边形或自交叉多边形分解为简单凸多边形的过程, 称之为多边形的分格化
+
+<li>
+多边形分格化的类 osgUtil::Tessellator
+
+<ul>
+<li>
+这部分略过
+
+</ul>
+<li>
+常见的几何体操作, 用于提高性能和渲染效率, 主要包括 osgUtil::Simplifier(简化), osgUtil::SmoothingVisitor(生成法线), osgUtil::DelaunayTriangulator(三角化工具), osgUtil::TriStripVisitor(条带化)
+
+<li>
+osgUtil::Simplifier 继承自 osg::NodeVistor 类, 通过访问器的方式遍历几何体并对其进行简化处理
+
+<ul>
+<li>
+主要两个方面的参数
+
+<ul>
+<li>
+当几何体样本比率小于 1 时, 设置点的误差限制
+
+<li>
+当几何体样本比率大于 1 时, 设置边的长度限制
+
+</ul>
+<li>
+样本比率越大, 简化越少, 样本比率越小, 简化越多
+<pre c++>
+virtual void apply(osg::Geode&amp; geode) // 应用于叶节点
+void simplify(osg::Geometry &amp;geometry) // 简化几何体
+</pre>
+
+<li>
+这两个函数同样可用于 osg::Node 节点, 不过, 关联实例时需要使用 accept() 方法
+
+<li>
+osgUtil::Simplifier 简化采用的是边塌陷算法
+
+</ul>
+<li>
+osgUtil::DelaunayTriangulator 类
+
+<ul>
+<li>
+创建狄洛尼三角网有如下3个步骤:
+
+<ul>
+<li>
+创建顶点数组
+
+<li>
+创建一个 osgUtil::DelaunayTriangulator 对象, 并初始化顶点数组, 同时生成三角网, bool triangulate()
+
+<li>
+创建一个几何体对象, 把 osgUtil::DelaunayTriangulator 类对象生成的绘制图元加入到几何体中. 还可以加入一些限制条件, 限制条件可以是点, 线或多边形
+
+<ul>
+<li>
+void addInputConstraint(DelaunayConstraint *dc) // 添加限制条件
+
+</ul>
+</ul>
+</ul>
+<li>
+三角带绘制, osgUtil::TriStripVisitor 类继承自 osgUtil::BaseOptimizerVisitor 类. 成员函数:
+
+<ul>
+<li>
+void stripify(osg::Geometry &amp;drawable) // 条带化几何体
+
+<li>
+virtual void apply(ost::Geode &amp;geode) // 应用于叶节点
+
+<li>
+三角形带的数量应该尽可能少
+
+</ul>
+<li>
+osgUtil::SmoothingVisitor 类继承自 osg::NodeVisitor 类, 生成顶点法向量
+
+</ul>
+
+<div id="第5章 渲染状态, 纹理与光照 "><h1 id="第5章 渲染状态, 纹理与光照 ">第5章 渲染状态, 纹理与光照 </h1></div>
+<ul>
+<li>
+osg 的渲染状态还可以指定着色器
+
+<li>
+osg::StateSet 类派生自 osg::Referenced, 其可以关联到任一节点(Node)或关联到Drawable类
+
+<li>
+尽量使场景图形的 SateSet 最少化
+
+<li>
+OSG 将渲染状态分成两个部分, 分别为渲染属性(Attribute)和渲染模式(Mode). 模式可以控制某个功能的开启和禁用.
+
+<li>
+从 Node 或 Drawable 对象中获取一个 StateSet 实例
+
+<ul>
+<li>
+osg::StateSet* state = obj-&gt;getOrCreateStateSet();
+
+<li>
+在 stateset 中设置模式和属性
+
+</ul>
+<li>
+OSG 为每个状态属性定义了不同的类, 所有的属性类均继承自 osg::StateAttribute, osg::StateAttribute <a href="是无法直接实例化的虚基类.html">是无法直接实例化的虚基类</a>
+
+<ul>
+<li>
+OSG 将所有的属性和模式分为两大部分, 分别为纹理和非纹理
+
+<li>
+设置渲染属性: 将需要修改的属性类实例化, 而后设置该类的数值
+<pre c++>
+osg::StateSet* state = geom-&gt;getOrCreateStateSet();
+osg::CullFace* cf = new osg::CullFace(osg::CullFace::BACK);
+state-&gt;setAttribute(cf):
+</pre>
+
+<li>
+设置渲染模式, osg::StateSet::setMode() 设置允许或禁止某种模式.
+<pre c++>
+osg::StateSet* state = geom-&gt;getOrCreateStateSet();
+state-&gt;setMode(GL_FOG,osg::StateAttribute::ON);
+</pre>
+
+<li>
+osg::StateSet::setAttributeAndModes() 同时设置属性和模式
+<pre c++>
+osg::BlendFunc* bf = new osg::BlendFunc();
+state-&gt;setAttributeAndModes(bf);
+</pre>
+
+<li>
+状态继承特性
+
+<ul>
+<li>
+osg::StateAttribute::OVERRIDE: 所有的子节点都将继承这一属性或模式, 子节点对它们的修改将无效
+
+<li>
+ost::StateAttribute::PROTECTED: 不受父节点的影响, 比如光源禁止光照.
+
+<li>
+osg::StateAttribute::INHERIT: 强制继承父节点的渲染状态
+
+</ul>
+</ul>
+<li>
+纹理坐标 WrapParameter, WrapMode, FilterParameter, FilterMode, Mode(映射模式), Mode(坐标生成模式), Coord(坐标), InternalFormatMode(内部格式)
+
+<li>
+创建二维纹理的步骤如下:
+
+<ul>
+<li>
+指定用户几何体的纹理坐标
+
+<li>
+创建纹理属性对象并保存纹理图形数据
+
+<li>
+为 StateSet 设置合适的纹理属性和模式
+
+</ul>
+<li>
+设置纹理坐标
+<pre c++>
+osg::ref_ptr&lt;osg::Geometry&gt; geom = new osg::Geometry;
+osg::ref_ptr&lt;osg::Vec2Array&gt; tc = new osg::Vec2Array;
+geom-&gt;setTexCoordArray(0, tc.get()); // 第一个参数为纹理单元号`
+tc-&gt;push_back(osg::Vec2(0.0f, 0.0f);
+tc-&gt;push_back(osg::Vec2(1.0f, 0.0f);
+tc-&gt;push_back(osg::Vec2(1.0f, 1.0f);
+tc-&gt;push_back(osg::Vec2(0.0f, 1.0f);
+</pre>
+
+<li>
+osg::Image 读取图像, setFileName 方法读取图像, 将 Image 关联到 Texture2D 即可. 使用 setImage() 即可进行关联, setUnRefImageDataAfterApply() 可以释放内部的图像.
+<pre c++>
+osg::ref&lt;osg::Image&gt; image = new osg::Image;
+image-&gt;setFileNmae("tree.rgb");
+</pre>
+
+<li>
+osg::Texture2D 属于 osg::StateAttribute 的派生类, 用于管理 OpenGL 纹理对象
+<pre c++>
+osg::ref&lt;osg::Texture2D&gt; tex = new osg::Texture2D;
+tex-&gt;setImage(image.get());
+</pre>
+
+<ul>
+<li>
+解除对 Image 引用的方法, 以节省内存
+<pre c++>
+tex-&gt;setUnRefImageDataAfterApply(true);
+</pre>
+
+</ul>
+<li>
+osg::StateSet::setTextureAttribute() 将一个纹理属性关联到 StateSet 对象, 第一个参数为纹理单元, 第二个参数是继承自 StateAttribute 类的一种纹理属性, 即 1D, 2D 之类, 比如 osg::Texture2D 对象
+<pre c++>
+osg::ref&lt;osg::Texture2D&gt; tex = new osg::Texture2D;
+state-&gt;setTextureAttribute(0, tex.get());
+</pre>
+
+<li>
+osg::StateSet::setTextureMode() 设置材质渲染模式, 第一个参数是纹理单元
+<pre c++>
+// 禁用纹理单元1的二维纹理
+state-&gt;setTextureMode(1, GL_TEXTURE_2D, osg::StateAttribute::OFF);
+</pre>
+
+<li>
+osg::StateSet::setTextureAttributesAndModes();
+<pre c++>
+osg::ref&lt;osg::Texture2D&gt; tex = new osg::Texture2D;
+// 设置第0个纹理单元的纹理并开启.
+state-&gt;setTextureAttributeAndModes(0, tex);
+</pre>
+
+<li>
+自动生成纹理坐标: OBJECT_LINEAR, EYE_LINEAR, SPHERE_MAP, NORMAL_MAP, REFLECTION_MAP
+
+<li>
+立方体纹理 osg::TextureCubeMap
+
+<li>
+创建球体天空盒的主要步骤如下:
+
+<ul>
+<li>
+创建立方图纹理对象
+
+<li>
+设置自动生成纹理坐标
+
+<li>
+设置纹理矩阵
+
+<li>
+设置立方图纹理
+
+<li>
+设置矩阵变换节点, 以实现合适的矩阵变换
+
+<li>
+关闭光照并关闭背面剔除, 设置渲染顺序, 加入到叶节点中绘制
+
+</ul>
+</ul>
+
+<div id="第6章 文件的读写 "><h1 id="第6章 文件的读写 ">第6章 文件的读写 </h1></div>
+<ul>
+<li>
+osgDB::DatabasePager, 可以在不干扰当前渲染的情况下后台从数据库读取各部分信息.
+
+<li>
+手动添加文件路径列表的两个方法:
+
+<ul>
+<li>
+还可以添加文件路径列表, osgDB::getDataFilePathList(), setDataFilePathlist()
+<pre c++>
+osgDB::FilePathList pathList = osgDB::getDataFilePathList();
+pathList.push_back("..."):
+pathList.push_back("..."):
+osgDB::setDataFilePathList(pathList);
+</pre>
+
+<li>
+osgDB::Registry::instance()-&gt;get()
+<pre>
+osgDB::Registry::instance()-&gt;getDataFilePathList().push_back(newPath);
+</pre>
+
+</ul>
+<li>
+文件读取失败的时候, 可以通过设置调试信息 NOTIFY 来确定.
+
+<li>
+文件的读取
+<pre c++>
+osg::ref_ptr&lt;osg::Node&gt; node = osgDB::readNodeFile("cow.osg");
+osg::ref_ptr&lt;osg::Image&gt; image = osgDB::readImageFile("lz.rgb"):
+</pre>
+
+<li>
+文件的保存
+<pre c++>
+osgDB::writeNodeFile(*node, "saved.osg");
+</pre>
+
+<li>
+c++ 流缓冲的概念
+
+<ul>
+<li>
+iostream 有3种形式的缓冲
+
+<ul>
+<li>
+不带缓冲区, 类似于 fwrite
+
+<li>
+空间自动管理的缓冲区, 下一个可写位置总是为末边界+1
+
+<li>
+外置的缓冲区, 如定义局部字符串数组, 并将此区域传递给 iostream
+
+</ul>
+<li>
+具体的缓冲由 basic_streambuf 及其派生类负责, 如 basic_filebuf, basic_stringbuf. basic_istream 和 basic_ostream 都是 basic_streambuf 的友元类
+
+<li>
+basic_iostream 包含了一个 basic_streambuf 的派生类的实例, 可以通过 basic_iostream 的成员函数 rdbuf() 来获取, 并通过构造函数传入.
+
+<li>
+流操作符 "&lt;&lt;" 实际上是通过调用 basic_streambuf 的相关操作实现的.
+
+<li>
+如果想要控制标准输入/输出流的缓冲区行为, 需要生成自己的 basic_streambuf 派生类, 并生成该类的对象, 传递给标准输入/输出流.
+
+<li>
+在 OSG 支持的文件中, 只有 .osg, .ive 以及一些图像文件支持流操作, 都可以用数据流操作来显示读取进度.
+
+<li>
+所有的 osgDB 插件都可以使用 osgDB::readNodeFile(), osgDB::writeNodeFile() 和 osgDB::readImageFile() 之类的函数来执行文件的读取和写入操作, 其中一些插件还允许使用标准数据流来执行一些低层级的操作, 如从用户自定义的数据流中读写数据.
+
+<li>
+根据 STL, 用户可以编写自定义的数据流缓存类来跟踪 uflow() 方法, 从而获取当前读入的字节数
+
+<li>
+按照如下的步骤来读取文件
+
+<ol>
+<li>
+给出文件名, 并搜索用于读取该文件的插件, 也就是调用 osgDB::Registry::instance()-&gt;getReaderWriterForExtension(), 根据文件扩展名参数, 返回 osgDB::ReaderWriter 对象
+
+<li>
+创建自定义数据流缓存类的实例, 将文件名传递给类的构造函数, 此时函数将按照类似于 standard std::basic_filebuf&lt;&gt; 的方法打开文件
+
+<li>
+通过自定义类的实例创建 std::istream 对象
+
+<li>
+调用步骤(1)获取的 ReaderWriter 对象的 readNode() 方法, 并将步骤(3) 创建的 istream 对象作为其输入参数. 此时 OSG 将读入文件, 同时调用自定义类的 uflow() 方法, 该方法将负责显示读入字节的进度信息.
+
+</ol>
+</ul>
+<li>
+OSG_LIBRARY_PATH 设置插件搜索路径, 搜索 osgdb_&lt;name&gt;.dll 这样的插件
+
+<li>
+osgDB::Registry 的构造函数实现了扩展名的映射表对应不同的文件格式和支持此类格式的插件
+
+<li>
+OSG 通过职责链的设计模式实现插件的查找, 查找步骤如下:
+
+<ul>
+<li>
+搜索已注册的插件列表(osgDB::Registry 内)
+
+<li>
+根据之前的命名规则创建插件文件的名称, 并尝试读取插件库, 如成功, 则添加插件到已注册插件列表中
+
+<li>
+回到步骤1, 如读取IO失败, 则返回失败信息.
+
+</ul>
+<li>
+osgArchive 是 OSG 的一个强悍的打包工具, 通过对 osgArchive.cpp 源码进行学习, 其有 11 个步骤, 见 PDF.
+
+<li>
+自定义插件 见 PDF, 插件读写类继承自 osgDB::<a href="ReaderWriter.html">ReaderWriter</a>
+
+<li>
+读取状态 ReadStatus, 写入状态 WriteStatus, OSGA ArchiveStatus
+
+<li>
+插件注册需要定义全局变量 
+<pre c++>
+REGISTER_OSGPLUGIN(VR, ReaderWriterVR)
+</pre>
+
+<li>
+应用程序中注册插件
+<pre c++>
+osgDB::Registry::instance()-&gt;addFileExtensionAlias("VR", "VR");
+</pre>
+
+<li>
+中文路径问题
+
+<li>
+osgEXP 导出工具
+
+</ul>
+
+</body>
+</html>

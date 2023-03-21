@@ -1,0 +1,494 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../../style.css" />
+    <title>Chapter19</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<h1 id="toc_1">Chapter 19 Wiggle: OpenGL on Windows</h1>
+<h1 id="toc_2">OpenGL Implementations on Window</h1>
+<h2 id="toc_2.1" class="justcenter">Generic OpenGL</h2>
+<p>
+		OpenGL 的一般实现仅仅是软件实现, 没有使用特定的3D硬件
+</p>
+<ul>
+<li>
+Microsoft implementation
+
+<li>
+SGI(Silicon Graphics Incorporated) OpenGL
+
+<li>
+MESA
+	== Installable Client Driver ==
+		ICD(Installable Client Driver)为Windows NT 的初始硬件驱动器接口, 通过整合软件和特定硬件实现了整个OpenGL管线
+		应用程序链接至 opengl32.dll 会被自动派发至用于OpenGL调用的 ICD 驱动代码
+	== Mini-Client Driver ==
+		Mini-Client Driver(MCD)为硬件和软件实现之间的妥协, 大部分早期PC的3D硬件仅仅提供了硬件加速光栅操作
+		目前已经过时了
+	== Mini-Driver ==
+		将 OpenGL 的调用转换为显卡私有API的调用, 目前已经过时
+	== OpenGL on Vista ==
+		在 Windows Vista 上海保存 mini-driver 的变种, 但不对开发者开放, 且当没有安装ICD时才会发现该驱动
+		安装最新的显卡驱动, 可以得到真正的基于ICD的驱动, 其包含窗口和全屏游戏的全部OpenGL支持
+	== Extended OpenGL ==
+		OpenGL 1.1 仍可以生产 screaming-fast 和高度复杂的3D渲染
+			首先, 调用一下函数确定硬件驱动器支持的OpenGL版本:
+				glGetString(GL_VERSION);
+					你应当仔细考虑你的程序所需要的OpenGL功能, 在仅有OpenGL 1.1 功能的情况下能否写该程序?
+					如果没有硬件的话, 用户使用内置的软件渲染器, 程序是否仍可用?
+					如果上面的答案为是的话, 应当使用 OpenGL 1.1 的导入库来写你的程序, 这样你的程序运用最广泛
+			然后, 优化你的性能, 实现特殊的视觉效果, 例如: 在片段程序中替换静态纹理映射. 通过顶点程序使用体积雾替换标准雾
+			许多软件需要新的OpenGL功能, 例如医学方面需要3D纹理或者 imaging subset 等等, 这种情况, 会写出最低的OpenGL支持
+
+</ul>
+<h1 id="toc_3">Basic Windows Rendering</h1>
+<h2 id="toc_3.1" class="justcenter">GDI Device Contexts</h2>
+<ul>
+<li>
+GDI 在 Vista 中仍可用, 但不再使用硬件加速
+
+<li>
+Vista 优先使用的高层绘制技术为 WPF (Windows Presentation Foundation), 底层渲染接口为 Windows Graphics Foundation(WGF), Direct3D 10.
+
+<li>
+当使用GDI时, 每个窗口都有一个 device context用于接受图形输出, 每个GDI函数都有一个device context参数用于告知函数影响哪个窗口
+
+<li>
+你可以有多个 device context, 但每个窗口只能有一个 device context
+
+<li>
+GDI为Windows 操作系统所特有, 其他的环境不需要 device contexts 和 window handle
+
+<li>
+OpenGL 有一个 context identifier, 称为 rendering context, 同 GDI device context, 保存当前颜色, 状态设置等等
+	== Pixel Formats ==
+
+<li>
+device context 在 3D 图形方面有限制, 毕竟其用于 2D 图形设计
+
+<li>
+一个 device context 的性质依赖于其设备的性质, 例如桌面设置为16色, 则 device context也会是16色
+
+<li>
+即使你创建一个内存 device context, 你也只能给它一个已存在的 window device context. 如果传递一个NULL指针, 则使用桌面的 device context
+
+<li>
+在将OpenGL渲染进一个窗口之前, 你必须根据你的需要配置你的窗口:
+
+<ul>
+<li>
+硬件还是软件渲染?
+
+<li>
+单缓存还是双缓存?
+
+<li>
+需要深度缓存?
+
+<li>
+关于 stencil, 目标 alpha, accumulation 缓存?
+
+</ul>
+<li>
+在设置完这些参数后, 窗口就不能再改变, 如你要切换一个深度颜色缓存的窗口为一个stencil和颜色缓存的窗口, 只能销毁第一个窗口, 然后创建第二个窗口
+		=== Describing a Pixel Format ===
+
+<ul>
+<li>
+在窗口创建完毕之后, 设置窗口的 3D特性 --- 像素格式, 结构体 PIXELFORMATDESCRIPTOR 用于描述该 pixel 格式
+
+<li>
+描述 Pixel Rendering Buffer 的有效 Flags
+
+<ul>
+<li>
+PFD_DRAW_TO_WINDOW --- 缓存的输出显示于窗口中
+
+<li>
+PFD_DRAW_TO_BITMAP --- 缓存的输入写入到windows位图中
+
+<li>
+PFD_SUPPORT_GDI --- 缓存支持 Windows GDI 绘制, 允许该标志的许多implementations仅仅用于单缓存窗口或者位图
+
+<li>
+PFD_SUPPORT_OPENGL --- 缓存支持 OpenGL 绘制
+
+<li>
+PFD_GENERIC_ACCELERATED --- 通过 MCD 设备加速该缓存
+
+<li>
+PFD_GENERIC_FORMAT --- software implementation 渲染缓存. 和 PFD_GENERIC_ACCELERATED一起设置, 不设置该标志硬件设备则为ICD
+
+<li>
+PFD_NEED_PALETTE --- 调色板管理设备的缓存, 当运行8位模式的时候才设置该标志
+
+<li>
+PFD_NEED_SYSTEM_PALETTE --- 表示 OpenGL 支持渲染 256 色模式
+
+<li>
+PFD_DOUBLEBUFFER --- 颜色缓存为双缓存
+
+<li>
+PFD_STEREO --- 颜色缓存为 stereoscopic(立体的), 不被微软的一般实现所支持, 大多数PC显卡由它们硬件的自定扩展支持 stereo
+
+<li>
+PFD_DEPTH_DONTCARE --- 仅当请求一个像素格式的时候才使用该标识, 表示你不需要深度缓存
+
+<li>
+PFD_DOUBLE_BUFFER_DONTCARE --- 仅当请求一个像素格式时使用该标识, 表示你不打算使用双缓存
+
+<li>
+PFD_SWAP_COPY --- 这是一个提示, 通过大块拷贝back缓存至front缓存完成缓存交换
+
+<li>
+PFD_SWAP_EXCHANGE --- 提示, 当发生缓存交换时, 前缓存和后缓存应当 exchanged
+
+</ul>
+</ul>
+</ul>
+			
+<ul>
+<li>
+PFD_SWAP_LAYER_BUFFERS --- 当支持 overlay 和 underlay 平面时使用该标志
+		=== Enumerating Pixel Formats ===
+
+</ul>
+<li>
+窗口的像素格式由一个整数数字标识
+
+<li>
+你可以使用 DescribePixelFormat 函数确定给定像素格式的特性.
+
+<li>
+代码:
+				PIXELFORMATDESCRIPTOR pfd;
+				int nFormatCount;
+				...
+				// 得到像素格式的数目
+				pfd.nSize = sizeof(PIXELFORMATDESCRIPTOR);
+				nFormatCount = DescribePixelFormat(hDC, 1, 0, NULL);
+<blockquote>
+// 遍历每个像素格式
+for(int i = 1; i &lt;= nFormatCount; i++)
+{
+DescribePixelFormat(hDC, i, pfd.nSize, &amp;pfd);
+...
+...
+}
+</blockquote>
+<ul>
+<li>
+具体见例子 GLView, 例子显示如如何将 OpenGL 渲染进任何 CWnd 窗口类
+
+<li>
+如果像素格式的颜色深度不符合桌面颜色深度, 则OpenGL不能进行渲染, 例如你不能在32位桌面创建16位颜色像素格式
+
+<li>
+至少24个像素格式被枚举, 如没有 OpenGL 硬件驱动, 可以发现正好24个像素格式被列出来.(属于微软的 Generic Implementation)
+
+<li>
+如果有硬件加速器(MCD或ICD), 则首先列出加速后的像素格式, 然后是24个属于微软的 generic pixel formats.
+
+<li>
+这意味着如果有硬件加速器, 则OpenGL有两个选择, 一个是硬件加速器的像素格式, 一个是微软的soft implementation 的像素格式
+
+<li>
+对于渲染至位图和打印设备, soft implementation 永远可用. 加入你希望(例如调试), 你可以强制 software rendering
+
+<li>
+有许多像素格式看起来一样, 这种情况, 这些像素格式支持 多重采样(multisampled) 缓存
+		=== Selecting and Setting a Pixel Format ===
+
+<li>
+ChoosePixelFormat 函数允许你创建一个包含你的3D窗口所需属性的像素格式结构, 而后找到最合适的索引, 调用 setPixelFormat 进行设置
+	== The OpenGL Rendering Context ==
+
+</ul>
+<li>
+一个典型的窗口程序可以由许多窗口组成, 每个窗口可设置一个像素格式, 但是每个窗口只能调用一次 SetPixelFormat
+
+<li>
+为了核心 OpenGL 函数的跨平台便利性, 每个环境必须有在执行任何OpenGL命令之前确定当前渲染窗口的方式.
+
+<li>
+正如 GDI使用 windows device context, OpenGL 环境嵌入 rendering context, 其保存 OpenGL 设置和命令
+
+<li>
+wglCreateContext 函数创建 OpenGL rendering context, 其数据类型为 HGLRC, 代码如下:
+			HGLRC hRC;
+			HDC hDC;
+			...
+			// 选择和设置一个像素格式
+			...
+			hRC = wglCreateContext(hDC);
+
+<li>
+应用程序可有多个 rendering context, 例如两个窗口使用不同的 drawing modes, perspectives 等等, 任何时候任意线程只能有一个当前rednering context
+
+<li>
+你可以将OpenGL rendering context从一个窗口移到另一个窗口, 但两个窗口需有相同的像素格式
+
+<li>
+wglMakeCurrent 函数设置一个rendering context为当前context, 并关联至一个窗口
+
+<h1 id="toc_4">Putting It All Together</h1>
+<h2 id="toc_4.1" class="justcenter">Creating the Window</h2>
+<ul>
+<li>
+窗口 Style 需要有 WS_CLIPCHILDREN | WS_CLIPSIBINGS, 该风格用于避免OpenGL rendering context 渲染其他的窗口, 因为其只能关联一个窗口
+
+<li>
+另外窗口类style有CS_OWNDC, 表示给该窗口分配一个唯一的 device context,这是由于需要一个 device context 用于 GDI 渲染和OpenGL 双缓存的页面翻转
+		=== First, You Need a Device Context ===
+
+<ul>
+<li>
+通过一个简单的函数得到一个 device context
+				HDC hDC = GetDC(hWnd);
+
+<li>
+得到 device context, 可用于 GDI 函数, 也可用于创建 OpenGL rendering context, 使其为当前 context, 且执行缓存交换
+
+<li>
+当不需要 device context时, 调用函数:
+				ReleaseDC(hWnd, hDC);
+		=== Enter Win32 ===
+
+<li>
+在你消耗完可用内存或者你的应用程序崩溃之前, 你可以拥有任意你需要的资源, GetDC() 函数比较耗资源, 如果调用之后一直挂着, 则可有效提高性能
+
+<li>
+你可以挂住 brush, font, 以及其他资源
+		=== Three Steps Forward, Two Steps Back ===
+
+<li>
+在 Windows 95, 98, ME, 如果程序冲突或者释放资源失败, 会引起资源泄漏, 会压缩系统资源
+		=== All is Not Lost ===
+
+<li>
+你每次调用 GetDC, 都会重新选择字体, mapping mode等等. 如果你有自己的 device context, 则只需要初始化一次, 所以使用 CS_OWNDC 类style
+
+<li>
+图形程序应当尽可能使用 CS_OWNDC 类style
+	== Using the OpenGL Rendering Context ==
+
+</ul>
+<li>
+窗口创建后, 有 WM_CREATE 消息, 此处适合设置 OpenGL rendering context, WM_DESTROY消息处适合清理
+		=== Initializing the Rendering Context ===
+
+<ul>
+<li>
+获取 Device context, 设置像素格式, 得到 OpenGL rendering context, 设置定时器
+		=== Shutting Down the Rendering Context ===
+
+<li>
+以 NULL 为参数调用函数 wglMakeCurrent();
+
+<li>
+wglDeleteContext() 删除 OpenGL Rendering context
+
+<li>
+在删除 rendering context 之前, 你应当删除所有 显示列表, 纹理对象, 和其他 OpenGL 分配的内存
+	== Other Windows Messages ==
+
+</ul>
+<li>
+WM_SIZE消息处理 viewport 变化
+
+<li>
+WM_TIMER 消息进行 idle 处理, 调用 InvalidateRect 使得 WM_PAINT 消息发送
+
+<li>
+WM_PAINT 消息, 如使用 BeginPaint/EndPaint 对, 相当的无效率. 所以使用 CS_OWNDC. SwapBuffers(hDC); 执行 buffers swap
+
+</ul>
+<h1 id="toc_5">OpenGL and Windows Font</h1>
+<ul>
+<li>
+Windows 支持 TrueType 字体, 该字体为矢量字体, 由一系列点和曲线定义组成
+
+<li>
+两个支持的函数 wglUseFontOutlines, wglUseFontBitmaps. 前者创建3D字体模型生成3D文本效果, 第二个创建一系列字体位图用于2D文本输出
+	== 3D Fonts and Text ==
+
+<ul>
+<li>
+wglUseFontOutlines(hDC, 0, 128, nFontList, 0.0f, 0.5f, WGL_FONT_POLYGONS, agmf);
+
+<ul>
+<li>
+第一个参数为包含指定字体的 device context
+
+<li>
+第二个和第三个参数指定 字符范围
+
+<li>
+第四个参数 nFontList 为前面所创建的显示列表范围的起始点
+
+<li>
+接下来的参数为 chardal devitaion, 可以堪称你希望字体的光滑程度, 0.0表示最光滑
+
+<li>
+接下来的0.5f表示该字符在z轴方向的大小
+
+<li>
+WGL_FONT_POLYGONS 创建实体字体立体. 计算出法线. 另一个可选的参数为 WGL_FONT_LINES, 其不生成法线, 生成 wireframe 版本
+
+<li>
+结构体 GLYPHMETRICSFLOAT 参数, 根据选中的字体填充该结构体变量, 这些值可以决定你将要渲染的3D字符串大小
+	== 2D Fonts and Text ==
+
+</ul>
+<li>
+wglUseFontBitmaps 函数类似于 wglUseFontOutlines. 
+
+</ul>
+</ul>
+<h1 id="toc_6">Full-Screen Rendering</h1>
+<h2 id="toc_6.1" class="justcenter">Creating a Frameless Window</h2>
+<ul>
+<li>
+window style 为 WS_POPUP, 而非 WS_OVERLAPPED, 则窗口无标题栏和边框
+	== Creating a Full-Screen Window ==
+
+<li>
+设定窗口左上角为(0, 0)和桌面大小, GetDeviceCaps 函数得到窗口大小信息
+			hDesktopWnd = GetDesktopWindow();
+			hDesktopDC = GetDC(hDesktopWnd);
+			nScreenX = GetDeviceCaps(hDesktopDC, HORZRES);
+			hScreenY = GetDeviceCaps(hDesktopDC, VERTRES);
+			ReleaseDC(hDesktopWnd, hDesktopDC);
+
+<li>
+如果你的系统有多显示器, 则返回主显示设备的值, WS_EX_TOPMOST属性设置窗口为最顶层窗口
+
+<li>
+ChangeDisplaySettings 函数, 允许你的应用程序运行时改变桌面大小, 终止时恢复桌面大小
+
+<li>
+在改变桌面设置之前, 你不应当创建渲染窗口或者设置 pixelformat
+
+</ul>
+<h1 id="toc_7">Multithreaded Rendering</h1>
+<ul>
+<li>
+多线程的好处:
+
+<ul>
+<li>
+如你有两个不同的窗口, 有自己的 rendering context. 则效率不错
+
+<li>
+工作线程执行物理计算和人工智能或者处理玩家互动信息, 另一个线程处理OpenGL渲染
+
+</ul>
+</ul>
+<h1 id="toc_8">OpenGL and WGL Extensions</h1>
+<ul>
+<li>
+opengl32.dll 只提供 OpenGL 1.1 的函数入口
+
+<li>
+wglGetProcAddress 函数可以得到 驱动所支持的 OpenGL 函数指针
+		PROC wglGetProcAddress(LPSTR lpszProc);
+
+<li>
+OpenGL 扩展: 显卡硬件驱动认可的新常量和枚举值; 添加至API的新函数
+
+<li>
+头文件 wglext.h, glext.h
+
+<ul>
+<li>
+wglext.h --- 包含 Windows 特定的扩展
+
+<li>
+glext.h --- 包含标准 OpenGL 扩展和许多显卡特定的 OpenGL 扩展
+	== Simple Extensions ==
+
+<li>
+glLightModeli(GL_LIGHT_MODEL_COLOR_CONTROL, GL_SEPARATE_SPECULAR_COLOR); 
+
+<li>
+其中GL_LIGHT_MODEL_COLOR_CONTROL 和 GL_SEPARATE_SPECULAR_COLOR, 这个类型的扩展传递已存入口的新token用于扩展的常量定义
+
+<li>
+根据扩展是否支持设置以下代码
+			if(gltIsExtSupported(GL_EXT_separate_specular_color))
+				RenderOnce();
+			else
+				UseMultiPassTechnique();
+	== Using New Entrypoints ==
+
+<li>
+imaging subset 
+
+<li>
+函数原型在 glext.h 中发现, 使用它们创建你想要调用的函数的指针, 例如在 glext.h, 苹果机中, 代码如下:
+			#ifndef _<em>APPLE</em>_
+				PFNGLHISTOGRAMPROC				glHistogram = NULL;
+				PFNGLGETHISTOGRAMPROC			glGetHistogram = NULL;
+				PFNGLCOLORTABLEPROC				glColorTable = NULL;
+				PFNGLCONVOLUTIONFILTER2DPROC	glConvolutionFilter2D = NULL;
+			#endif
+			而后得到自己获取指针
+				glHistogram = gltGetExtensionPointer("glHistogram");
+			然后直接使用
+				glHistogram(GL_HISTOGRAM, 256, GL_LUMINANCE, GL_FALSE);
+	== Auto-Magic Extensions ==
+
+<li>
+GLEE 库(GL Easy Extension library), 可以直接访问所有支持的函数指针, 方法是添加 glee.c 和 glee.h 进工程
+	== WGL Extensions ==
+
+<li>
+使用 wglGetProcAddress 函数访问 WGL 扩展的入口点 
+
+<li>
+在所有的 WGL 扩展中, 有两个扩展建议使用 glGetString(GL_EXTENSIONS). 一个是 交换内部扩展, 另一个是 WGL_ARB_extensions_string 扩展
+
+<li>
+ARB 扩展字符串函数原型如下:
+			const char *wglGetExtensionsStringARB(HDC hdc);
+			PFNWGLGETEXTENSIONSSTRINGARBPROC *wglGetExtensionsStringARB;
+			wglGetExtensionsStringARB = (PFNWGLGETEXTENSIONSSTRINGARBPROC)wglGetProcAddress("wglGetExtensionsStringARB");
+	== Extended Pixel Formats ==
+
+<li>
+重要的 WGL 扩展 WGL_ARB_pixel_format 扩展, 允许你检查和选择PIXELFORMATDESCRIPTOR结构创建之后不存在的像素格式
+
+<li>
+BOOL wglGetPixelFormatAttribivARB
+
+<li>
+BOOL wglGetPixelFormatAttribfvARB
+
+<li>
+这两个函数用于查询特定像素格式索引, 返回一个数组包含用于该像素格式的属性数据
+			int attrib[] = { WGL_NUMBER_PIXEL_FORMATS_ARB };
+			int nResults[0];
+			wglGetPixelFormatAttributeivARB(hDC, 1, 0, 1, attrib, nResults);
+	== Win32 to the ==
+
+</ul>
+</ul>
+
+    </div>
+</body>
+</html>

@@ -1,0 +1,331 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../../style.css">
+<title>Windowsnote</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</head>
+<body>
+
+<p>
+系统函数<br />
+GetSystemMetrics --- SM_CXSCREEN/SM_CYSCREEN 得到屏幕分辨率<br />
+GetTextMetrics --- 根据DC获得文字信息<br />
+GetDeviceCaps --- 获得设备信息, HORZRES/VERTRES 得到屏幕分辨率, LOGPIXELSX/LOGPIXELSY, HORZSIZE/VERTSIZE, , ASPECTX/ASPECTY, PLANES, BITSPIXEL, NUMCOLORS<br />
+GetWindlowLong --- 用子窗口句柄和GWL_ID可以获得窗口ID, 使用 GetDlgCtrlID 也有同样的效果. 可用GWL_HINSTANCE获得实例句柄, GWL_WNDPROC可以得到窗口处理函数的地址<br />
+GetSysColor/SetSysColor --- 获得系统颜色, 如COLOR_BTNFACE, COLOR_BTNSHADOW, COLOR_BTNTEXT, COLOR_WINDOWTEXT<br />
+<br />
+对话框函数<br />
+GetDialogBaseUnit --- 获得内定字体字符的宽度和高度<br />
+GetDlgItem --- 根据父窗口句柄和ID获得子窗口句柄<br />
+DialogBox/DialogBoxIndirect/DialogBoxParam --- 对话框函数<br />
+SendDlgItemMessage --- 给对话框子控件发送消息<br />
+CreatDialog --- 无模式对话框<br />
+GetOpenFileName/GetSaveFileName/ChooseFont/FindText/ReplaceText/ChooseColor --- 通用对话框<br />
+<br />
+窗口函数<br />
+SetClassLong/GetClassLong --- 设置窗口, 参数 GCL_HCURSOR 可以修改窗口图标<br />
+CreateWindow/MoveWindow --- 创建和移动窗口, 创建窗口注意注册窗口类, 如果该窗口类已存在于Windows中, 则不注册.<br />
+ShowWindow --- SW_SHOWNORMAL, SW_HIDE<br />
+UpdateWindow<br />
+SetScrollRange/SetScrollPos<br />
+SetScrollInfo/GetScrollInfo<br />
+ScrollWindow<br />
+GetKeyState --- 不能为未按下的键调用该函数<br />
+GetCursorPos/SetCursorPos --- 鼠标位置<br />
+SetCapture/ReleaseCapture --- 捕捉鼠标<br />
+GetParent ---获取父窗口句柄<br />
+SendMessage 发送消息<br />
+SetWindowText/GetWindow --- 改变和获取窗口文字(包括按钮)<br />
+EnableWindow, IsWindowVisible<br />
+MAKEINTRESOURCE --- 将ID转换为字符串<br />
+<br />
+消息函数<br />
+GetMessage/PeekMessage<br />
+GetMessageTime --- 可获得按下或者释放键的相对时间<br />
+TranslateMessage --- 将按键消息转换为字符消息<br />
+<br />
+时间函数<br />
+SetTimer/KillTimer: 可在WM_CREATE消息中创建定时器, 在WM_DESTROY消息中销毁定时器. 在WM_TIMER消息中处理定时器消息. 也可在SetTimer中设置处理函数. 如果SetTimer第一个参数为NULL, 忽视第二个参数, 则为全局定时器, 其对应KillTimer第一个参数也为NULL.<br />
+GetLocalTime/GetSystemTime/SetLocalTime/SetSystemTime --- 获取时间<br />
+GetDateFormat/GetTimeFormat/GetLocaleInfo 格式化时间和日期<br />
+<br />
+图像和图标函数<br />
+ShowCursor --- 鼠标的计数加减一<br />
+DrawIcon, LoadIcon, DestroyIcon/CreateIcon/CreateIconIndirect<br />
+CreateImage --- 不能与LoadIcon相比, LoadIcon无需自己销毁.<br />
+SetCursor<br />
+<br />
+资源函数<br />
+LoadString --- 复制字符串资源到缓冲区<br />
+LoadResource --- 加载资源<br />
+LockResource / FreeResource --- 访问资源前者可以装入内存, 后者释放内存<br />
+<br />
+菜单和组合键函数<br />
+LoadMenu/SetMenu --- 加载/设置菜单<br />
+LoadAccelerators --- 加载组合键<br />
+TranslateAccelerator --- 在GetMessage中拦截组合键<br />
+<br />
+按钮函数<br />
+CheckRadioButton/CheckDlgButton/IsDlgButtonCheced --- 设置和判断按钮<br />
+<br />
+绘制函数<br />
+InvalidateRect/GetUpdateRect/ValidateRect<br />
+BeginPaint/EndPaint --- 用于 WM_PAINT消息的更新矩形区域<br />
+GetDC/ReleaseDC<br />
+GetWindowDC/ReleaseDC --- 整个窗口句柄, 含标题栏<br />
+CreateDC/DeleteDC --- 可获取整个屏幕的句柄, "DISPLAY"<br />
+CreateIC --- 取得设备信息而不绘画<br />
+CreateCompatibleDC --- 用于位图<br />
+CreateMetaFile/CloseMetaFile --- Metafile设备<br />
+SetMapMode/GetMapMode<br />
+SetWindowEx/GetWindowEx/OffsetWindowOrgEx<br />
+SetViewportOrgEx/GetViewportOrgEx/OffsetViewportOrgEx<br />
+SetWindowExtEx/GetWindowExtEx/ScaleWindowExtEx<br />
+SetViewportExtEx/GetViewportExtEx/ScaleViewportExtEx<br />
+SelectObject -- 选择笔, 笔刷, 字体, 位图<br />
+MoveToEx/LineTo/PolyLineTo/PolyBezierTo/ArcTo<br />
+PolyDraw/PolyLine/Arc/Rectangle/Eclipse/RoundRect/Pie/Chord/PolyBezier<br />
+GetCurrentPositionEx<br />
+SetBkMode/GetBkMode<br />
+SetBkColor/GetBkColor<br />
+SetTextColor/GetTextColor<br />
+绘制模式: SetROP2/GROP2<br />
+Streching模式: SetStrechBltMode/GetStrechBltMode<br />
+多边形填充模式: SetPolyFillMode/GetPolyFillMode<br />
+SetTextCharacterExtra/GetTextCharacterExtra<br />
+SetBrushOrgEx/GetBrushOrgEx<br />
+SelectClipRgn/IntersectClipRgn/OffsetClipRgn/ExcludeClipRgn/ExcludeClipRect/SelectClipPath<br />
+SaveDC/RestoreDC --- 当CS_OWNERDC属性时, 保存DC内容用于恢复<br />
+SetPixel/GetPixel<br />
+GetStockObject<br />
+CreatePen/CreatePenIndirect/DeleteObject<br />
+GetObject --- 可通过画笔句柄获得画笔信息<br />
+GetCurrentObject --- 可获得当前类似画笔的句柄<br />
+CreateSolidBrush/CreateHatchBrush/CreatePattenBrush/CreateDIBPattenBrush<br />
+ClientToScreen/ScreenToClient --- 坐标转换<br />
+GetWindowRect/GetClientRect<br />
+DPtoLP --- 设备点到逻辑点的转换<br />
+FillRect/FrameRect/InvertRect/SetRect/OffsetRect/InflateRect/SetRectEmpty/CopyRect/IntersectRect/UnionRect/PtInRect<br />
+CreateRectRgn/CreateEllipseRgn//CreatePolygonRgn/CombineRgn<br />
+CreateCaret/SetCaretPos/ShowCaret/HideCaret/DestroyCaret<br />
+DrawBoxOutline<br />
+<br />
+<br />
+GDI 函数<br />
+TextOut<br />
+<br />
+字符函数<br />
+fprintf, sprintf, wsprintf 格式化字符串<br />
+IsTextUnicode/MultiCharToWideChar/WhideCharToMultiChar字符函数<br />
+<br />
+其他函数<br />
+GetRValue, GetGValue, GetBValue, GetNearestColor. <br />
+<br />
+消息<br />
+WM_PAINT 消息<br />
+WM_SIZE 消息: 可获得大小变化后的客户端大小. 该消息之后跟一个WM_PAINT消息.<br />
+WM_VSCROLL/WM_HSCROLL: 其wParam包含滚动条的操作消息, SB带头<br />
+WM_SETFOCUS/WM_KILLFOCUS --- 焦点消息<br />
+WM_KEYDOWN/WM_KEYUP/WM_SYSKEYDOWN/WM_SYSKEYUP --- wParam 虚拟键代码 VK开头.<br />
+WM_CHAR/WM_DEADCHAR/WM_SYSCHAR/WM_SYSDEADCHAR<br />
+WM_LBUTTONDOWN/WM_LBUTTONUP/WM_LBUTTONDBCLK/WM_LBUTTONUP<br />
+WM_NCHITTEST: 非显示区域命中测试<br />
+WM_MOUSEWHEEL --- 滚轮消息<br />
+WM_SETTINGCHANGE --- 系统设置变化时调用, 调用 SystemParameterInfo函数<br />
+WM_COMMAND --- 子窗口向父窗口发送的消息<br />
+WM_SYSCOLORCHANGE --- 系统颜色改变时会发送该消息. <br />
+WM_COLORBTN --- 改变按钮颜色<br />
+WM_DRAWITEM --- 绘制控件<br />
+WM_SETREDRAW --- 可打开和关闭重画(见列表框部分)<br />
+<br />
+宏<br />
+LOWORD/HIWORD, COLORREF, RGB<br />
+<br />
+数据结构<br />
+WNDCLASS --- 表示窗口<br />
+</p>
+
+<h4 id="toc_0.0.0.1">绘制</h4>
+<ul>
+<li>
+绘制次序: HDC-&gt;修改设备-&gt;绘图-&gt;释放HDC
+
+<li>
+更新一个区域: 调用InvalidateRect而后调用UpdateWindow
+
+<li>
+字符的宏定义
+
+<ul>
+<li>
+_tcslen 表示求字符串长度的通用函数
+
+<li>
+TCHAR 表示字符类型
+
+<li>
+__T(x), __TEXT(x) 表示常量字符串
+
+<li>
+使用_T(x)和_TEXT(x)表示_<em>T(x), TEXT(x)表示</em>_TEXT(x)
+
+<li>
+通用字符类型: TCHAR, *PTCHAR, *LPTSTR, 还有 LPCTSTR
+
+</ul>
+<li>
+影响绘制函数的五个参数: 画笔位置, 画笔, 背景方式, 背景颜色, 绘图模式
+
+<li>
+画笔: 句柄为HPen, 内置画笔为 BLACK_PEN, WHITE_PEN, NULL_PEN(用函数GetStockObject获取)
+
+<li>
+自己所创建的对象要注意删除, 例如画笔
+
+<li>
+画刷: WHITE_BRUSH, LTGRAY_BRUSH, GRAY_BRUSH, DKGRAY_BRUSH, BLACK_BRUSH, NULL_BRUSH
+
+<li>
+NULL_PEN --- 可画出一个没有边界框的图形. NULL_BRUSH --- 画出边界框而不填入图形. 
+
+<li>
+共有八种映像方式
+
+</ul>
+
+<h4 id="toc_0.0.0.2">鼠标与按键 </h4>
+<ul>
+<li>
+WM_CHAR消息在WM_KEYDOWN和WM_KEYUP之间
+
+<li>
+GetStockObject --- 获得存储的字体 SYSTEM_FONT, SYSTEM_FIXED_FONT, OEM_FIXED_FONT
+
+<li>
+可通过 GetSystemMetrics 使用参数SM_MOUSEPRESENT判断是否有鼠标, 参数 SM_CMOUSEBUTTONS 得到按键个数
+
+<li>
+光标样式:IDC_ARROW, IDC_CROSS, IDC_WAIT, 可以用LoadCursor加载, 而后放在WNDCLASS里面设置窗口的鼠标样式
+
+<li>
+WM_MOUSEMOVE消息可用其wParam与MK_LBUTTOM进行与计算判断鼠标是否按下左键移动.
+
+<li>
+要窗口接收鼠标双击消息, 则窗口样式则必须有 CS_DBCLKS
+
+<li>
+标题栏, 菜单, 窗口滚动条等地的鼠标消息发送给DefWindowProc, 含有字母NC.
+
+<li>
+窗口关闭顺序: WM_CLOSE-&gt;DefWindowProc-&gt;DestroyWindow-&gt;WM_DESTROY-&gt;PostQuitMessage(0)-&gt;GetMessage传回0
+
+</ul>
+
+<h4 id="toc_0.0.0.3">子控件 </h4>
+<ul>
+<li>
+父窗口向子窗口发送消息 --- BM前缀
+
+<li>
+按钮控件: BS_PUSHBUTTON/BS_DEFPUSHBUTTON, BS_CHECKBOX/BS_AUTOCHECKBOX, BS_3STATE/BS_AUTO3STATE, BS_RADIOBUTTON, BS_GROUPBOX, 查询是否选中可发送消息BM_GETCHECK, 设置选择可发送消息 BM_SETCHECK
+
+<li>
+按钮设置 BS_OWNERDRAW 样式可以在着色的任何时候向其父窗口发送 WM_DRAWITEM 消息
+
+<li>
+Static 控件, 其窗口类名为"static", 拦截 WM_NCHITTEST消息, 将HITRANSPARENT的值传回Windows-&gt;传给父窗口-&gt;传给DefWindowProc, 其可通过拦截 WM_CTLCOLORSTATIC消息调用 SetTextColor 来改变文字颜色, SetBkColor改变背景颜色
+
+<li>
+滚动条窗口类别为 "scrollbar", 样式可有 SB_VERT/SB_HORZ, 不向父窗口发送WM_COMMAND, 而是使用 WM_VSCROLL/WM_HSCROLL, 可使用参数CYHSCROLL和参数CXVSCROLL从函数GetSystemMetrics获得滚动条尺寸大小信息, WM_CTLCOLORSCROLLBAR 处理控件颜色
+
+<li>
+编辑控件, 窗口类名为"edit".  发送给它的消息有 WM_CUT, WM_COPY, WM_CLEAR, WM_PASTE. 还有 EM_GETSEL, EM_SETSEL, EM_REPLACESEL, EM_GETLINECOUNT. EM_LINEINDEX, EM_LINELENGTH, EM_GETLINE
+
+<li>
+列表块, 窗口类名为"listbox". 样式 WS_CHILD, 没有WM_COMMAND消息. 可发送消息给它 LB_ADDSTRING(在LBS_SORT的情况下), LB_INSERTSTRING(无LBS_SORT的情况下). LB_DELETESTRING, LB_RESETCONTENT, LB_GETCOUNT, LB_SETCURSEL, LB_SELECTSTRING, LB_GETCURSEL, LB_GETTEXTLEN, LB_SETCURSEL, LB_SETSEL, LB_GETSEL, LB_DIR(文件列表)
+
+<li>
+图标Icon: 可以使用SM_CXICON和SM_CYICON获得图标大小. DrawIcon可以绘制图表. LoadIcon 加载图标, RegisterClassEx 注册类时设定图标, 运行时可用SetClassLong和GCL_HICON参数改变图标. GetClassLong可用参数GCL_HICON得到图标句柄. 
+
+<li>
+SetClassLong和参数GCL_HCURSOR可以设置光标. 还可使用SetCursor
+
+</ul>
+
+<h4 id="toc_0.0.0.4">菜单和组合键</h4>
+<ul>
+<li>
+菜单分为 main menu/top-level menu, popup menu/submenu, system menu, 三种状态: enabled, disabled, grayed. 只有enabled的时候才能发送WM_COMMAND消息.
+
+<li>
+关联菜单: 在窗口类的lpszMenuName关联, 或者LoadMenu, 而后用于CreateWindow的第九个参数. 或者用SetMenu 设置菜单. 菜单attach窗口时会随窗口消失而销毁, 否则只能用DestroyMenu销毁.
+
+<li>
+菜单消息: WM_INITMENU, WM_MENUSELECT, WM_INITMENUPOPUP, WM_COMMAND, WM_SYSCOMMAND, WM_MENUCHAR(Alt+Char)
+
+<li>
+Keyboard accelerators: 产生 WM_COMMAND消息的组合键. 规则:1.不使用和Windows内部设定的Accelerators. 2.尽量与其他程序一致. 3. 不使用Tab, 回车, 空格. 加载 LoadAccelerators. 其在GetMessage中拦截该组合键消息, 使用函数 TranslateAccelerator. 注意该函数对模式对话框和消息窗口无效, 因为其不经过GetMessage.
+
+<li>
+选中菜单一般发送如下消息(即使用Accelerator选中菜单): WM_INITMENU, WM_INITMENUPOPUP, WM_MENUSELECT.
+
+<li>
+在WM_INITMENUPOPUP消息中设置可使菜单项是否有效.
+
+<li>
+结束程序需要处理WM_QUERYENDSESSION消息, 其返回0时则Windows不会结束.
+
+</ul>
+
+<h4 id="toc_0.0.0.5">对话框 </h4>
+<ul>
+<li>
+对话框模板的单位大小: 横向单位 = 1/4 字体宽度, 纵向单位 = 1/8 字体高度. 对话框属性style常用 WS_POPUP和DS_MODALFRAME, WS_GROUP.
+
+<li>
+窗口处理函数和对话框处理函数的区别: 前者返回LRESULT, 后者返回布尔值. 前者未处理消息调用DefWindowProc, 后者TRUE表示处理消息, FALSE表示未处理消息. 对话框没有WM_PAINT, WM_CREATE消息, 但是有WM_INITDIALOG消息. 该消息返回TRUE时, 第一个有WS_TABSTOP属性的子控件拥有焦点, 否则使用SetFocus设置焦点.
+
+<li>
+对话框函数: DialogBox, DialogBoxIndirect --- 动态创建对话框, 不使用RS. 还可使用SendDlgItemMessage给子控件发送消息. EndDialog 结束对话框, 第二个参数作为返回值. DialogBoxParam 可代替DialogBox函数.
+
+<li>
+CheckRadioButton/CheckDlgButton --- 可以设置对话框的选中与否.
+
+<li>
+BS_AUTOCHECKBOX控件/BS_AUTORADIOBUTTON, 不用处理WM_COMMAND消息, 返回之前用IsDlgButtonCheced判断.
+
+<li>
+WS_GROUP 表示一组空间的开头和结尾. 
+
+<li>
+static类窗口子控件可以通过使区域无效发送WM_PAINT消息发送给控件窗口处理函数来实现重绘.
+
+<li>
+无模式对话框使用CreatDialog创建, 无模式对话框需要使用ShowWindow使其显示. 其消息直接发送给窗口处理程序. 使用DestroyWindow结束对话框.
+
+<li>
+IsDialogMessage可判断是否是某个对话框的消息.
+
+<li>
+窗口样式 WS_CLIPCHILDREN 重绘时无需考虑子窗口所占区域.
+
+<li>
+通用对话框, GetOpenFileName -- 打开对话框, GetSaveFileName 保存对话框, 
+
+<li>
+IsTextUnicode 判断是否UNICODE字节字符顺序. 字符转换函数 MultiCharToWideChar, WhideCharToMultiChar.
+
+<li>
+ChooseFont 选择字体对话框.
+
+<li>
+FindText/ReplaceText 查找替换对话框.
+
+<li>
+ChooseColor 颜色对话框
+
+</ul>
+
+</body>
+</html>

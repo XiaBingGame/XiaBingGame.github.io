@@ -1,0 +1,72 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../style.css" />
+    <title>arcball</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<h1 id="toc_1">实现Arcball效果(OpenGL)</h1>
+<ul>
+<li>
+主要讲解如何在OpenGL中实现Arcball效果.
+
+<li>
+Arcball效果: 当按下鼠标左键并移动时, 场景窗口中鼠标下方的物体会围绕其中心旋转. 好比人用手指按住地球仪让其旋转的效果.
+
+<li>
+本例主要运用矩阵变换来实现. 首先根据鼠标的移动得到旋转轴以及旋转角度. 而后转换成四元数格式, 再转换成变换矩阵.
+
+<li>
+首先得到投影矩阵和视图变换矩阵
+<pre c++>
+GLdouble projection_matrix[16] = {1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1};
+GLdouble modelview_matrix[16] = {1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1};
+int viewport_matrix[4] = {0,0,640,480};
+
+glGetDoublev(GL_PROJECTION_MATRIX,projection_matrix);
+glGetIntegerv(GL_VIEWPORT,viewport_matrix);
+</pre>
+
+<li>
+得到鼠标位置在模型空间中的位置
+<pre c++>
+GLdouble x,y,z;
+gluUnProject(mouse_x, mouse_y, 0.0,
+             modelview_matrix,
+             projection_matrix,
+             viewport_matrix,
+             &amp;x, &amp;y, &amp;z);
+</pre>
+
+<li>
+而后从眼睛位置以及上面得到的鼠标位置得到一条射线, 而后根据射线方程得到球面上一点的位置.
+
+<li>
+而后根据鼠标的移动得到另外一个球面点的位置. 从而得到球心到达两个球面上点的向量, 叉乘得到旋转轴, 点乘得到旋转角度.
+
+<li>
+根据旋转轴和旋转角度得到四元数. 而后四元数变换得到旋转矩阵. <br />
+
+</ul>
+
+<p>
+参考资料: <a href="http://rainwarrior.ca/dragon/arcball.html">http://rainwarrior.ca/dragon/arcball.html</a>
+</p>
+
+    </div>
+</body>
+</html>

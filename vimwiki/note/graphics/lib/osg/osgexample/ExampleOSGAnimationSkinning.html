@@ -1,0 +1,93 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../../style.css" />
+    <title>ExampleOSGAnimationSkinning</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="../index.html">首页</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<ul>
+<li>
+osgAnimation::Skeleton 派生自 osg::MatrixTransform
+
+<ul>
+<li>
+嵌套类 UpdateSkeleton 派生自 osg::NodeCallback
+
+<li>
+setDefaultUpdateCallback() 设置默认回调
+
+<ul>
+<li>
+该回调主要作用是验证骨骼是否有效, 即每个骨头要么没有子骨头, 要么子骨头必须位于第一个孩子处.
+
+</ul>
+</ul>
+<li>
+osgAnimation::Bone --- 骨头, 派生自 public osg::MatrixTransform
+
+<ul>
+<li>
+setInvBindMatrixInSkeletonSpace --- 应该是设置位置
+
+</ul>
+<li>
+osgAnimation::UpdateBone
+
+<ul>
+<li>
+getStackedTransforms()
+
+</ul>
+<li>
+osgAnimation::StackedTranslateElement
+
+<li>
+演示如何创建骨骼动画
+
+<li>
+osgAnimation::BasicAnimationManager
+
+<ul>
+<li>
+registerAnimation 注册
+
+<li>
+buildTargetReference 构建目标
+
+<li>
+playAnimation
+
+</ul>
+<li>
+osgAnimation::Animation
+
+<ul>
+<li>
+addChannel
+
+</ul>
+<li>
+createTesselatedBox 创建一个分格几何体, 返回 osgAnimation::RigGeometry
+
+<li>
+osgAnimation::VertexInfluenceSet, osgAnimation::VertexInfluenceMap 动画影响集合和映射
+
+<li>
+演示如何创建一个骨骼动画, 给一个几何体分配不同的骨头.
+
+</ul>
+
+    </div>
+</body>
+</html>

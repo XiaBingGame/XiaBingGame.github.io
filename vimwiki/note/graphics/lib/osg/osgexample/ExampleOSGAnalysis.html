@@ -1,0 +1,139 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../../style.css" />
+    <title>ExampleOSGAnalysis</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="../index.html">首页</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<ul>
+<li>
+osgViewer::Viewer 派生自 osgViewer::ViewerBase, osgViewer::View
+
+<ul>
+<li>
+osgViewer::View::setCameraManipulator
+
+<li>
+osgViewer::View::addEventHandler
+
+<li>
+osgViewer::StatsHandler
+
+<li>
+osgViewer::WindowSizeHandler
+
+</ul>
+<li>
+osgGA::StateSetManipulator
+
+<li>
+IncrementalCompileOperation::assignForceTextureDownloadGeometry() --- 分配一个用来强制下载纹理的几何体(简单)
+
+<li>
+修改并设置 osgUtil::IncrementalCompileOperation <a href="实现效率问题.html">实现效率问题</a>
+
+<li>
+本例开启了一个新的线程, 用于进行读取文件, 保存文件操作
+
+<ul>
+<li>
+创建一个新的 osg::OperationThread, 并启动它(startThread())
+
+<ul>
+<li>
+该 OperationThread::add 可以添加一个操作
+
+</ul>
+<li>
+这里创建了 DatabasePagingOperation
+
+<ul>
+<li>
+基类 osg::Operation 重载 operator() 方法
+
+<ul>
+<li>
+osgDB::readRefNodeFile 读取文件
+
+<li>
+调用自己的场景处理器处理该节点, 这里主要是多个优化器和其他的内容.
+
+<li>
+osgDB::writeNodeFile 写入文件
+
+<li>
+设置增量编译操作, 这里由 Viewer 来控制
+
+<ul>
+<li>
+创建 CompileSet
+
+<li>
+设置CompileSet回调
+
+<li>
+将 CompileSet 添加到增量编辑操作内
+
+</ul>
+</ul>
+<li>
+基类 osgUtil::IncrementalCompileOperation::CompileCompletedCallback 用于增量编译
+
+<ul>
+<li>
+回调的作用主要用于告知编译完成
+
+</ul>
+</ul>
+<li>
+每个文件创建一个 DatabasePagingOperation 进行加载
+
+<li>
+加载完模型后, 记得清理该 DatabasePagingOperation
+
+</ul>
+<li>
+osg::getOrCreateContextData(0)-&gt;reportStats 可以得到一些信息
+
+<li>
+常见的几种优化
+
+<ul>
+<li>
+osgUtil::VertexAccessOrderVisitor, 访问节点后, 调用 optimizeOrder() 方法
+
+<li>
+osgUtil::VertexCacheVisitor, 访问节点后, 调用 optimizeVertices() 方法
+
+<li>
+osgUtil::IndexMeshVisitor, 访问节点后, 调用 makeMesh() 方法
+
+<li>
+osgUtil::Simplifier, 简化
+
+</ul>
+<li>
+OptimizeImageVisitor 演示如何处理一个节点内的所有图像
+
+<li>
+MemoryVisitor 实现内存的重分配, 两种方案
+
+<li>
+StripStateVisitor 控制所有节点以及其是否使用 VBO 和显示列表
+
+</ul>
+
+    </div>
+</body>
+</html>

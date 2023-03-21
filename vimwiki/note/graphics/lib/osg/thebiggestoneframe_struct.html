@@ -1,0 +1,173 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../style.css" />
+    <title>thebiggestoneframe_struct</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="../index.html">首页</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<ul>
+<li>
+ViewerBase::frame() 主要流程
+
+<ul>
+<li>
+初始化
+
+<ul>
+<li>
+viewerInit()
+
+<ul>
+<li>
+osg::Viewer::View::init
+
+</ul>
+<li>
+realize()
+
+<ul>
+<li>
+getContexts()
+
+<ul>
+<li>
+(*_realizeOperation)(gc)
+
+</ul>
+<li>
+setUpThreading()
+
+<ul>
+<li>
+osgViewer::ViewerBase::startThreading()
+
+</ul>
+<li>
+编译上下文
+
+</ul>
+</ul>
+<li>
+advance()
+
+<ul>
+<li>
+记录帧信息
+
+<li>
+getDeleteHandler()
+
+</ul>
+<li>
+eventTraversal()
+
+<ul>
+<li>
+取出所有事件
+
+<li>
+遍历事件, 使用注册的事件处理器处理
+
+<li>
+遍历事件, 使用 _cameraManipulator
+
+<li>
+执行每个节点和 Drawable 的事件回调函数
+
+<li>
+执行相机的事件回调
+
+</ul>
+<li>
+updateTraversal()
+
+<ul>
+<li>
+处理用户的更新回调
+
+<li>
+更新摄像机的位置
+
+<li>
+DatabasePager::updateSceneGraph
+
+<ul>
+<li>
+DatabasePager::removeExpiredSubgraph
+
+<ul>
+<li>
+遍历  DatabasePager::_pagedLODList, 执行 removeExpiredChildren 函数
+
+<li>
+将过期节点从 _pagedLODList 中删除
+
+<li>
+执行 SharedStateManager::prune 函数
+
+</ul>
+<li>
+DatabasePager::addLoadedDataToSceneGraph
+
+</ul>
+<li>
+ImagePager::updateSceneGraph
+
+<ul>
+<li>
+只有 osg::ImageSequence 可以使用图片数据库来执行工作
+
+</ul>
+<li>
+用户定义的 _updateOperations
+
+<li>
+更新相机的观察矩阵
+
+<li>
+View::updateSlaves
+
+</ul>
+<li>
+renderingTraversal()
+
+</ul>
+</ul>
+
+<ul>
+<li>
+osgDB::DatabasePager 内含多线程 DatabaseThread, 两个数据处理线程
+
+<li>
+osgDB::DatabasePager::DatabaseThread::run() 
+
+<ul>
+<li>
+删除过期的场景数据
+
+<li>
+获取新的数据加载请求
+
+<li>
+编译加载的数据
+
+<li>
+将加载的数据合并至场景图形
+
+</ul>
+</ul>
+
+    </div>
+</body>
+</html>

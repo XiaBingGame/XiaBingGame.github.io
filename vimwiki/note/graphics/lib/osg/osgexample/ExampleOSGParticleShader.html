@@ -1,0 +1,68 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../../style.css" />
+    <title>ExampleOSGParticleShader</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="../index.html">首页</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<ul>
+<li>
+API
+
+<ul>
+<li>
+osgParticle::ParticleSystem
+
+<ul>
+<li>
+派生自 osg::Drawable
+
+<li>
+setVisibilityDistance 设置可视距离
+
+</ul>
+<li>
+osgParticle::Particle
+
+<ul>
+<li>
+Particle 由 Emitter 创建, 而后放入粒子系统中
+
+<li>
+可永久生存, 只需 lifeTime &lt; 0
+
+<li>
+属性的当前值可以用一个范围值表示, 当 t = 0 时, 当前值等于 min, 当 t = liftTime, 当前值等于 max
+
+<ul>
+<li>
+可以自定义 interpolator 对象达到某种类型的过渡效果
+
+<li>
+当 lifeTime &lt; 0 时, 不会有任何插值, 只会使用 min 值
+
+</ul>
+<li>
+setShape 形状
+
+<li>
+setSortMode 设置排序模式
+
+</ul>
+</ul>
+</ul>
+
+    </div>
+</body>
+</html>

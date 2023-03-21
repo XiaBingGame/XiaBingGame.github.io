@@ -1,0 +1,50 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../../style.css" />
+    <title>ExampleOSGAnimationSolid</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="../index.html">首页</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<ul>
+<li>
+演示如何创建一个节点的变换动画
+
+<li>
+osgAnimation::UpdateMatrixTransform --- 控制一个 osg::MatrixTransform 变换的动画, 通过设置其更新回调实现
+
+<ul>
+<li>
+getStackedTransforms() 获取变换列表
+
+<li>
+可以压入 osgAnimation::StackedTranslateElement 和 osgAnimation::StackedRotateAxisElement
+
+</ul>
+<li>
+osgAnimation::BasicAnimationManager --- 作为父节点的更新回调。
+
+<li>
+创建 osgAnimation::Vec3LinearChannel 控制之前的 osgAnimation::StackedTranslateElement, 其插入了关键帧, 并作为 osgAnimation::Animation 的一个 Channel
+
+<li>
+同理创建 osgAnimation::FloatLinearChannel 控制 osgAnimation::StackedRotateAxisElement
+
+<li>
+osgAnimation::BasicAnimationManager 注册这两个动画并播放
+
+</ul>
+
+    </div>
+</body>
+</html>

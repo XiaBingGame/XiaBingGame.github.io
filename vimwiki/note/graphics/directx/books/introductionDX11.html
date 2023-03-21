@@ -1,0 +1,391 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../style.css" />
+    <title>introductionDX11</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<ul>
+<li>
+D3DX 库(扩展)
+
+<li>
+文档: DirectX SDK\Documentation\DirectX9\windows_graphics.chm.
+
+<li>
+例子: DirectX SDK\Samples\C++\Direct3D10 和 DirectX SDK\Samples\C++\Direct3D11 目录
+
+<li>
+链接的库
+
+<ul>
+<li>
+debug: d3d11.lib, d3dx11d.lib, D3DCompiler.lib, Effects11d.lib, dxerr.lib, dxgi.lib, dxguid.lib
+
+<li>
+release: d3d11.lib, d3dx11.lib, D3DCompiler.lib, Effects11.lib, dxerr.lib, dxgi.lib, dxguid.lib
+
+</ul>
+<li>
+查找路径
+
+<ul>
+<li>
+可执行文件目录 - D:\DXSDK\Utilities\bin\x86
+
+<li>
+包含目录 - D:\DXSDK\Include, D:\Data\Books\BookIV\Code\Common
+
+<li>
+库目录 - D:\DXSDK\Lib\x86, D:\Data\Books\BookIV\Code\Common
+
+</ul>
+</ul>
+
+<h1 id="toc_1">Chapter 1 Vector Algebra</h1>
+<h2 id="toc_1.1">1.1 Vectors</h2>
+<ul>
+<li>
+向量只和方向长度有关, 和位置无关.
+
+</ul>
+<h3 id="toc_1.1.1">1.1.1 Vectors and Coordinate Systems</h3>
+<ul>
+<li>
+相同的向量在不同坐标系统下可能不同.
+
+</ul>
+<h3 id="toc_1.1.2">1.1.2 Left-Handed Versus Right-Handed Coordinate Systems</h3>
+<h3 id="toc_1.1.3">1.1.3 Basic Vector Operations</h3>
+<ul>
+<li>
+相等, 加法, 标量乘法, 减法
+
+</ul>
+<h2 id="toc_1.2">1.2 Length and Unit Vectors</h2>
+<h2 id="toc_1.3">1.3 The Dot Product</h2>
+<h3 id="toc_1.3.1">1.3.1 Orthogonalization</h3>
+<ul>
+<li>
+有时我们有一系列向量接近正交但不完全正交, 所以正交化这些向量.
+
+<li>
+Gram-Schmidt Prthogonalization process
+
+</ul>
+<h2 id="toc_1.4">1.4 The Cross Product</h2>
+<h3 id="toc_1.4.1">1.4.1 Pseudo 2D Cross Product</h3>
+<h3 id="toc_1.4.2">1.4.2 Orthogonalization with the Cross Product</h3>
+<ul>
+<li>
+使用叉乘实现正交化
+
+<li>
+选择方向不变化的向量很重要, 对于相机而言, 通常选择其向前看的方向为不变的向量.
+
+</ul>
+<h2 id="toc_1.5">1.5 Points</h2>
+<h2 id="toc_1.6">1.6 XNA Math Vectors</h2>
+<ul>
+<li>
+D3DX的11版本不再支持3D数学工具函数, 而是由XNA数学库来支持. 在 Windows 上, 该库使用 SSE2(Streaming SIMD Extensions 2) 指令集.
+
+<li>
+在线文档 XNAMath2010, 详细内容可见文章 Designing Fast Cross-Platform SIMD Vector Libraries.
+
+<li>
+要使用 XNA 数学库, 头文件 xnamath.h
+
+</ul>
+<h3 id="toc_1.6.1">1.6.1 Vector Types</h3>
+<ul>
+<li>
+XMVECTOR, 128位类型.
+<pre class="brush: c++">
+	typedef __m128 XMVECTOR;
+</pre>
+
+<li>
+对于类数据成员, 推荐使用XMFLOAT2, XMFLOAT3, XMFLOAT4. 如果使用这些类型, 则不能使用 SIMD 的好处.
+<pre class="brush: c++">
+	typedef struct _XMFLOAT2 {
+		FLOAT x;
+		FLOAT y;
+	} XMFLOAT2;
+	typedef struct _XMFLOAT3 {
+		FLOAT x;
+		FLOAT y;
+		FLOAT z;
+	} XMFLOAT3;
+	typedef struct _XMFLOAT4 {
+		FLOAT x;
+		FLOAT y;
+		FLOAT z;
+		FLOAT w;
+	} XMFLOAT4;
+</pre>
+
+<li>
+总结:
+
+<ol>
+<li>
+使用 XMVECTOR 用于局部和全局变量
+
+<li>
+使用 XMFLOAT2, XMFLOAT3, XMFLOAT4 用于类数据成员类型
+
+<li>
+在计算之前使用加载函数转换 XMFLOAT* 为 XMVECTOR.
+
+<li>
+使用 XMVECTOR 进行计算
+
+<li>
+使用存储函数转换 XMVECTOR 为 XMFLOAT*
+
+</ol>
+</ul>
+<h3 id="toc_1.6.2">1.6.2 加载和存储方法 </h3>
+<pre class="brush: c++">
+	// Loads XMFLOAT2 into XMVECTOR
+	XMVECTOR XMLoadFloat2(CONST XMFLOAT2 *pSource);
+	// Loads XMFLOAT3 into XMVECTOR
+	XMVECTOR XMLoadFloat3(CONST XMFLOAT3 *pSource);
+	// Loads XMFLOAT4 into XMVECTOR
+	XMVECTOR XMLoadFloat4(CONST XMFLOAT4 *pSource);
+	// Loads 3-element UINT array into XMVECTOR
+	XMVECTOR XMLoadInt3(CONST UINT* pSource);
+	// Loads XMCOLOR into XMVECTOR
+	XMVECTOR XMLoadColor(CONST XMCOLOR *pSource);
+	// Loads XMBYTE4 into XMVECTOR
+	XMVECTOR XMLoadByte4(CONST XMBYTE4 *pSource);
+	// Loads XMVECTOR into XMFLOAT2
+	VOID XMStoreFloat2(XMFLOAT2 *pDestination, FXMVECTOR V);
+	// Loads XMVECTOR into XMFLOAT3
+	VOID XMStoreFloat3(XMFLOAT3 *pDestination, FXMVECTOR V);
+	// Loads XMVECTOR into XMFLOAT4
+	VOID XMStoreFloat4(XMFLOAT4 *pDestination, FXMVECTOR V);
+	// Loads XMVECTOR into 3 element UINT array
+	VOID XMStoreInt3(UINT* pDestination, FXMVECTOR V);
+	// Loads XMVECTOR into XMCOLOR
+	VOID XMStoreColor(XMCOLOR* pDestination, FXMVECTOR V);
+	// Loads XMVECTOR into XMBYTE4
+	VOID XMStoreByte4(XMBYTE4 *pDestination, FXMVECTOR V);
+	FLOAT XMVectorGetX(FXMVECTOR V);
+	FLOAT XMVectorGetY(FXMVECTOR V);
+	FLOAT XMVectorGetZ(FXMVECTOR V);
+	FLOAT XMVectorGetW(FXMVECTOR V);
+	XMVECTOR XMVectorSetX(FXMVECTOR V, FLOAT x);
+	XMVECTOR XMVectorSetY(FXMVECTOR V, FLOAT y);
+	XMVECTOR XMVectorSetZ(FXMVECTOR V, FLOAT z);
+	XMVECTOR XMVectorSetW(FXMVECTOR V, FLOAT w);
+</pre>
+<h3 id="toc_1.6.3">1.6.3 参数传递 </h3>
+<ul>
+<li>
+对于XMVECTOR类型, 其将参数传递给函数有三种不同的规则用于 32 位, 64位 Windows 和 XBox 360. 为了平台独立, 我们使用类型 CXMVECTOR 和 FXMVECTOR用于传递 XMVECTOR 参数.
+<pre class="brush: c++">
+// 32-bit Windows
+typedef const XMVECTOR FXMVECTOR;
+typedef const XMVECTOR&amp; CXMVECTOR;
+// 64-bit Windows
+typedef const XMVECTOR&amp; FXMVECTOR;
+typedef const XMVECTOR&amp; CXMVECTOR;
+</pre>
+
+<li>
+规则如下, 前三个 XMVECTOR 参数应当为 FXMVECTOR, 任意额外的XMVECTOR参数为CXMVECTOR类型, XMVECTOR参数之间可以有其他的非 XMVECTOR 参数
+
+</ul>
+<h3 id="toc_1.6.4">1.6.4 常量向量</h3>
+<ul>
+<li>
+常量XMVECTOR实例应当使用 XMVECTORF32 类型.
+<pre class="brush: c++">
+static const XMVECTORF32 g_vHalfVector = { 0.5f, 0.5f, 0.5f, 0.5f };
+static const XMVECTORF32 g_vZero = { 0.0f, 0.0f, 0.0f, 0.0f };
+XMVECTORF32 vRightTop = {
+	vViewFrust.RightSlope,
+	vViewFrust.TopSlope,
+	1.0f,1.0f
+};
+XMVECTORF32 vLeftBottom = {
+	vViewFrust.LeftSlope,
+	vViewFrust.BottomSlope,
+	1.0f,1.0f
+};
+</pre>
+
+</ul>
+<h3 id="toc_1.6.5">1.6.5 重载操作符 </h3>
+<ul>
+<li>
+重载的操作符用于向量加法, 减法, 标量乘法. 定义 XM_NO_OPERATOR_OVERLOADS 可以禁止操作符重载
+<pre class="brush: c++">
+// Vector operators
+#if defined(__cplusplus) &amp;&amp; !defined(XM_NO_OPERATOR_OVERLOADS)
+XMVECTOR operator+ (FXMVECTOR V);
+XMVECTOR operator- (FXMVECTOR V);
+XMVECTOR&amp; operator+= (XMVECTOR&amp; V1, FXMVECTOR V2);
+XMVECTOR&amp; operator-= (XMVECTOR&amp; V1, FXMVECTOR V2);
+XMVECTOR&amp; operator*= (XMVECTOR&amp; V1, FXMVECTOR V2);
+XMVECTOR&amp; operator/= (XMVECTOR&amp; V1, FXMVECTOR V2);
+XMVECTOR&amp; operator*= (XMVECTOR&amp; V, FLOAT S);
+XMVECTOR&amp; operator/= (XMVECTOR&amp; V, FLOAT S);
+XMVECTOR operator+ (FXMVECTOR V1, FXMVECTOR V2);
+XMVECTOR operator- (FXMVECTOR V1, FXMVECTOR V2);
+XMVECTOR operator* (FXMVECTOR V1, FXMVECTOR V2);
+XMVECTOR operator/ (FXMVECTOR V1, FXMVECTOR V2);
+XMVECTOR operator* (FXMVECTOR V, FLOAT S);
+XMVECTOR operator* (FLOAT S, FXMVECTOR V);
+XMVECTOR operator/ (FXMVECTOR V, FLOAT S);
+#endif // __cplusplus &amp;&amp; !XM_NO_OPERATOR_OVERLOADS
+</pre>
+
+</ul>
+<h3 id="toc_1.6.6">1.6.6 Miscellaneous</h3>
+<ul>
+<li>
+常量
+<pre class="brush: c++">
+#defineXM_PI 3.141592654f
+#defineXM_2PI 6.283185307f
+#defineXM_1DIVPI 0.318309886f
+#defineXM_1DIV2PI 0.159154943f
+#defineXM_PIDIV2 1.570796327f
+#defineXM_PIDIV4 0.785398163f
+</pre>
+
+<li>
+内置函数
+<pre class="brush: c++">
+XMFINLINE FLOAT XMConvertToRadians(FLOAT fDegrees)
+{
+	return fDegrees * (XM_PI / 180.0f);
+}
+XMFINLINE FLOAT XMConvertToDegrees(FLOAT fRadians)
+{
+	return fRadians * (180.0f / XM_PI);
+}
+</pre>
+
+<li>
+宏
+<pre class="brush: c++">
+#define XMMin(a, b) (((a) &lt; (b)) ? (a) : (b))
+#define XMMax(a, b) (((a) &gt; (b)) ? (a) : (b))
+</pre>
+
+</ul>
+<h3 id="toc_1.6.7">1.6.7 Setter Functions</h3>
+<ul>
+<li>
+设置一个 XMVECTOR 内容的函数
+<pre class="brush: c++">
+XMVECTOR XMVectorZero(); // Returns the zero vector0
+XMVECTOR XMVectorSplatOne(); // Returns the vector (1, 1, 1, 1)
+XMVECTOR XMVectorSet(FLOAT x, FLOAT y, FLOAT z, FLOAT w);	// Returns the vector (x, y, z, w)
+XMVECTOR XMVectorReplicate(FLOAT s);	// Returns the vector(s, s, s, s)
+XMVECTOR XMVectorSplatX(FXMVECTOR V);	// Returns the vector (vx, vx, vx, vx)
+XMVECTOR XMVectorSplatY(FXMVECTOR V);	// Returns the vector (vy, vy, vy, vy)
+XMVECTOR XMVectorSplatZ(FXMVECTOR V);	// Returns the vector (vz, vz, vz, vz)
+</pre>
+
+</ul>
+<h3 id="toc_1.6.8">1.6.8 向量函数</h3>
+<pre class="brush: c++">
+XMVECTOR XMVector3Length(FXMVECTOR V);		// Returns || v ||		Input v
+XMVECTOR XMVector3LengthSq(FXMVECTOR V);	// Returns || v ||平方		 Input v
+XMVECTOR XMVector3Dot(FXMVECTOR V1, FXMVECTOR V2);	// Returns v
+XMVECTOR XMVector3Cross(FXMVECTOR V1, FXMVECTOR V2);
+XMVECTOR XMVector3Normalize(FXMVECTOR V);
+XMVECTOR XMVector3Orthogonal(FXMVECTOR V);
+XMVECTOR XMVector3AngleBetweenVectors(FXMVECTOR V1, FXMVECTOR V2);
+VOID XMVector3ComponentsFromNormal(XMVECTOR* pParallel, XMVECTOR* pPerpendicular, FXMVECTOR V, FXMVECTOR Normal);
+BOOL XMVector3Equal(FXMVECTOR V1, FXMVECTOR V2);
+BOOL XMVector3NotEqual(FXMVECTOR V1, FXMVECTOR V2);
+</pre>
+<h3 id="toc_1.6.9">1.6.9 浮点错误</h3>
+<ul>
+<li>
+由浮点精度引起的错误.
+
+</ul>
+
+<h1 id="toc_2">Chapter 2 Matrix Alegebra</h1>
+<h2 id="toc_2.1">2.8 XNA Matrices</h2>
+<h3 id="toc_2.1.1">2.8.1 矩阵类型</h3>
+<ul>
+<li>
+使用 XMMATRIX 类表示矩阵.
+
+<li>
+可以使用 XMMatrixSet 函数设置 XMMATRIX.
+
+<li>
+当需要类数据成员时, 则用 XMFLOAT4X4 存储矩阵.
+
+</ul>
+<h3 id="toc_2.1.2">2.8.2 Matrix 函数</h3>
+<pre class="brush: c++">
+XMMATRIX XMMatrixIdentity(); // Returns the identity matrix I
+BOOL XMMatrixIsIdentity(CXMMATRIX M); 
+XMMATRIX XMMatrixMultiply(CXMMATRIX A, CXMMATRIX B); // Input B
+XMMATRIX XMMatrixTranspose(CXMMATRIX M); // Input M
+XMVECTOR XMMatrixDeterminant(CXMMATRIX M); // Input M
+XMMATRIX XMMatrixInverse(XMVECTOR* pDeterminant, CXMMATRIX M); // Input M
+</pre>
+
+<h1 id="toc_3">Chapter 3 变换</h1>
+<h2 id="toc_3.1">3.6 XNA 数学变换函数</h2>
+<pre class="brush: c++">
+XMMATRIX XMMatrixScaling(
+   FLOAT ScaleX,
+   FLOAT ScaleY,
+   FLOAT ScaleZ); // Scaling factors
+XMMATR IX XMMatrixScalingFromVector(
+   FXMVECTOR Scale);
+XMMATRIX XMMatrixRotationX(
+   FLOAT Angle); // Clockwise angle θ to rotate
+XMMATRIX XMMatrixRotationY(
+   FLOAT Angle); // Clockwise angle θ to rotate
+XMMATRIX XMMatrixRotationZ(
+   FLOAT Angle); // Clockwise angle θ to rotate
+XMMATRIX XMMatrixRotationAxis(
+   FXMVECTOR Axis,
+   FLOAT Angle);
+XMMATRIX XMMatrixTranslation(
+   FLOAT OffsetX,
+   FLOAT OffsetY,
+   FLOAT OffsetZ); // Translation factors
+XMMATRIX XMMatrixTranslationFromVector(
+   FXMVECTOR Offset); // Translation factors (tx , ty ,tz)
+XMVECTOR XMVector3Transform(
+   FXMVECTOR V,
+   CXMMATRIX M);
+XMVECTOR XMVector3TransformCoord(
+   FXMVECTOR V,
+   CXMMATRIX M);
+XMVECTOR XMVector3TransformNormal(
+   FXMVECTOR V,
+   CXMMATRIX M);
+</pre>
+
+    </div>
+</body>
+</html>

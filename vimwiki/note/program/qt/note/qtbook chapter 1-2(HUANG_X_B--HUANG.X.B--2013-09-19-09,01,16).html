@@ -1,0 +1,381 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../style.css" />
+    <title>qtbook chapter 1-2</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<h1 id="toc_1">Chapter 1: Getting Started</h1>
+<h2 id="toc_1.1">1.1 Hello Qt</h2>
+<ul>
+<li>
+命令行创建
+<pre>
+// 创建了proj文件
+qmake -project
+// 创建makefile
+qmake hello.pro
+// 创建vs版本
+qmake -tp vc hello.pro
+</pre>
+
+<li>
+QLabel 文本可以使用HTML代码
+
+</ul>
+<h2 id="toc_1.2">1.2 Making Connection</h2>
+<ul>
+<li>
+QPushButton
+
+<li>
+QApplication::quit()
+
+</ul>
+<h2 id="toc_1.3">1.3 Laying Out Widgets</h2>
+<ul>
+<li>
+控件: QWidget, QSpinBox, QSlider
+
+<li>
+编译出来的可执行文件使用 -style 命令行参数可以修改默认的style
+
+<li>
+layout还可以自动设置其内的组件为该layout所在组件的子组件.
+
+</ul>
+<h2 id="toc_1.4">1.4 Using the Reference Documention</h2>
+
+<h1 id="toc_2">Chapter 2: Creating Dialogs</h1>
+<h2 id="toc_2.1">2.1 Subclassing QDialog</h2>
+<ul>
+<li>
+对话框程序一般用于设置程序的选项和选择.
+
+<li>
+类中使用Q_OBJECT 宏表示该类可以要定义singnal和slot
+
+<li>
+Qt::CaseSensitivity 为枚举类型, 可取值Qt::CaseSensitive 和  Qt::CaseInsensitive
+
+<li>
+控件: QCheckBox
+
+<li>
+使用前向声明速度可能更快
+
+<li>
+include文件QtGui可省略繁琐的include语句
+
+<li>
+Qt最重要的模块为 QtCore, QtGui, QtNetwork, QtOpenGL, QtScript, QtSql, QtSvg, QtXml
+
+<li>
+在比较大的程序中, 头文件中包含其他大的头文件, 不是合适的做法, 所以在头文件中不要include QtGui
+
+<li>
+tr函数可以用于转换该字符串至其他语言, 需要声明 Q_OBJECT 宏
+
+<li>
+&amp;符号可以用于设置快捷键, 而buddy的功用就是当label获得焦点, 其buddy也就获得了焦点.
+
+<li>
+default按钮用于当用户按下回车键时等同于按下该按钮.
+
+<li>
+QLineEdit 的 textChanged 信号
+
+<li>
+addStretch 就像在该处增加了弹簧一样的空白
+
+<li>
+layout可以自动设置组件的父子关系
+
+<li>
+QWidget::sizeHint() 可以返回组件"理想的"大小
+
+<li>
+Qt 使用 meta-object 编译器来编译 meta-object 系统
+
+<li>
+QWidget::setTabOrder() 设置tab 次序
+
+</ul>
+<h2 id="toc_2.2">2.2 Signals and Slots in Depth</h2>
+<ul>
+<li>
+slot和普通的C++成员函数相同, 可以是虚拟的, 可以被重载, 可以为公有, 保护或者私有函数. 可以直接调用该函数. 参数可以为任何类型. 唯一不同的就是当信号发出的时候就会自动调用该slot函数
+
+<li>
+signal和slot
+
+<ul>
+<li>
+一个signal可以连接多个slot
+
+<li>
+多个signal可以连接一个slot
+
+<li>
+一个signal可以连接另一个signal
+
+<li>
+连接可以被移除
+
+<li>
+signal和slot必须含有相同的参数和次序. 如果signal的参数多于slot的参数数, 多余的参数则会抛弃.
+
+<li>
+在connect中, 参数不要写出名称, 只需写出类型即可.
+
+<li>
+signal和slot在QObject中实现, 不仅仅局限于GUI程序. 可以为任意QObject派生类所使用.
+
+</ul>
+<li>
+Qt的Meta-Object系统: 可以捆绑两个独立的软件组件, 且组件之间无需互相了解
+
+<ul>
+<li>
+该系统提供了两个关键服务: signals-slots 和 introspection(反省)
+
+<li>
+introspection功能是实现signals-slots的必要部分, 同时允许应用程序员在运行时期得到关于QObject派生类的"meta-information", 该信息包含该对象支持的signals和slots列表以及类名称.
+
+<li>
+该机制支持属性(Designer扩展的)和文本翻译(国际化), 并且为QtScript模块的基础, 可动态添加属性.
+
+<li>
+Qt通过工具moc来实现meta-object系统.
+
+<li>
+该机制的作用如下:
+
+<ol>
+<li>
+Q_OBJECT宏声明了一些每个QObject派生类必须实现的introspection函数: metaObject(), tr(), qt_metacall(),以及其他
+
+<li>
+moc工具生成Q_OBJECT所声明函数和所有信号的实现代码
+
+<li>
+QObject中如connect和disconncet这样的成员函数使用这些introspection函数来完成它们的工作.
+
+</ol>
+</ul>
+<li>
+注意循环connect导致的无限循环问题
+
+</ul>
+<h2 id="toc_2.3">2.3 Rapid Dialog Design</h2>
+<ul>
+<li>
+创建对话框的基本步骤:
+
+<ol>
+<li>
+创建和初始化子widget
+
+<li>
+将子widget放入layout中
+
+<li>
+设置tab次序
+
+<li>
+建立signal-slot连接
+
+<li>
+实现对话框自定义slot
+
+</ol>
+<li>
+Designer在设计过程中, 如果设计完layout之后, 可使用Form/Adjust Size来重置大小.
+
+<li>
+Designer设计的form使用setupUi()函数调用一个QWidget对象来安装该form.
+
+<li>
+从QDialog和Designer设计的类派生新类来实现额外的功能
+
+<li>
+在setupUi函数安装了ui form之后, 其会自动根据命名惯例将slot on_objectName_signalName()连接至对应的ObjectName的signalName信号上.
+
+<li>
+可以使用 validator 限制输入的范围.
+
+<li>
+Qt提供了三个内置的validator: QIntValidator, QDoubleValidator, 和 QRegExpValidator
+
+<li>
+slot accept()函数将dialog的返回值设置为QDialog::Accepted()(等于1). reject则设置返回值为QDialog::Rejected()(等于0)
+
+<li>
+QLineEdit::hasAcceptableInput()  用验证器验证输入内容是否符合validator的要求
+
+<li>
+QDialogButtonBox 可以指定按钮并根据操作系统正确地显示出来, 在Designer中则是将Button Box添加至Form上. 有成员函数 button() 和信号 accepted(), rejected()
+
+</ul>
+<h2 id="toc_2.4">2.4 Shape-Changing Dialog</h2>
+<ul>
+<li>
+最常用的变形对话框为扩展对话框和多页面对话框.
+
+<li>
+按钮的 checkable 属性
+
+<li>
+Designer中, 组合框右键菜单的编辑条目菜单.
+
+<li>
+代码技巧: 类似的widget由于内容不同其大小有可能不同, 如需设置相同大小可用如下代码:
+<pre c++>
+primaryColumnCombo-&gt;setMinimumSize(secondaryColumnCombo-&gt;sizeHint());
+// secondaryColumnCombo的内容为None, 比PrimaryColumnCombo的内容要多, 所以重新设置
+</pre>
+
+<li>
+用户不能改变大小: QLayout::setSizeConstraint(QLayout::SetFixedSize);
+
+<li>
+多页面对话框
+
+<ul>
+<li>
+QTabWidget --- 提供tab bar控制其内置的QStackedWidget
+
+<li>
+QListWidget 和 QStackedWidget 配合使用, QListWidget的当前条目显示哪个QStackedWidget显示
+
+<ul>
+<li>
+QListWidget::currentRowChanged() 信号连至 QStackedWidget::setCurrentIndex() 槽
+
+</ul>
+<li>
+QTreeWidget 和 QStackedWidget 类似QListWidget
+
+</ul>
+</ul>
+<h2 id="toc_2.5">2.5 Dynamic Dialog</h2>
+<ul>
+<li>
+动态对话框
+
+<ul>
+<li>
+是指用Qt Designer创建的.ui文件在运行期间创建的对话框
+
+<li>
+我们可以在运行期间使用QUiLoader类加载ui文件
+<pre c++>
+QUiLoader uiLoader;
+QFile file("sortdialog.ui");
+QWidget *sortDialog = uiLoader.load(&amp;file);
+if (sortDialog) {
+	...
+}
+</pre>
+
+<li>
+我们可以使用QObject::findChild&lt;T&gt;()访问该form的子widget
+<pre c++>
+QComboBox *primaryColumnCombo =
+	sortDialog-&gt;findChild&lt;QComboBox *&gt;("primaryColumnCombo");
+if (primaryColumnCombo) {
+	...
+}
+</pre>
+
+<li>
+QUiLoader 位于特定的库里, 需要增加配置: CONFIG += uitools
+
+</ul>
+</ul>
+<h2 id="toc_2.6">2.6 Built-in Widget and Dialog Classes</h2>
+<ul>
+<li>
+内置的widget和对话框类
+
+<ul>
+<li>
+按钮: QPushButton, QToolButton, QCheckBox, QRadioButton
+
+<li>
+单页容器: QGroupBox, QFrame
+
+<li>
+多页容器: QTabWidget, QToolBox
+
+<li>
+条目视图: QListView, QTreeView, QTableView
+
+<li>
+显示: QLabel, QLCDNumber, QProgress, QTextBrowser
+
+<li>
+输入: QSpinBox, QDoubleSpinBox, QComboBox, QDateEdit, QTimeEdit, QDateTimeEdit, QScrollBar, QSlider, QTextEdit, QLineEdit, QDial
+
+<li>
+反馈对话框: QInputDialog, QProgressDialog, QMessageBox, QErrorMessage
+
+<li>
+颜色和字体对话框: QColorDialog, QFontDialog
+
+<li>
+文件和打印对话框: QPageSetupDialog, QFileDialog, QPrintDialog
+
+<li>
+Qt的QWizard对话框
+
+</ul>
+<li>
+QTabWidget可以设置其tab的形状和位置.
+
+<li>
+滚动条的机制在QAbstractScrollArea中实现, 这个类是条目视图和其他可滚动widget的基类
+
+<li>
+Qt提供富文本(rich text), 支持编辑带格式的文本
+
+<li>
+QLabel用于显示纯文本, HTML, 图像
+
+<li>
+QTextBrowser为只读QTextEdit的子类, 可显示带格式的文本, 相对于QLabel, 可以用于显示大量的文本内容, 提供滚动条, 键盘和鼠标可以控制浏览.
+
+<li>
+QLineEditor支持输入mask和validator, QTextEditor为QAbstractScrollArea的派生类, 可以输入大量的文本. 可以设置输入纯文本还是富文本(rich text), 两者都集成了剪贴板.
+
+<li>
+Qt提供了消息框和错误对话框. QProgressDialog 或者 QProgressBar 显示时间进度. QInputDialog 用于输入单行信息.
+
+<li>
+设置颜色, 字体, 文件或者打印的标准通用对话框集合. 颜色选择可使用Qt的颜色选择widget, 字体也有内置的QFontComboBox
+
+<li>
+QWizard提供了创建wizerd的框架.
+
+<li>
+Qt Solutions提供了额外的widget. 包括颜色选择器, thumbwheel control, pie menus, property browser, 复制对话框.
+
+</ul>
+
+    </div>
+</body>
+</html>

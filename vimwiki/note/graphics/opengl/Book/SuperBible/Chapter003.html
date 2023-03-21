@@ -1,0 +1,281 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../../style.css" />
+    <title>Chapter003</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="../index.html">首页</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<div id="传递数据给顶点着色器"><h1 id="传递数据给顶点着色器">传递数据给顶点着色器</h1></div>
+<div id="传递数据给顶点着色器-顶点属性 "><h2 id="顶点属性 ">顶点属性 </h2></div>
+<ul>
+<li>
+in 前缀变量为 vertex attribute.
+
+<li>
+使用 glVertexAttrib*() 输入数据. 每次调用该函数可以更新其数据.
+
+<li>
+layout 前缀设置其位置.
+
+</ul>
+
+<div id="将数据在stage之间传递 "><h1 id="将数据在stage之间传递 ">将数据在stage之间传递 </h1></div>
+<ul>
+<li>
+使用相同的变量名来传递.
+
+</ul>
+
+<div id="Interface Blocks"><h1 id="Interface Blocks">Interface Blocks</h1></div>
+<ul>
+<li>
+有Block名和instance名, stage之间block名要一致, shader内部只关心 instance 名
+<pre glsl>
+// Declare VS_OUT as an output interface block
+out VS_OUT
+{
+	vec4 color; // Send color to the next stage
+} vs_out;
+</pre>
+
+<li>
+Interface Block 只能用于 shader stage 之间传递数据.
+
+</ul>
+
+<div id="Tessellation"><h1 id="Tessellation">Tessellation</h1></div>
+<ul>
+<li>
+Tessellation 表示一个处理过程, 将一个高阶图元(OpenGL称之为patch)划分成许多更小的, 更简单的图元(如三角形). OpenGL 包含一个固定功能管线上可配置的Tessellation engine, 其可以将四边形, 三角形和线条拆分成大量更小的点, 线条, 三角形. 由三个部分组成:TCS, tessellation 引擎, TES
+
+</ul>
+<div id="Tessellation-Tessellation Control Shaders"><h2 id="Tessellation Control Shaders">Tessellation Control Shaders</h2></div>
+<ul>
+<li>
+负责两件事情: 首先确定发送给 tessellation engine 的 tessellation 层级(level), 生成发送给TES的数据.
+
+<li>
+每个 patch 由一些控制点组成. 使用 glPatchParameteri()及参数GL_PATCH_VERTICES 配置patch控制点的数量. 默认每个 patch 控制点的数量为3.
+
+<li>
+当激活 tessellation 之后, 每个控制点运行一次VS, 同时根据控制点分组成批运行TCS. 每个batch的大小和每个patch的顶点数量相同. 即为顶点当作控制点, 顶点着色器的结果成批传递给TCS作为输入. 每个patch的控制点数量可以改变, 因此TCS输出的控制点数量与其输入的控制点数量可能不同. 由TCS产生的控制点数量在源码中使用一个output layout前缀设置.
+<pre glsl>
+layout (vertics = N ) out;
+</pre>
+
+<ul>
+<li>
+N 表示每个 patch 的控制点数量. TCS 负责计算输出控制点的值以及设置发送给Tessellation引擎的 tessellation factor.
+
+<li>
+TCS输出 tessellation factor 写入 gl_TessLevelInner 和 gl_TessLevelOuter 内置输出变量中.
+
+<li>
+任意其他在管线中向下传递的数据则写入用户自定义的输出变量中(使用out关键字声明的变量, 或者内置的 gl_out 数组)
+
+</ul>
+<li>
+下面的代码, 设置输出的控制点数量为3. 其输入拷贝至输出(使用内置的gl_in和gl_out变量), 设置内部和外部 tessellation level 为 5. 
+
+<li>
+gl_InvocationID 内置变量用于在 gl_in 和 gl_out 数组中索引. 其表示, 在当前 TCS 的激活调用中, 该变量的值为所处理 patch 中那个控制点的索引, 该索引以 0 为起点.
+<pre glsl>
+#version 430 core
+layout (vertices = 3) out;
+void main(void)
+{
+	if (gl_InvocationID == 0)
+	{
+		gl_TessLevelInner[0] = 5.0;
+		gl_TessLevelOuter[0] = 5.0;
+		gl_TessLevelOuter[1] = 5.0;
+		gl_TessLevelOuter[2] = 5.0;
+	}
+	gl_out[gl_InvocationID].gl_Position = gl_in[gl_InvocationID].gl_Position;
+}
+</pre>
+
+</ul>
+
+<div id="Tessellation-The Tessellation Engin"><h2 id="The Tessellation Engin">The Tessellation Engin</h2></div>
+<ul>
+<li>
+将一个表示成patch的高阶表面, 分割拆分成简单的图元, 如点, 线, 三角形.
+
+<li>
+tessellation engine 产生输出图元之后, TES 则采用这些图元的顶点. tessellation engine 负责产生用于TES每次调用的参数, TES变换engine产生的图元, 并准备光栅化.
+
+</ul>
+<div id="Tessellation-Tessellation Evaluation Shaders"><h2 id="Tessellation Evaluation Shaders">Tessellation Evaluation Shaders</h2></div>
+<ul>
+<li>
+tessellation engine 生成的图元每个顶点都会调用 TES 一次. 因此 tessellation levels 如果很高, 则会调用 TES 很多次.
+
+<li>
+下面的代码 layout 前缀设置了 tessellation mode, 我们这里设置为 triangles, equal_spacing, cw. equal_spacing 表示沿着 tessellated 多边形边其应当有相同的间隔. 生成的三角形使用顺时针的顶点围绕顺序.
+
+<li>
+gl_TessCoord, 由 tessellator 生成顶点的重心坐标. gl_in[] 结构数组的每个成员的 gl_Position 成员, 其匹配 TCS 写入的 gl_out 结构. 
+
+<li>
+下面的着色器本质上是一个 pass-through tessellation. tessellated 的输出patch和原先的patch, 即输入的三角形patch有完全相同的形状
+<pre glsl>
+#version 430 core
+layout (triangles, equal_spacing, cw) in;
+void main(void)
+{
+	gl_Position = (gl_TessCoord.x * gl_in[0].gl_Position +
+	gl_TessCoord.y * gl_in[1].gl_Position +
+	gl_TessCoord.z * gl_in[2].gl_Position);
+}
+</pre>
+
+<li>
+glPolygonMode() 设置多边形模式
+<pre c++>
+void glPolygonMode(GLenum face,
+	GLenum mode);
+</pre>
+
+</ul>
+
+<div id="几何着色器"><h1 id="几何着色器">几何着色器</h1></div>
+<ul>
+<li>
+每个图元运行一次. 可访问图元内所有顶点.
+
+<li>
+有两个函数: EmitVertex() 和 EndPrimitive()
+
+<li>
+可以改变图元模式.
+<pre glsl>
+#version 430 core
+layout (triangles) in;
+layout (points, max_vertices = 3) out;
+void main(void)
+{
+	int i;
+	for (i = 0; i &lt; gl_in.length(); i++)
+	{
+		gl_Position = gl_in[i].gl_Position;
+		EmitVertex();
+	}
+}
+</pre>
+
+<ul>
+<li>
+将三角形变成了点.
+
+<li>
+第一行 layout 表示希望输入的图元为三角形, 第二行 layout 表示输出点, 最多三个顶点
+
+</ul>
+<li>
+几何着色器自动在程序末端调用 EndPrimitive()
+
+</ul>
+
+<div id="Primitive Assembly, Clipping, and Rasterization"><h1 id="Primitive Assembly, Clipping, and Rasterization">Primitive Assembly, Clipping, and Rasterization</h1></div>
+<div id="Primitive Assembly, Clipping, and Rasterization-Clipping"><h2 id="Clipping">Clipping</h2></div>
+<ul>
+<li>
+裁剪空间中的坐标除以第四个分量得到单元设备空间的坐标. 可见区域范围x,y为-1.0到1.0, z 为 0.0 到 1.0. 
+
+</ul>
+<div id="Primitive Assembly, Clipping, and Rasterization-Viewport Transformation"><h2 id="Viewport Transformation">Viewport Transformation</h2></div>
+<ul>
+<li>
+设备单元坐标转换至窗口坐标
+
+</ul>
+<div id="Primitive Assembly, Clipping, and Rasterization-Culling"><h2 id="Culling">Culling</h2></div>
+<ul>
+<li>
+根据面的朝向剔除
+
+<li>
+通过计算面的有符号面积得知面的朝向. 公式为采用其边的叉乘. 公式见P40
+
+<li>
+glEnable() 和参数 GL_CULL_FACE, glCullFace() 和参数 GL_FRONT, GL_BACK, GL_FRONT_AND_BACK
+
+</ul>
+<div id="Primitive Assembly, Clipping, and Rasterization-Rasterization"><h2 id="Rasterization">Rasterization</h2></div>
+<ul>
+<li>
+确定如线条或三角形的图元可能会覆盖哪些片段. OpenGL使用 half-space-based 法. OpenGL 首先在窗口坐标中确定三角形的围绕盒, 而后测试每个片段是否位于三角形内. 为了做到这点, 三角形的三条边用于将窗口分成一半, 而后处理.
+
+</ul>
+
+<div id="Fragment Shader"><h1 id="Fragment Shader">Fragment Shader</h1></div>
+<ul>
+<li>
+片段着色器常用来计算光照, 应用材质, 确定片段深度. 可用的输入有如 gl_FragCoord 这样的内置变量.
+
+</ul>
+
+<div id="Framebuffer Operations"><h1 id="Framebuffer Operations">Framebuffer Operations</h1></div>
+<ul>
+<li>
+framebuffer表示屏幕的可见内容, 还表示可存储每个像素其颜色值之外内容的额外内存.
+
+<li>
+由 windowing系统提供的framebuffer为默认framebuffer, 还可提供你自己的framebuffer, 用于渲染off-screen区域.
+
+</ul>
+<div id="Framebuffer Operations-像素操作"><h2 id="像素操作">像素操作</h2></div>
+<ul>
+<li>
+scissor test
+
+<li>
+stencil test
+
+<li>
+depth test
+
+<li>
+混合和逻辑操作阶段, 根据framebuffer考虑为存储浮点值, 单元化的值或者整数值来决定, 如果framebuffer的值为浮点或单元化的整数值, 则应用混合. 如果framebuffer包含未单元化的整数值, 则应用逻辑操作, 如逻辑AND, OR, OXR.
+
+</ul>
+
+<div id="Compute Shaders"><h1 id="Compute Shaders">Compute Shaders</h1></div>
+<ul>
+<li>
+compute shader stage看成一个单独的管线, 独立于其他面向图形的管线.
+
+<li>
+compute shader 可看成一个特殊的, 单阶段的管线.
+
+<li>
+在工作的单个单元上操作的计算着色器的每次invocation可看成一个 work item, 一些 work item 组成 local workgroup. 这些 workgroup的集合发送给OpenGL的计算管线进行处理.
+<pre glsl>
+#version 430 core
+layout (local_size_x = 32, local_size_y = 32) in;
+void main(void)
+{
+	// Do nothing
+}
+</pre>
+
+<li>
+创建 GL_COMPUTE_SHADER 的着色器对象, glShaderSource() 连接源码, glCompileShader() 编译, glAttachShader() 和 glLinkProgram() 链接.
+
+</ul>
+
+    </div>
+</body>
+</html>

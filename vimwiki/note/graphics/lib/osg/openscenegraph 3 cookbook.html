@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../../style.css">
+<title>openscenegraph 3 cookbook</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</head>
+<body>
+
+<div id="第二章 "><h1 id="第二章 ">第二章 </h1></div>
+<ul>
+<li>
+弱指针 osg::observer_ptr&lt;&gt;: 不会拥有对象, 没有引用计数, 但是当对象被删除或回收时, 其会被通知并被设置为NULL
+
+<li>
+在回调和用户使用中观察和使用一个节点时, 弱指针很有用, 无需额外的代码. 原始至真需要随时保持其有效. 多线程内可以使用 lock() 方法将弱指针转换为临时的强指针, 以确保不被其它线程删除.
+<pre c++>
+// Define a member variable using osg::observer_ptr&lt;&gt;.
+osg::observer_ptr&lt;osg::Node&gt; _memberNode;
+// In a thread, when we want to obtain the member node.
+osg::ref_ptr&lt;osg::Node&gt; tempRefOfNode;
+if ( _memberNode.lock(tempRefOfNode) )
+{
+  osg::Node* realNode = tempRefOfNode.get();
+  // Do something to the realNode.
+  // Don't worry if it is unreferenced or deleted in
+  // other threads, because tempRefOfNode can ensure
+  // it works during the lifetime of the smart pointer.
+}
+</pre>
+
+</ul>
+
+<div id="第二章 -镜像实现"><h2 id="镜像实现">镜像实现</h2></div>
+<ul>
+<li>
+将镜面的矩阵变换作为场景的父节点.
+
+<li>
+配合渲染到纹理模拟真正的镜面, 水面反射, 阴影.
+
+<li>
+MatrixTransform 的 preMult 方法
+<pre c++>
+	osg::ref_ptr&lt;osg::MatrixTransform&gt; reverse =
+		new osg::MatrixTransform;
+	// 在 -20.0f 处翻转.
+	// 矩阵变换使用 preMult 保存矩阵.
+	reverse-&gt;preMult(osg::Matrix::translate(0.0f, 0.0f, -z) *
+		osg::Matrix::scale(1.0f, 1.0f, -1.0f) *
+		osg::Matrix::translate(0.0f, 0.0f, z));
+	reverse-&gt;addChild(scene.get());
+</pre>
+
+<li>
+ClipPlane 和 ClipNode 配合使用
+<pre c++>
+	// 位于 z = -10.0 处的 xy 平面.
+	osg::ref_ptr&lt;osg::ClipPlane&gt; clipPlane = new osg::ClipPlane;
+	clipPlane-&gt;setClipPlane(0.0, 0.0, -1.0, z);
+	clipPlane-&gt;setClipPlaneNum(0);
+
+	// ClipNode 添加 ClipPlane
+	osg::ref_ptr&lt;osg::ClipNode&gt; clipNode = new osg::ClipNode;
+	clipNode-&gt;addClipPlane(clipPlane.get());
+	clipNode-&gt;addChild(reverse.get());
+</pre>
+
+<li>
+osg::Stencil 类可以进行 stencil tests, 具体可见 examples/osgreflect
+
+</ul>
+
+<div id="第二章 -广度优先访问器 "><h2 id="广度优先访问器 ">广度优先访问器 </h2></div>
+<ul>
+<li>
+默认 osg::NodeVisitor 深度优先查找
+
+<li>
+从 osg::NodeVisitor 派生, 需要实现 reset() 和 apply() 方法
+
+</ul>
+
+<div id="第二章 -实现背景图像节点"><h2 id="实现背景图像节点">实现背景图像节点</h2></div>
+<ul>
+<li>
+代码有问题
+
+</ul>
+
+<div id="第二章 -让场景始终面向相机 "><h2 id="让场景始终面向相机 ">让场景始终面向相机 </h2></div>
+<ul>
+<li>
+使用 CullVisitor, 其遍历场景图, 收集透明和不透明 Drawable
+
+<li>
+CullStack::getModelViewMatrix 得到模型试图矩阵
+
+<li>
+Matrix::decompose 矩阵分解
+
+<li>
+在 root 节点和 billboardNode 节点添加回调分别有啥不同. 在遍历 root 节点时就开始设置矩阵, 否则在遍历 billboardNode 时才设置矩阵.
+
+<ul>
+<li>
+书上的说法是下一帧才有效
+
+</ul>
+<li>
+常用访问器
+
+<ul>
+<li>
+osgGA::EventVisitor
+
+<li>
+osgUtil::UpdateVisitor
+
+<li>
+osgUtil::CullVisitor
+
+<li>
+osgUtil::GLObjectsVisitor
+
+<li>
+osg::CollectOccluderVisitor
+
+<li>
+osgUtil::IntersectionVisitor
+
+</ul>
+<li>
+对于其他的公告板实现, 见 osg::Billboard 和 osg::AutoTransform 类, 例子 osgforest, osgautotransform
+
+</ul>
+
+</body>
+</html>

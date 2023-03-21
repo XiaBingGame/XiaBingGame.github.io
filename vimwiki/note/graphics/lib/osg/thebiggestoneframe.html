@@ -1,0 +1,1561 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../style.css" />
+    <title>thebiggestoneframe</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="../index.html">首页</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<div id="最长的一帧 "><h1 id="最长的一帧 " class="header"><a href="#最长的一帧 ">最长的一帧 </a></h1></div>
+<div id="最长的一帧 -osgViewer/ViewerBase.cpp"><h2 id="osgViewer/ViewerBase.cpp" class="header"><a href="#最长的一帧 -osgViewer/ViewerBase.cpp">osgViewer/ViewerBase.cpp</a></h2></div>
+<ul>
+<li>
+ViewerBase::frame(dboule) 主要执行内容如下:
+
+<ol>
+<li>
+第一帧: viewerInit(), realize()
+
+<li>
+advance(double)
+
+<li>
+eventTraversal()
+
+<li>
+updateTraversal()
+
+<li>
+renderingTraversals()
+
+</ol>
+<li>
+viewerInit() 调用 osg::Viewer::View::init()
+
+<ul>
+<li>
+_eventQueue 储存视景器的事件队列
+
+<li>
+窗口事件使用 osgGA::GUIEventAdapter 派生并重写 handler() 函数(见例子 osgkeyboardmouse)
+
+<li>
+osgGA::GUIEventAdapter::setEventType 设置事件类型为 osgGA::GUIEventAdapter::FRAME, 每帧都调用
+
+<li>
+_cameraManipulator 存储相机操作器
+
+<ul>
+<li>
+可用 setCameraManipulator 来设置这个变量的内容
+
+</ul>
+<li>
+将初始化事件和 Viewer 自身传递给 _cameraManipulator 的 init 函数, 该函数可以用于初始化工作. 重写 osgGA::CameraManipulator::init 可以初始化自定义漫游器的功能.
+
+</ul>
+<li>
+realize() 完成窗口和场景的"设置"工作
+
+<ul>
+<li>
+getContexts(contexts) 使用 osg::GraphicsContext 对象.
+
+<li>
+osg::GraphicsContext 图形上下文
+<pre c++>
+	osg::ref_ptr&lt;osg::GraphicsContext::Traits&gt; traits = new osg::GraphicsContext::Traits; 
+	osg::ref_ptr&lt;osg::Referenced&gt; windata =   
+	    new osgViewer::GraphicsWindowWin32::WindowData(hWnd); 
+	traits-&gt;x = 0; 
+	traits-&gt;y = 0; 
+	... ...
+	traits-&gt;inheritedWindowData = windata; 
+	osg::GraphicsContext* gc = osg::GraphicsContext::createGraphicsContext(traits.get()); 
+	Camera* camera = viewer.getCamera(); 
+	camera-&gt;setGraphicsContext(gc); 
+	... ...
+	viewer.setCamera(camera); 
+</pre>
+
+<ul>
+<li>
+osg::GraphicsContext::Traits 设置窗口属性.
+
+<li>
+创建的 osg::GraphicsContext 赋予给相机
+
+<li>
+getContexts 获取主相机和从属相机的 GraphicsContexts 并保存至 vector
+
+<li>
+参考例子 osgcamera
+
+</ul>
+<li>
+在进入仿真循环之前,可以创建相机并设置GraphicsContext, 见 osgViewerMFC 和 osgcamera 例子
+
+<li>
+如果没有创建 Graphics Context, 程序会为你创建默认 Graphics Context
+
+<ul>
+<li>
+OSG_CONFIG_FILE 配置文件路径
+
+<li>
+OSG_WINDOW: 窗口大小和尺寸, 使用 osgViewer::View::setUpViewInWindow
+
+<li>
+OSG_SCREEN: 屏幕窗口, 创建相应数量的屏幕
+
+<li>
+osgViewer::View::setUpViewAcrossAllScreens 函数, 创建一个全屏显示的图形设备
+
+</ul>
+</ul>
+<li>
+osgViewer::View::setUpViewInWindow: 五个参数, 窗口左上角x, y, 宽度 width, 高度 height, 屏幕数量 screenNum
+
+<ul>
+<li>
+获取 osg::DisplaySettings 的指针. osg::DisplaySettings 保存了 OSG 目前用到的, 与图形显示, 尤其是与立体显示有关的所有信息.
+
+<li>
+osg::DisplaySettings
+
+<ul>
+<li>
+_displayType: 显示器类型. _stereoMode: 立体显示模式. _eyeSeparation: 双眼的物理距离. _screenWidth, _screenHeight: 屏幕的实际宽度和高度(默认为0.325, 0.26). _screenDistance: 人眼到屏幕的距离, 默认为0.5.
+
+<li>
+_splitStereoHorizontalEyeMapping: 左眼渲染左视口还是右视口.
+
+<li>
+_splitStereoHorizontalSeparation: 左视口和右视口之间的距离.
+
+<li>
+_splitStereoVerticalEyeEyeMapping: 左眼渲染顶视口还是底视口.
+
+<li>
+_splitStereoVerticalSeparation: 顶视口和底视口之间的距离.
+
+<li>
+_splitStereoAutoAdjustAspectRatio: 默认为 true, 用于屏幕分割之后对其宽高比进行补偿.
+
+<li>
+_maxNumOfGraphicsContexts: 用户程序中最多可用的 GraphicsContext 数量, 默认为 32 个.
+
+<li>
+_numMultiSamples: 多重采样的子像素样本数, 默认为 0. 可以打开.
+
+<li>
+_minimumNumberStencilBits: 模板缓存的最小位数.
+
+</ul>
+<li>
+从系统环境变量或命令行参数获取 DisplaySettings: DisplaySettings::readEnvironmentalVariables() / DisplaySettings::readCommandLine()
+
+<li>
+如果要修改 DisplaySettings, 请务必在 viewer 的 realize() 方法调用之前修改.
+
+<li>
+osgViewer::View::setUpViewInWindow() 具体实现在 SingleWindow::configure(), osgViewer/config/SingleWindow.cpp 内
+
+<li>
+调用函数 ScreenIdentifier::readDISPLAY
+
+<ul>
+<li>
+检查系统环境变量 DISPLAY, 调用 ScreenIdentifier::setScreenIdentifier 函数, 将其中的内容按照"hostName:0.0"的格式解析为系统的主机名字(hostName), 显示数(win32下必须为0)和屏幕数(0或其他数字).
+
+</ul>
+<li>
+osg::GraphicsContext::WindowingSystemInterface::getScreenResolution 可以获取屏幕分辨率
+
+<li>
+使用 osg::GraphicsContext::createGraphicsContext() 创建 gc
+
+<li>
+osg::Camera::setGraphicsContext 设置相机上下文
+
+<li>
+osgGA::GUIEventAdapter::setWindowRectangel 记录新建立的窗口设备的大小.
+
+<li>
+主摄像机 _camera 的透视投影参数, 并设置新的 Viewport 视口.
+
+<li>
+osg::Camera::setDrawBuffer 和 osgCamera::setReadBuffer: 执行 glDrawBuffer 和 glReadBuffer, 自动设置此摄像机想要绘制和读取的缓存.
+
+<li>
+一些辅助函数: getScreenResolution, setScreenResolution, setScreenRefreshRate(屏幕刷新率) 等相关函数.
+
+<li>
+执行 View::assignSceneDataToCameras, 包括如下工作:
+
+<ul>
+<li>
+对于场景漫游器, 执行 setNode 函数和 home 函数. 注意, 如果我们使用 setCameraManipulator 函数时, 也会自动执行同样的操作.
+
+<li>
+将场景图赋予主摄像机 _camera, 同时设置它对应的渲染器(Rnerder)的相关函数. 
+			  同样将场景图形赋予所有的从摄像机 _slaves, 并设置每个从摄像机的渲染器.
+
+</ul>
+</ul>
+<li>
+回到 realize() 函数
+
+<ul>
+<li>
+对之前获得的所有 gc, 依次执行以下代码
+<pre c++>
+gc-&gt;realize();
+if(_realizeOperation.valid() &amp;&amp; gc-&gt;valid())
+{
+	gc-&gt;makeCurrent();
+	(*_realizeOperation)(gc);
+	gc-&gt;releaseContext();
+}
+</pre>
+
+</ul>
+<li>
+对于 GraphicsContext, 通过 osg::GraphicsContext::createGraphicsContext() 创建, 其内调用 GraphicsContext::WindowingSystemInterface::createGraphicsContext() 创建 gc. 这里 GraphicsContext::WindowingSystemInterface 为 Win32WindowingSystemInterface, 创建的graphics context 为 osgViewer::GraphicsWindowWin32
+
+</ul>
+<p>
+<img src="http://www.xiabingdev.com/cloudimages/images/2021/05/02/01_osg_GraphicsContext_WindowingSystemInterface.png" />
+</p>
+<ul>
+<li>
+gc-&gt;realize() 实际调用的是 GraphicsWindowWin32::realize
+
+<li>
+具体可见 GraphicsWindowWin32.cpp 源码
+
+<li>
+ (*_realizeOperation)(gc), 实现用户自己的 realize 操作, 通过派生 osg::Operator 类, 并调用 setRealizeOperation 方法实现. 见 osgcatch 例子
+
+<li>
+再次遍历 GraphicsContext 设备. 对每个 gc, 判断其是否为 GraphicsWindow 对象, 执行 GraphicsWindow::grabFocusIfPointerInWindow 函数(负责把鼠标焦点转到当前窗口).
+
+<li>
+启动计时工作, osg::Timer::setStartTick().
+
+<li>
+Viewer::setStartTick(): 找到当前视景器和所有 GraphicsContext 设备的事件队列 _eventQueue, 并设定他们的启动时刻为当前时间.
+
+<li>
+ViewerBase::setUpThreading: 设置线程.
+
+<ul>
+<li>
+osgViewer::ViewerBase::setUpThreading()
+
+<ul>
+<li>
+osg 的视景器有四种线程模型, 可以使用 setThreadingModel 进行设置.
+
+<ul>
+<li>
+SingleThreaded: 单线程模型, 不会创建任何新线程来完成场景的筛选和渲染. 在单核以及配置较低的系统上运行稳定.
+
+<li>
+CullDrawThreadPerContext: 每个 GraphicsContext 创建一个图形线程, 实现并行的渲染工作, 尝试把线程分别放在不同的CPU上运行. 每一帧结束后强制同步所有的线程. 应用范围比较有限.
+
+<li>
+DrawThreadPerContext: 为每个 GraphicsContext 创建一个图形线程, 并分配到不同的CPU上, 在当前帧的所有线程完成工作之前, 开始下一帧, 和上面不同.
+
+<li>
+CullThreadPerCameraDrawThreadPerContext: 为每个 GraphicsContext 和每个摄像机创建线程, 这种模式同样不会等待前一次的渲染结束. 四核甚至更高的配置时, 该线程模型将最大限度发挥多 CPU 的处理能力.
+
+</ul>
+</ul>
+</ul>
+<li>
+更新(Update)和筛选(Cull)/绘制(Draw)工作是由 ViewerBase::renderingTraversals 函数来完成的. 很多线程的调度和同步工作也是在这个函数中完成的.
+
+<li>
+Viewer::getScenes 函数获取当前视景器对应的 osgViewer::Scene 对象, 也就是场景. 一个场景包括了唯一的场景图形根节点, 分页数据库(DatabasePager), 分页图像库(ImagePager). Viewer 对象通常只包括一个 Scene 场景, 而 CompositeViewer 则可能包含多个场景对象.
+
+<li>
+ViewerBase::setUpThreading 自动执行 ViewerBase::startThreading.
+
+<li>
+realize()
+
+<ul>
+<li>
+编译上下文(Compile Contexts), 只需要在 realize() 之前调用如下代码
+<pre c++>
+osg::DisplaySettings::instance()-&gt;setCompileContextsHint(true);
+</pre>
+
+<li>
+遍历所有可能的 GraphicsContext 设备, 针对它们分别再各自添加一个新的 GraphicsContext 设备, 所用的函数为 GraphicsContext::getOrCreateCompileContext. 在这之后, 分别执行了创建图形线程, 设置 CPU 依赖性, 以及启动图形线程的工作.
+
+<li>
+getOrCreateComplieContext 函数: 主要用于创建后台 Graphics Context. 这些新增的 GraphicsContext 对象使用了 pBuffer 的特性, 并使用对应对象相同的图形上下文(Traits::sharedContext). 使用 Pixel BUffer 可以提高图形刷新的速度. 还可以为特定的 GraphicsContext 设备添加特殊的处理动作.
+
+<ul>
+<li>
+添加特殊处理动作: 使用 osg::GraphicsContext::getCompileContext 获取后台图形上下文, 再使用 GraphicsContext::add 函数向其中追加 osg::Operation 对象. 见例子 osgterrain.
+
+</ul>
+<li>
+注意: 编译上下文可能在 Windows 上的实现有问题.
+
+</ul>
+</ul>
+
+
+<ul>
+<li>
+advance 函数的工作内容
+
+<ul>
+<li>
+获取上一次记录的参考时间(Reference Time)
+
+<li>
+计算帧间时间
+
+<li>
+记录已经经过的帧数
+
+<li>
+ViewerBase::getStats 获取 osg::Stats 对象, 进行帧状态的保存和显示.
+
+<li>
+Referenced::getDeleteHandler() 处理 osg::Referenced 对象被弃用之后的删除工作.
+
+<li>
+主要变量为 osg::View::_stats, osg::View::_frameStamp
+
+</ul>
+<li>
+记录工作
+
+<ul>
+<li>
+osg::FrameStamp 变量 _frameStamp 处理总时间和总帧数.
+
+<li>
+osg::Stats 变量 _stats 记录当前帧以及之前的24帧的每帧用时, 事件遍历用时, 更新遍历用时, 渲染遍历用时. 可以设置自己的状态收集或者设置为空, 通过 osg::View::setStats 实现.
+
+<li>
+osg::Referenced::getDeleteHnadler()-&gt;flush(): 统一删除
+
+<li>
+osg::Referenced::getDeleteHnadler()-&gt;setFrameNumber(_frameStamp-&gt;getFrameNumber())
+
+<li>
+DeleteHandler 的参数 _numFramesToRetainObjects: 垃圾对象被收集后, 再经过多少帧(默认为2), 方予以释放. 使用 setFrameNumber 更新待删除句柄的帧数.
+
+<li>
+目前 OSG 的删除不是用垃圾回收, 而是渲染之前添加 ref_ptr 引用计数, 渲染之后 unref 引用计数, 但这样渲染效率会降低 6%.
+
+<li>
+如果要使用 DeleteHandler, 可以加入 #undef OSGUTIL_RENDERBACKEND_USE_REF_PTR
+
+</ul>
+<li>
+osgViewer::Viewer 包括几个最主要的组件
+
+<ul>
+<li>
+漫游器 _cameraManipulator, 用于实现交互式的场景漫游
+
+<li>
+事件处理器组 _eventHandlers, 负责处理 Viewer 的事件队列 _eventQueue, 主要是键盘/鼠标等事件的处理.
+
+<li>
+场景 _scene, 包括 Viewer 所对应的场景图形根节点, 以及用于提高节点和图像数据速度的两个分页数据库.
+
+<li>
+摄像机 _camera 和 _slaves, 前者为场景的主摄像机, 后者为从摄像机组. 主相机不一定要用来显示场景,它更重要的作用是为 OSG 世界矩阵的计算提供依据.
+
+<ul>
+<li>
+视口(Viewport)
+
+<li>
+图形上下文 (GraphicsContext), 表示平台相关的图形显示窗口(Win32通过CreateWindowEx创建该窗口), 或者表示离屏渲染的设备(PixelBufferWin32).
+
+<ul>
+<li>
+具体代码可见 GraphicsWindowWin32 中的 handleNativeWindowingEvent 函数.
+
+</ul>
+</ul>
+<li>
+渲染器(GraphicsOperation, 更多时候是 osgViewer::Renderer), 这是 CULL 和 DRAW 的关键
+
+<li>
+DisplaySettings 直接对摄像机的处理工作负责, 大部分设置选项可以传递到摄像机对应的窗口特性(GraphicsContext::Traits)
+
+</ul>
+</ul>
+
+<div id="最长的一帧 -osgViewer::Viewer::eventTraversal"><h2 id="osgViewer::Viewer::eventTraversal" class="header"><a href="#最长的一帧 -osgViewer::Viewer::eventTraversal">osgViewer::Viewer::eventTraversal</a></h2></div>
+<ul>
+<li>
+摄像机与场景的关系
+
+</ul>
+<p>
+<img src="http://www.xiabingdev.com/cloudimages/images/2021/05/02/02_osgViewer.png" />
+</p>
+<ul>
+<li>
+执行用户设置的事件回调(EventCallback), 并为所有的用户交互和系统事件提供一个响应的机制.
+
+<li>
+_eventHandlers 负责处理由图形窗口设备传递到事件队列 _eventQueue 的各种事件.
+
+<li>
+新的事件处理器通过 View::addEventHandler 添加, 除了 RecordCameraPathHandler 和 StatsHandler 等常见的处理器工具之外, 其他的自定义事件处理器都派生自 osgGA::GUIEventHandler, 并重写 handle 函数. 见 osgviewer, osgkeyboardmouse 等例子.
+
+<li>
+eventTraversal 主要任务: 每一帧过程中, 取出已经发生的所有事件, 丢弃对场景无益的(视口之外的鼠标点击和乱点)事件, 依次将所有事件提交给各个事件处理器, 最后清空现有的事件队列, <a href="等待下一帧的到来.html">等待下一帧的到来</a>.
+
+<li>
+记录事件遍历的时间
+
+<li>
+记录起始时刻之后的工作
+
+<ul>
+<li>
+getEventQueue() 得到 osgGA::EventQueue, 里面包含了 Event 列表, 通常为 Event 的派生类 GUIEventAdapter 事件的链表.
+
+<li>
+取出事件队列的状态事件(EventQueue::getCurrentEventState), 为事件队列公用的"状态事件"
+
+<ul>
+<li>
+如可以使用成员函数 GUIEventAdapter::getX 和 getY 获取当前的鼠标位置.
+
+</ul>
+<li>
+取出主摄像机的viewport范围, 将该范围设置为事件队列的"响应范围"(EventQueue::setInputRange)
+
+<ul>
+<li>
+EventQueue::setInputRange 主要工作设置鼠标活动的最大和最小范围
+
+<li>
+EventQueue::setUseFIxedMouseInputRange: 开启了鼠标范围的限定标志, 鼠标移动的范围自动限制在这个范围之内(默认关闭)
+
+</ul>
+<li>
+计算主摄像机的 VPW 矩阵
+<pre c++>
+// 假设 VM 为视觉矩阵
+localCoord = worldCoord * VM;
+</pre>
+
+<ul>
+<li>
+这里使用右乘.
+
+<li>
+获取 VPW.
+<pre c++>
+        osg::Matrix masterCameraVPW = getCamera()-&gt;getViewMatrix() * getCamera()-&gt;getProjectionMatrix();
+        if (getCamera()-&gt;getViewport())
+        {
+            osg::Viewport* viewport = getCamera()-&gt;getViewport();
+            master_min_x = viewport-&gt;x();
+            master_min_y = viewport-&gt;y();
+            master_max_x = viewport-&gt;x()+viewport-&gt;width();
+            master_max_y = viewport-&gt;y()+viewport-&gt;height();
+            masterCameraVPW *= viewport-&gt;computeWindowMatrix();
+        }
+
+</pre>
+
+</ul>
+</ul>
+<li>
+通过 Viewer::getContexts 函数找到 Viewer 中所有已有的 GraphicsWindow 图形窗口, 然后执行 GraphicsWindowWin32::checkEvents 函数.
+
+<ul>
+<li>
+通知 Windows 执行窗口的消息回调函数, 进而执行用户交互和系统消息的检查函数 GraphicsWindowWin32::handleNativeWindowingEvent.
+
+<li>
+GraphicsWindowWin32::handleNativeWindowingEvent 的作用负责把 WM_* 消息转化并传递给 osgGA::EventQueue 消息队列
+
+<li>
+OSG 仿真环境
+
+</ul>
+</ul>
+<p>
+<img src="http://www.xiabingdev.com/cloudimages/images/2021/05/02/03_osg.png" />
+</p>
+<ul>
+<li>
+使用 EventQueue::takeEvents 函数, 把当前 GraphicsWindow 图形窗口对象 gw 的事件队列保存到指定的变量 gw_events 中.
+<pre c++>
+osgGA::EventQueue::Events gw_events;
+gw-&gt;getEventQueue()-&gt;takeEvents(gw_events);
+</pre>
+
+<li>
+符合下列条件的摄像机, 为"焦点摄像机"(_cameraWithFocus)
+
+<ul>
+<li>
+鼠标移动时, 鼠标进入了摄像机的视口范围之内
+
+<li>
+摄像机是对应该视口的, 允许接收事件(Camera::getAllowEventFocus), 且"渲染目标实现方式"(Render Target Implementaton) 为 Camera::FRAME_BUFFER
+
+</ul>
+<li>
+将焦点摄像机的坐标转换为主摄像机的二维坐标. 通过两者的 VPW 实现.
+<pre c++>
+osg::Viewport* viewport = getCameraWithFocus()-&gt;getViewport(); 
+osg::Matrix localCameraVPW = getCameraWithFocus()-&gt;getViewMatrix() *   
+    getCameraWithFocus()-&gt;getProjectionMatrix(); 
+if (viewport) localCameraVPW *= viewport-&gt;computeWindowMatrix(); 
+osg::Matrix matrix( osg::Matrix::inverse(localCameraVPW) * masterCameraVPW ); 
+osg::Vec3d new_coord = osg::Vec3d(x,y,0.0) * matrix; 
+x = new_coord.x(); 
+y = new_coord.y(); 
+…… 
+</pre>
+
+<li>
+上面的代码是将焦点相机的 x, y 转换成主相机的 x, y
+
+<li>
+单一窗口的关闭工作
+<pre c++>
+bool wasThreading = areThreadsRunning(); 
+if (wasThreading) stopThreading(); 
+gw-&gt;close(); 
+if (wasThreading) startThreading(); 
+</pre>
+
+<ul>
+<li>
+首先尝试终止所有的渲染线程(包括各个图形设备开启的线程和渲染器开启的线程), 关闭窗口后再打开所有的渲染线程.
+
+<li>
+当我们试图在运行时开启一个新的 OSG 图形窗口时, 也必须使用相同的线程控制步骤. 关闭线程, 创建新渲染窗口, 开启线程.
+
+</ul>
+<li>
+所有来自图形窗口和Viewer的事件都被添加到一个 std::list 链表中.
+
+<li>
+OSG 的退出事件
+
+<ul>
+<li>
+退出键 Esc
+
+<li>
+ViewerBase::setQuitEventSetsDone 设置是否允许按下某个键之后直接退出. 
+
+<li>
+ViewerBase::setKeyEventSetsDone 来设置自定义的退出键. 默认为 GUIEventAdapter::Key_Escape.
+
+<li>
+ViewerBase::setDone 函数帮助我们随时结束仿真程序. 这样就算屏蔽了退出键, 也可以通过该方法退出程序.
+
+</ul>
+<li>
+遍历事件, 每个 GUIEventAdapter 事件 event 传递给每一个注册的 GUIEventHandler 事件处理器.
+<pre c++>
+for(EventHandlers::iterator hitr = _eventHandlers.begin(); 
+        hitr != _eventHandlers.end(); 
+        ++hitr) 
+{ 
+    (*hitr)-&gt;handleWithCheckAgainstIgnoreHandledEventsMask( *event, *this, 0, 0); 
+} 
+</pre>
+
+<ul>
+<li>
+osgGA::GUIEventHandler::handleWithCheckAgainstIgnoreHandledEventsMask()
+
+<ul>
+<li>
+主要工作是执行 GUIEventHandlere::handle 函数.
+
+<li>
+handle 函数返回 true 时后续 handler 不会再进行处理.
+
+<li>
+该函数不要去重写
+
+</ul>
+<li>
+GUIEventHandler::setIgnoreHandledEventsMask 函数, 希望某个事件处理器暂时不要处理某一事件. 通过 GUIEventAdapter::EventType 类型的参数实现.
+
+</ul>
+<li>
+遍历事件, 每个 GUIEventAdapter 事件 event 再次传递给 _cameraManipulator, 所以在之前鼠标和按钮事件轻易不要返回 true, 避免影响到这些 manipulator.
+
+<li>
+此时在 eventTraversal 内执行每个节点和Drawable的事件回调函数
+
+<ul>
+<li>
+对于任意节点, Geode 叶节点以及任意 Drawable 几何体, 我们都可以使用 setEventCallback 和 setUpdateCallback 函数设置它的事件回调和更新回调对象. 这些回调函数在 eventTraversal 函数中处理
+
+<ul>
+<li>
+节点的回调对象必须为 osg::NodeCallback 以及实现 NodeCallback::operator() 函数, Drawable 对象的事件回调对象为 Drawable::EventCallback 以及 EventCallback::event() 函数, Drawable 对象的更新回调对象为 Drawable::UpdateCallback 以及 UpdateCallback::update 函数.
+
+<li>
+_eventVisitor 负责管理事件回调的遍历工作. _updateVisitor 负责更新遍历. 还可以使用 ViewerBase::setEventVisitor 加载我们自定义的事件访问器
+
+</ul>
+<li>
+对于接收到的所有窗口事件, 作如下处理:
+
+<ul>
+<li>
+调用场景数据节点, 使用 _eventVisitor 访问该节点, 处理里面所有节点的事件回调
+
+<li>
+处理所有 slave 相机的事件回调
+
+<li>
+处理相机和slave相机的自身事件回调
+<pre c++>
+osg::NodeVisitor::TraversalMode tm = _eventVisitor-&gt;getTraversalMode(); 
+_eventVisitor-&gt;setTraversalMode(osg::NodeVisitor::TRAVERSE_NONE); 
+if (_camera.valid() &amp;&amp; _camera-&gt;getEventCallback()) _camera-&gt;accept(*_eventVisitor); 
+for(unsigned int i=0; i&lt;getNumSlaves(); ++i) 
+{ 
+    osg::Camera* camera = getSlave(i)._camera.get(); 
+    if (camera &amp;&amp; camera-&gt;getEventCallback()) camera-&gt;accept(*_eventVisitor); 
+} 
+_eventVisitor-&gt;setTraversalMode(tm); 
+</pre>
+
+<ul>
+<li>
+对于每个相机, 会获取相机的 stateset, 及该 stateset 的事件回调方法(runEventCallbacks)
+
+<li>
+获取每个相机的事件回调, 调用该回调处理
+
+</ul>
+<li>
+遍历所有的 osgGA::EventHandler, 调用其 handle(osgGA::Event* event, osg::Object* object, osg::NodeVisitor* nv) 方法
+
+<ul>
+<li>
+这里 event 基本都有 GUIEventAdapter, nv 为 _eventVisitor
+
+<li>
+handle 方法内调用 handle(const GUIEventAdapter&amp;,GUIActionAdapter&amp;), 其中 GUIActionAdapter 通过 osgGA::EventVisitor::getActionAdapter 而来.
+
+<li>
+所以对于 Viewer 的 EventHandler, 我们一般都是重写 handle(const GUIEventAdapter&amp;,GUIActionAdapter&amp;) 方法
+
+</ul>
+</ul>
+</ul>
+</ul>
+
+
+<div id="最长的一帧 -osgViewer::Viewer::updateTraversal()"><h2 id="osgViewer::Viewer::updateTraversal()" class="header"><a href="#最长的一帧 -osgViewer::Viewer::updateTraversal()">osgViewer::Viewer::updateTraversal()</a></h2></div>
+<ul>
+<li>
+更新回调使用 _updateVisitor 进行场景图形更新遍历. 通过 setUpdateCallback 设置更新回调.
+
+<li>
+事件回调和更新回调的区别: 每个事件对于每个节点和相机都会调用事件回调一次, 更新回调只在每帧调用一次.
+
+<li>
+updateTraversal 的作用: 处理用户的更新回调对象, 更新摄像机的位置, 更新分页数据库 DatabasePager 和图像库 ImagePager 的内容. 主要流程如下:
+
+<ul>
+<li>
+获取函数的起始时刻
+
+<li>
+_updateVisitor 访问场景图形的根节点并遍历其子节点. 实现各个节点和 Drawable 对象的更新回调.
+
+<li>
+DatabasePager::updateSceneGraph 以及 ImagePager::updateSceneGraph 更新场景的分页数据库和分页图像库
+
+<li>
+处理用户定义的更新工作队列 _updateOperations.
+
+<li>
+主摄像机 _camera 以及从摄像机 _slaves 的更新回调(注意别遍历它们的子节点)
+
+<li>
+根据_cameraManipulator 的位置姿态矩阵去更新主摄像机的 _camera 的观察矩阵. MatrixManipulator::getInverseMatrix.
+
+<li>
+View::updateSlaves 更新所有 _slaves 中所有摄像机的投影矩阵, 观察矩阵以及场景筛选设置(CullSetting)
+
+<li>
+获取函数的结束时刻, 将相关的时刻信息保存到记录器中.
+
+</ul>
+<li>
+之前 ViewerBase::setRealizeOperation 进行自定义的场景预处理工作. 这里我们可以使用 _updateOperations 更新工作队列进行自定义的场景更新工作, 通过函数 ViewerBase::addUpdateOperation 写入多组更新处理器 Operation 对象(或者使用对应的成员函数 removeUpdateOperation 来移除), 因此可以实现的操作也更丰富.
+
+<ul>
+<li>
+习惯上 Operation 对象可以用来处理与图形设备以及 OpenGL 底层 API 相关的工作, 不过用户层级的工作在这里实现通常也没有问题
+
+</ul>
+<li>
+osgViewer::View::updateSlave()
+
+<ul>
+<li>
+更新从属摄像机组 _slaves:
+
+<ul>
+<li>
+从属摄像机继承了主摄像机的投影矩阵, 观察矩阵和场景筛选设置. 但可以在 View::addSlave 添加从属摄像机时, 设置投影矩阵与观察矩阵的偏置值, 还可以使用 CullSettings::setInheritanceMask 设置 CullSettings 的继承掩码
+
+<li>
+osg::Camera 类继承自 osg::CullSettings 类, 有几种筛选:
+
+<ul>
+<li>
+背面筛选: GL_CULLFACE, osg::CullFace 可以开启该功能.
+
+<li>
+视锥体筛选: view frustum culling, 场景中每个物体的包围盒与视锥进行比较.
+
+<li>
+剪切平面筛选: clip plane, osg 可以用 osg::ClipPlane 实现.
+
+<li>
+遮挡筛选: occlusion culling, 会增大计算的开销, 仅作为一个预处理步骤出现
+
+</ul>
+<li>
+OSG 支持的场景筛选方式, CullSettings::CullingModeValues 枚举值包括以下值:
+
+<ul>
+<li>
+NO_CULLING: 不进行场景筛选工作
+
+<li>
+NEAR_PLANE_CULLING: 近平面筛选, 将超出近平面范围之外的对象剔除
+
+<li>
+FAR_PLANE_CULLING: 远平面筛选, 将超出平面范围之外的对象剔除
+
+<li>
+VIEW_FRUSTUM_CULLING: 视锥体筛选, 保证场景中只有视锥体范围内的一小部分节点和Drawable是可见的, 因而加速场景的绘制速度.
+
+<li>
+VIEW_FRUSTUM_SIDES_CULLING: 视锥体侧面筛选, 它不执行近平面/远平面的筛选工作, 除此之外与VIEW_FRUSTUM_CULLING没有区别
+
+<li>
+SMALL_FEATURE_CULLING: 细节筛选, 筛选掉细微物体. CullSettings::setSmallFeatureCullingPixelsSize 设置细微物体的阀值, 可以通过设置几何体对象的包围盒大小避免被裁剪掉.
+
+<li>
+SHADOW_OCCLUSION_CULLING: 遮挡筛选, 见例子 osgoccluder, 查看 ConvexPlanarOccluder 和 OccluderNode 的用法
+
+<li>
+CLUSTER_CULLING: 聚集筛选, 类似于背面筛选, 将多个对象组合起来并进行统一的背面筛选, OSG 可以使用筛选回调 ClusterCullingCallback 来实现节点的聚集筛选(对节点使用 Node::setCullback). 对于地球地理信息的裁剪时很适用
+
+<li>
+DEFAULT_CULLING: 默认情况打开视锥体侧面筛选, 细节筛选, 遮挡筛选和聚集筛选的选项
+
+<li>
+ENABLE_ALL_CULLING: 开启全部筛选方式.
+
+</ul>
+<li>
+CullSettings::setCullingMode 设置一种或多种筛选方式. 如暂时屏蔽一种筛选方式
+<pre c++>
+camera-&gt;setCullingMode(camera-&gt;getCullingMode() &amp; 
+    ~osg::CullSettings::SMALL_FEATURE_CULLING); 
+</pre>
+
+<li>
+有关各种筛选方式的详细算法，可以参考 CullingSet::isCulled 函数，有关遮挡筛选和聚集筛选的算法请单独参阅 OccluderNode，ConvexPlanarOccluder 和 ClusterCullingCallback 等相关类的实现代码。
+
+</ul>
+</ul>
+</ul>
+
+<div id="最长的一帧 -线程处理库 OpenThreads"><h2 id="线程处理库 OpenThreads" class="header"><a href="#最长的一帧 -线程处理库 OpenThreads">线程处理库 OpenThreads</a></h2></div>
+<ul>
+<li>
+OSG 将其纳入了自己的结构体系, 包含了几个主要的线程处理类
+
+<ul>
+<li>
+Thread 类: 线程实现类, 是一个面向对象的线程实现接口, 没定义一个Thread类, 相当于定义一个共享进程资源, 但是可以独立调度的线程. 重写 run() 和 cancel() 这两个成员函数, 即可实现线程运行时和取消时的操作; 通过调用 start() 和 cancel(), 可以启动或中止已经定义的进程对象.
+
+<li>
+Mutex 类: 互斥体接口类. lock() 函数加锁, unlock() 函数解锁. 一个线程类中可以存在多个 Mutex 成员, 用于在不同的地点或情形下为共享区域加锁.
+
+<li>
+Condition 类: 条件量接口类. 它依赖于某个 Mutex 互斥体, 互斥体加锁时阻塞所在的线程, 解锁或者超过时限则释放此线程, 允许其继续运行.
+
+<li>
+Block 类: 阻塞器类. 可以阻塞线程的执行, 使用 block() 阻塞执行它的线程(注意, 不一定是定义它的Thread线程, 而是当前执行了 block 函数的线程, 包括系统主进程). 使用 release() 释放之前被阻塞的线程.
+
+<ul>
+<li>
+下面代码首先阻塞的是主进程, 然后再次阻塞的是 TestThread 线程
+<pre c++>
+#include &lt;OpenThreads/Thread&gt;
+#include &lt;OpenThreads/Condition&gt;
+#include &lt;OpenThreads/Mutex&gt;
+#include &lt;OpenThreads/ScopedLock&gt;
+#include &lt;OpenThreads/Block&gt;
+#include &lt;iostream&gt;
+
+class TestThread : public OpenThreads::Thread
+{
+public:
+    TestThread() : _done(false), _count(0){ }
+    ~TestThread() {  cancel();  }
+
+    void block(){ _block.block(); }
+
+    virtual int cancel()
+    {
+        _block.release();
+        _done = true;
+        while (isRunning())
+        {
+            OpenThreads::Thread::YieldCurrentThread();
+        }
+        return 0;
+    }
+
+    virtual void run()
+    {
+        do 
+        {
+            std::cout &lt;&lt; "(" &lt;&lt; _count &lt;&lt; ")";
+            ++_count;
+
+            if (_count == 10)
+            {
+                _block.release();
+                _block.reset();
+                _block.block();
+            }
+            microSleep(150000);
+
+        } while (!_done);
+    }
+
+protected:
+    bool                    _done;
+    unsigned long       _count;
+    OpenThreads::Block  _block;
+};
+
+int main()
+{
+    TestThread t;
+    t.start();
+    t.block();
+    std::cout &lt;&lt; "(Main)" &lt;&lt; std::endl;
+    getchar();
+    t.cancel();
+
+    return 0;
+}
+</pre>
+
+</ul>
+<li>
+BlockCount 类: 计数阻塞器类, 类似于阻塞器类, block() 阻塞线程, release() 释放线程. BlockCount 的构造函数还可以设置一个阻塞计数值, 计数的作用是每当阻塞器对象的 completed() 函数被执行一次, 计数器就减一, 直至减到零就释放被阻塞的线程.
+
+<li>
+Barrier 类: 线程栅栏类. 它的构造函数与 BlockCount 类似, 可以设置一个整数值, 该值理解为栅栏的"强度". 每个执行 Barrier::block() 函数的线程都将被阻塞. 当被阻塞在栅栏处的线程达到指定的数目时, 就好比栅栏无法支撑那么大的强度一样, 栅栏将被重开, 所有的线程将被释放. 重要的是, 这些线程是几乎同时释放的, 也就保证了线程执行的同步性.
+
+<ul>
+<li>
+注意 BlockCount 和 Barrier 的区别. 前者任意线程执行指定次数的 completed() 函数, 即可释放被阻塞的线程, 后者必须阻塞指定个数的线程之后, 所有的线程才会同时被释放.
+
+</ul>
+<li>
+ScopedLock 模板: 与 Mutex 配合出现, 它的作用域之内将对共享资源进行加锁, 作用域之外自动解锁
+<pre c++>
+{
+	OpenThreads::ScopedLock&lt;OpenThreads::Mutex&gt; lock(_mutex):
+	// ... ...
+}
+// ... ...
+</pre>
+
+</ul>
+</ul>
+
+<div id="最长的一帧 -osgDB::DatabasePager::updateSceneGraph()"><h2 id="osgDB::DatabasePager::updateSceneGraph()" class="header"><a href="#最长的一帧 -osgDB::DatabasePager::updateSceneGraph()">osgDB::DatabasePager::updateSceneGraph()</a></h2></div>
+<ul>
+<li>
+工作内容为更新分页数据库的内容, 它的内容简单到只包含两个执行函数的内容
+
+<ul>
+<li>
+DatabasePager::removeExpiredSubgraphs: 去除已经过期的场景子树
+
+<li>
+DatabasePager::addLoadedDataToSceneGraph: 向场景图形中添加新载入的数据.
+
+</ul>
+<li>
+osgDB::DatabasePager 类执行的工作: 每一帧的更新遍历执行到 updateSceneGraph 函数时, 都会自动将"一段时间内始终不在当前页面上"的场景子树去除, 并将"新载入到当前页面"的场景子树加入渲染, 这里的"页面"是指用户的视野范围.
+
+<li>
+osgDB::DatabasePager 中内置了专用于相关工作处理的 DatabaseThread 线程.
+
+</ul>
+<li>
+osgDB::DatabasePager::DatabaseThread::run()
+
+<ul>
+<li>
+主要的工作:
+
+<ol>
+<li>
+删除过期的场景数据, 过期对象的统一删除工作在这里完成, 而其他地方的更新遍历则负责将检索到的过期对象送入相应的过期对象列表.
+
+<li>
+获取新的数据加载请求: 请求加载的数据可能是新的数据信息, 也可能是已有的场景数据(曾经从"当前页面"中去除, 更新又回到"当前页面"中); 可能是本地的数据文件, 也可能来自网络, 并需要把下载的数据缓存在本地磁盘上. 这些都需要在线程中一一加以判断.
+
+<li>
+编译加载的数据: 对数据进行编译以提升效率. 例如为几何数据创建显示列表(Display List), 将纹理对象提前加载到纹理内存.
+
+<li>
+将加载的数据合并至场景图形, 将读入的数据先保存在一个列表中, 并且由仿真循环负责获取和执行合并新节点的操作.(不能直接合并,因为我们不知道此时渲染器在做些什么)
+
+</ol>
+<li>
+数据流程图, 第一部分为数据的检索和输入, 中间的部分为数据存储的内存空间, 最后一部分为存储数据的输出
+
+</ul>
+<p>
+<img src="http://www.xiabingdev.com/cloudimages/images/2021/05/02/04_DabaBaseThread_.png" />
+</p>
+<ul>
+<li>
+长时间离开"当前页面"的对象(线程外) ---&gt; 弃用对象列表 _childrenToDeleteList ---&gt; 释放对象以降低系统开销(线程内)
+
+<li>
+新的对象, 或者进入"当前页面"的对象(线程外) ---&gt; 数据请求列表 _requestList ---&gt; 尝试加载或重新加载对象(线程内)
+
+<li>
+加载后, 需要提前编译的对象(线程内) ---&gt; 等待编译列表 _dataToCompileList ---&gt; 执行对象的预编译工作(线程内)
+
+<li>
+编译完成, 或者不需要提前编译的对象(线程内) ---&gt; 等待合并列表 _dataToMergeList ---&gt; 将对象合并到场景图形(线程外)
+
+</ul>
+<li>
+DatabasePager 类所定义的各种数据结构:
+
+<ul>
+<li>
+DatabasePager::DatabaseThread 类: 分页数据库的核心处理线程, 负责实现场景元素的定期清理, 加载以及合并工作. 由于一直检查各个数据列表的循环状态太过耗费系统资源, 因此平常状态下应当被阻塞, 需要时再予以唤醒.
+
+<li>
+DatabasePager::DatabaseRequest 结构体: 保存用户的单个数据请求, 包括数据文件名, 请求时间, 数据加载后存入的节点, 以及要进行合并的父节点等. _dataToCompileMap 编译映射表, 保存图形设备ID与编译对象(几何体显示列表, 纹理等)的映射关系. 
+
+<li>
+DatabasePager::RequestQueue 结构体: 负责保存和管理一个"数据请求列表" _requestList, 也就是 DatabaseRequest 对象组成的列表. 同时需要对列表中的元素按请求时间排序. _dataToCompleList 和 _dataToMergeList 都是 RequestQueue 类型的对象, 只是这两个列表都完成了加载, 只是准备进行编译或合并.
+
+<li>
+DatabasePager::ReadQueue, 这个结构体继承自 RequestQueue, 不过还增加了一个"弃用对象列表" _childrenToDeleteList, 即 osg::Object 对象组成的列表, 这个结构体可以向列表追加数据请求和弃用对象之外, 还包括一个 updateBlock 函数, 负责阻塞或者放行 DatabaseThread 线程. 放行根据是: 列表中是否存在新的数据请求或弃用对象需要处理, 以及用户是否通过函数设置暂时不要启用线程(DatabasePager::setDatabasePagerThreadPause).
+
+</ul>
+<li>
+DatabasePager 默认创建两个数据处理线程, 均保存在线程列表 _databaseThreads 中, 这两个线程分别负责处理来自本地文件的数据队列 _fileRequestQueue 和来自 HTTP 站点的网络数据队列 _httpRequestQueue(这两个队列均为 ReadQueue 对象).
+
+<ul>
+<li>
+来自网络的数据也可以被缓存到本地, 设置系统变量 OSG_FILE_CACHE 为本地路径.
+
+</ul>
+
+<div id="最长的一帧 -osgDB::DatabasePager::DatabaseThread::run()"><h2 id="osgDB::DatabasePager::DatabaseThread::run()" class="header"><a href="#最长的一帧 -osgDB::DatabasePager::DatabaseThread::run()">osgDB::DatabasePager::DatabaseThread::run()</a></h2></div>
+<ul>
+<li>
+循环开始时, 阻塞数据处理线程. 直到 updateBlock 函数在外部执行才会放行.
+
+<li>
+执行 updateBlock 函数的几种情形:
+
+<ul>
+<li>
+ReadQueue 对象中的"数据请求列表" _requestList 被修改, 例如新的数据加载请求被传入, 请求被取出, 列表被重置
+
+<li>
+ReadQueue 对象中的"弃用对象列表" _childrenToDeleteList 被修改, 例如新的过期对象被送入, 对象被删除, 列表被重置
+
+<li>
+执行 DatabasePager::setDatabasePagerThreadPause 函数, 当线程被重新启动时, 会自动检查线程是否应当被唤醒.
+
+</ul>
+<li>
+执行过期数据的删除工作, 取出 _childrenToDeleteList 中的所有对象, 并安全地将它们析构.
+
+<li>
+使用 DatabasePager::ReadQueue::takeFirst 函数, 从当前线程对应的 ReadQueue 对象(_fileRequestQueue 或 _httpRequestQueue) 的队列中取出并清除第一个数据加载请求(DatabaseRequest), 756行.
+
+<li>
+OSG 2.6 的版本会自动判断数据加载请求是否过期, 即请求从外部程序发出的时间是否为当前帧或者上一帧, 如果这个 DatabaseRequest 请求是很多帧之前发出的, 就不再处理它.
+
+<ul>
+<li>
+更新版本的 OSG 对此已经有了改动, 不再严格地按照"发出时间是否为当前帧或者上一帧"的条件来进行处理.
+
+</ul>
+<li>
+判断请求加载的文件是否来自 HTTP 网络
+
+<ul>
+<li>
+如果设置了系统变量 OSG_FILE_CACHE, "本地文件处理线程"将尝试建立同名的文件缓存路径, 并将请求转交给"网络文件处理线程"的 _httpRequestQueue 进行处理.
+
+</ul>
+<li>
+使用 DatabaseThread::dpReadRefNodeFile 加载文件. 我们假定 OSG 的 readNodeFile 函数是线程安全的, 因此 dpReadRefNodeFile 与 osgDB::readNodeFile 没有太大差异.
+
+<li>
+加载完毕后, 网络数据还将使用 osgDB::writeNodeFile 缓存到本地文件.
+
+<li>
+获取 DatabaseRequest::_groupForAddingLoadedSubgraph 的值, 对于已经加载的模型而言, 这就是把它合并到当前场景时它的父节点
+
+<li>
+合并到父节点的工作:
+
+<ol>
+<li>
+获取从该父节点到场景根节点的一条路径, 可看成场景遍历是, 从根节点一直到新加载节点之前的遍历路径
+<pre c++>
+osg::NodePath nodePath; 
+osg::NodePathList nodePathList = groupForAddingLoadedSubgraph-&gt;getParentalNodePaths(); 
+if (!nodePathList.empty()) nodePath = nodePathList.front(); 
+nodePath.push_back(groupForAddingLoadedSubgraph.get()); 
+</pre>
+
+<li>
+创建场景对象的预编译访问器: DatabasePager::FindCompileableGLObjectsVisitor, 这个访问器的主要工作是找到场景树中所有的 StateSet 渲染属性集以及 Drawable 几何体对象, 并将它们记录到之前所述的编译映射表 DatabaseRequest::_dataToCompileMap 中. 这样我们就可以在需要的时候调用映射表中的内容, 来执行显示列表创建和纹理绑定这两项重要的 OpenGL 预处理工作.
+
+<li>
+将第一步得到的节点路径压入到访问器中, 这样相当于从场景的根节点开始执行遍历, 这样可以测试新节点合并到场景树之后场景可能产生的变化. 函数 NodeVisitor::pushOntoNodePath.
+<pre c++>
+for(osg::NodePath::iterator nitr = nodePath.begin(); nitr != nodePath.end(); ++nitr) 
+    frov.pushOntoNodePath(*nitr); 
+</pre>
+
+<li>
+一切顺利的话, 所有需要预编译的对象(StateSet与Drawable)都已经记录到"图形设备-编译对象"的映射表_dataToCompileMap中. OSG 将需要编译的对象复制到每个GraphicsContext 图形设备的对应映射像中.
+
+<li>
+系统会自动为每个对象创建 k-Dop Tree 包围体(前提是开启了文件加载时的 KdTree 设置, 见例子 osgkdtree), 可以为场景的射线交集检测提供一种更加精确的测试工具
+
+<li>
+等待预编译的数据加载请求(DatabaseRequest)送入待编译列表 _dataToCompileList(或者待合并列表 _dataToMergeList, 如果不需要预编译的话)
+
+</ol>
+<li>
+<a href="接下来的工作.html">接下来的工作</a>
+
+<ul>
+<li>
+从待编译列表 _dataToCompileList 中筛选并清除已经过期的数据请求, 即那些早在当前帧或上一帧之前就已经发出的请求
+
+<li>
+遍历所有的图形窗口设备, 检查它们是否注册了线程(除了 SingleThreaded 单线程模型之外, 其他几种线程模型均会为每个图形设备创建一个线程), 如果线程有效的话, 就向其中加入一个 DatabasePager::CompileOperation 对象, 否则就用下面的代码处理渲染状态集和几何体对象的编译工作
+<pre c++>
+gc-&gt;makeCurrent();
+_pager-&gt;compileAllGLObjects(*(gc-&gt;getState()));
+gc-&gt;releaseContext();
+</pre>
+
+<ul>
+<li>
+DatabasePager::compileAllGLObjects 函数的工作: 取出映射表 _dataToCompileMap 中的所有 StateSet 和 Drawable 对象, 并依次执行 StateSet::compileGLObjects 和 Drawable::compileGLObjects 函数
+
+<li>
+DatabasePager::CompileOperation 类, 继承自 osg::Operation, 并重写了 operator() 操作符, 以完成指定的图形操作.
+
+</ul>
+</ul>
+</ul>
+<li>
+osgDB::DatabasePager::updateSceneGraph
+
+<ul>
+<li>
+DatabasePager::removeExpiredSubgraphs: 用于去除已经过期的场景子树.
+
+<ul>
+<li>
+首先遍历 DatabasePager::_pagedLODList 这个成员变量, 并执行其中每个 PagedLOD 对象的 removeExpiredChildren 函数, 取得其中已经过期的子节点并记录到一个列表里.
+
+<li>
+将这些过期节点标记为"可删除", 并传递给 _fileRequestQueue-&gt;_childrenToDeleteList 成员, 也就是前文所述的"待删除列表", 同时唤醒 DatabaseThread 线程.
+
+<li>
+将过期节点从 _pagedLODList 中删除.
+
+<li>
+执行 SharedStateManager::prune 函数, 这里的 osgDB::SharedStateManager 指的是一个渲染状态共享管理器, 它负责记录分页数据库中各个节点的渲染属性(StateAttribute), 并判断节点之间是否共享了同一个渲染属性, 从而节省加载和预编译的时间. prune 函数的工作是从 SharedStateManager 中剔除那些没有被共享的渲染属性
+
+<li>
+默认 SharedStateManager 是关闭的, 如果想要启用, 调用如下函数
+<pre c++>
+osgDB::Registry::instance()-&gt;getOrCreateSharedStateManager(); 
+</pre>
+
+</ul>
+</ul>
+<li>
+osgDB::DatabasePager::addLoadedDataToSceneGraph: 用于向场景图中添加新载入的数据
+
+<ul>
+<li>
+取得"待合并列表" _dataToMergeList, 并遍历其中每一个 DatabaseRequest 对象.
+
+<ul>
+<li>
+遍历过程中, 首先执行 SharedStateManager::share 函数, 将新加载节点 _loadedModel 的渲染属性保存到 SharedStateManager 管理器中.
+
+<li>
+执行 DatabasePager::registerPagedLODs, 在加载的节点及其子树中搜索 PagedLOD 节点, 并添加到刚刚提到的 _pagedLODList 列表中.
+
+<li>
+判断 DatabaseRequest::_groupForAddingLoadedSubgraph 对象(也就是新加载节点在场景中的父节点)是否合法, 并将 DatabaseRequest::_loadedModel 添加为它的子节点
+
+</ul>
+</ul>
+<li>
+什么情形下我们才会用到 DatabasePager, 当我们使用 osg::PagedLOD 和 osg::ProxyNode 节点的时候
+
+<ul>
+<li>
+osg::ProxyNode --- 代理节点. 使用代理节点可以指向某个已经存在的模型文件, 并在需要的时候加载它.
+
+<ul>
+<li>
+我们希望在场景方针循环开始之后才加载某个模型文件, 可以使用 ProxyNode 指定要加载的文件名, 并在场景筛选(Cull)的过程中加载模型, 加载后的新节点将作为 ProxyNode 节点的子节点.
+<pre c++>
+osg::ProxyNode* proxyNode = new osg:: ProxyNode; 
+proxyNode-&gt;setFileName(0, “nodefile.osg”); 
+</pre>
+
+<li>
+ProxyNode::setLoadingExternalReferenceMode 来设置加载的时机, 例如首先设置为不自动加载(NO_AUTOMATIC_LOADING), 在适当的时候再设置立即加载(LOAD_IMMEDIATELY)
+
+</ul>
+<li>
+osg::PagedLOD: 继承自 osg::LOD, 它的工作同样是按照用户的可视范围, 将多个子节点作为同一场景的多个细节层次, 即在视点靠近物体时呈现较多的物理细节, 而在远离时仅仅呈现一个简化的模型, 从而降低了运算和绘制的负担.
+
+<ul>
+<li>
+PagedLOD 节点, 运用了分页数据库的功能, 将多个模型数据分批加载到场景图形中(作为 PagedLOD 的子节点), 并根据用户当前的可视范围, 将那些一段时间内均无法被看到的 PagedLOD 子节点剔除出场景图形, 以节约系统资源.
+
+<li>
+举例：以四级Node节点及其子树来表达某个场景在不同视距下的细节层次，这些场景模型已经保存为诸如 "node_1.osg" 的文件形式
+<pre c++>
+	osg::PagedLOD* pagedLOD = new osg::PagedLOD;
+	pagedLOD-&gt;setFileName(0, "node_1.osg");
+	pagedLOD-&gt;setRange(0, minRange1, maxRange1);
+	pagedLOD-&gt;setFileName(1, "node_2.osg");
+	pagedLOD-&gt;setRange(1, minRange2, maxRange2);
+	... ...
+</pre>
+
+<li>
+DatabasePager::setExpiryDelay 用于决定视野外对象的过期时间, PagedLOD::setPriorityOffset设置子节点的优先级. setCenter 来设置中心点等等
+
+</ul>
+</ul>
+<p>
+<img src="http://www.xiabingdev.com/cloudimages/images/2021/05/02/05_PagedLOD.png" />
+</p>
+<ul>
+<li>
+主要流程介绍
+
+</ul>
+<p>
+<img src="http://www.xiabingdev.com/cloudimages/images/2021/05/02/06_DatabasePager.png" />
+</p>
+<ul>
+<li>
+osg::PagedLOD 节点或者 osg::ProxyNode 节点使用 setFileName 函数, 请求运行时加载模型文件为子节点.
+
+<li>
+在场景的筛选(Cull)过程中, OSG将自动取出 PagedLOD 和 ProxyNode 中保存的文件名数据, 并使用 DatabasePager::requestNodeFile 函数将其保存到"数据请求列表"中(RequestQueue::_requestList).
+
+<li>
+DatabasePager 内置了两个数据处理线程(DatabaseThread), 分别用于处理本地文件和HTTP数据, 线程的主要工作是删除"已弃用队列"(RequestQueue::_childrenToDeleteList)中的对象, 并从"数据请求列表"中获取新的请求.
+
+<li>
+线程中如果取得新的数据请求, 则尝试加载新的模型, 判断是否需要预编译模型, 并送入"等待编译列表"(_dataToCompileList). 预编译的含义是执行显示列表的创建, 纹理绑定, GLSL 数据绑定等 OpenGL 动作, 通常情况下预编译模型可以避免它在显示时出现帧延时.
+
+<li>
+对于编译完成或者无需编译的数据请求, 首先创建其 KDTree 包围体(用于 K-Dop Tree 碰撞检测计算), 然后送入"等待合并列表"(_dataToMergeList), 线程让出控制权.
+
+<li>
+场景的每次更新遍历均会执行 updateSceneGraph 函数, 于其中将一段时间内没有进入用户视野的节点送入"已弃用队列"(这一工作只限于 PagedLOD 节点的子节点), 并将"等待合并列表"中的新数据使用 addChild 送入当前的场景图形.
+
+</ul>
+<li>
+osgViewer::Viewer::updateTraversal()
+
+<ul>
+<li>
+阅读 ImagePager 的相关内容, 该类的工作性质与 DatabasePager 没什么大的区别, 主要负责纹理图片文件的运行时加载工作.
+
+<li>
+OSG 2.6 的版本中, 只有 osg::ImageSequence 可以使用图片数据库来执行工作, 通过调用 ImageSequence::addImageFile 函数, 指定运行时加载的图片文件名称. 文件将逐步被加载并送入这个 ImageSequence 对象中. ImageSequence 类的主要功能是使用自身包含的 Image 图像对象序列, 实现一种动画纹理的效果.
+
+<li>
+ImagePager 内置了一个处理线程(ImagePager::ImageThread), 其中随时读取"图片加载请求"(ImagePager::ImageRequest)的内容, 并根据其中的文件名使用 osgDB::readImageFile 加载数据(osg::Image对象), 加载之后的图片数据将被加入到申请它的 ImageSequence 对象中.
+
+<li>
+ImagePager 本身暂时不具备"分页"的功能. 即不会负责将长时间不用的图片删除.
+
+</ul>
+
+<div id="最长的一帧 -渲染机制相关"><h2 id="渲染机制相关" class="header"><a href="#最长的一帧 -渲染机制相关">渲染机制相关</a></h2></div>
+<ul>
+<li>
+OSG 的渲染过程可以分为三个阶段:
+
+<ul>
+<li>
+用户(APP)阶段: 更新用户数据, 负责场景对象的运动和管理等等
+
+<li>
+筛选(CULL)阶段: 负责对场景中的对象进行筛选裁剪, 略过那些不会被用户所见(因而不必渲染)的物体, 并根据渲染状态的相似性对即将进入渲染管线的对象排序(从而避免OpenGL状态量的频繁切换)
+
+<li>
+绘制(DRAW)阶段: 执行各种OpenGL操作, 将数据送入OpenGL渲染管线及显示系统处理
+
+</ul>
+<li>
+多个图形设备(渲染窗口)时, 需要分别为每个窗口的每个摄像机执行相应的筛选和绘制工作，不过用户(APP)工作可以被多个图形设备共享。
+
+<li>
+我们可以允许上一帧的绘制没有结束以前, 开始下一帧的用户数据更新工作
+
+<li>
+允许不同的CPU来执行不同图形设备的筛选和绘制工作, 从而提高整体渲染的效率
+
+</ul>
+<li>
+frame() 函数的基本内容
+<pre c++>
+advance(simulationTime); // 记录场景的帧数，帧速率信息
+eventTraversal(); // 处理场景的交互事件及回调
+updateTraversal(); // 处理场景的更新回调，以及分页数据的更新
+renderingTraversal(); // 场景的渲染遍历工作
+</pre>
+
+<li>
+osgViewer::ViewerBase::startThreading() 的工作
+
+<ul>
+<li>
+startThreading 函数的工作
+
+<ul>
+<li>
+执行 ViewerBase::releaseContext, 首先释放渲染上下文
+
+<li>
+如果用户没有设置线程模型, 则使用 ViewerBase::suggestBestThreadingModel 自动进行判断(这部分工作现在已经转移至 ViewerBase::setUpThreading() 函数里)
+
+<li>
+Viewer::getContexts 获取当前所有的图形设备(GraphicsContext)
+
+<li>
+Viewer::getCameras 获取当前所有的摄像机(主摄像机和所有从摄像机)
+
+</ul>
+<li>
+suggestBestThreadingModel 的判断原则
+
+<ul>
+<li>
+环境变量 OSG_THREADING是否为: "SingleThreaded", "CullDrawThreadPerContext", "DrawThreadPerContext", "CullThreadPerCameraDrawThreadPerContext"
+
+<li>
+如果当前不存在图形设备或者摄像机, 则采用 SingleThreaded 模型
+
+<li>
+如果只存在一个图形窗口, 则采用 SingleThreaded 模型(单核)或 DrawThreadPerContext 模型(多核)
+
+<li>
+如果系统 CPU 数超过当前图形设备或者摄像机数总和, 采用 CullThreadPerCameraDrawThreadPerContext 模型
+
+<li>
+以上均不符合时, 采用 DrawThreadPerContext 模型.
+
+</ul>
+<li>
+一般来说推荐 CullDrawThreadPerContext, DrawThreadPerContext, 不推荐 CullThreadPerCameraDrawThreadPerContext
+
+</ul>
+<li>
+单线程模式没有额外的工作要做。直接 frame() 函数内的下一个步骤 renderingTraversals()
+
+
+<div id="最长的一帧 -osgViewer:: ViewerBase::renderingTraversals()"><h2 id="osgViewer:: ViewerBase::renderingTraversals()" class="header"><a href="#最长的一帧 -osgViewer:: ViewerBase::renderingTraversals()">osgViewer:: ViewerBase::renderingTraversals()</a></h2></div>
+<ul>
+<li>
+单线程模型
+
+<ul>
+<li>
+单线程模型用不上的一些变量:
+
+<ul>
+<li>
+ViewerBase::_startRenderingBarrier: 渲染启动的一个栅栏标志, 用于同步开始所有的图形设备的线程操作
+
+<li>
+ViewerBase::_endRenderingDispatchBarrier: 渲染结束的一个栅栏标志, 用于同步结束所有的图形设备的线程操作
+
+<li>
+ViewerBase::_endDynamicDrawBlock: 用于同步结束所有的动态对象绘制操作, 这里的动态对象是指 Object::setDataVariance 被设置为 DYNAMIC 的场景对象
+
+</ul>
+<li>
+单线程模型下 renderingTraversals() 的执行步骤
+
+<ol>
+<li>
+ViewerBase::checkWindowStatus 检查是否存在有效的图形设备, 不存在的话使用 ViewerBase::stopThreading 停止线程运行
+
+<li>
+记录渲染遍历开始的时间
+
+<li>
+遍历视景器对应的所有 Scene 场景(Viewer单视景器只存在一个场景), 记录分页数据库的更新启动帧(使用DatabasePager::signalBeginFrame, 这将决定 DatabasePager 中的数据请求是否过期), 并计算场景节点的围绕球
+
+<li>
+获取当前所有的图形设备(GraphicsContext)和摄像机
+
+<li>
+[重要步骤]遍历所有摄像机的渲染器(Renderer), 执行Renderer::cull场景筛选的操作
+
+<li>
+[重要步骤]遍历所有的图形设备, 设置渲染上下文(使用 ViewerBase::makeCurrent)并执行GraphicsContext::runOperations, 实现场景绘制的操作
+
+<li>
+再次遍历所有的图形设备, 执行双缓存交换操作(GraphicsContext::swapBuffers)
+
+<li>
+遍历视景器中的场景, 告知分页数据库更新已经结束(DatabasePager::signalEndFrame, 目前这个函数没有作用)
+
+<li>
+释放当前的渲染上下文(ViewerBase::releaseContext)
+
+<li>
+记录渲染遍历结束的时间, 并保存到这个记录器当中(ViewerBase::getStats)
+
+</ol>
+</ul>
+</ul>
+
+<div id="最长的一帧 -osgViewer:: ViewerBase::renderingTraversals()-osgViewer::Renderer::cull()"><h3 id="osgViewer::Renderer::cull()" class="header"><a href="#最长的一帧 -osgViewer:: ViewerBase::renderingTraversals()-osgViewer::Renderer::cull()">osgViewer::Renderer::cull()</a></h3></div>
+<ul>
+<li>
+osgViewer::Renderer 为摄像机渲染场景的工作提供了一个公有接口. 
+
+<li>
+当我们向视景器(Viewer)添加一个新的摄像机(Camera)时, 一个与摄像机相关联的渲染器(Renderer)也会被自动创建. 而当我们准备渲染场景时, 与特定图形设备(GraphicsContext)相关联的摄像机也会自动调用其渲染器的响应函数, 执行场景筛选和绘制等工作.
+
+<li>
+获取相机附带渲染器
+<pre c++>
+osgViewer::Renderer* renderer = dynamic_cast&lt;osgViewer::Renderer*&gt;(camera-&gt;getRenderer()); 
+</pre>
+
+<ul>
+<li>
+osg::Camera::getRenderer() 返回的是 osg::GraphicsOperation 的指针。
+
+</ul>
+<li>
+场景视图类, osgUtil::SceneView, 2.x版本之后退居幕后, 由 osgViewer::Renderer 负责调用
+
+<li>
+每个渲染器创建两个 osgUtil::SceneView 对象(Renderer::_sceneView[2]), 从而实现渲染后台双缓存的支持, 注 SingleThreaded 和 CullDrawThreadPerContext 环境下只使用到第一个场景视图.
+
+<li>
+Renderer::cull() 的主要工作:
+
+<ol>
+<li>
+从 _availabelQueue 队列中获取一个可用的场景视图(SceneView), 这个队列中通常会保存有两个 SceneView 对象
+
+<li>
+Renderer::updateSceneView 函数, 更新这个场景视图的全局渲染状态(根据场景主摄像机的 StateSet 渲染状态集, 更新成员变量 SceneView::_globalStateSet), osgUtil::SceneView 的状态(osg::State), osgUtil::SceneView 的显示设置(osg::DisplaySettings)
+
+<li>
+更新场景视图(SceneView)的融合距离(Fusion Distance)和筛选设置(CullSettings). 融合距离表示双眼所在平面到实现汇聚点的距离, 可以通过 View::setFusionDistance 函数传递给SceneView, 通常应用于立体显示的场合
+
+<li>
+执行 SceneView::cull 函数, 这才是真正的场景筛选(裁剪)工作的所在
+
+<li>
+记录场景筛选所耗费的时间, 并保存到统计器(osg::Stats) 中
+
+<li>
+将这个渲染视图添加到绘制队列 _drawQueue 中. 这个队列中保存的对象将在场景绘制时用到
+
+</ol>
+<li>
+osg::State: OpenGL 状态机在OSG中的具体实现, 封装了几乎所有的 OpenGL 状态量, 属性参数, 以及顶点数组的设置值.
+
+<ul>
+<li>
+允许用户直接查询各种 OpenGL 状态的当前值(直接执行 State::captureCurrentState, 而不必再使用 glGet* 系列函数)
+
+</ul>
+</ul>
+
+<div id="最长的一帧 -osgViewer:: ViewerBase::renderingTraversals()-osg::GraphicsContext::runOperations()"><h3 id="osg::GraphicsContext::runOperations()" class="header"><a href="#最长的一帧 -osgViewer:: ViewerBase::renderingTraversals()-osg::GraphicsContext::runOperations()">osg::GraphicsContext::runOperations()</a></h3></div>
+<ul>
+<li>
+该函数的执行过程
+
+<ol>
+<li>
+获取场景中所有注册的摄像机, 对它们进行排序, 排序的原则根据摄像机的渲染顺序而定, 可以通过 Camera::setRenderOrder 进行设置. 设置为 PRE_RENDER 级别的摄像机排序在最前, POST_RENDER 级别的摄像机排序在最后. 同一级别的摄像机根据 setRenderOrder 函数中传入的整数设置先后顺序, 排序数较小的摄像机在前.
+
+<li>
+依次遍历排序过的各个摄像机, 执行器渲染器的 Renderer 的 operator() 操作. 该操作有个参数为当前的 GraphicsContext. 该操作执行了场景在该图形设备中的绘制工作。
+
+<li>
+遍历 GraphicsContext::_operations 队列中的各个 Operation 对象, 执行其 operator() 操作. 我们可以重写自己的 Operation 派生对象, 并通过 GraphicsContext::add 将其添加到图形设备的执行队列中, 从而实现自己定义的 OpenGL 绘图功能. 这里不用考虑 makeCurrent() 的问题, 执行 runOperations 之前已经执行了. 
+
+<ul>
+<li>
+这里会调用 Renderer 的 operator() 方法， osgViewer::Renderer 的 operator() 的工作仅仅是判断是否使用图形线程来执行场景的筛选, 对于单线程模型(SingleThreaded)来说, 它转向 Renderer::draw 函数, 因为场景筛选的工作已经由前面的代码完成了, 对于线程模型(CullDrawThreadPerContext)来说, 它将转向 Renderer::cull_draw 函数, 对于另外两种线程模型而言, DrawThreadPerContext 同样使用 Renderer::cull和Renderer::draw来执行场景筛选和绘制的工作. 而CullThreadPerCameraDrawThreadPerContext 则为每个摄像机创建线程来完成筛选工作, 场景的绘制仍然由下文的 Renderer::draw 来完成
+
+</ul>
+</ol>
+</ul>
+
+<div id="最长的一帧 -osgViewer:: ViewerBase::renderingTraversals()-osgViewer::Renderer::draw()"><h3 id="osgViewer::Renderer::draw()" class="header"><a href="#最长的一帧 -osgViewer:: ViewerBase::renderingTraversals()-osgViewer::Renderer::draw()">osgViewer::Renderer::draw()</a></h3></div>
+<ul>
+<li>
+该函数的基本执行流程:
+
+<ol>
+<li>
+从绘制队列 _drawQueue 中取出一个场景图形(SceneView)对象.
+
+<li>
+执行 Renderer::compile().
+
+<li>
+执行 Renderer::initialize(osg::State*), 初始化 Renderer 绘制所需的基本变量, 这里仅仅设置 osgViewer::OpenGLQuerySupport 变量
+
+<li>
+执行 SceneView::getDynamicObjectCount 函数判断场景视图中动态对象(设置为 DYNAMIC) 的个数, 并执行其回调类(此回调类派生自线程阻塞器BlockCount, 此处为 State::getDynamicObjectRenderingCompletedCallback)的 completed 函数.
+
+<ul>
+<li>
+completed 函数的作用: 将阻塞器的引用计数减一, 减到零时自动释放所阻塞的线程. 对于单线程模型来说, 这一步骤基本没有用处. 对于多线程工作而言, 其保证动态(DYNAMIC)对象的更改不会影响到渲染管线而实现的. 在 OSG 内, 只有设置为 setDataVariance(DYNAMIC) 的对象才可以在仿真循环中被随时更改.
+
+</ul>
+<li>
+执行 OpenGLQuerySupport::checkQuery 函数, 判断是否可以使用 OpenGL 查询对象(query objects).
+
+<li>
+执行 OpenGLQuerySupport::beginQuery 函数, 创建或者获取一个查询对象, 其工作主要是获取并统计 GPU 计算的时间
+
+<li>
+[重要步骤]执行 SceneView::draw 函数, 场景的绘制工作最后也是在 osgUtil::SceneView 函数中完成的.
+
+<li>
+将已经结束绘制的场景视图对象再次追加到 _availableQueue 队列中, 这样可以保证该队列始终保存有两个 SceneView 对象, 以正确实现场景的筛选和渲染工作.
+
+<li>
+[新版已删除]执行 Renderer::flushAndCompile 函数, 它的作用是执行场景中所有过期对象的删除工作. 单线程模型下将直接执行 osg::flushDeletedGLObjects 函数, 多线程模型下, 由于每个图形设备(GraphicsContext)都分配了一个操作线程, 因此将向线程追加一个新的 osg::FlushDeletedGLObjectsOperation 操作, 它所调用的函数实质上与单线程模式下相同. FlushDeletedGLObjectsOperation 继承自 Operation 类.
+
+<ul>
+<li>
+flushDeletedGLObjects 函数现在在 SceneView::draw() 内调用，
+
+<li>
+需要删除的对象包括过期的显示列表, 纹理, 着色器等, 具体的方法可以参考 releaseGLObjects 函数, 它在多个类当中都有实现.
+
+<li>
+flushAndCompile 还负责分页数据库的预编译工作(即 DatabasePager::compileGLObjects 函数的内容), 该函数的主要工作:
+
+<ul>
+<li>
+从 DatabasePager 的"待编译列表"中取出一个数据, 从它的 DataToCompileMap 映射表中取出待编译的几何体(Drawable)队列和渲染状态(DtateSet)队列.
+
+<li>
+对于 Drawable 对象, 执行 Drawable::compileGLObjects, 创建几何体的显示列表(使用我们熟悉的 glNewList), 对于 StateSet 对象, 执行 StateSet::compileGLObjects, 进而执行各种渲染属性的预编译命令(例如 Texture 对象要使用 glTexImage2D 等函数执行纹理数据的加载, 而 Program 对象要执行 GLSL 代码的载入和编译), 这些现在在 GLObjectsVisitor::apply() 内实现。
+
+<li>
+从"待编译列表"中剔除已经编译的数据, 注意每一帧的过程中没有必要编译所有的对象, 使用 DatabasePager::setMaximumNumOfObjectsToCompilePerFrame 可以设置每一帧从"待编译列表"中取出多少数据执行编译工作, 默认值为4
+
+</ul>
+</ul>
+<li>
+执行 OpenGLQuerySupport::endQuery, 结束查询对象的工作
+
+<li>
+计算场景绘制所需的时间, 并传递给记录器(ViewerBase::getStats).
+
+</ol>
+<li>
+流程介绍
+
+</ul>
+<p>
+<img src="http://www.xiabingdev.com/cloudimages/images/2021/05/02/07_Camera_SceneView_rel.png" />
+</p>
+<ul>
+<li>
+OSG 视景器 (SceneView) 的摄像机(包括主摄像机 _camera 和从摄像机 _slaves) 均包括了与其对应的渲染器(Renderer)和图形设备(GraphicsContext) 
+
+<li>
+使用 setSceneData 将场景图形的根节点关联到视景器时, 这个根节点实质上被添加为此 Viewer 对象中每个主/从摄像机的子节点(使用 View::assignSceneDataToCameras 函数), 因而我们可以通过改变摄像机的观察矩阵来改变我们观察整个场景的视角
+
+<li>
+场景的筛选(CULL)和绘制(DRAW)工作实质上都是有内部类 osgUtil::SceneView 来完成的, 但是 OSG 也为场景渲染的工作提供了良好的公用接口, 即"渲染器". 渲染器 osgViewer::Renderer 负责将场景绘制所需的各种数据(OpenGL状态值, 显示设置, 筛选设置等)传递给 SceneView 对象, 并调用 SceneView::cull 和 SceneView::draw 函数, 以完成场景的筛选和绘制工作.
+
+<li>
+摄像机所对应的图形设备(GraphicsContext)同样也可能负责调用 SceneView::draw 函数, 这与我们选择的线程模型有关, 多线程模型为每一个图形设备创建一个专门的工作线程(使用 GraphicsContext::createGraphicsThread 函数), 并在其中处理与场景绘制相关的诸多工作, 因此 GraphicsContext 类在某种意义上也可以视作 SceneView 的一个公有实现接口(不过它更重要的意义在于, 它是OSG与特定操作系统平台API的接口)
+
+</ul>
+
+    </div>
+</body>
+</html>

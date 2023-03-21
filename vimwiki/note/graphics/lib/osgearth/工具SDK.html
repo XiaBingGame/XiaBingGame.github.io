@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../../style.css">
+<title>����SDK</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</head>
+<body>
+
+<ul>
+<li>
+osgEarth Utils 名称空间包含一系列有用的类用于和 map 互动
+
+<li>
+DataScanner 递归查找一个目录以便用于加载 ImageLayer 对象.
+
+<ul>
+<li>
+仅有 MP 地形引擎支持无限数量的 image layers, 所以该引擎最好和 DataScanner 一起使用
+<pre c++>
+DataScanner scanner;
+ImageLayerVector imageLayers;
+scanner.findImageLayers( rootFolder, extensions, imageLayers );
+</pre>
+
+<li>
+扩展参数可以有 “tif,ecw” 
+
+</ul>
+</ul>
+
+</body>
+</html>

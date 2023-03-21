@@ -1,0 +1,84 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../../style.css">
+<title>ADO</title>
+<meta http-equiv="Content-Type" content="text/html; charset=cp936">
+</head>
+<body>
+
+<pre c++>
+	_ConnectionPtr	m_pConnection;	// 连接对象
+	_RecordsetPtr	m_pRecordset;	// 记录对象
+
+	// 初始化
+	HRESULT hr = m_pConnection.CreateInstance("ADODB.Connection");
+	ASSERT(SUCCEEDED(hr));
+	hr = m_pRecordset.CreateInstance("ADODB.Recordset");
+	ASSERT(SUCCEEDED(hr));
+
+	// 设置数据库路径
+	TCHAR szFilePath[MAX_PATH];
+	GetModuleFileName(NULL,szFilePath,MAX_PATH);
+
+	TCHAR* p = szFilePath;
+	while(*p)
+	{
+		p++;
+	}
+	do{
+		p--;
+	}while(*p != '\\');
+	*p = '\0';
+
+	CString strPath = szFilePath;
+	if(strPath.Right(1) != '\\')
+	{
+		strPath = strPath + '\\';
+	}
+	strPath = strPath + "Menu.mdb";	
+
+	// 连接数据库
+	try{
+		_bstr_t bstrConnection = "Provider=Microsoft.Jet.OLEDB.4.0;Data Source=" + strPath;
+	//	_bstr_t bstrConnection = "driver={Microsoft Access Driver (*.mdb)};dbq=" + strPath;
+		hr = theApp.m_pConnection-&gt;Open(bstrConnection,"","",adModeUnknown);
+		ASSERT(SUCCEEDED(hr));
+		SysFreeString(bstrConnection);
+	}
+	catch (_com_error e)
+	{
+		CString temp;
+		temp.Format("连接数据库错误:%s",e.ErrorMessage());
+		::MessageBox(NULL,temp,"提示信息",NULL);
+		return false;
+	}	
+	
+	// 连接记录集, 查询
+	HRESULT hr = recordSet.CreateInstance("ADODB.Recordset");
+	ASSERT(SUCCEEDED(hr));
+	_bstr_t bstrSQL = "SELECT * FROM [tb_menuinfo] where 上级菜单 = '" + strText + "'";
+	if(m_pConnection-&gt;State &amp; adStateOpen)
+	{
+		recordSet-&gt;Open(bstrSQL,m_pConnection.GetInterfacePtr(),adOpenStatic,adLockOptimistic,adCmdText);
+		if (recordSet-&gt;adoEOF)
+		{		
+		}
+		else
+		{
+			_variant_t var;
+			CString		strName;
+			while(!recordSet-&gt;adoEOF)
+			{
+				var = recordSet-&gt;GetCollect("菜单名称");
+				// 得到查询
+				if(var.vt != VT_NULL)
+					strName = (TCHAR*)(_bstr_t)var;
+				recordSet-&gt;MoveNext();
+			}
+		}		
+	}
+</pre>
+
+</body>
+</html>

@@ -1,0 +1,96 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../style.css" />
+    <title>������֪�� GitHub ʹ�ü��� </title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<ul>
+<li>
+diff时忽略空格
+
+<li>
+查看某个作者的提交历史
+
+<ul>
+<li>
+在URL中添加?author=username
+
+<li>
+例如:　<a href="https://github.com/rails/rails/commits/master?author=dhh">https://github.com/rails/rails/commits/master?author=dhh</a>
+
+</ul>
+<li>
+比较版本
+
+<ul>
+<li>
+<a href="https://github.com/rails/rails/compare/master...4-1-stable">https://github.com/rails/rails/compare/master...4-1-stable</a>
+
+<li>
+<a href="https://github.com/rails/rails/compare/master@{1.day.ago}...master">https://github.com/rails/rails/compare/master@{1.day.ago}...master</a>
+
+<li>
+<a href="https://github.com/rails/rails/compare/master@{2014-10-04}...master">https://github.com/rails/rails/compare/master@{2014-10-04}...master</a>
+
+<li>
+和派生仓库比较，加上派生仓库名作前缀即可: <a href="https://github.com/rails/rails/compare/byroot:master...master">https://github.com/rails/rails/compare/byroot:master...master</a>
+
+</ul>
+<li>
+通过 HTML 方式嵌入 Gist, 可以将 Gist 嵌入到其他站点, 在 Gist URL 后附加.pibb，得到一个纯 HTML 的版本
+
+<ul>
+<li>
+例如 <a href="https://gist.github.com/tiimgreen/10545817.pibb">https://gist.github.com/tiimgreen/10545817.pibb</a>
+
+</ul>
+<li>
+Git.io 是适用于 GitHub 的短网址服务。
+
+<ul>
+<li>
+也可以使用Curl访问
+
+</ul>
+<li>
+高亮行, 在 URL 中加上 #L52 可以高亮第52行。或者你也可以直接点击行数. 多行高亮同样支持。你可以使用类似#L53-L60格式，或者在按住shift的同时点击。
+
+<li>
+快速引用, 可以选中别人的评论文字，然后按r，这些内容会以引用的形式被复制在文本框中：
+
+<li>
+任务列表, 在工单或合并请求中，你可以使用任务列表语法：
+<pre>
+- [ ] Be awesome
+- [ ] Do stuff
+- [ ] Sleep
+</pre>
+
+<li>
+合并请求的 diff 和 patch, 可以在 URL 后添加 .diff 和 .patch，以对应的模式查看合并请求:
+<pre>
+https://github.com/tiimgreen/github-cheat-sheet/pull/15
+https://github.com/tiimgreen/github-cheat-sheet/pull/15.diff
+https://github.com/tiimgreen/github-cheat-sheet/pull/15.patch
+</pre>
+
+</ul>
+
+    </div>
+</body>
+</html>

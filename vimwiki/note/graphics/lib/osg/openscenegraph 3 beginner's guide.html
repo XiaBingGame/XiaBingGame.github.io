@@ -1,0 +1,2366 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../style.css" />
+    <title>openscenegraph 3 beginner's guide</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="../index.html">首页</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<div id="3 Creating Your First OSG Program"><h1 id="3 Creating Your First OSG Program" class="header"><a href="#3 Creating Your First OSG Program">3 Creating Your First OSG Program</a></h1></div>
+<ul>
+<li>
+使用 CMake, 写一个 CMakeLists.txt
+<pre>
+cmake_minimum_required(VERSION 2.6)
+project(MyProject)
+
+find_package(OpenThreads)
+find_package(osg)
+find_package(osgDB)
+find_package(osgUtil)
+find_package(osgViewer)
+
+macro(config_project PROJNAME LIBNAME)
+	include_directories( ${${LIBNAME}_INCLUDE_DIR} )
+	target_link_libraries( ${PROJNAME} ${${LIBNAME}_LIBRARY} )
+endmacro()
+
+add_executable(MyProject main.cpp)
+config_project(MyProject OPENTHREADS)
+config_project(MyProject OSG)
+config_project(MyProject OSGDB)
+config_project(MyProject OSGUTIL)
+config_project(MyProject OSGVIEWER)
+</pre>
+
+<ul>
+<li>
+在 OSG_ROOT 或 OSG_DIR 内查找库
+
+<li>
+OSG_INCLUDE_DIR, OSG_LIBRARY, OSG_LIBRARY_DEBUG
+
+</ul>
+<li>
+osg::ref_ptr&lt;&gt;: valid()(是否有效指针), release()(计数减一但不释放, 返回相应指针)
+
+<li>
+osg::Referenced: ref(), unref(), referenceCount()(可以返回引用数)
+
+<ul>
+<li>
+osg::Referenced 以及其派生类应当只在堆空间中创建, 因为其析构函数为 protected 
+<pre c++>
+osg::ref_ptr&lt;osg::Node&gt; node = new osg::Node; // 合法
+osg::Node node; // 非法
+</pre>
+
+<li>
+不要产生引用循环, 引用循环即直接或间接引用自身, 子节点是自己或自己的父节点
+
+<li>
+release() 可用于函数返回, 其实现为 删除一个引用, 而后返回指针, 当引用为0不删除其所引用的对象
+
+</ul>
+<li>
+osg::notify() 输出调试信息: ALWAYS, FATAL, WARN, NOTICE, INFO, DEBUG_INFO, DEBUG_FP 从最严重到最轻松
+<pre c++>
+osg::notify(osg::WARN) &lt;&lt; "Some warn message." &lt;&lt; std::endl;
+</pre>
+
+<ul>
+<li>
+类似工作的宏: OSG_FATAL, OSG_WARN, OSG_NOTICE
+
+<li>
+osg::NotifyHandler 派生类可以让 notifier 将内容输出至流或者文件, 或者输出至 GUI Widget, 而后使用 osg::setNofityHandler() 设置 notifier
+
+<li>
+环境变量 OSG_NOTIFY_LEVEL 可以控制显示的信息等级
+
+</ul>
+</ul>
+
+<div id="4 Buiding Geometry Models"><h1 id="4 Buiding Geometry Models" class="header"><a href="#4 Buiding Geometry Models">4 Buiding Geometry Models</a></h1></div>
+<ul>
+<li>
+显示列表利于静态物体. VBO 利于动态变化物体
+
+<li>
+osg::Geode 的几个方法
+
+<ul>
+<li>
+addDrawable(), removeDrawable(), removeDrawables(), getDrawable(), getNumDrawables()
+
+<li>
+可以用如下代码一次性移除所有的 drawables
+<pre c++>
+geode-&gt;removeDrawables(0, geode-&gt;getNumDrawables());
+</pre>
+
+</ul>
+<li>
+osg::ShapeDrawable 派生自 osg::Drawable, 渲染基本的几何形状, 一个 osg::ShapeDrawable 实例通常含一个 osg::Shape 对象表示特定的几何类型以及属性
+<pre c++>
+shapeDrawable-&gt;setShape(new osg::Box(osg::Vec3(1.0f, 0.0f, 0.0f), 10.0f, 10.0f, 5.0f);
+</pre>
+
+<ul>
+<li>
+其他还有 Capsule, Cone, Cylinder, Sphere
+
+<li>
+setColor 设置颜色
+
+</ul>
+<li>
+OSG 有一个内部类 osg::GLBeginEndAdapter 类, 用于执行基本的形状绘制操作. 其使用 glBegin() / glEnd() 的风格来绘制顶点数组
+
+<ul>
+<li>
+使用方法, 从 osg::Drawable 基类派生, 重写 drawImplementation() 方法
+<pre c++>
+void drawImplementation( osg::RenderInfo&amp; renderInfo ) const
+{ 
+    osg::GLBeginEndAdapter&amp; gl =
+        renderInfo.getState()-&gt;getGLBeginEndAdapter();
+    gl.Begin( ... );
+    gl.Vertex3fv( ... );
+    gl.End();
+}
+</pre>
+
+</ul>
+<li>
+osg::Array 类不能实例化, 其派生类继承了 std::vector 的方法
+<pre c++>
+vertices-&gt;push_back(osg::Vec3(1.0f, 0.0f, 0.0f));
+</pre>
+
+<li>
+osg::Geometry 自 osg::Drawable 派生而来
+
+<ul>
+<li>
+set*Array() 支持所有的属性数组
+
+<li>
+setColorBinding() 可以设置某种绑定, 如 osg::Geometry::BIND_PER_VERTEX, osg::Geometry::BIND_OVERALL
+
+</ul>
+<li>
+osg::PrimitiveSet 用于管理如何绘制
+
+<ul>
+<li>
+osg::Geometry 的一些方法用于图元
+
+<ul>
+<li>
+addPrimitiveSet(), removePrimitiveSet(), getPrimitiveSet(), getNumPrimitiveSets()
+
+</ul>
+<li>
+osg::DrawArrays, osg::DrawElmentsUInt
+<pre c++>
+geom-&gt;addPrimitiveSet(new osg::DrawArrays(mode, first, count));
+</pre>
+
+</ul>
+<li>
+osg::DrawElements* 类可以用 push_back() 这样的方法添加索引
+
+<li>
+osgUtil::SmoothingVisitor 可以为一个几何体生成法线数组
+
+<li>
+多边形技术, 一些预处理方法, 如多边形减少, tessellation
+
+<ul>
+<li>
+osgUtil::Simplifier
+
+<li>
+osgUtil::SmoothingVisitor
+
+<li>
+osgUtil::TangentSpaceGenerator 生成切线, 副法线, 法线
+
+<li>
+osgUtil::Tessellator: 将凹多边形改成凸多边形
+
+<ul>
+<li>
+setWindingType() 可以设置不同的缠绕类型
+
+</ul>
+<li>
+osgUtil::TriStripVisitor 转换成三角形带
+
+<li>
+这些技术部分可以接受节点作为参数
+
+</ul>
+<li>
+OSG 有一系列的 functor 用于从drawables内重读几何属性和图元, 利用这些数据可以进行拓扑mesh建模及类似功能. 拓扑这里表示面, 边, 以及它们之间的关系
+
+<li>
+osg::Drawable 支持四个类型的仿函数
+
+<ul>
+<li>
+osg::Drawable::AttributeFunctor: 读取定点属性作为数组指针, 其有一系列虚方法用于该不同数据类型的顶点属性, 你可以继承这些类, 实现自己的方法
+<pre c++>
+virtual void apply( osg::Drawable::AttributeType type,
+                    unsigned int size, osg::Vec3* ptr )
+{
+    // Read 3-elements vectors with the ptr and size parameters.
+    // The first parameter determines the attribute type,
+    // for example, osg::Drawable::VERTICES.
+    …
+}
+</pre>
+
+<li>
+osg::Drawable::ConstAttributeFunctor 是一个只读版本, 参数为常量数组指针
+
+<li>
+osg::PrimitiveFunctor  模拟 OpenGL 绘制流程, 其有两个重要的派生类 osg::TemplatePrimitiveFunctor&lt;&gt; 和 osg::TriangleFunctor&lt;&gt;
+
+<li>
+osg::PrimitiveIndexFunctor, 派生类 osg::TriangleIndexFunctor&lt;&gt;
+
+</ul>
+<li>
+osg::Drawable 派生类, 像 osg::ShapeDrawable 以及 osg::Geometry, 其有 accept() 方法, 可用于接受不同的 functor.
+
+<li>
+osg::TriangleFunctor&lt;&gt; 仿函数类可以收集在三角形面上的信息, 其会转换 osg::Drawable 对象的图元集为三角形集合, 模板参数必须实现 operator()
+
+<li>
+主要可以用来事先收集几何数据, 不仅收集三角形, 还可收集点, 线条, 四边形.
+<pre c++>
+void operator()( const osg::Vec3&amp;, bool );
+void operator()( const osg::Vec3&amp;, const osg::Vec3&amp;, bool );
+void operator()( const osg::Vec3&amp;, const osg::Vec3&amp;,
+                 const osg::Vec3&amp;, bool );
+void operator()( const osg::Vec3&amp;, const osg::Vec3&amp;,
+                 const osg::Vec3&amp;, const osg::Vec3&amp;, bool );
+</pre>
+
+<ul>
+<li>
+分析一个几何体的拓扑性
+
+</ul>
+<li>
+osg::Drawable 纯类有两个非常重要的虚方法
+
+<ul>
+<li>
+computeBound() 计算围绕盒, 用于场景剔除的依据.
+
+<li>
+drawImplementation() 常量方法使用 OSG 和 OpenGL 调用进行实际上的绘制
+
+<ul>
+<li>
+osg::RenderInfo&amp; 参数包含 OSG 渲染后端的渲染信息
+
+<li>
+draw() 方法调用该方法, 该方法内的绘制会构成显示列表, 因此该函数的绘制只会调用一次.
+
+</ul>
+<li>
+可以禁止显示列表, 使用如下方法
+<pre c++>
+drawable-&gt;setUseDisplayList(false);
+</pre>
+
+<ul>
+<li>
+当有几何变形动作或动画时, 该语句有用, 主要用于绘制顶点数据会变化的物体.
+
+<li>
+不要再该函数释放 OpenGL 渲染上下文
+
+</ul>
+</ul>
+<li>
+自定义的 drawable 类, 你需要重实现该两个方法
+
+<li>
+osg::Drawable 派生类需要实现拷贝构造函数
+
+<li>
+META_Object 宏. 之后你可以用如下方法获取两个字符串值
+<pre c++>
+const char* lib = obj-&gt;libraryName();
+const char* name = obj-&gt;className();
+</pre>
+
+</ul>
+
+<div id="5 Managing Scene Graph"><h1 id="5 Managing Scene Graph" class="header"><a href="#5 Managing Scene Graph">5 Managing Scene Graph</a></h1></div>
+<ul>
+<li>
+osg::Group 节点
+
+<ul>
+<li>
+addChild(), insertChild() 添加子节点
+
+<li>
+removeChild(), removeChildren() 移除一个或多个节点
+
+<li>
+getChild(), 获取其子节点
+
+<li>
+getNumChildren(), 子节点的数量
+
+</ul>
+<li>
+一个节点允许有多个parent 节点.
+
+<ul>
+<li>
+getParent() 根据索引获取其父节点
+
+<li>
+getNumParents()
+
+<li>
+getParentalNodePaths() 得到根节点到当前节点的路径, 结果为 osg::NodePath 变量的列表, 其为 std::vector 对象
+<pre c++>
+osg::NodePath&amp; nodePath = child3-&gt;getParentalNodePaths()[0];
+for ( unsigned int i=0; i&lt;nodePath.size(); ++i )
+{
+    osg::Node* node = nodePath[i];
+    // Do something...
+}
+</pre>
+
+</ul>
+<li>
+osg::Node 的 asGroup() 和 asGeode() 节省 dynamic_cast&lt;&gt; 这样的时间
+
+<li>
+不同类型的遍历
+
+<ul>
+<li>
+事件遍历: 鼠标和键盘事件
+
+<li>
+更新遍历: 更新场景图, 执行回调
+
+<li>
+剔除遍历: 输出内部的渲染列表
+
+<li>
+绘制遍历: 绘制, 和场景图无关
+
+</ul>
+<li>
+osg::Transform 由 osg::Group 派生而来, 但不能直接实例化
+
+<li>
+相对坐标系, 绝对坐标系(osg::Transform::ABSOLUTE_RF - 相当于使用 glLoadMatrix, osg::Transform::RELATIVE_RF)
+
+<li>
+osg::Matrix 常用方法
+
+<ul>
+<li>
+postMult(), operator*() 执行后置乘法 post-multiplications, preMult() 前置乘法 pre-multiplications.
+
+<li>
+makeTranslate(), makeRotate(), makeScale(): 重置当前矩阵, 创建一个4x4的平移,旋转和缩放矩阵.其有静态版本 translate(), rotate(), scale()
+
+<li>
+invert() 方法对矩阵求逆, 静态函数版本 inverse()
+
+</ul>
+<li>
+OSG使用行主序的矩阵
+
+<li>
+osg::Matrixf 浮点版本
+
+<li>
+osg::MatrixTransform 派生自 osg::Transform
+
+<ul>
+<li>
+setMatrix(), getMatrix()
+
+</ul>
+<li>
+osg 内一个节点可以有多个父节点
+
+<li>
+osg::PositionAttitudeTransform 类, 类似 glTranslate(), glScale(), glRotate() 的集成
+
+<ul>
+<li>
+setPosition(), setScale(), setRotate(), setAttitude(), 最后一个使用四元数参数 osg::Quat, osg::Quat 还可以用欧拉角的三个参数构造.
+
+</ul>
+<li>
+osg::Switch
+
+<ul>
+<li>
+addChild() 有一个 bool 参数表示是否可见
+
+<li>
+setValue() 设置某个子节点是否可见
+
+<li>
+setNewChildDefaultValue() 设置新子节点的默认可见性
+
+<li>
+traverse() 函数重写可实现某种程度的动画, 各种回调时会调用该方法
+
+</ul>
+<li>
+osg::LOD
+
+<ul>
+<li>
+addChild 设置范围
+
+<li>
+setRange 设置范围
+
+</ul>
+<li>
+使用 osgUtil::Simplifier 简化模型
+
+<li>
+osg::ProxyNode, osg::PagedLOD
+
+<ul>
+<li>
+osg::ProxyNode, 尽可能快地启动程序, 使用 setFileName() 代替 addChild(), 延迟加载
+
+<li>
+osg::PagedLOD 从 osg::LOD 派生
+
+</ul>
+<li>
+osg 的内部数据加载管理器 osg::DatabasePager, 其在多个后台线程内工作, 加载静态数据库(由proxy和分页节点组织的数据文件)和动态数据库数据(运行时生成和添加的分页节点). 其会自动回收分页节点
+
+<li>
+osg::PagedLOD 有方法 setFileName(), setRange(), addChild()
+
+<li>
+自定义个节点, 可重写虚函数 traverse(). 输入参数 osg::NodeVisitor&amp;, 可表示是哪个类型的 traversals(更新, 事件, 回调), 注意重写该方法有风险, 其会影响遍历进程.
+
+<li>
+META_Node 宏
+
+<li>
+从源码中学习 osgUtil::CullVisitor
+<pre c++>
+osgUtil::CullVisitor* cv = dynamic_cast&lt;osgUtil::CullVisitor*&gt;(&amp;nv);
+if ( cv )
+{ 
+    // Do something
+}
+</pre>
+
+<li>
+使用 osg::computeLocalToWorld() 计算绝对坐标系的位置
+<pre c++>
+osg::Vec3 posInWorld = node-&gt;getBound().center() *
+            osg::computeLocalToWorld(node-&gt;getParentalNodePaths()[0]);
+</pre>
+
+<li>
+osg::NodeVisitor
+
+<ul>
+<li>
+apply() 方法
+<pre c++>
+virtual void apply( osg::Node&amp; );
+virtual void apply( osg::Geode&amp; );
+virtual void apply( osg::Group&amp; );
+virtual void apply( osg::Transform&amp; );
+</pre>
+
+<li>
+调用 traverse() 方法用于继续遍历
+
+</ul>
+</ul>
+
+<div id="6 Creating Realistic Rendering Effects"><h1 id="6 Creating Realistic Rendering Effects" class="header"><a href="#6 Creating Realistic Rendering Effects">6 Creating Realistic Rendering Effects</a></h1></div>
+<ul>
+<li>
+osg::StateAttribute 类为虚基类. 派生类实现不同的渲染属性, 如光照, 材质, 雾
+
+<li>
+osg::StateSet 将属性和模式分为两组, 纹理和非纹理
+
+<ul>
+<li>
+添加非纹理属性和模式的方法
+
+<ul>
+<li>
+setAttribute() 添加一个 osg::StateAttribute 派生类对象
+
+<li>
+setMode() 设置模式, 使用值 osg::StateAttribute::ON, osg::StateAttribute::OFF
+
+<li>
+setAttributeAndModes()
+
+</ul>
+<li>
+纹理属性
+
+<ul>
+<li>
+setTextureAttribute(), setTextureMode(), setTextureAttributeAndModes()
+
+</ul>
+</ul>
+<li>
+多边形模式即填充, 线条, 点没有 glEnable/glDisable, 所以没有模式开关
+
+<li>
+三种状态继承模式: osg::StateAttribute::INHERIT, osg::StateAttribute::OVERRIDE, osg::StateAttribute::PROTECTED
+
+<ul>
+<li>
+OVERRIDE 强制让所有的子节点继承其模式
+
+</ul>
+<li>
+相应的 Type ID 可以从state set返回具体的属性
+<pre c++>
+osg::PolygonMode* pm = dynamic_cast&lt;osg::PolygonMode*&gt;(
+    stateset-&gt;getAttribute(osg::StateAttribute::POLYGONMODE) );
+</pre>
+
+<li>
+查询某个模式是否开启
+<pre c++>
+osg::StateAttribute::GLModeValue value =
+    stateset-&gt;getMode( GL_LIGHTING );
+</pre>
+
+<li>
+几何体可以设置每个顶点的雾坐标, setFogCoordArray(), setFogCoordBinding(), 而后指定雾坐标来源
+<pre c++>
+fog-&gt;setFogCoordinateSource(GL_FOG_COORD);
+</pre>
+
+<ul>
+<li>
+还可以使用片段深度进行雾颜色的计算, 参数为 GL_FRAGMENT_DEPTH
+
+</ul>
+<li>
+osg::Light
+
+<ul>
+<li>
+setLightNum(), getLightNum(), set/getAmbient(), set/getDiffuse()
+
+</ul>
+<li>
+osg::LightSource 
+<pre c++>
+osg::ref_ptr&lt;osg::Light&gt; light = new osg::Light;
+light-&gt;setLightNum( 1 );  // Specify light number 1
+...
+osg::ref_ptr&lt;osg::LightSource&gt; lightSource = new osg::LightSource;
+lightSource-&gt;setLight( light.get() );  // Add to a light source node
+...
+// Add the source node to the scene root and enable rendering mode GL_LIGHT1 to fit the light's set!
+root-&gt;addChild( lightSource.get() );
+root-&gt;getOrCreateStateSet()-&gt;setMode( GL_LIGHT1, osg::StateAttribute::ON );
+</pre>
+
+<li>
+osg::LightSource::setStateSetModes() 来设置允许光照
+<pre c++>
+root-&gt;addChild( lightSource.get() );
+lightSource-&gt;setStateSetModes( root-&gt;getOrCreateStateSet(), osg::StateAttribute::ON );
+</pre>
+
+<li>
+osg::LightSource 的子节点看成是光源的物理形状
+
+<li>
+光源设置参考坐标系
+<pre c++>
+lightSource-&gt;setReferenceFrame( osg::LightSource::ABSOLUTE_RF );
+</pre>
+
+<li>
+osg 通过第四个坐标判断是方向性光源还是位置光源
+
+<li>
+osg::LightSource 可以影响不是它子节点的节点, 这是因为 positional states 的概念, 即使用当前定位它们的模型视图矩阵的渲染状态
+
+<ul>
+<li>
+有 glLight, glClipPlane, glTexGen --- 都可以影响不是它子节点的节点
+
+</ul>
+<li>
+osg::Image: 存储图像数据
+
+<ul>
+<li>
+osgDB::readImageFile()
+
+<li>
+s(), t(), r()
+
+<li>
+data() 返回 unsigned char* 指针
+
+<li>
+getPixelFormat(), getDataType()
+
+<li>
+分配一个图像 allocateImage()
+<pre c++>
+osg::ref_ptr&lt;osg::Image&gt; image = new osg::Image;
+image-&gt;allocateImage( s, t, r, GL_RGB, GL_UNSIGNED_BYTE );
+unsigned char* ptr = image-&gt;data();
+...  // Operate on the ptr variable directly!
+</pre>
+
+</ul>
+<li>
+纹理设置其使用的图像.
+
+<ul>
+<li>
+setImage
+<pre c++>
+osg::ref_ptr&lt;osg::Image&gt; image = osgDB::readImageFile( "picture.bmp" );
+osg::ref_ptr&lt;osg::Texture2D&gt; texture = new osg::Texture2D;
+texture-&gt;setImage( image.get() );
+</pre>
+
+<li>
+构造函数
+<pre c++>
+osg::ref_ptr&lt;osg::Image&gt; image = osgDB::readImageFile( "picture.bmp" );
+osg::ref_ptr&lt;osg::Texture2D&gt; texture = new osg::Texture2D( image.get() );
+</pre>
+
+</ul>
+<li>
+osg::Texture 可以通过 getImage() 得到图像
+
+<ul>
+<li>
+setUnRefImageDataAfterApply() --- 一旦图像已经上传到显存且不共享, 则可以自动释放资源, 此时 getImage() 将得到无效的指针
+
+</ul>
+<li>
+setResizeNonPowerOfTwoHint() 设置是否重置图像大小为2的幂次方
+
+<li>
+osg::TextureRectangle 不要求2的幂次方图像大小, 但不支持 mipmap
+
+<li>
+osg::Texture
+
+<ul>
+<li>
+setWrap
+
+<li>
+setFilter
+
+</ul>
+<li>
+渲染次序对混合有很大影响
+
+<li>
+osg::StateSet 的 setRenderingHint() 方法控制节点和 drawable 的渲染次序, 先绘制不透明物体, 而后由远到近绘制透明物体
+<pre c++>
+// 表示该节点不透明
+node-&gt;getOrCreateStateSet()-&gt;setRenderingHint(osg::StateSet::OPAQUE_BIN );
+// 表示该节点透明
+node-&gt;getOrCreateStateSet()-&gt;setRenderingHint(osg::StateSet::TRANSPARENT_BIN );
+</pre>
+
+<ul>
+<li>
+这样才能保证正确的渲染次序
+
+<li>
+注意该方法的资源消耗
+
+</ul>
+<li>
+osg::Shader
+
+<ul>
+<li>
+setShaderSource(), loadShaderSourceFromFile()
+
+<li>
+osg::readShaderFile() 后缀 .vert, .frag, geom
+
+</ul>
+<li>
+osg::Program
+
+<li>
+osg::Uniform
+
+<li>
+增加额外的属性数组传递给顶点着色器, 使用 osg::Program 的 addBindAttribLocation() 方法, 还有几何体的 setVertexAttribArray() 方法
+
+<li>
+几何着色器用于 OpenGL 3.2 core 版本之上, 否则着色器应当声明 GL_EXT_geometry_shader4
+
+<ul>
+<li>
+GL_GEOMETRY_VERTICES_OUT_EXT
+
+<li>
+GL_GEOMETRY_INPUT_TYPE_EXT
+
+<li>
+GL_GEOMETRY_OUTPUT_TYPE_EXT
+
+<li>
+osg::Program 使用 setParameter() 方法设置这些参数的值
+
+</ul>
+<li>
+osgCompute, osgCUDA 计算着色器, osgNV, osgOcean, osgPPU
+
+</ul>
+
+<div id="7 Viewing the World"><h1 id="7 Viewing the World" class="header"><a href="#7 Viewing the World">7 Viewing the World</a></h1></div>
+<ul>
+<li>
+本章主要是关于视图的内容
+
+<li>
+模型矩阵用 osg::MatrixTransform, osg::PositionAttitudeTransform, 视图矩阵使用 osg::Camera
+
+<li>
+osg::Camera 主要功能有四个类别
+
+<ul>
+<li>
+处理视图矩阵, 投影矩阵, 视口
+
+<ul>
+<li>
+setViewMatrix(), setViewMatrixAsLookAt()
+
+<li>
+setProjectionMatrix()
+
+<li>
+setProjectionMatrixAsFrustum(), setProjectionMatrixAsOrtho(), setProjectionMatrixAsOrtho2D(), setProjectionMatrixAsPerspective()
+
+<li>
+setViewport()
+
+<li>
+可使用相应的 get* 函数, 如 getViewMatrixAsLookAt()
+
+</ul>
+<li>
+封装了 OpenGL 函数, 例如 glClear(), glClearColor(), glClearDepth()
+
+<li>
+相机绑定了清空缓存的相关内容.
+
+<ul>
+<li>
+setClearMask(), 默认为 GL_COLOR_BUFFER_BIT|GL_DEPTH_BUFFER_BIT
+
+<li>
+setClearColor(), 还有相应的 depth, stencil, accum 方法, 以及相应的 get* 方法
+
+</ul>
+<li>
+管理该相机相关的 OpenGL 图形上下文, 也就是窗口
+
+<li>
+一个相机可以挂接一个纹理代表内部的buffer组件, 如 color buffer, depth buffer 等.
+
+</ul>
+<li>
+osgViewer::Viewer 创建和管理一个主相机, 使用 getCamera() 方法得到
+
+<ul>
+<li>
+其会自动添加根节点作为它的子节点.
+
+<li>
+其他的相机, 则间接或直接地添加至根节点, 将会共享(不需自己创建)关联主相机的图形上下文, 在相同的渲染窗口内并绘制它们自己的子场景.
+
+</ul>
+<li>
+osg::Camera
+
+<ul>
+<li>
+setRenderOrder() --- 用于精确控制相机的渲染次序, 两个参数分别为次序枚举值和次序号, PRE_RENDER 和 POST_RENDER, 第二个则为同类型下的渲染顺序, 
+
+<li>
+setClearMask() --- 设置哪些需要清理
+
+</ul>
+<li>
+主相机的视图矩阵有viewer的内部 osgGA::CameraManipulator 对象控制, 用户输入通过一系列 osgGA::GUIEventHandler 来处理
+
+<li>
+模拟循环有三种类型的任务执行: 指定主相机的 manipulator, 设置关联的图形上下文, 循环中渲染帧
+
+<ul>
+<li>
+setCameraManipulator(), 参数必须为 osgGA::CameraManipulator 的派生类
+
+<li>
+循环
+<pre c++>
+while ( !viewer.done() )
+{
+    viewer.frame();
+}
+</pre>
+
+<li>
+设置不与屏幕的刷新率同步
+<pre c++>
+viewer.setRunFrameScheme( osgViewer::Viewer::ON_DEMAND );
+</pre>
+
+<ul>
+<li>
+仅当场景图修改, 更新处理, 或用户输入的时候执行 frame()
+
+<li>
+默认为 CONTINUOUS
+
+</ul>
+<li>
+osgViewer::Viewer::setRunMaxFrameRate()
+
+<li>
+setRunMaxFrameRate 和 ON_DEMAND 只有在 viewer.run() 函数中才有效, 如果自己写的循环调用 viewer.frame() 则无效
+
+</ul>
+<li>
+每个相机一个线程处理数据
+
+<li>
+osgViewer 的 setDone(), setKeyEventSetsDone() 设置程序是否结束
+
+<li>
+OSG_WINDOW 环境变量可以控制 osgViewer 的默认显示
+
+<li>
+setupViewInWindow 还可以设置多屏幕环境, 第五个参数 0 表示默认屏幕
+
+<li>
+setUpViewOnSingleScreen() 在其他屏幕设置全屏窗口
+
+<li>
+osgViewer::CompositeViewer 支持多个视图和多个屏幕, 其有相同的方法 run(), frame(), done(), 还有管理视图 addView(), removeView(), getView(), 由 osgViewer::View 类管理
+
+<li>
+osgViewer::View 是 osgViewer::Viewer 的超类, 两者的主要区别在于 View 不能当作单个 Viewer 使用, 其没有 run() 或 frame() 方法
+<pre c++>
+osgViewer::CompositeViewer multiviewer;
+multiviewer.addView( view );
+</pre>
+
+<li>
+osgViewer::View 对象内有一个 osg::Camera 节点用于管理子场景及关联的窗口. 每个 View 可以有自己的 manipulator 和 event handler
+
+<ul>
+<li>
+所有的视图可以用同样的根节点
+<pre c++>
+view1-&gt;setSceneData( root.get() );
+view2-&gt;setSceneData( root.get() );
+view3-&gt;setSceneData( root.get() );
+</pre>
+
+<li>
+如果要设计相同场景的前面, 顶部视图或其它视图, 可以给每个视图的主相机添加一个视图或投影矩阵, 而后禁止 manipulator, 因为其会根据用户的数据事件重置你的矩阵配置
+<pre c++>
+view1-&gt;getCamera()-&gt;setViewMatrix( … );
+view1-&gt;getCamera()-&gt;setProjectionMatrix( … );
+view1-&gt;setCameraManipulator( NULL );  // Set the manipulator to null!
+// Avoid using default manipulator, too!
+view1-&gt;getCamera()-&gt;setAllowEventFocus( false );
+</pre>
+
+<ul>
+<li>
+setAllowEventFocus 用于设置相机是否可以接受用户输入事件
+
+</ul>
+</ul>
+<li>
+注 getBound() 方法有助于设置观察点合适的位置
+
+<li>
+还可以通过相机的 setViewport() 方法使用不同相机从不同角度观察相同的场景.
+
+<li>
+osg::DisplaySettings 单例模式
+<pre c++>
+osg::DisplaySettings* ds = osg::DisplaySettings::instance();
+</pre>
+
+<ul>
+<li>
+设置用于新创建渲染设备请求的属性.
+
+<li>
+setDoubleBuffer()
+
+<li>
+setDepthBuffer()
+
+<li>
+setMinimumNumAlphaBits()
+
+<li>
+setNumMultiSamples()
+
+</ul>
+<li>
+多重采样在 WGL 中有 WGL_SAMPLE_BUFFERS_ARB 和 WGL_SAMPLES_ARB
+
+<li>
+osg::GraphicsContext 及其派生类 osgViewer::GraphicsWindowWin32, 其管理渲染窗口的配置和管理
+
+<li>
+osg::DisplaySettings 保存显示属性的默认值
+
+<li>
+3D 渲染
+
+<li>
+下面关于渲染至纹理的内容.
+
+<li>
+欲实现 texture baking, 有三步要做:
+
+<ul>
+<li>
+创建要渲染的纹理
+
+<li>
+渲染场景至纹理
+
+<li>
+如常使用该纹理
+
+<li>
+osg::Camera 类的 attach() 方法, 一个参数是纹理, 一个是 buffer
+<pre c++>
+camera-&gt;attach( osg::Camera::COLOR_BUFFER, texture.get() );
+</pre>
+
+<ul>
+<li>
+其他 buffer 有 DEPTH_BUFFER, STENCIL_BUFFER, COLOR_BUFFER0 到 COLOR_BUFFER15
+
+<li>
+而后设置相机合适的视图矩阵, 投影矩阵, 视口
+
+</ul>
+</ul>
+<li>
+glCopyTexSubImage() 可以直接将帧缓存的内容保存至纹理中
+
+<li>
+osg::Camera 的 setRenderTargetImplementation() 方法可以选择三种实现, 直接从帧缓存复制, pixel buffer, 或 FBO
+<pre c++>
+camera-&gt;setRenderTargetImplementation( osg::Camera::FRAME_BUFFER );
+</pre>
+
+<ul>
+<li>
+使用 glCopyTexSubImage() 方法将渲染结果绘至挂接的纹理
+
+<li>
+其他方法为 PIXEL_BUFFER, FRAME_BUFFER_OBJECT
+
+</ul>
+<li>
+相机的内容还可以保存至 osg::Image
+<pre c++>
+osg::ref_ptr&lt;osg::Image&gt; image = new osg::Image;
+image-&gt;allocateImage( width, height, 1, GL_RGBA, GL_UNSIGNED_BYTE );
+camera-&gt;attach( osg::Camera::COLOR_BUFFER, image.get() );
+… 
+// After running for a while
+osgDB::writeImageFile( *image, "saved_image.bmp" );
+</pre>
+
+</ul>
+
+<div id="8 Animating Scene Objects"><h1 id="8 Animating Scene Objects" class="header"><a href="#8 Animating Scene Objects">8 Animating Scene Objects</a></h1></div>
+<ul>
+<li>
+写 while viewer done 循环, 并在其内制作后期动画的一些动作, 容易与单独的 cull 和 draw 线程产生访问冲突
+
+<li>
+osg::NodeCallback 是更新, 事件, 剔除回调的一个重要实现, 其仅能和节点关联起来. 对于 drawable, 我们有 osg::Drawable::UpdateCallback, osg::Drawable::EventCallback, osg::Drawable::CullCallback
+
+<li>
+setUpdateCallback(), addUpdateCallback()
+
+<li>
+osg::Drawable 回调需要重写的函数
+
+<ul>
+<li>
+osg::Drawable::UpdateCallback 要重写的虚函数为 update()
+
+<li>
+osg::Drawable::EventCallback 要重写的虚函数为 event()
+
+<li>
+osg::Drawable::CullCallback 要重写的虚函数为 cull()
+
+</ul>
+<li>
+另有 osg::StateAttribute::Callback 可用于 State attribute 的更新和事件回调
+
+<li>
+osg::Uniform::Callback 用于 Uniform 的更新回调, 事件回调
+
+<li>
+osg::Camera::DrawCallback 用于相机的绘制前和绘制后回调(osg::Camera::setPreDrawCallback(), osg::Camera::setPostDrawCallback())
+
+<li>
+traverse() 方法用于两个目的: 一个是之前 osg::Switch 的 traverse() 方法用于遍历时自身的执行代码, 而 osg::NodeVisitor 的 traverse() 方法则用于继续遍历. 虽然两者有不同的参数, 但执行的是相同的处理管线. node 的 traverse() 会调用 visitor 的 apply() 方法, 而该方法会继续调用 node 的 traverse() 方法, 以便进行整个场景的遍历.
+
+<li>
+对于回调类的 operator() 方法内的 traverse(), 其仅仅调用 visitor 的 traverse() 方法进行遍历
+
+<li>
+osg::Object::setDataVariance(), DYNAMIC 在每次渲染之前, 确保对象在下一帧的更新和剔除工作之前已经完成绘制工作.
+<pre c++>
+node-&gt;setDataVariance( osg::Object::DYNAMIC );
+</pre>
+
+<li>
+如果在更新中改变了一个几何体的大小和形状, 记得更新其显示列表与围绕盒
+<pre c++>
+	quad-&gt;dirtyDisplayList();
+	quad-&gt;dirtyBound();
+</pre>
+
+<ul>
+<li>
+dirtyDisplayList() 调用该方法才会更新显示列表, 绘制物体的新形状, 前提是该 drawable 支持显示列表, setUseDisplayList() 该方法用来设置是否支持显示列表
+
+<li>
+setUseVertexBufferObjects() 设置 drawable 使用 VBO, 注意要设置 setUseDisplayList() 为假, 此时使用数组的 dirty() 方法来更新
+<pre c++>
+osg::Vec3Array* vertices = …;
+…    // Dynamically modify the vertex array data
+vertices-&gt;dirty();
+</pre>
+
+<li>
+对于会变化的几何数据, 用 VBO 较好
+
+</ul>
+<li>
+ease motions/ease functions, 用于两点之间的插值, osgAnimation 库定义了内置的一些 ease motion
+
+<ul>
+<li>
+LinearMotion, In/Out/InOut*Motion: Quad, Cubic, Quart, Bounce, Elastic, Sin, Back, Circ, Expo
+
+<li>
+创建一个线性插值运动队想
+<pre c++>
+// Start value is 0.0, and duration time is 1.0.
+osg::ref_ptr&lt;osgAnimation::LinearMotion&gt; motion =
+    new osgAnimation::LinearMotion(0.0f, 1.0f);
+</pre>
+
+</ul>
+<li>
+路径动画, 设置关键点的位置, 旋转, 缩放.
+
+<ul>
+<li>
+osg::AnimationPath, osg::AnimationPath::ControlPoint
+<pre c++>
+osg::ref_ptr&lt;osg::AnimationPath&gt; path = new osg::AnimationPath;
+path-&gt;insert(t1, osg::AnimationPath::ControlPoint(pos1,rot1,scale1));
+path-&gt;insert(t2, …);
+</pre>
+
+<ul>
+<li>
+setLoopMode()
+
+</ul>
+<li>
+将 osg::AnimationPath 传递给内置的 osg::AnimationPathCallback 用于动画
+
+</ul>
+<li>
+osg 加上后缀 0,0,90.rot 表示围绕z轴旋转90度
+
+<li>
+注意 osg::AnimationPathCallback 仅能影响到 osg::MatrixTransform 和 osg::PositionAttitudeTransform 节点, 其会在更新遍历中更新变换矩阵或位置与旋转
+<pre c++>
+osg::ref_ptr&lt;osg::AnimationPathCallback&gt; apcb = new osg::AnimationPathCallback;
+apcb-&gt;setAnimationPath( createAnimationPath(50.0f, 6.0f) );
+root-&gt;setUpdateCallback( apcb.get() );
+</pre>
+
+<li>
+osg::AnimationPathCallback 类提供 reset(), setPause(), setTimeMultiplier(), setTimeOffset() 方法, 实现停止, 重置, 快进
+<pre c++>
+// 重置
+apcb-&gt;setPause( false );
+apcb-&gt;reset();
+// 时间和快进
+apcb-&gt;setTimeOffset( 4.0f );
+apcb-&gt;setTimeMultiplier( 2.0f );
+</pre>
+
+<li>
+使用 ease motion 改善动画质量.
+<pre c++>
+osg::ref_ptr&lt;osgAnimation::LinearMotion&gt; motion =
+    new osgAnimation::LinearMotion(0.0, 10.0);
+…
+motion-&gt;update( dt );
+float value = motion-&gt;getValue();
+</pre>
+
+<li>
+osg::StateAttributeCallback 进行状态属性的更新变化
+
+<li>
+osg::Material 可以用来设置几何体的颜色属性, 而不使用其自身的颜色数组
+
+<li>
+osg::createTexturedQuadGeometry() 创建带纹理坐标的四边形几何体
+
+<li>
+osg::Uniform::setUpdateCallback() 以及 osg::Uniform::Callback 用于进行着色器的动画
+
+<li>
+osg::ImageStream 支持图像流, 在数据缓存中管理子图像集, 其可以从视频文件或网络读取数据
+
+<li>
+osg::ImageSequence 类, 其存储多个Image对象并连续渲染它们, 有以下方法:
+
+<ul>
+<li>
+addImage(), setImage(), getImage(), getNumImages()
+
+<li>
+addImageFile(), setImageFile()
+
+<li>
+setLength() --- 图像序列的总耗时, 单位为秒.
+
+<li>
+setTimeMultiplier() --- 设置快进
+
+<li>
+play(), pause(), rewind(), seek()
+
+</ul>
+<li>
+osgAnimation::TemplateKeyframe&lt;&gt; 类用于定义 osgAnimation 库内一个通用的关键帧, osgAnimation::TemplateKeyframeContainer&lt;&gt; 类管理一个相同数据类型关键帧的列表, 其从 std::vector 派生而来
+<pre c++>
+osgAnimation::TemplateKeyframe&lt;osg::Vec3&gt; kf(0.0, osg::Vec3(...));
+osgAnimation::TemplateKeyframeContainer&lt;osg::Vec3&gt;* container = new osgAnimation::TemplateKeyframeContainer&lt;osg::Vec3&gt;;
+container-&gt;push_back(keyframe);
+</pre>
+
+<ul>
+<li>
+上面的两个模板类可用 osgAnimation::Vec3KeyFrame 和 osgAnimation::Vec3KeyFrameContainer 代替
+<pre c++>
+osgAnimation::Vec3KeyframeContainer* container =
+    new osgAnimation::Vec3KeyframeContainer;
+container-&gt;push_back( osgAnimation::Vec3Keyframe(0.0, osg::Vec3(…)) );
+</pre>
+
+</ul>
+<li>
+osgAnimation::TemplateKeyframeContainer&lt;&gt; 基类有 osg::Referenced.
+
+<li>
+osgAnimation::TemplateSampler&lt;&gt; 定义了底层的采样器(sampler)模板, 其包含了内部的插值器(interpolator)对象以及一个使用相同模板参数的 osgAnimation::TemplateKeyframeContainer&lt;&gt;
+
+<ul>
+<li>
+例如 osgAnimation::Vec3LinearSampler 定义了一个包含 osg::Vec3 数据的采样器, 一个线性插值器. 其公有方法 getOrCreateKeyframeContainer() 返回一个有效的 3D 向量关键帧容器对象.
+
+<li>
+下面第一个为Sampler类, 第二个为关键帧类, 第三个为值的类型
+
+<li>
+FloatStepSampler FloatKeyframe float
+
+<li>
+DoubleLinearSampler DoubleKeyframe double
+
+<li>
+Vec2LinearSampler Vec2Keyframe osg::Vec2
+
+<li>
+Vec3LinearSampler Vec3Keyframe osg::Vec3
+
+<li>
+Vec4LinearSampler Vec4Keyframe osg::Vec4
+
+<li>
+QuatSphericalLinearSampler QuatKeyframe osg::Quat
+
+<li>
+MatrixLinearSampler MatrixKeyframe osg::Matrixf
+<pre c++>
+// Again, assume it is a 3D vector sampler
+sampler-&gt;getOrCreateKeyframeContainer()-&gt;push_back(
+    osgAnimation::Vec3Keyframe(0.0, osg::Vec3(…)) );  // Frame at 0s
+sampler-&gt;getOrCreateKeyframeContainer()-&gt;push_back(
+    osgAnimation::Vec3Keyframe(2.0, osg::Vec3(…)) );  // Frame at 2s
+</pre>
+
+</ul>
+<li>
+osgAnimation::TemplateChannel&lt;&gt; 类
+
+<ul>
+<li>
+接受一个 sampler 类作为模板参数, 表示该 sampler 和一个"目标"之间的关联.
+
+<li>
+setName() 设置该 Channel 的名称
+
+<li>
+setTargetName() 通过该名称查找目标
+
+<li>
+目标对象通常为 osgAnimation 内置的更新回调, 这些回调通过 setUpdateCallback() 方法挂接至具体节点. osgAnimation::UpdateMatrixTransform 则是典型的一个回调. 在每一帧中, 该类更新其挂接的 osg::MatrixTransform 节点并改变其变换矩阵, 变换依据是channel的结果.
+
+<li>
+拥有一个 3D 向量采样器的channel可以用 osgAnimation::Vec3LinearChannel 类代替, 拥有spherical liear quaternion 采样器的可以用 osgAnimation::QuatSphereLinearChannel 代替
+
+</ul>
+<li>
+osgAnimation::Animation 类包含一系列的动画 channel, 表示它们在同一层. 通过方法 addChannel() 添加
+
+<li>
+osgAnimation::BasicAnimationManager, 通过方法 registerAnimation(), unregisterAnimation(), getAnimationList() 方法管理 osgAnimation::Animation, 通过 playAnimation(), stopAnimation(), isPlaying() 方法控制播放, 其为 update callback, 但应该做用于根节点上. 以便给予整个场景图上的动画完整控制
+
+<li>
+例子演示了使用不同的频道控制不同的动画, 例如一个移动, 一个旋转
+
+<li>
+osgAnimation::Bone 和 osgAnimation::Skeleton 用于构造一个完整的骨骼. osgAnimation::UpdateBone 类定义如何从动画频道(channel)中更新骨骼
+
+<li>
+Collada DAE 学习创建骨骼动画, FBX 格式
+
+<li>
+建模软件: 3dsmax, Maya, Blender
+
+<li>
+osgCal2, Cal3D 项目
+<pre>
+http://cal3d.sourceforge.net/
+http://osgcal.sourceforge.net/
+</pre>
+
+</ul>
+
+<div id="9 Interacting with Outside Elements"><h1 id="9 Interacting with Outside Elements" class="header"><a href="#9 Interacting with Outside Elements">9 Interacting with Outside Elements</a></h1></div>
+<ul>
+<li>
+osgGA::GUIEventHandler --- 处理 GUI 事件
+
+<ul>
+<li>
+viewer 的 addEventHandler()/removeEventHandler() 添加/删除一个事件处理器, 在事件遍历中处理.
+
+<li>
+重写 handle() 方法, 两个参数 osgGA::GUIEventAdapter 参数(用于接收事件), osgGA::GUIActionAdapter 用于反馈
+<pre c++>
+bool handle( const osgGA::GUIEventAdapter&amp; ea,
+             osgGA::GUIActionAdapter&amp; aa )
+{
+    …  // concrete operations
+}
+</pre>
+
+<li>
+osgGA::GUIActionAdapter 可以请求 GUI 采取某些行动用于响应输入的事件, 大多数时候, 其可被看成 viewer 对象, osgViewer::Viewer 派生自 osgGA::GUIActionAdapter.
+
+<li>
+一句话, 界面Action适配器大多数情况下可以转换为 osgViewer::Viewer.
+<pre c++>
+osgViewer::Viewer* viewer = dynamic_cast&lt;osgViewer::Viewer*&gt;(&amp;aa);
+</pre>
+
+<li>
+osgGA::GUIEventAdapter 管理OSG支持的所有类型的事件, 包括用于他们的 setting 和 getting 方法. 
+
+<li>
+getEventType() 返回一个 event adapter 内存储的当前 GUI 事件. 
+
+<ul>
+<li>
+PUSH/RELEASE/DOUBLECLICK: 鼠标的事件
+
+<ul>
+<li>
+getX(), getY() 得到当前鼠标的位置
+
+<li>
+getButton() 得到相应的按钮: LEFT_MOUSE_BUTTON, MIDDLE_MOUSE_BUTTON, RIGHT_MOUSE_BUTTON.
+
+</ul>
+<li>
+SCROLL: 鼠标滚动
+
+<ul>
+<li>
+getScrollingMotion(): 返回 SCROLL_UP, SCROLL_DOWN, SCROLL_LEFT, SCROLL_RIGHT
+
+</ul>
+<li>
+DRAG: 鼠标拖曳
+
+<ul>
+<li>
+getX(), getY() 得到当前鼠标的位置, getButtonMask() 得到当前鼠标按钮状态, 返回值类似于 getButton()
+
+</ul>
+<li>
+MOVE: 鼠标移动
+
+<ul>
+<li>
+getX(), getY() 得到当前鼠标的位置
+
+</ul>
+<li>
+KEYDOWN/KEYUP: 按键
+
+<ul>
+<li>
+getKey() 返回值是字母键的ascii值, 或者 Key_Symbol 枚举值, 例如 KEY_BackSpace
+
+</ul>
+<li>
+FRAME: 帧事件
+
+<li>
+USER: 用户定义的事件
+
+<ul>
+<li>
+getUserData() 得到用户数据指针, 用户数据对象需要从 osg::Referenced 基类派生而来
+
+</ul>
+</ul>
+<li>
+getModKeyMask() 可以得到当前的 modifier 按键, 其返回值为 MODKEY_CTRL, MODKEY_SHIFT, MODKEY_ALT 等等的或值.
+<pre c++>
+if ( ea.getModKeyMask() &amp; osgGA::GUIEventAdapter::MODKEY_CTRL )
+{
+   …  // Related operations
+}
+</pre>
+
+<li>
+还有对应的设置方法, 包括 setEventType(), setX(), setY() 等等, 不适合用于 handle() 实现. 常用于OSG底层的图形窗口系统, 用于将新的事件压入事件队列中.
+
+</ul>
+<li>
+osg::Camera 通过方法 setAllowEventFocus() 可以设置是否接收用户输入, 如禁止接收用户输入, 则需要设置相机的视图矩阵, 此时其不会自动生成视图矩阵, 可使用方法 setViewMatrixAsLookAt
+
+<li>
+osgGA::GUIEventHandler 的 handle() 方法返回 false 表没有处理完毕, 可以被后面的其他处理器和回调函数继续处理
+
+<li>
+osg 同样允许设置节点的事件回调, 在节点或 drawables 上, 调用 setEventCallback() 和 addEventCallback() 方法, 其接受一个 osg::NodeCallback 指针为参数.
+
+<ul>
+<li>
+osg::NodeCallback 的 operator() 内节点访问器参数可以转换为 osg::EventVisitor 指针
+
+<li>
+意思是节点或可渲染对象的回调也可以获取事件列表
+<pre c++>
+#include &lt;osgGA/EventVisitor&gt;
+…
+void operator()( osg::Node* node, osg::NodeVisitor* nv )
+{
+    std::list&lt; osg::ref_ptr&lt;osgGA::GUIEventAdapter&gt; &gt; events;
+    osgGA::EventVisitor* ev = dynamic_cast&lt;osgGA::EventVisitor*&gt;(nv);
+    if (ev) events = ev-&gt;getEvents();
+    …  // Handle events with the node
+}
+</pre>
+
+</ul>
+<li>
+osgGA::CameraManipulator 也有个虚函数名为 handle(), 其从 osgGA::GUIEventHandler 派生而来, 但 viewer 不适合用 addEventHandler() 方法添加
+
+<ul>
+<li>
+通过调用 getInverseMatrix() 方法计算该 manipulator 的逆变换矩阵, 在更新遍历中通过 setViewMatrix() 设置主相机的视图矩阵(讲述了通过操作器设置相机视图矩阵的时机)
+
+<li>
+所有的 OSG manipulator, 包括用户自定义的, 都应当重写该方法
+
+<li>
+setByMatrix() 和 getMatrix(), 可以重写, 用于设置或得到变换矩阵.
+
+<li>
+重写这些方法可以产生你的相机 manipulator
+
+</ul>
+<li>
+osgGA::EventQueue 管理事件队列类
+
+<ul>
+<li>
+addEvent() --- 任何时候调用该方法压入事件, 参数为 osgGA::GUIEventAdapter 指针(setEventType(), setButton() 方法)
+
+<li>
+userEvent() --- 用户定义的事件使用用户的数据指针作为参数, 无需创建一个新的事件队列对象
+
+<li>
+可以改动 viewer 的事件队列.
+<pre c++>
+viewer.getEventQueue()-&gt;userEvent(data);
+</pre>
+
+<ul>
+<li>
+USER 事件, 通过 getUserData() 方法处理, data 是 osg::Referenced 派生类对象
+
+<li>
+这里讲述了如何添加一个用户事件
+
+</ul>
+</ul>
+<li>
+FRAME 事件每一帧都会触发
+
+<li>
+可以在其他地方发送 user 事件, 除了事件处理器外,可以在更新和剔除遍历中, 即回调, 自定义的节点和drawable都可以作为事件发送者.
+
+<li>
+确定鼠标点击的地方是场景图的哪些部分. 使用 osgUtil 库提供的相交工具. 结果为相交集, 其内包含拾取的 drawable, 它的父节点路径, 相交点等等
+
+<li>
+osgUtil::IntersectionVisitor 类是一个实现, 从 osg::NodeVisitor 派生而来, 和物体的围绕盒进行判断, 在遍历中快速掠过没有相交的子场景树.
+
+<ul>
+<li>
+使用一个 osgUtil::Intersector 派生类对象作为参数构造该类.
+
+<li>
+这些 intersector 配置一些相交测试,包括线段, 平面, 多面体
+
+<li>
+一个 intersector 可以在四种类型的坐标系统中工作, 每个有不同的输入参数, 使用不同的变换矩阵转换至世界空间.
+
+<ul>
+<li>
+MODEL, VIEW, PROJECTION, WINDOW
+
+</ul>
+</ul>
+<li>
+osgUtil::LineSegmentIntersector
+
+<li>
+假设在一个事件处理器的 handle() 方法内处理一个相交测试. 可以根据 WINDOW 坐标系统可以得到鼠标的三维空间位置的光线.
+<pre c++>
+osg::ref_ptr&lt;osgUtil::LineSegmentIntersector&gt; intersector =
+    new osgUtil::LineSegmentIntersector(
+        osgUtil::Intersector::WINDOW, ea.getX(), ea.getY()
+    );
+osgUtil::IntersectionVisitor iv( intersector.get() );
+camera-&gt;accept( iv );
+</pre>
+
+<ul>
+<li>
+上面的代码演示了如何自己处理相交测试
+
+</ul>
+<li>
+intersector 的 containsIntersections() 方法可用于检查是否有相交的结果.
+
+<li>
+osgUtil::LineSegmentIntersector 的 getIntersections() 方法返回一个 Intersection 变量集合. 根据 viewer 由近到远去排序. 这些结果可以通过 getLocalIntersectPoint() 或 getWorldIntersectPoint() 得到相交点位置
+<pre c++>
+osgUtil::LineSegmentIntersector::Intersection&amp; result =
+    *( intersector-&gt;getIntersections().begin());
+osg::Vec3 point = result.getWorldIntersectPoint();  // in world space
+
+// 第一行还可以写成
+osgUtil::LineSegmentIntersector::Intersection&amp; result =
+    intersector-&gt;getIntersections().front();
+</pre>
+
+<ul>
+<li>
+setNodeMask --- 给节点加上标志, NodeVisitor 可以用 setTraversalMask 根据标志设置可以遍历的节点
+
+<li>
+Visitor 遍历时还可以设置自己的 mask
+
+</ul>
+<li>
+通过鼠标拖曳一个矩形框选择该框内的物体. 推荐使用 osgUtil::PolytopeIntersector
+
+<li>
+osg::Camera 通过 setGraphicsContext() 方法关联以一个 OpenGL 图形上下文
+
+<ul>
+<li>
+图形上下文可以是提供一个相关图形窗口 API 或某种 buffer 对象的窗口.
+
+<li>
+OpenGL pixel buffer, 存储了像素数据, 这些数据不会传输给帧缓存(frame buffer).
+
+</ul>
+<li>
+osg::GraphicsContext 类表示抽象的图形上下文, osgViewer::GraphicsWindow 表示抽象的图形窗口. 后者的 getEventQueue() 方法可以管理 GUI 事件. 对于其特定的平台派生类会添加新的事件至该事件队列
+
+<li>
+osg::GraphicsContext 类的 createGraphicsContext() 方法可以创建图形上下文, 使用 osg::GraphicsContext::Traits 指针作为参数
+
+<li>
+osg::GraphicsContext::Traits --- 设置具体图形上下文的属性. 其与 osg::DisplaySettings 类不同, 其管理新创建相机属性上下文的特征.
+
+<ul>
+<li>
+该类使用类成员变量表示属性
+
+<li>
+x, y, width, height, windowName, windowDecoration, red, green, blue, alpha, depth, stencil, doubleBuffer, samples, quadBufferStereo, inheritedWindowData(关联的窗口句柄)
+
+</ul>
+<li>
+创建自定义窗口的主要步骤:
+
+<ul>
+<li>
+配置渲染窗口的 traits
+
+<li>
+创建 graphics context, 将该 graphics context 关联至相机
+
+<li>
+设置该相机为 viewer 的主相机
+
+</ul>
+<li>
+一些技巧
+
+<ul>
+<li>
+将 osg::GraphicsContext::Traits 类的 inheritedWindowData 成员设置为窗口句柄, 窗口句柄的类型可以是 Win32 的 HWND, X11 的 Window, Cocoa 的 WindowRef, 而后 OSG 将会管理该 OpenGL 渲染上下文, 在继承的窗口上进行绘制调用, 在该窗口上进行整个场景的绘制
+
+<li>
+应当连续的执行 osgViewer::Viewer 类的 frame() 方法. 为了实现该目标, 我们可以使用单独的线程, 或一个 GUI 定时器事件处理器, 该定时器有很短的时间间隔
+
+<li>
+对于直接支持 OpenGL 绘制调用的 widgets(Qt 的 QGLWidget, GLUT, FLTK等等), 使用 osgViewer::GraphicsWindowEmbedded 类创建一个图形上下文, widget 类的连续更新方法函数需要调用 OSG viewer 的 frame() 方法 
+
+<li>
+永远不要在 GUI 的回调和事件处理器中修改场景图(scene graph, 动态的改变节点和状态属性, 添加和移除子节点等等), 避免线程冲突. 应该用其他的回调或事件处理
+
+</ul>
+<li>
+MFC 通过 CWND 对象的 GetSafeHwnd() 方法获取窗口句柄
+
+<li>
+OSG中一个特殊的窗口上下文, osgViewer::GraphicsWindowEmbedded, 其假设窗口包含了一个图形上下文, 该上下文无需其他操作来支持 OpenGL(例如成为当前渲染的上下文, making rendering context current), 此时, 直接分配一个新的 embedded 图形窗口, 而后将其挂接至相机 
+<pre c++>
+gw = new osgViewer::GraphicsWindowEmbedded(x,y,width,height);
+camera-&gt; setGraphicsContext( gw );
+</pre>
+
+<ul>
+<li>
+而后以一定频率绘制帧, 发送鼠标和键盘事件.
+<pre c++>
+gw-&gt;getEventQueue()-&gt;keyPress( 'W' );
+</pre>
+
+<li>
+可见 osgViewerGLUT 例子
+
+</ul>
+</ul>
+
+<div id="10 存储和加载文件 "><h1 id="10 存储和加载文件 " class="header"><a href="#10 存储和加载文件 ">10 存储和加载文件 </a></h1></div>
+<ul>
+<li>
+惯例 osgdb_后缀.dll 或 osgdb_后缀.s, 有的插件可以支持多个后缀, 例如 osgdb_jpeg 插件支持 .jpg 和 .jpeg.
+
+<li>
+OSG_FILE_PATH 环境变量保存 OSG 的搜索路径
+
+<li>
+特定扩展的发现, 分为两步:
+
+<ul>
+<li>
+首先, osgDB::Registry 类管理常用的插件列表. 该类为单例模式. 其插件列表可以快速查找和调用该格式对应的读写入口, 其使用了 chain-of-responsibility 设计模式. 即每个插件对象, 在 OSG 中都是一个读取器或写入器, 其会尝试处理输入文件的扩展名, 如果该插件无法识别该插件, 则将其传递给列表中的下一个插件
+
+<li>
+当所有预存储的读写器都无法处理该文件扩展, OSG 则使用该扩展名作为关键字从外部的共享模块查找和加载插件. osgdb_&lt;ext&gt; 库文件. 用以下代码映射扩展名和插件名的映射关系
+<pre c++>
+// Add alias extensions for specified plugin
+osgDB::Registry::instance()-&gt;addFileExtensionAlias( "jpeg", "jpeg" );
+osgDB::Registry::instance()-&gt;addFileExtensionAlias( "jpg", "jpeg" );
+// Now OSG can read .jpg files with the osgdb_jpeg plugin
+osg::Image* image = osgDB::readImageFile( "picture.jpg" );
+</pre>
+
+</ul>
+<li>
+伪加载器(pseudo-loader), 表示非真实的文件扩展, 在真正的扩展名后填充一些内容表示该文件应当用特定的插件读取, 例如
+<pre>
+osgviewer worldmap.shp.ogr
+</pre>
+
+<ul>
+<li>
+实际的文件名为 worldmap.shp. 其以 ESRI 的 shapefile 格式存储整个世界地图. 后缀 .ogr 强制 osgdb_ogr 读取 .shp 文件而后构建场景图. 如果没有该后缀则使用 osgdb_shp 读取 
+
+<li>
+.ffmpeg 支持100多个解码器
+<pre>
+node = osgDB::readNodeFile("cessna.osg.0,0,90.rot");
+</pre>
+
+<ul>
+<li>
+0,0,90 为参数
+
+</ul>
+<li>
+.curl 伪加载器, 调用 osgdb_curl 插件, 依赖第三方库 libcurl, 该第三方库提供了易用的客户端接口用于URL传输.
+
+</ul>
+<li>
+插件支持
+
+<ul>
+<li>
+<a href="http://curl.haxx.se/download.html">http://curl.haxx.se/download.html</a> libcurl 下载, 选择 Win32-MSVC 版本
+
+<li>
+CMakeCache.txt 文件可以拖进 CMake GUI 窗口.
+
+<li>
+&lt;PROJ&gt;_INCLUDE_DIR, &lt;PROJ&gt;_LIBRARY, &lt;PROJ&gt;_LIBRARY_DEBUG, &lt;PROJ&gt;会根据 CMake 的组名而变化
+
+<li>
+命令行可以通过 -D 前缀添加每个选项
+<pre>
+# cmake -DCMAKE_BUILD_TYPE=Release -DCURL_INCLUDE_DIR=/usr/local/include -DCURL_LIBRARY=/usr/local/lib/libcurl.so …
+</pre>
+
+<li>
+<a href="http://gnuwin32.sourceforge.net/packages.html">http://gnuwin32.sourceforge.net/packages.html</a> 提供了有用的预编译库
+
+<li>
+<a href="http://osgtoy.svn.sourceforge.net/viewvc/osgtoy/3rdParty/">http://osgtoy.svn.sourceforge.net/viewvc/osgtoy/3rdParty/</a>
+
+<li>
+选项 ACTUAL_3RDPARTY_DIR
+
+<ul>
+<li>
+创建一个空目录, 任意命名(3rdparty), 含3个目录 include, lib, bin, 分别放第三方库的响应文件
+
+</ul>
+<li>
+OSG 要求 FreeType 版本高于 2.35, 源码 <a href="http://savannah.nongnu.org/download/freetype/,">http://savannah.nongnu.org/download/freetype/,</a> 预编译文件 <a href="http://gnuwin32.sourceforge.net/packages/freetype.htm">http://gnuwin32.sourceforge.net/packages/freetype.htm</a>
+
+<ul>
+<li>
+FreeType 在 CMake 中有两个额外的选项 FREETYPE_INCLUDE_DIR_freetype2 和 FREETYPE_INCLUDE_DIR_ft2build, 第一个设置 freetype 子目录的父目录路径. 第二个位 ft2build.h 的位置
+
+</ul>
+</ul>
+<li>
+重写自己的插件
+
+<ul>
+<li>
+osgDB::ReaderWriter 类, 可重写的类
+
+<ul>
+<li>
+supportsExtension(): 构造函数中调用, 参数为扩展名和描述
+
+<li>
+acceptsExtension(): 参数名是否被接受
+
+<li>
+fileExists(): 确定文件是否存在
+
+<li>
+readNode(): 文件名和 osgDB::Option 参数, option 由具体插件实现分析和使用
+
+<li>
+writeNode(): 将场景图写入一个文件中
+
+<li>
+readImage()
+
+<li>
+writeImage()
+
+</ul>
+<li>
+readNode() 的代码实现如下
+<pre c++>
+osgDB::ReaderWriter::ReadResult readNode(
+                            const std::string&amp; file,
+                            const osgDB::Options* options) const
+{
+    // Check if the file extension is recognizable and file exists
+    bool recognizableExtension = …;
+    bool fileExists = …;
+    if (!recognizableExtension) return ReadResult::FILE_NOT_HANDLED;
+    if (!fileExists) return ReadResult::FILE_NOT_FOUND;
+    …
+    // Construct the scene graph according to format specification
+    osg::Node* root = …;
+    …
+    // In case there are fatal errors during the process,
+    // return an invalid message; otherwise return the root node
+    bool errorInParsing = …;
+    if (!errorInParsing) return ReadResult::ERROR_IN_READING_FILE;
+    return root;
+}
+</pre>
+
+<li>
+osg::ReadResult 对象可以表示多个目标, 如节点, 图像, 状态枚举值(FILE_NOT_FOUND), 错误消息字符串. 该功能通过多个隐式构造函数实现.
+
+<li>
+osgDB::Options 通过 getOptionString() 和 setOptionString() 得到字符串, 用于控制插件的操作.
+
+<li>
+readNodeFile() --- 参数改为流数据参数(std::istream)
+
+<ul>
+<li>
+osgDB::Registry 的 getReaderWriterForExtensions() 得到具体的 reader-writer
+
+<li>
+osg::ReaderWriter::readNode 返回 osgDB::ReaderWriter::ReadResult, 其有 success() 和 takeNode() 方法用于得到状态和节点指针
+
+</ul>
+</ul>
+<li>
+osg, ive 保存场景图信息
+
+<li>
+创建一个 wrapper, 使得 osgDB::writeNodeFile, readNodeFile 之类的函数写入读取原生 osg, osgt 等文件时, 可以将新的类, 新的方法, 新的属性写入和读取
+
+<li>
+写该封装器需要三个条件:
+
+<ul>
+<li>
+从 osg::Object 继承而来, 无论是直接还是间接
+
+<li>
+有名称空间, META_Object
+
+<li>
+getter 和 setter 方法
+
+</ul>
+<li>
+需要写宏 REGISTER_OBJECT_WRAPPER, ADD_UINT_SERIALIZER 等
+
+<li>
+其他属性的序列化宏 ADD_BOOL_SERIALIZER, ADD_FLOAT_SERIALIZER, ADD_VEC3_SERIALIZER 等
+
+<li>
+BEGIN_ENUM_SERIALIZER(), ADD_ENUM_VALUE(), END_ENUM_SERIALIZER() 宏, 用于构造一个完整 serializer. ADD_USER_SERIALIZER() 设计用户自定义的 serializer
+
+<li>
+源码 src/osgWrappers/serializers
+
+<li>
+参考 <a href="http://www.openscenegraph.org/projects/osg/wiki/Support/KnowledgeBase/SerializationSupport.">http://www.openscenegraph.org/projects/osg/wiki/Support/KnowledgeBase/SerializationSupport.</a>
+
+</ul>
+
+<div id="11 Developing Visual Components"><h1 id="11 Developing Visual Components" class="header"><a href="#11 Developing Visual Components">11 Developing Visual Components</a></h1></div>
+<ul>
+<li>
+osg::BillBoard
+
+<ul>
+<li>
+setMode(): POINT_ROT_EYE, POINT_ROT_WORLD, AXIAL_ROT
+
+<li>
+addDrawable 添加一个 pivot
+<pre c++>
+billboard-&gt;addDrawable(child, osg::Vec3(1.0f, 0.0f, 0.0f));
+</pre>
+
+<ul>
+<li>
+公告板是通过法线来确定旋转量的, 根据法线和当前旋转轴或视觉向量旋转的.
+
+</ul>
+</ul>
+<li>
+osg::AutoTransoform: 其子节点可进行自动旋转
+
+<li>
+osgText 库. 需要有 osgdb_freetype 插件, osgText::Font 管理字体. osgText::readFontFile()
+
+<li>
+osgText::TextBase 表示文本. 派生类 osgText::Text
+
+<ul>
+<li>
+setFont(), setPosition(), setCharacterSize(), setText()
+
+<li>
+setText() 支持宽字符
+
+</ul>
+<li>
+osgText::Text3D, ostText::Font3D, osgText::readFont3DFile()
+
+<li>
+osgParticle::ParticleSystem 管理所有粒子的创建, 更新和销毁, 从 osg::Drawable 派生而来
+
+<ul>
+<li>
+osgParticle::Emitter, osgParticle::ModularEmitter
+
+<ul>
+<li>
+osgParticle::Placer
+
+<li>
+osgParticle::Shotter
+
+<li>
+osgParticle::Counter
+
+</ul>
+<li>
+osgParticle::Program, osgParticle::ModularProgram
+
+<ul>
+<li>
+由一组 osgParticle::Operator 派生类组成
+
+</ul>
+<li>
+emitter 和 program 都有 osg::Node 派生而来
+
+<li>
+osgParticle::ParticleSystemUpdater: 更新回调中调用重计算粒子, 也是一个 osg::Node, 应当放在 emitter 和 program 之后, 以确保更新能正确地执行
+<pre c++>
+root-&gt;addChild( emitter );
+root-&gt;addChild( program );
+root-&gt;addChild( updater );  // Added last
+</pre>
+
+</ul>
+<li>
+emitter, program, 含粒子系统的节点可以不位于同一个节点的子节点内
+
+<ul>
+<li>
+战斗机, 盘旋上升
+
+<ul>
+<li>
+emitter 位于战斗机的节点之下, 表示新生成的粒子收到战斗机的影响
+
+<li>
+粒子系统和 updater 则不应当位于战斗机节点之下, 其不应受到战斗机盘旋运动的影响.
+
+</ul>
+</ul>
+<li>
+osgParticle::RadialShooter
+<pre c++>
+osg::ref_ptr&lt;osgParticle::RadialShooter&gt; shooter =
+    new osgParticle::RadialShooter;
+// Theta is the angle between the velocity vector and Z axis
+shooter-&gt;setThetaRange( osg::PI_2 - 0.1f, osg::PI_2 + 0.1f );
+// Phi is the angle between X axis and the velocity vector projected
+// onto the XOY plane
+shooter-&gt;setPhiRange( -0.1f, 0.1f );
+// Set the initial speed range
+shooter-&gt;setInitialSpeedRange( 5.0f, 8.0f );
+</pre>
+
+<li>
+osgShadow::ShadowedScene 投射阴影的子场景的根节点. osgShadow::ShadowTechnique 派生类可扩展阴影技术
+
+<ul>
+<li>
+setTextureSize 修改阴影纹理大小
+
+</ul>
+<li>
+NodeMask 可用于区分投影者和被投影者. 还可用于 cull 遍历中控制物体的绘制. 如果 nodemask 为0, 则不绘制该物体.
+
+<li>
+<a href="http://www.openscenegraph.org/projects/osg/wiki/Support/ProgrammingGuide/osgShadow.">http://www.openscenegraph.org/projects/osg/wiki/Support/ProgrammingGuide/osgShadow.</a>
+
+<li>
+两本高级技术书
+
+<ul>
+<li>
+Real-time rendering by Akenine-M?ller, Haines, and Hoffman
+
+<li>
+Computer Graphics: Principles and Practice by Foley, Van Dam et al
+
+</ul>
+<li>
+osgFX 库
+
+<ul>
+<li>
+osgFX::Effect 纯基类
+
+</ul>
+<li>
+其他库
+
+<ul>
+<li>
+osgART
+
+<li>
+osgAudio
+
+<li>
+osgBullet
+
+<li>
+osgcal
+
+<li>
+osgCairo
+
+<li>
+osgCompute(osgCUDA)
+
+<li>
+osgEarth
+
+<li>
+osgIntrospection
+
+<li>
+osgManipulator
+
+<li>
+osgMaxExp
+
+<li>
+osgModeling
+
+<li>
+osgNV
+
+<li>
+osgOcean
+
+<li>
+osgPango
+
+<li>
+osgQt
+
+<li>
+osgSWIG
+
+<li>
+osgWidgets
+
+<li>
+osgVirtualPlanets
+
+<li>
+osgVisual
+
+<li>
+osgVolume
+
+<li>
+osgXI
+
+<li>
+Maya2OSG
+
+<li>
+VirtualPlanetBuilder
+
+</ul>
+</ul>
+
+<div id="12 Improving Rendering Efficency"><h1 id="12 Improving Rendering Efficency" class="header"><a href="#12 Improving Rendering Efficency">12 Improving Rendering Efficency</a></h1></div>
+<div id="12 Improving Rendering Efficency-OpenThreads"><h2 id="OpenThreads" class="header"><a href="#12 Improving Rendering Efficency-OpenThreads">OpenThreads</a></h2></div>
+<ul>
+<li>
+基础元素: OpenThreads::Thead, OpenThreads::Mutex, OpenThread::Barrier, OpenThreads::Condition
+
+<li>
+一些处理线程和线程属性的全局函数:
+
+<ul>
+<li>
+GetNumberOfProcessors(): 得到可用处理器的数量
+
+<li>
+SetProcessorAffinityOfCurrentThread(): 设置当前线程的处理器关系(即哪个处理器用于执行该线程), 应当在当前线程正在运行时调用
+
+<li>
+CurrentThread(): OpenThreads::Thread 的静态方法, 返回当前运行线程实例的指针
+
+<li>
+YieldCurrentThread(): OpenThreads::Thread 的静态方法, 将当前线程从可执行状态改为就绪状态, 并让其他线程接管处理器的控制
+
+<li>
+microSleep(): OpenThreads::Thread 的静态方法. 当前线程睡眠(单位微秒). 可用于单线程应用
+
+</ul>
+<li>
+对于多线程, 注意 OpenGL 上下文是线程具体的. 一个 OpenGL 上下文只能在一个线程内成为当前上下文(wglMakeCurrent()). 一个 OSG 渲染窗口只包装一个 OpenGL Context.
+
+<li>
+实时渲染的传统方法有三个独立的阶段: 用户更新(UPDATE), 场景剔除(CULL), OpenGL调用(DRAW).
+
+<ul>
+<li>
+CULL 阶段: 移除不可见的物体, 根据渲染状态对剩下的物体进行排序
+
+<li>
+每个窗口有自己的 CULL 和 DRAW 阶段
+
+</ul>
+<li>
+三种线程模型: osgViewer:ViewerBase::ThreadingModel
+
+<ul>
+<li>
+默认为 AutomaticSelection
+
+<li>
+SingleThreaded
+
+<ul>
+<li>
+单线程可用于测试新功能, 和GUI进行集成
+
+</ul>
+<li>
+ThreadPerContext
+
+<ul>
+<li>
+所有的视图绘制任务结束后才会进行下一帧的更新
+
+<li>
+每个视图一个线程
+
+</ul>
+<li>
+ThreadPerCamera.
+
+<ul>
+<li>
+每个相机和窗口都有一个CULL线程和一个DRAW线程
+
+<li>
+DRAW线程分为两个阶段: CPU部分分发(dispatching)命令, GPU部分进行渲染缓存的交换(即将新的绘制内容写入到另一个buffer内).
+
+<li>
+在 buffer 交换的时候, 开始下一帧的用户更新, 注意场景对象的数据是否可变
+<pre c++>
+node-&gt;setDataVariance(osg::Object::DYNAMIC);
+</pre>
+
+</ul>
+</ul>
+<li>
+CULL 技术的描述: 不要绘制你不能看到的物体. 通过两种方式达到该目标: 如果不需要详细绘制物体, 减少物体的面数. 忽略当前适口看不到的物体
+
+<ul>
+<li>
+前者使用 LOD 算法实现.
+
+<li>
+后者则找出不需要绘制的物体
+
+<ul>
+<li>
+背面剔除(Back face culling), 使用 osg::CullFace 类实现, 对于不透明物体和带洞的物体可能不太合适.
+
+<li>
+小物体剔除(Samll feature): 进行可见性测试, 计算出该物体绘制的像素数量. 如果小于用户定义的最小数量像素门槛值, 则从渲染列表中移除该物体
+
+<ul>
+<li>
+会导致实际意义的几何点不会被渲染. 禁用该功能, 否则只有一个顶点的物体可能不会绘制
+<pre c++>
+camera-&gt;setCullingMode(
+   camera-&gt;getCullingMode() &amp; ~osg::Camera::SMALL_FEATURE_CULLING );
+</pre>
+
+</ul>
+<li>
+视体锥剔除
+
+<li>
+遮挡剔除(Occlusion culling)
+
+<ul>
+<li>
+算法检查一个物体是否被一个 occlusion representation 给遮挡住, 该 occlusion representation 由一些类型的 occlusion information 组成,
+
+<ul>
+<li>
+occlusion information: 例如 polygon clipping volumes, 可以当作一个 occluder
+
+</ul>
+</ul>
+</ul>
+</ul>
+<li>
+OSG 提供 osg::OccluderNode 类, 实现一个基本的 occlude 对象. 其从 osg::Group 派生而来, 检查其 occlusion repesentation 和所有场景节点与对象之间的关系(不包括它的子节点). OccluderNode 的子节点表示了 occluder 的几何部分.
+
+<ul>
+<li>
+occlusion representation 类为 osg::ConvexPlanarOccluder, 由一个 convex clipping 多边形组成(getOccluder() 方法可以得到). 该多边形可能包括洞口(addHole())
+
+<ul>
+<li>
+osg::ConvexPlanarPolygon 的 add() 方法可以添加多边形和洞口顶点
+
+</ul>
+<li>
+ setOccluder() 设置该 occlusion representation
+
+</ul>
+<li>
+不使用 occluder 和 occludee 的概念, 而是计算物体之间的遮挡情况, 目前还不可能
+
+<li>
+一些改进渲染速度的方案
+
+<ul>
+<li>
+太多的几何体 --- 低帧率和巨大的资源消耗, 解决方案:
+
+<ul>
+<li>
+使用 LOD 和剔除技术减少绘制对象的顶点数
+
+<li>
+使用图元集和索引机制而非使用重复的顶点
+
+<li>
+将几何体合并为一个, 这是因为一个几何体只需要一个显示列表
+
+<li>
+尽可能共享几何体, 顶点, 节点
+
+</ul>
+<li>
+太多的可变物体(setDataVariance() 方法设置的物体) --- 低帧率, 这是因为 DRAW 阶段必须要等到所有的会变化的物体更新后才能进行绘制. 解决方案:
+
+<ul>
+<li>
+如果节点或 drawables 不会随时改变内容, 就不要设置 DYNAMIC 标签
+
+<li>
+不要设置根节点为 dynamic, 除非你确信要这么做
+
+</ul>
+<li>
+太多的纹理对象 --- 由于巨大的资源消耗以及低帧率. 解决方案:
+
+<ul>
+<li>
+尽可能共享渲染状态以及纹理
+
+<li>
+使用更小的分辨率, 如果可以使用 DXTC 格式压缩它们.
+
+<li>
+osg::TextureRectangle 处理非2的幂次方大小的纹理
+
+<li>
+使用 LOD 简化和管理带有巨大大小纹理的节点
+
+</ul>
+<li>
+场景节点很"松散", 即没有有效的分组 --- 剔除和绘制时间耗时. 许多多余的状态变化
+
+<ul>
+<li>
+许多父节点只有一个子节点, 很多的 drawables 作为叶子节点
+
+<li>
+解决方案: 重构场景图, 尽可能将类似特点和行为的节点分组在一起
+
+</ul>
+<li>
+加载和卸载资源太频繁 --- 更低的运行速度和浪费的内存碎片, 解决方案:
+
+<ul>
+<li>
+使用 buffer pool 分配和释放资源, OSG 默认使用这个方法处理纹理和 buffer 对象 
+
+</ul>
+</ul>
+<li>
+osgUtil::Optimizer 类处理优化
+
+<ul>
+<li>
+移除多余的节点, 共享重复的状态, 检查和合并几何体, 优化纹理设置等等
+
+<li>
+include/osgUtil/Optimizer 可以看其细节
+
+</ul>
+<li>
+共享纹理, 在文件读写回调中收集和重用图像, 而后共享所有使用相同图像和参数的纹理.
+
+<li>
+重用纹理的思路, 如果一个纹理的图像文件已经加载过, 就重用该纹理.
+
+<li>
+当调用 readImageFile() 函数时, osgDB::Registry 实例会尝试使用预设的 osgDB::ReadFileCallback 执行实际的加载工作. 如果该回调不存在, 则调用 readImageImplementation() 选择一个合适的插件加载图像并返回结果对象.
+
+<ul>
+<li>
+我们可以通过继承 osgDB::ReadFileCallback 类来接管读取图像的过程.
+
+<ul>
+<li>
+该类需要重写 readImage() 方法
+
+</ul>
+</ul>
+<li>
+osgDB::Registry 类的 setReadFileCallback 方法设置文件读取的回调.
+
+<li>
+要允许 osgDB::SharedStateManager 的运行时优化器, 通过 setShareStateManager() 或 getOrCreateSharedStateManager() 来定义, 后面的函数会分配一个默认的实例给 registry
+<pre c++>
+osgDB::Registry::instance()-&gt;getOrCreateSharedStateManager();
+// ...
+osgDB::SharedStateManager* ssm =
+    osgDB::Registry::instance()-&gt;getSharedStateManager();
+if ( ssm ) ssm-&gt;share( root.get() );
+</pre>
+
+<li>
+osgDB::SharedStateManager --- 收集渲染状态, 替换后续节点的重复渲染转状态.
+
+<li>
+osgDB::DatabasePager 也利用了 osgDB::SharedStateManager 去管理外部场景图的状态(当动态加载和卸载分页节点的时候)
+
+<li>
+不光可以共享相同图像的纹理, 还可以共享读取相同模型的节点.
+
+<li>
+没有"超级"渲染引擎可以处理无限制的数据集. 使用分页机制, 根据当前的视口和视锥体加载和卸载对象. 其设计一个更好的结构用于索引空间数据的区域. 四叉树, 八叉树, R-tree, binary space partitioning(BSP)
+
+<li>
+四叉树对于地形或2D平面很有用. 有效的加载足够清晰的内容, 并可根据视角有效率地卸载和加载数据
+
+<li>
+osg::HeightField 类创建一个当前等级向下采样的高度域. 该类从 osg::Shape 派生而来, 可被 osg::ShapeDrawable 使用. 原点位于左下角.
+
+<li>
+地形数据库创建工具 ---- VirtualPlanetBuilder(VPB), 可以读取地理空间图像集和高度数据的一个范围, 构建地形区域的一小块, 该地形区域有分页LOD节点的各层.
+
+<li>
+VPB 主要依赖于 OSG 项目和第三方 GDAL 项目
+
+<ul>
+<li>
+<a href="http://www.openscenegraph.org/projects/VirtualPlanetBuilder.">http://www.openscenegraph.org/projects/VirtualPlanetBuilder.</a>
+
+<li>
+<a href="http://www.gdal.org/">http://www.gdal.org/</a>
+
+<li>
+vpbmaster 可执行程序可以快速构建一个 OSG 原生格式的地形.
+<pre>
+vpbmaster -d dem_file.tif -t dom_file.tif -o output.osgb
+</pre>
+
+</ul>
+<li>
+VPB 生成的一个例子数据库
+<pre>
+osgviewer http://www.openscenegraph.org/data/earth_bayarea/earth.ive
+</pre>
+
+</ul>
+
+    </div>
+</body>
+</html>

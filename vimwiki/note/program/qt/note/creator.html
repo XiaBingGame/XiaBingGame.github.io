@@ -1,0 +1,527 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../style.css" />
+    <title>creator</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<h1 id="toc_1">管理项目</h1>
+<h2 id="toc_1.1">创建项目</h2>
+<ul>
+<li>
+可以创建自定义的 wizards 以标准化子项目和类的添加.
+
+<li>
+在Projects模式中可以修改qmake项目的构建和运行设置.
+
+<li>
+可以使用 CMake 自动构建系统并手动设置项目
+
+<li>
+可以导入不使用 qmake 或 CMake 的项目
+
+<li>
+可以安装用于mobile设备的工具作为SDK的一部分.
+
+<li>
+改变项目目录位置, 见 Tool-&gt;Options-&gt;Build &amp; Run-&gt;General.
+
+<li>
+创建 C++ 类, 支持名称空间, 例如在类名的输入处输入: MyNamespace::MySubNamespace::MyClass.
+
+<li>
+修改文件的默认后缀, 选择 Tool-&gt;Options-&gt;C++-&gt;File Naming.
+
+<li>
+可用于创建GLSL的片段和顶点着色器程序.
+
+<li>
+为了在 Project 面板中显示其他类型的文件, 编辑项目文件, 添加该文件名作为 OTHER_FILES 变量的值, 你可以使用星字符号.
+
+<li>
+给一个项目添加子项目,  在 Project Management 对话框中, 可以将一个新项目添加至另一个项目作为子项目. 但是根项目必须指定qmake使用subdirs模板构建该项目.
+
+<ul>
+<li>
+File-&gt;New File or Project-&gt;Other Project-&gt;Subdirs Project-&gt;Choose.
+
+<li>
+在 Summary 页面, 选择 Finish &amp; Add Subproject 创建根项目并添加其他的项目.
+
+<li>
+Project 面板右键项目选择菜单 New Subproject 添加子项目.
+
+<li>
+设置依赖性, 使用 Add Library 面板.
+
+</ul>
+</ul>
+
+<h2 id="toc_1.2">打开项目</h2>
+<ul>
+<li>
+.user 文件存储一个项目需要构建的信息. 
+
+<li>
+Configure Project 标签显示了用于构建和运行项目的kits列表. 它们安装于开发电脑中, 且在 Tools&gt;Options&gt;Build &amp; Run&gt;Kits 中配置.
+
+<li>
+配置编辑器的kits, Tools&gt;Options&gt;Build &amp; Run&gt;Kits
+
+</ul>
+
+<h2 id="toc_1.3">添加用于项目的库</h2>
+<ul>
+<li>
+你可以添加系统库, 你自己的库, 第三方库 .
+
+<li>
+在编译中, 可使用 pkg-config 查询系统库
+
+<li>
+对于你自己的库和第三方库, 你需要指定路径. Qt Creator 自动添加内部库的路径.
+
+<li>
+所有的库, 选择用于应用, 库或插件的目标平台.
+
+<li>
+设置库动态或静态链接. 对于静态链接内部库, Qt Creator 在项目文件中添加依赖(dependencies)
+
+<li>
+添加库, Project面板, 右键项目选择Add Library菜单.
+
+</ul>
+
+<h2 id="toc_1.4">添加新的自定义Wizards</h2>
+<ul>
+<li>
+项目 wizards 中, 你设置项目需要的文件, 添加 wizard 页面以便开发者设置项目的配置.
+
+<li>
+类 wizards 中, 你允许开发者设置类名, 基类, 用于类的头文件和源文件.
+
+</ul>
+<h3 id="toc_1.4.1">自定义 Wizard 概览</h3>
+<ul>
+<li>
+一个自定义 wizard 定义一个 wizard 页面的用户接口, 在wizard中用户输入的值分配了一个域名. 文件的创建有以下方式:
+
+<ol>
+<li>
+基于模板, 源文件韩占位符, 可以被来自 wizard 的值替换. 另外可选的是, 可以应用 modifier 符.
+
+<li>
+生成脚本.
+
+</ol>
+<li>
+自定义 wizard 位于以下目录的子目录中.
+
+<ul>
+<li>
+share/qtcreator/templates/wizards
+
+<li>
+本地用户配置文件夹, $HOME/.config/QtProject/qtcreator/templates/wizards
+
+<li>
+%APPDATA%\QtProject\qtcreator\templates\wizards
+
+</ul>
+<li>
+这些目录中有一个名为 wizard.xml 的XML配置文件, 模板源文件, 可选的是, 有生成器脚本.
+
+</ul>
+<h3 id="toc_1.4.2">创建项目 wizards</h3>
+<ul>
+<li>
+步骤
+
+<ol>
+<li>
+拷贝 share/qtcreator/templates/wizards/helloworld 或 share/qtcreator/templates/wizards/listmodel 文件夹
+
+<li>
+修改 wizard_example.xml 文件
+
+<li>
+接下来的代码确定 New 对话框中 wizard 的类型和位置
+<pre>
+&lt;wizard version="1" kind="project"
+class="qt4project" firstpage="10"
+id="A.HelloWorld" category="B.CustomProjects"&gt;
+</pre>
+
+<ol>
+<li>
+version: 文件内容的版本, 不要修改该值.
+
+<li>
+kind: wizard类型, project或者class
+
+<li>
+class: 指定项目的类型. 该属性为可选内容.
+
+<li>
+firstpage: 指定在标准项目wizard中新一页的位置. 值10确保该自定义页位于standard页面之后, 和wizard的最后一页一样.
+
+<li>
+id: 你的wizard的唯一标识符. 字母表示类别中该wizard的位置.
+
+<li>
+category: 表示列表中该wizard的位置. 字母表示New对话框列表中类别的位置.
+
+</ol>
+<li>
+接下来的代码设置出现在New对话框的图标和文本.
+<pre>
+&lt;icon&gt;console.png&lt;/icon&gt;
+&lt;description&gt;Creates a hello-world-project with custom message.&lt;/description&gt;
+&lt;description xml:lang="de"&gt;Erzeugt ein Hello-Welt-Projekt mit einer Nachricht.&lt;/description&gt;
+&lt;displayname&gt;Hello World&lt;/displayname&gt;;
+&lt;displayname xml:lang="de"&gt;Hallo Welt&lt;/displayname&gt;;
+&lt;displaycategory&gt;Custom Projects&lt;/displaycategory&gt;
+&lt;displaycategory xml:lang="de"&gt;Benutzerdefinierte Projekte&lt;/displaycategory&gt;
+</pre>
+
+<ol>
+<li>
+你可以添加翻译作为文本元素的值. 设置目标语言作为元素的一个属性.
+
+</ol>
+<li>
+添加至项目的文件
+
+<ol>
+<li>
+基于模板的, 下面的代码设置要加入项目的文件
+<pre>
+    &lt;files&gt;
+        &lt;file source="main.cpp" openeditor="true" /&gt;
+        &lt;file source="project.pro" target="%ProjectName%.pro" openproject="true" /&gt;
+        &lt;file source="icon.png" target="%ProjectName%.png" binary="true" /&gt;
+</pre>
+
+<ol>
+<li>
+文件必须位于wizard文件夹内.
+
+<li>
+openediror: 表示当wizard完成后在编辑器中打开文件.
+
+<li>
+binary: 表示是二进制文件, 其占位符不会被值给替换.
+
+<li>
+target: 新的文件名. %ProjectName% 表示被wizard第一页内的Name域中填写的字符串代替.
+
+<li>
+openproject: 表示该文件是一个项目文件, 在wizard完成后会被打开.
+
+</ol>
+<li>
+生成器脚本.
+<pre>
+    &lt;generatorscript binary="generate.pl"&gt;
+        &lt;argument value="--class-name=%ClassName%"/&gt;
+        &lt;argument value="--project-name=%ProjectName%"/&gt;
+        &lt;argument value="--header-suffix=%CppHeaderSuffix%" omit-empty="true"/&gt;
+        &lt;argument value="--source-suffix=%CppSourceSuffix%" omit-empty="true"/&gt;
+        &lt;argument value="--description=%Description%" omit-empty="true" write-file="true"/&gt;
+    &lt;/generatorscript&gt;
+</pre>
+
+<ol>
+<li>
+omit-empty: 当所有占位符扩展为空值, 则忽略该完整参数.
+
+<li>
+write-file: 代替扩展值, 其值会被写入暂存文件, 且其文件名会被传送给脚本. 对于多行文本域很有用.
+
+</ol>
+</ol>
+<li>
+接下来的代码创建一个页面, 指定项目的设置.
+<pre>
+&lt;!-- Create a 2nd wizard page with parameters --&gt;
+&lt;fieldpagetitle&gt;Hello World Parameters&lt;/fieldpagetitle&gt;
+&lt;fieldpagetitle xml:lang="de"&gt;Hallo Welt Parameter&lt;/fieldpagetitle&gt;
+&lt;fields&gt;
+    &lt;field mandatory="true" name="MESSAGE"&gt;
+        &lt;fieldcontrol class="QLineEdit" validator='^[^"]+$'  defaulttext="Hello world!" placeholdertext="Enter a message"/&gt;
+        &lt;fielddescription&gt;Hello world message:&lt;/fielddescription&gt;
+        &lt;fielddescription xml:lang="de"&gt;Hallo-Welt-Nachricht:&lt;/fielddescription&gt;
+    &lt;/field&gt;
+&lt;/fields&gt;
+</pre>
+
+<ul>
+<li>
+field域可以使用QWidget控件.
+
+<li>
+mandatory 表示该域是否命令的.
+
+<li>
+name设置了占位符.
+
+<li>
+fielddescription 设置出现在wizard页面上的域名称.
+
+</ul>
+</ol>
+</ul>
+<h3 id="toc_1.4.3">创建class wizards</h3>
+<ul>
+<li>
+下面代码用于wizard的设置
+<pre>
+&lt;wizard version="1" kind="class" id="A.ListModel" category="B.CustomClasses"&gt;
+
+   &lt;description&gt;Creates a QAbstractListModel implementation.&lt;/description&gt;
+   &lt;description xml:lang="de"&gt;Erzeugt eine Implementierung von QAbstractListModel.&lt;/description&gt;
+
+   &lt;displayname&gt;QAbstractListModel implementation&lt;/displayname&gt;
+   &lt;displayname xml:lang="de"&gt;Implementierung von QAbstractListModel&lt;/displayname&gt;
+
+   &lt;displaycategory&gt;Custom Classes&lt;/displaycategory&gt;
+   &lt;displaycategory xml:lang="de"&gt;Benutzerdefinierte Klassen&lt;/displaycategory&gt;
+</pre>
+
+<li>
+添加至项目的文件
+<pre>
+&lt;files&gt;
+    &lt;file source="listmodel.cpp" target="%ClassName:l%.%CppSourceSuffix%"  openeditor="true" /&gt;
+    &lt;file source="listmodel.h" target="%ClassName:l%.%CppHeaderSuffix%"  openeditor="true" /&gt;
+&lt;/files&gt;
+</pre>
+
+<ul>
+<li>
+目标含有以下变量用于构造文件名
+
+<ul>
+<li>
+%ClassName:l% --- 由类名域的值代替, l 表示将字符串转换为小写字符串.
+
+<li>
+%CppSourceSuffix% 和 %CppHeaderSuffix% --- 预定义的变量.
+<pre>
+&lt;!-- Create parameter wizard page --&gt;
+
+&lt;fieldpagetitle&gt;ListModel parameters&lt;/fieldpagetitle&gt;
+&lt;fieldpagetitle xml:lang="de"&gt;Parameter des ListModel&lt;/fieldpagetitle&gt;
+&lt;fields&gt;
+    &lt;field name="ClassName"&gt;
+
+        &lt;fieldcontrol class="QLineEdit" validator="^[a-zA-Z0-9_]+$" defaulttext="MyListModel" /&gt;
+
+        &lt;fielddescription&gt;Class name:&lt;/fielddescription&gt;
+        &lt;fielddescription xml:lang="de"&gt;Klassenname:&lt;/fielddescription&gt;
+    &lt;/field&gt;
+    &lt;field name="Datatype"&gt;
+        &lt;fieldcontrol class="QComboBox" defaultindex="0"&gt;
+            &lt;comboentries&gt;
+                &lt;comboentry value="QString"&gt;
+                    &lt;comboentrytext&gt;class QString&lt;/comboentrytext&gt;
+                    &lt;comboentrytext xml:lang="de"&gt;Klasse QString&lt;/comboentrytext&gt;
+                &lt;/comboentry&gt;
+            &lt;comboentry value="int"&gt;
+                &lt;comboentrytext&gt;Integer&lt;/comboentrytext&gt;
+                &lt;comboentrytext xml:lang="de"&gt;Ganzzahlwert&lt;/comboentrytext&gt;
+            &lt;/comboentry&gt;
+        &lt;/comboentries&gt;
+        &lt;/fieldcontrol&gt;
+        &lt;fielddescription&gt;Data type:&lt;/fielddescription&gt;
+        &lt;fielddescription xml:lang="de"&gt;Datentyp:&lt;/fielddescription&gt;
+    &lt;/field&gt;
+&lt;/fields&gt;
+</pre>
+
+</ul>
+</ul>
+</ul>
+
+<h3 id="toc_1.4.4">支持的widget</h3>
+<ul>
+<li>
+PathChooser utility
+
+<li>
+QCheckBox
+
+<li>
+QComboBox
+
+<li>
+QLineEdit
+
+<li>
+QTextEdit
+
+</ul>
+<h4 id="toc_1.4.4.1">Path Choosers</h4>
+<pre>
+&lt;field mandatory="true" name="QtCreatorSources"&gt;
+    &lt;fieldcontrol class="Utils::PathChooser" defaulttext="" expectedkind="existingdirectory"/&gt;
+        &lt;fielddescription&gt;Qt Creator sources:&lt;/fielddescription&gt;
+&lt;/field&gt;
+</pre>
+<h4 id="toc_1.4.4.2">Check Boxes</h4>
+<pre>
+&lt;field name="CONSOLE"&gt;
+    &lt;fieldcontrol class="QCheckBox" defaultvalue="true"/&gt;
+    &lt;fielddescription&gt;Console application&lt;/fielddescription&gt;
+&lt;/field&gt;
+</pre>
+<h4 id="toc_1.4.4.3">Text Editors</h4>
+<pre>
+&lt;field name="License"&gt;
+    &lt;fieldcontrol class="QTextEdit" defaulttext="Put your license text here" /&gt;
+        &lt;fielddescription&gt;License:&lt;/fielddescription&gt;
+&lt;/field&gt;
+</pre>
+
+<h3 id="toc_1.4.5">处理模板文件</h3>
+<ul>
+<li>
+支持的modifier字符
+
+<ul>
+<li>
+l --- 小写
+
+<li>
+u --- 大写
+
+<li>
+c --- 大写第一个字母.
+
+</ul>
+<li>
+helloworld例子中, %NETWORK%和QCheckBox一起使用.
+<pre>
+%NETWORK%QT += network
+
+=================================
+&lt;field name="NETWORK"&gt;
+    &lt;fieldcontrol class="QCheckBox" truevalue="" falsevalue="# "/&gt;
+    &lt;fielddescription&gt;Include network module&lt;/fielddescription&gt;
+    &lt;fielddescription xml:lang="de"&gt;Netzwerk-Modul verwenden&lt;/fielddescription&gt;
+&lt;/field&gt;
+</pre>
+
+<ul>
+<li>
+如果选择了checkbox, 则用truevalue代替, 否则使用 falsevalue代替.
+
+</ul>
+<li>
+可以使用条件语句添加一段内容.
+<pre>
+@if "%SCRIPT%" == "true"
+QT += script
+@endif
+
+=================================
+&lt;field name="SCRIPT"&gt;
+    &lt;fieldcontrol class="QCheckBox"/&gt;
+    &lt;fielddescription&gt;Include script module&lt;/fielddescription&gt;
+    &lt;fielddescription xml:lang="de"&gt;Script-Modul verwenden&lt;/fielddescription&gt;
+&lt;/field&gt;
+</pre>
+
+</ul>
+
+<h3 id="toc_1.4.6">预定义的标准变量</h3>
+<ul>
+<li>
+%ProjectName% --- project wizard 为项目名称
+
+<li>
+%Path% --- classes中为文件创建的目录, projects中为项目创建之后命名的子目录.
+
+<li>
+%TargetPath% --- 实际文件创建的目录. 对于非project wizard而言, 和 %Path% 一致. 对于 project wizard, 其为 %Path%%ProjectName%
+
+<li>
+%CppSourceSuffix% --- 见 Tools &gt; Opetions &gt; C++ &gt; File Naming
+
+<li>
+%CppHeaderSuffix% --- 同上
+
+<li>
+%CurrentDate% --- yyyy-MM-dd
+
+<li>
+%CurrentTime%
+
+</ul>
+
+<h3 id="toc_1.4.7">验证用户输入</h3>
+<ul>
+<li>
+验证规则由JavaScript表达式和一个错误信息组成.
+<pre>
+&lt;validationrules&gt;
+    &lt;validationrule condition='"%ClassName%" != "QAbstractListModel"'&gt;
+        &lt;message&gt;%ClassName% cannot be used as class name.&lt;/message&gt;
+        &lt;message xml:lang="de"&gt;%ClassName% kann nicht als Klassenname verwendet werden.&lt;/message&gt;
+    &lt;/validationrule&gt;
+&lt;/validationrules&gt;
+</pre>
+
+<ul>
+<li>
+确保输入的类名和基类名不会相同.
+
+</ul>
+</ul>
+
+<h3 id="toc_1.4.8">使用生成器脚本 </h3>
+<ul>
+<li>
+wizard输入的值作为一个命令行参数传递给脚本. 这些参数由wizard配置文件定义.
+
+<li>
+脚本必须实现一个 --dry-run 命令行选项.
+
+<li>
+Qt Creator 需要知道创建的文件名是否已存在. 两个步骤:
+
+<ul>
+<li>
+确定文件名和属性
+<pre>
+    myclass.cpp,openeditor
+    myclass.h,openeditor
+    myproject.pro,openproject
+</pre>
+
+<li>
+创建文件: 仅在工作目录中用这些参数调用脚本.
+<pre>
+generate.pl --class-name=TestClass --project-name=TestProject --header-suffix=h --source-suffix=cpp --description=/tmp/qtcreatorj26629.txt
+</pre>
+
+</ul>
+</ul>
+
+    </div>
+</body>
+</html>

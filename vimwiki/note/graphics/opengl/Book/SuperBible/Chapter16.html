@@ -1,0 +1,98 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../../style.css" />
+    <title>Chapter16</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<h1 id="toc_1">Getting Your Feet Wet</h1>
+<ul>
+<li>
+gl_ModelViewProjectionMatrix 两个矩阵合在一起的结果.
+
+<li>
+自己执行变换的另一个选择是使用 ftransform 内置函数. 其在输入的顶点位置上模拟固定功能管线的顶点变换. 这不仅仅是便利, 其还可以保证结果与固定功能管线一致. 在多pass渲染时有用.
+
+<li>
+如果你混合固定功能管线和你自己的顶点着色器(不使用 ftransform)且绘制相同的几何体, 为了避免 "Z-fighting" 人工锯齿, 则使用 invariant 修饰符用于顶点着色器的输出.
+
+</ul>
+<h2 id="toc_1.1">Diffuse Lighting</h2>
+<ul>
+<li>
+光源位置可以使用内置 gl_LightSource[n].position 代替, 这样你可以使用 glLight* 传递光源位置.
+
+<li>
+gl_NormalMatrix
+
+<li>
+normalize
+
+</ul>
+<h2 id="toc_1.2">Specular Lighting</h2>
+<ul>
+<li>
+镜面高亮在物体表面上快速变化. 在每个顶点上计算而后沿着三角形插值给出相对弱的结果. 可能会得到一个多边形形状的高亮.
+
+<li>
+一种方法为镜面光照结果散射光分离. 输出一个为顶点的主颜色, 一个为顶点的辅助颜色. 通过添加散射和镜面颜色, 你可以在镜面高亮出现的地方有效率地饱和其颜色(值大于1.0). 如果你试图插值这些颜色的和. 则该saturation会影响到整个多边形更多的地方. 然而, 如果你各自插值两个颜色而后在每个片段中求和. 则仅有哪些想要的地方才会出现 saturation. 当使用固定功能管线的片段处理, 通过允许 GL_COLOR_SUM使得能够逐片段求和.
+
+<li>
+如果镜面指数过高, 其变化的速度可能超过了逐像素插值允许的速度. 一种解决方法是顶点着色器输出镜面系数(N*H), 在片段中使用指数. 在不使用片段着色器的情况, 你可以设置一个一维纹理, 其带有每个值的128次方的表格, 而后 (N*H) 作为顶点着色器纹理坐标的输出. 一维纹理的数据生成只生成7/8到1.0的128次幂的数据, 长度为512. 所以 (N*H)的值乘以8再减去7得到[-7, 1]的坐标值, 对于[-7, 0]之间的值不关心.
+
+<li>
+更精确的做法是仅在顶点着色器中输出法线向量. 而后在cube map纹理中编码, 这样每个N坐标其结果纹理值为 (N*H)的128次方.
+
+</ul>
+<h2 id="toc_1.3">Per-Vertex Fog</h2>
+<ul>
+<li>
+在顶点着色器中实现雾计算, 效率更高且结果可以接受.
+
+<li>
+内置 length() 函数.
+
+</ul>
+<h2 id="toc_1.4">每个顶点的点大小</h2>
+<ul>
+<li>
+根据距离衰减点的大小.
+
+<li>
+允许 GL_VERTEX_PROGRAM_SIZE_ARB, 这样来自顶点着色器输出的点大小可以替换通常的OpenGL点大小.
+
+</ul>
+<h2 id="toc_1.5">自定义的顶点变换</h2>
+<ul>
+<li>
+在着色器中对模型顶点进行缩压和拉伸操作.
+
+</ul>
+
+<h1 id="toc_2">顶点混合</h1>
+<ul>
+<li>
+设置多个模型视图在关节周边影响的区域, 称之为 region of influence.
+
+<li>
+每个顶点设置权重值. 使用 glVertAttrib1f 设置该值.
+
+</ul>
+
+    </div>
+</body>
+</html>

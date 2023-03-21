@@ -1,0 +1,125 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../../../../style.css">
+<title>C++Primer_11</title>
+<meta http-equiv="Content-Type" content="text/html; charset=cp936">
+</head>
+<body>
+
+<ul>
+<li>
+算法也许会改变存储在容器中的元素的值, 也会会在容器内移动元素, 但是算法从不直接添加或删除元素. 特殊的迭代器类---插入器(inserter), 除了用来遍历其所绑定的序列之外, 还可以实现更多的功能, 例如插入运算. 如要插入和删除元素, 最好使用容器的成员函数.
+
+<li>
+算法的头文件 &lt;algorithm&gt;, &lt;numeric&gt;; 理解算法的最基本方法是了解该算法是否读元素, 写元素或者对元素进行重新排序
+
+<li>
+算法函数 accumulate, find_first_of, fill, fill_n, copy, replace, replace_copy, sort, unique, stable_sort, count_if
+
+<li>
+插入迭代器 back_inserter, 需要包含 &lt;iterator&gt;头文件
+<pre c++>
+vector&lt;int&gt; ivec;
+fill_n(back_inserter(ivec), 10);
+</pre>
+
+<li>
+另外三种迭代器: 插入迭代器, iostream 迭代器, 反向迭代器.
+
+<li>
+插入迭代器
+
+<ul>
+<li>
+back_inserter: push_back 实现
+
+<li>
+front_inserter: push_front 实现
+
+<li>
+inserter: inserter 实现, 还可有指向插入起始位置的参数. 注意是固定位置
+<pre c++>
+list&lt;int&gt; list, list2, list3;
+for(list&lt;int&gt;::size_type i = 0; i != 4; ++i)
+	list.push_front(i);
+copy(list.begin(), list.end(), front_inserter(list2));
+copy(list.begin(), list.end(), inserter(list3.begin());
+// 创建 list2的过程中, 始终在list2的所有元素之前插入. 而在复制创建list3的过程中, 则是在固定位置插入, 插入第一个元素之后, 插入位置就不再是首元素了.
+</pre>
+
+</ul>
+<li>
+iostream 迭代器: istream_iterator 用于读取输入流; ostream_iterator 用于写输出流, 这些迭代器将它们所对应的流视为特定类型的元素序列.
+
+<ul>
+<li>
+istream_iterator&lt;T&gt; in(strm); --- 创建从输入流 strm 中读取 T类型对象的 istream_iterator 对象
+
+<li>
+istream_iterator&lt;T&gt; in; --- istream_iterator对象的超出末端迭代器
+
+<li>
+ostream_iterator&lt;T&gt; in(strm) --- 创建将T类型的对象写到输出流 strm 的 ostream_iterator 对象
+
+<li>
+ostream_iterator&lt;T&gt; in(strm, delim) --- 同上, 但写入过程中使用 delim 作为元素的分隔符. delim 为以空字符结束的字符数组.
+
+</ul>
+<li>
+流迭代器只定义了最基本的迭代器操作: 自增, 解引用和赋值. 此外可比较两个 istream 迭代器是否相等(或不等). 而ostream迭代器则不提供比较运算
+
+<li>
+任何自己定义输入操作符(&gt;&gt;操作符)的类型都可以定义 istream_iterator; 任何自己定义输出操作符(&lt;&lt;操作符)的类型都可以定义 ostream_iterator.
+
+<li>
+一旦给 ostream_iterator 对象赋了一个值, 写入就提交了. 赋值后, 没有办法再改变这个值. ostream_iterator 对象中每个不同的值正好输出一次.
+
+<li>
+反向迭代器的成员函数 base() 可用于转换该反向迭代器为正向迭代器.
+
+<li>
+迭代器的种类: 输入迭代器, 输出迭代器, 前向迭代器, 双向迭代器, 随机访问迭代器
+
+<li>
+list 容器特有的算法
+
+<ul>
+<li>
+lst.merge(lst2)
+
+<li>
+lst.merge(lst2, comp);
+
+<li>
+lst.remove(val)
+
+<li>
+lst.remove_if(unaryPred)
+
+<li>
+lst.reverse()
+
+<li>
+lst.sort()
+
+<li>
+lst.splice(iter, lst2)
+
+<li>
+lst.splice(iter, lst2, iter2)
+
+<li>
+lst.splice(iter, beg, end) --- 三者将lst2的元素移到lst中迭代器iter指向的元素前面, lst2 删除移出的的元素
+
+<li>
+lst.unique()
+
+<li>
+lst.unique(binaryPred) --- 调用 erase 删除同一个值的连续副本.
+
+</ul>
+</ul>
+
+</body>
+</html>

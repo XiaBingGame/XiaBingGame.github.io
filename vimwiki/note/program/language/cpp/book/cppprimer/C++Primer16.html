@@ -1,0 +1,550 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../../../style.css" />
+    <title>C++Primer16</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<h1 id="toc_1">第16章 模板和泛型编程 </h1>
+<ul>
+<li>
+模板的定义以关键字 template 开始, 后接模板形参表, 模板形参表为尖括号括住的一个或多个模板形参的列表, 形参之间以逗号分隔. 模板形参表不能为空.
+
+<li>
+模板形参分为表示类型的类型形参(type parameter)和表示常量表达式的非类型形参(nontype parameter). 非类型形参跟在类型说明符之后声明, 类型形参跟在关键字 class 或 typename 之后定义.
+
+<li>
+inline 关键字不能放在 template 关键字之前
+<pre class="brush: c++">
+template &lt;typename T&gt; inline T min(const T&amp;, const T&amp;);
+</pre>
+
+<li>
+使用类模板时, 必须为模板形参显式指定实参, 函数模板可以不用显式指定实参. 例如:
+<pre class="brush: c++">
+Queue&lt;int&gt; qi;
+Queue&lt; vector&lt;double&gt; &gt; qc;
+Queue&lt;string&gt; qs;
+</pre>
+
+<li>
+模板形参赋予的唯一含义就是区别类型形参和非类型形参; 类型形参表示未知类型, 非类型形参表示未知值.
+
+<li>
+模板形参遵循常规名字屏蔽规则.
+
+<li>
+用作模板形参的名字不能再模板内部重用, 模板形参的名字只能在同一模板形参表中使用一次, 但可以在不同模板中重用
+<pre class="brush: c++">
+template &lt;class T&gt; T calc(const T&amp; a, const T&amp; b)
+{
+	typedef double T;	// 出错了, 不能重用.
+	T tmp = a;
+	// ...
+	return tmp;
+}
+template &lt;class V, class V&gt; V calc(const V&amp; a, const V&amp; b);	// 错误, 名字只能使用一次
+template &lt;class T&gt; T calc(const T&amp; a, const T&amp; b);			// 没问题, 可以在不同模板使用同一名字.
+template &lt;class T&gt; int compare(const T&amp; a, const T&amp; b);
+</pre>
+
+<li>
+模板也可以只声明而不定义, 每个模板类型形参前面必须带上关键词 class 或 typename; 每个非类型形参前面必须带上类型名字.
+
+<li>
+在函数模板形参表中, typename 和 class 具有相同含义. typename 是作为标准C++的组成部分加入到C++中的.
+
+<li>
+typename关键字可用于指定一个成员是类型名称, 而非类成员. 例如 typename Parm::size_type *p;  如果不这样做, 编译器默认会把 size_type 看成数据成员.
+
+<li>
+非类型形参的值的类型可在函数的模板形参表中指定, 例如:
+<pre class="brush: c++">
+template &lt;class T, size_t N&gt; void array_init(T (&amp;param)[N]);
+...
+int x[42];
+double y[40];
+array_init(x);
+array_init(y);
+
+const int sz = 40;
+int z[sz+2];
+array_init(z);
+</pre>
+
+<li>
+模板非类型形参是模板定义内部的常量值. 
+
+<li>
+对于模板非类型形参而言, 求职结果相同的表达式被认为是等价的, 例如上面的 array_int(x) 和 array_int(z) 调用的是同一个函数 array_int&lt;int, 42&gt;.
+
+<li>
+使用模板的程序员保证用作函数实参的类型实际上支持所用的任意操作, 保证在模板使用那些操作的环境中那些操作运行正常. 编写模板代码时, 对实参类型的要求尽可能少是很有益的.
+
+<li>
+编写泛型程序的两个重要原则: 模板的形参是 const 引用; 函数体中的测试只用 &lt; 比较
+
+<li>
+类模板在引用实际模板类类型时实例化, 函数模板在调用它或者用它对函数指针进行初始化或赋值时实例化.
+
+<li>
+使用类模板必须显式指定模板实参
+
+<li>
+使用函数模板时, 编译器通常会为我们推断模板形参, 从函数实参确定模板实参的类型和值的过程叫做模板实参推断
+
+<ul>
+<li>
+如模板函数有多个类型形参, 则传递的实参类型必须完全匹配.
+<pre class="brush: c++">
+template &lt;typename T&gt; int compare(const T&amp; v1, const T&amp; v2);
+// ...
+short si;
+compare(si, 1024);	// 出错, 不完全匹配.
+</pre>
+
+<li>
+模板函数的实参只会执行两种转换
+
+<ul>
+<li>
+const 转换, 如函数参数为 const 引用或 const 指针类型, 则传递的实参可以不必是 const类型, 可转换至 const 类型.
+
+<li>
+如果函数参数为非const引用类型, 则使用const实参调用的时候, 则忽略掉const
+
+<li>
+数组和函数到指针的转换
+<pre class="brush: c++">
+template &lt;typename T&gt; T fobj(T, T);
+template &lt;typename T&gt; T fref(const T&amp;, const T&amp;);
+string s1("a value");
+const string s2("another value");
+fobj(s1, s2);		// 都为string类型
+fref(s1, s2);		// 都为const引用类型
+int a[10], b[42];
+fobj(a, b);		// 都为 int* 类型
+fref(a, b);		// 见 7.2.4 节, 当形参为引用时, 数组不能转换为指针.
+</pre>
+
+</ul>
+</ul>
+<li>
+类型转换的限制只适用于类型为模板形参的那些实参.
+
+<li>
+可以使用函数模板对函数指针进行初始化或赋值
+<pre class="brush: c++">
+template &lt;typename T&gt; int compare(const T&amp;, const T&amp;);
+int (*pf1)(const int&amp;, const int&amp;) = compare;
+</pre>
+
+<li>
+如果不能从函数指针类型确定模板实参, 则会出错
+<pre class="brush: c++">
+void func(int(*) (const string&amp;, const string&amp;));
+void func(int(*) (const int&amp;, const int&amp;));
+func(compare);	// 出错, 没法确定是string还是int版本
+</pre>
+
+<li>
+函数模板可使用显式实参
+
+<ul>
+<li>
+返回类型中使用类型实参, 返回类型最好用第一个模板形参, 这样后面的模板形参可省略显式指定, 由函数形参推断.
+<pre class="brush: c++">
+template &lt;class T1, class T2, class T3&gt;
+T1 sum(T2, T3);
+long val3 = sum&lt;long&gt;(i, lng);
+</pre>
+
+<li>
+可显式指定模板形参消除函数指针的二义性
+<pre class="brush: c++">
+template &lt;typename T&gt; int compare(const T&amp;, const T&amp;);
+void func(int(*) (const string&amp;, const string&amp;));
+void func(int(*) (const int&amp;, const int&amp;));
+func(compare&lt;int&gt;);
+</pre>
+
+</ul>
+<li>
+一般而言, 调用函数的时候, 编译器只需要看到函数的声明即可. 同样, 创建类的对象时, 类的定义体必须可用, 而类的成员函数的定义不是必须存在的. 所以类定义和函数声明放在头文件中, 类成员函数和普通函数的定义放在源文件中.
+
+<li>
+使用模板函数, 则编译器必须能够访问模板函数的定义体, 而不仅仅是声明. 有两种使用方式: 包含编译模型和分别编译模型
+
+<ul>
+<li>
+包含编译模型(inclusion compilation model) 在声明函数模板或类模板的头文件中最后一句加上一条 #include 源文件.
+
+<li>
+分别编译模型(separate compilation model), 跟踪相关的模板定义, 使用 export 关键字. 该关键字指明给定的定义可能会需要在其他文件中产生实例化. 该关键字不必在模板声明中出现. 在函数模板的定义中指明该函数模板为导出的. 声明则放在头文件中.
+<pre class="brush: c++">
+export template&lt;typename type&gt;
+Type sum(Type t1, Type t2) /* ... */
+</pre>
+
+<li>
+类的导出要麻烦一下, 一般不在头文件定义该类为导出, 如果在头文件中使用export, 则该头文件只能被程序中的一个源文件使用. 我们应当在实现文件中使用export
+<pre class="brush: c++">
+// 头文件
+template &lt;class Type&gt; class Queue { ... };
+// 源文件
+export template &lt;class Type&gt; class Queue;
+#include &lt;Queue.h&gt;
+// 类成员函数的定义&lt;F7&gt;&lt;F7&gt;
+</pre>
+
+<li>
+也可以将类模板的个别成员声明为导出的, 其定义应该放在定义类模板的头文件中, 不要和非导出成员的定义混淆
+
+</ul>
+<li>
+类模板中的名字查找...(需要进一步理解)
+
+<li>
+在类模板的定义体内, 可以使用模板的非限定名: 例如 template &lt;typename Type&gt; class Queue {}; Queue(const Queue&amp;) 等同于 Queue&lt;Type&gt;(const Queue&lt;Type&gt;&amp;)
+
+<li>
+类模板成员函数在类定义体外的定义必须要包含几点: template 开头, 后接模板形参表; 是哪个类的成员; 类名包含模板形参, 如:
+<pre class="brush: c++">
+template &lt;class T&gt; ret-type void classname&lt;T&gt;::member-name
+</pre>
+
+<li>
+与函数模板不同, 类成员函数的类型由函数对象的类型确定, 所以类成员模板函数不会进行形参推断, 其形参允许进行常规转换
+<pre class="brush: c++">
+Queue&lt;int&gt; qi;
+short s = 42;
+int i = 42;
+qi.push(s);
+qi.push(i); // 两个push都有效, 都是调用 Queue&lt;int&gt;::push(const int&amp;)
+</pre>
+
+<li>
+类模板的成员函数只有在程序调用时才会实例化该函数. 定义类模板的对象时, 会实例化类模板, 从而实例化用于初始化该对象的构造函数, 以及该构造函数调用的任意成员.
+
+<li>
+类模板的指针定义不会对类进行实例化, 只有用到这样的指针时才会对类进行实例化.
+
+<li>
+非类型模板的实参在实例化时必须为编译时常量表达式
+
+<li>
+类模板中可以出现三种友元声明:
+
+<ol>
+<li>
+普通非模板类和函数的友元声明, 将友元关系授予明确指定的类或函数
+
+<li>
+类模板或函数模板的友元声明, 授予对友元所有实例的访问权
+
+<li>
+只授予对类模板或函数模板的特定实例的访问权的友元声明.
+
+</ol>
+<li>
+友元可以是类模板或函数模板
+<pre class="brush: c++">
+template &lt;class Type&gt; class Bar {
+	template &lt;class T&gt; friend class Fool;
+	template &lt;class T&gt; friend void templ_fcn1(const T&amp;);
+};
+</pre>
+
+<ul>
+<li>
+注意这些友元声明使用于类本身不同的类型形参.
+
+</ul>
+<li>
+授予类模板和函数模板特定实例的访问权的友元声明
+<pre class="brush: c++">
+template &lt;class T&gt; class Foo2;
+template &lt;class T&gt; void templ_fcn2(const T&amp;);
+template &lt;class Type&gt; class Bar {
+	friend class Foo2&lt;char*&gt;;
+	friend void templ_fcn2&lt;char*&gt;(char* const &amp;);
+}
+</pre>
+
+<ul>
+<li>
+更常见的形式
+<pre class="brush: c++">
+template &lt;class T&gt; class Foo3;
+template &lt;class T&gt; void templ_fcn3(const T&amp;);
+template &lt;class Type&gt; class Bar {
+	friend class Foo3&lt;Type&gt;;
+	friend void templ_fcn3&lt;Type&gt;(char* const &amp;);
+}
+</pre>
+
+</ul>
+<li>
+如果一个类将另一个模板类或模板函数的特定实例化声明为友元, 则需要事先声明该模板类或函数
+
+<li>
+任意类(模板或非模板)可以拥有本身为类模板或者函数模板的成员, 这种成员称为成员模板(member template), 成员模板不能为虚. 
+
+<li>
+模板类定义体外的模板成员函数的定义有两个模板形参表, 首先是类模板形参表, 而后是成员函数模板形参表. 其实例化, 类模板形参有类的对象确定, 成员模板的形参与普通函数模板的形参一样, 可进行实参推断.
+<pre class="brush: c++">
+template &lt;class Type&gt; class Queue
+{
+public:
+	template &lt;class It&gt;
+	Queue(It beg, It end) : head(0), tail(0) { copy_elems(beg, end); }
+	
+	template &lt;class Iter&gt; void assign(Iter, Iter);
+private:
+	template &lt;class Iter&gt; void copy_elems(Iter, Iter);
+};
+// 类定义体外的成员模板函数定义
+template &lt;class T&gt; template &lt;class Iter&gt;
+void Queue&lt;T&gt;::assign(Iter beg, Iter end)
+{
+	destroy();
+	copy_elems(beg, end);
+}
+
+short a[4] = { 0, 3, 6, 9 };
+Queue&lt;int&gt; qi(a, a+4);
+vector&lt;int&gt; vi(a, a+4);
+qi.assign(vi.begin(), vi.end());
+</pre>
+
+<li>
+类模板的static成员, 每个类模板实例化的所有对象共享其特定的static成员. 类模板 static 成员的定义, 在类体外必须首先要写 template和模板形参. 如:
+<pre class="brush: c++">
+template &lt;class T&gt;
+size_t Foo&lt;T&gt;::ctr = 0;
+</pre>
+
+<li>
+类模板的特化, 例如使用C字符串指针时, 不是使用该指针, 而是用该指针指向的字符串进行操作. 特化中, 一个或多个模板形参的实际类型或实际值是指定的.
+
+<li>
+类模板特化的形式: 关键字 template 后跟一对空的尖括号; 再接函数名和一对尖括号, 尖括号指定特化定义的模板形参; 函数形参表; 函数体. 例如:
+<pre class="brush: c++">
+template &lt;&gt;
+int compare&lt;const char*&gt;(const char* const &amp;v1,
+						const char* const &amp;v2)
+{
+	return strcmp(v1, v2);
+}
+</pre>
+
+<li>
+对于用户而言, 调用特化函数或使用特花蕾, 与使用从通用版本实例化的版本无法区别.
+
+<li>
+模板特化的形式如下:
+
+<ul>
+<li>
+关键字 template 后面接一对空的尖括号 (&lt;&gt;)
+
+<li>
+再接模板名和一对尖括号, 尖括号中指定这个特化定义的模板形参
+
+<li>
+函数形参表
+
+<li>
+函数体
+<pre class="brush: c++">
+template&lt;&gt; int compare&lt;const char*&gt;(const char* const&amp; v1, const char* const&amp; v2)
+{
+	return strcmp(v1, v2);
+}
+</pre>
+
+</ul>
+<li>
+函数模板特化可以声明而无需定义, 其中 template&lt;&gt; 和 函数形参表不能省略, 模板类型形参可省略, 如果可以从函数形参表推断模板形参, 则不必显示指定模板实参
+<pre class="brush: c++">
+template&lt;&gt; int compare&lt;const char*&gt;(const char* const&amp;, const char* const&amp;);
+template&lt;&gt; int compare(const char* const&amp;, const char* const&amp;);
+</pre>
+
+<li>
+在模板特化的调用中, 实参类型必须与特化版本函数的形参类型完全匹配, 如果不完全匹配, 编译器将为实参从模板定义实例化一个实例.
+
+<li>
+不要在一个源文件中实例化该函数模板, 而在另一个源文件中用同样的实参特化该函数模板. 因此模板特化的声明必须在使用该特化的每个文件中出现. 所以应在一个头文件中包含模板特化的声明, 然后使用该特化的每个源文件包含该头文件.
+
+<li>
+特化一个函数模板之前, 需要有该函数模板的声明. 注意, 特化出现在该模板实例的调用之后是错误的.
+<pre class="brush: c++">
+template &lt;class T&gt; int compare(const T&amp; t1, const T&amp; t2) { /* ... */ }
+int main() {
+	int i = compare("hello", "world");
+}
+
+// 下面的定义是错误的, 因为特化发生在调用之后.
+template &lt;&gt; int compare&lt;const char*&gt;(const char* const&amp; s1, const char* const&amp; s2)
+{ /* ... */ }
+</pre>
+
+<li>
+可以特化类模板
+<pre class="brush: c++">
+template &lt;&gt; class Queue&lt;const char*&gt;
+{
+public:
+	void push(const char*);
+	void pop() { real_queue.pop(); }
+	bool empty() const { return real_queue.empty(); }
+	std::string front() { return real_queue.front(); }
+	const std::string&amp; front() const { return real_queue.front(); }
+private:
+	Queue&lt;std::string&gt; real_queue;
+};
+</pre>
+
+<li>
+类模板的特化可以定义与模板本身不同的成员, 类模板成员的定义不会用于显式特化成员的定义. 不过, 通常类模板的特化应该与类模板有相同的接口.
+
+<li>
+类模板的特化在类定义体外的成员函数定义, 不需要加上 template &lt;&gt;
+<pre class="brush: c++">
+void Queue&lt;const char*&gt;::push(const char* val)
+{
+	real_queue.push(val);
+}
+</pre>
+
+<li>
+可以只特化类成员函数, 而不特化整个类, 特化的声明应当放在头文件中.
+<pre class="brush: c++">
+template&lt;&gt; void Queue&lt;const char*&gt;::push(const char* const val);
+template&lt;&gt; void Queue&lt;const char*&gt;::pop();
+</pre>
+
+<li>
+假设一个模板类有多个模板形参, 其中只特化部分模板形参. 成为模板类的部分特化. 格式为 template开头, 后跟尖括号(&lt;&gt;)括住的模板形参表, 部分特化的模板形参表是对应的类模板定义形参表的子集. 其中只列出未知模板形参的那些形参, 
+<pre class="brush: c++">
+template &lt;class T1, class T2&gt;
+class some_template{
+	// ...
+};
+
+// 部分特化该模板类
+template &lt;class T1&gt;
+class some_template&lt;T1, int&gt;
+{
+	//...
+};
+</pre>
+
+<li>
+部分特化是在使用的时候隐式实例化
+<pre class="brush: c++">
+some_template&lt;int, string&gt; foo;	// 使用模板
+some_template&lt;string, int&gt; bar;	// 使用部分特化
+</pre>
+
+<ul>
+<li>
+当声明了部分特化的时候, 编译器将为实例化选择最特化的模板法定义.
+
+</ul>
+<li>
+函数模板也可以重载, 可以定义相同名字但形参数目或类型不同的多个函数模板, 也可以定义与函数模板有相同名字的普通非模板函数.
+
+<li>
+函数调用的步骤如下:
+
+<ul>
+<li>
+根据函数名选择函数集合
+
+<ul>
+<li>
+与被调用函数名字相同的所有普通函数
+
+<li>
+任意相同名字的函数模板实例化, 发现与调用函数实参相匹配的实例化模板函数
+
+</ul>
+<li>
+确定哪些普通函数是可行的, 而候选模板函数都是可行的
+
+<li>
+如果需要转换来进行调用, 根据转换的种类排列可行函数
+
+<ul>
+<li>
+如果只有一个函数可选, 则为该函数
+
+<li>
+如有二义性, 则去掉所有函数模板实例(注意: 只有二义性的时候才去掉, 如果可完全匹配模板函数则不用去掉)
+
+</ul>
+<li>
+重新排列去掉函数模板实例的可行函数
+
+<ul>
+<li>
+如果只有一个函数可选, 则为该函数
+
+<li>
+否则, 调用具有二义性.
+<pre class="brush: c++">
+template &lt;typename T&gt; int compare(const T&amp;, const T&amp;);	// 1号
+template &lt;class U, class V&gt; int compare(U, U, V);		// 2号
+int compare(const char*, const char*);					// 3号
+
+compare(1, 0); // 1 号的 int 版本
+vector&lt;int&gt; ivec1(10), ivec2(20);
+compare(ivec1.begin(), ivec1.end(), ivec2.begin());		// 2号的 vector&lt;int&gt;::iterator 版本
+int ia1[] = {0, 1, 2, 3, ,4, 5, 6, 7, 8, 9};
+compare(ia1, ia1+10, ivec1.begin());	// 2 号的, int* 和 vector&lt;int&gt;::iterator 版本
+const char const_arr1[] = "world", const_arr2[] = "hi";
+compare(const_arr1, const_arr2);		// 3号函数
+char ch_arr1[] = "world", ch_arr2[] = "hi";
+compare(ch_arr1, ch_arr2);		// 3 号函数, 这是因为数组到指针引用还有一步转换, 所以模板和普通函数都需要转换, 因此优先选择普通函数
+
+char* p1 = ch_arr1, *p2 = ch_arr2;
+compare(p1, p2);		// 模板函数的 char* 版本, 因为这里模板函数的版本不需要转换, 而普通函数需要转换.
+</pre>
+
+</ul>
+</ul>
+<li>
+注意, 如果上面的代码使用T类型的形参代替T类型的const引用, 则会发生很大转变
+<pre class="brush: c++">
+template &lt;typename T&gt; int compare(T, T); // 4号
+compare(ch_arr1, ch_arr2);		// 则调用4号函数的char* 版本
+compare(p1, p2);	// 4号函数的char*版本
+compare(const_arr1, const_arr2);	// 3号的普通函数
+const char* cp1 = const_arr1, *cp2 = const_arr2;
+compare(cp1, cp2);	// 3 号的普通函数.
+</pre>
+
+<li>
+设计既包含函数模板有包含非函数模板的重载函数集合是困难的. 定义函数模板特化几乎总是比使用非模板版本更好.
+
+</ul>
+
+    </div>
+</body>
+</html>

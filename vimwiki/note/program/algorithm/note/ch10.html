@@ -1,0 +1,65 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../style.css" />
+    <title>ch10</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+<!--
+	<ul id="top-nav">
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+-->	
+</div>
+</div>
+    <div class="content">
+    
+<ul>
+<li>
+10.4-2
+<pre>
+# 使用中序遍历二叉树
+PRINTBTREE(T, t)
+	if t = NIL
+		then return
+	PRINTBTREE(T, left[t])
+	print(t)
+	PRINTBTREE(T, right[t])
+</pre>
+
+<li>
+10.4-3
+<pre>
+PRINTBTREE(T, t)
+	STACK_PUSH(L, t)
+	while STACK_ISEMPTY(L) == FALSE
+		do p = STACK_POP
+		   if left[p] != NIL
+		   		then STACK_PUSH(p)
+		   if right[p] != NIL
+		   		then STACK_PUSH(p)
+</pre>
+
+<li>
+10.4-4
+<pre>
+ITERTREE(T, t)
+	if t = NIL
+		then return
+	print(t)
+	ITERTREE(T, leftchild(t))
+	ITERTREE(T, sibling(t))
+</pre>
+
+</ul>
+
+    </div>
+</body>
+</html>

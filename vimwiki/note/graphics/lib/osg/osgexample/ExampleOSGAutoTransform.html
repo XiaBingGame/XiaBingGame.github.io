@@ -1,0 +1,98 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../../style.css" />
+    <title>ExampleOSGAutoTransform</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="../index.html">首页</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<ul>
+<li>
+创建文本, 自动变换节点, CompositeViewer
+
+<li>
+创建文本, osgText::Text 作为 geode 的 drawable
+<pre>
+    osg::Geode* geode = new osg::Geode();
+    std::string timesFont("fonts/arial.ttf");
+    {
+        osgText::Text* text = new  osgText::Text;
+        geode-&gt;addDrawable( text );
+
+        text-&gt;setFont(timesFont);
+        text-&gt;setPosition(pos);
+        text-&gt;setCharacterSize(size);
+        text-&gt;setAxisAlignment(axisAlignment);
+        text-&gt;setAlignment(osgText::Text::CENTER_CENTER);
+        text-&gt;setText(label);
+    }
+</pre>
+
+<li>
+根据 osg::GraphicsContext::Traits 创建 osg::GraphicsContext, osg::GraphicsContext::createGraphicsContext()
+
+<li>
+同一个 osg::GraphicsContext 可以创建不同视口区域的 View
+<pre>
+    if (!gc)
+    {
+        osg::ref_ptr&lt;osg::GraphicsContext::Traits&gt; traits = new osg::GraphicsContext::Traits;
+        traits-&gt;x = x;
+        traits-&gt;y = y;
+        traits-&gt;width = width;
+        traits-&gt;height = height;
+        traits-&gt;windowDecoration = true;
+        traits-&gt;doubleBuffer = true;
+        traits-&gt;sharedContext = 0;
+
+        gc = osg::GraphicsContext::createGraphicsContext(traits.get());
+        if (!gc)
+        {
+            osg::notify(osg::NOTICE)&lt;&lt;"  GraphicsWindow has not been created successfully."&lt;&lt;std::endl;
+            return 0;
+        }
+
+        x = 0;
+        y = 0;
+    }
+
+    osgViewer::View* view = new osgViewer::View;
+    view-&gt;getCamera()-&gt;setGraphicsContext(gc.get());
+    view-&gt;getCamera()-&gt;setViewport(new osg::Viewport(x, y, width, height));
+    //view-&gt;getCamera()-&gt;setProjectionMatrixAsPerspective(30.0, double(width) / double(height), 1.0, 1000.0);
+    view-&gt;setCameraManipulator(new osgGA::TrackballManipulator);
+    view-&gt;setSceneData(scenegraph);}}}
+</pre>
+
+<li>
+osgViewer::CompositeViewer 调用 addView 添加多个 View
+
+<li>
+获取屏幕分辨率
+<pre c++>
+        osg::GraphicsContext::WindowingSystemInterface* wsi = osg::GraphicsContext::getWindowingSystemInterface();
+        if (!wsi)
+        {
+            osg::notify(osg::NOTICE)&lt;&lt;"Error, no WindowSystemInterface available, cannot create windows."&lt;&lt;std::endl;
+            return 1;
+        }
+
+        unsigned int width, height;
+        wsi-&gt;getScreenResolution(osg::GraphicsContext::ScreenIdentifier(0), width, height);
+</pre>
+
+</ul>
+
+    </div>
+</body>
+</html>

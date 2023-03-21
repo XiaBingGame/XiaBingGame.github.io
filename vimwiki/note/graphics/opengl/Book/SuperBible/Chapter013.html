@@ -1,0 +1,658 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../../style.css" />
+    <title>Chapter013</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="../index.html">首页</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<div id="Chapter 13  Debugging and Performance Optimization"><h1 id="Chapter 13  Debugging and Performance Optimization">Chapter 13  Debugging and Performance Optimization</h1></div>
+<div id="Chapter 13  Debugging and Performance Optimization-13.1 Debugging Your Applications"><h2 id="13.1 Debugging Your Applications">13.1 Debugging Your Applications</h2></div>
+<ul>
+<li>
+debug context --- 通过错误检查或者使用 OpenGL API 得到的反馈
+
+</ul>
+
+<div id="Chapter 13  Debugging and Performance Optimization-13.1 Debugging Your Applications-13.1.1 Debug Contexts"><h3 id="13.1.1 Debug Contexts">13.1.1 Debug Contexts</h3></div>
+<ul>
+<li>
+当你创建一个 OpenGL context 时, 其有选项创建其中一个模式, 其中一个模式是 debug context. 当你创建一个 debug context, OpenGL 在应用和驱动及GPU之间安装一个额外的layer. 这些额外的 layer 执行严格的错误检查, 分析参数, 记录错误, 或者其他昂贵的内容. 
+
+<li>
+为了创建一个 debug context, 重写 sb6::application::init() 函数, 在 info 结构里设置 debug flag
+<pre class="brush: c++">
+void my_application::init()
+{
+	sb6::application::init();
+	info.flags.debug = 1;
+}
+</pre>
+
+<li>
+OpenGL 使用一个函数指针设置一个回调函数, 用于当错误发生时通知应用. 回调函数指针的定义如下
+<pre class="brush: c++">
+typedef void (APIENTRY * GLDEBUGPROC)(GLenum source,
+		GLenum type,
+		GLuint id,
+		GLenum severity,
+		GLsizei length,
+		const GLchar* message,
+		void* userParam);
+</pre>
+
+<li>
+函数 glDebugMessageCallback()
+<pre class="brush: glsl">
+void glDebugMessageCallback(GLDEBUGPROC callback,
+		void * userParam);
+</pre>
+
+<ul>
+<li>
+callback 为回调函数指针
+
+<li>
+userParam 由 OpenGL 存储, 传递回你的回调函数
+<pre class="brush: c++">
+static void APIENTRY simple_print_callback(GLenum source,
+		GLenum type,
+		GLuint id,
+		GLenum severity,
+		GLsizei length,
+		const GLchar* message,
+		void* userParam)
+{
+	printf("Debug message with source 0x%04X, type 0x%04X, "
+			"id %u, severity 0x%0X, ’%s’\n",
+			source, type, id, severity, message);
+}
+void initialize_debug_output()
+{
+	glDebugMessageCallback(&amp;simple_print_callback, NULL);
+}
+</pre>
+
+</ul>
+<li>
+一旦你设置了调试回调函数, OpenGL 会在其需要的时候报告信息给你的应用. 所以你应当小心不要套在回调函数内调用任何OpenGL 函数. 
+
+<li>
+在回调函数中, source 参数表示消息来自 OpenGL 的哪部分. 可能是如下的值:
+
+<ul>
+<li>
+GL_DEBUG_SOURCE_API --- 来自于 OpenGL API 的使用
+
+<li>
+GL_DEBUG_SOURCE_SHADER_COMPILER --- 发送编译错误和警告信息给你的应用. 与着色器和程序信息日志存储的信息相同.
+
+<li>
+GL_DEBUG_SOURCE_WINDOW_SYSTEM --- 与窗口系统或操作系统的交互产生的问题
+
+<li>
+GL_DEBUG_SOURCE_THIRD_PARTY --- 来自于一个工具, utility 库, 或者OpenGL 驱动的其他源.
+
+<li>
+GL_DEBUG_SOURCE_APPLICATION --- 不与其他类别匹配的 catch-all 类别的事物.
+
+</ul>
+<li>
+type 类型
+
+<ul>
+<li>
+GL_DEBUG_TYPE_ERROR --- 表示一个错误发生
+
+<li>
+GL_DEBUG_TYPE_DEPRECATED_BEHAVIOR --- 使用的功能其被OpenGL标识为反对的.
+
+<li>
+GL_DEBUG_TYPE_UNDEFINED_BEHAVIOR --- 应用试图做的某事可能产生未定义的结果.
+
+<li>
+GL_DEBUG_TYPE_PERFORMANCE --- 警告性能可能不大好.
+
+<li>
+GL_DEBUG_TYPE_PORTABILITY --- 应用在其他的OpenGL实现可能有问题.
+
+<li>
+GL_DEBUG_TYPE_MARKER --- 插入事件给 OpenGL 命令流, 使得其可以被工具以及其他debugging aids得到.
+
+<li>
+GL_DEBUG_TYPE_PUSH_GROUP, GL_DEBUG_TYPE_POP_GROUP --- 使用 glPushDebugGroup() 和 glPopDebugGroup() 生成
+
+<li>
+GL_DEBUG_TYPE_OTHER --- 不属于之前类别的错误
+
+</ul>
+<li>
+severity 参数: GL_DEBUG_SEVERITY_LOW, GL_DEBUG_SEVERITY_MEDIUM, GL_DEBUG_SEVERITY_HIGH, GL_DEBUG_SEVERITY_NOTIFICATION 中的一个, 表示不同级别
+
+<li>
+每个消息有单独的标志符, 在 id 参数中. 实际的值是实现定义的, 其可关联至具体的信息. 还有参数就是消息字符串的长度, 消息字符串指针, 还有 userParam 参数.
+
+<li>
+glDebugMessageControl() 函数, 返回你想要接收哪种信息类型, 原型为
+<pre class="brush: c++">
+void glDebugMessageControl(GLenum source,
+		GLenum type,
+		GLenum severity,
+		GLsizei count,
+		const GLuint * ids,
+		GLboolean enabled);
+</pre>
+
+<ul>
+<li>
+source, type, severity 参数形成了该函数将要影响的调试信息组. 每个参数和之前回调函数有差不多的值. 这些参数的任意组合可以设为 GL_DONT_CARE. 如果一个参数为 GL_DONT_CARE, 则忽略用于该目标的过滤. 否则匹配的值将会在过滤中. 如果ids不会NULL, 则可看成 count message identifier 数组的指针. 标志符位于该列表的任意信息将看成 filter 的一部分.
+
+<li>
+enable 参数 --- 允许报告作为结果的消息组. 例如打开所有 high severity 消息, 关闭所有着色器产生的消息
+<pre class="brush: c++">
+// Enable all messages with high severity
+glDebugMessageControl(GL_DONT_CARE, // Source
+	GL_DONT_CARE, // Type
+	GL_DEBUG_SEVERITY_HIGH, // Severity
+	0, NULL, // Count, ids
+	GL_TRUE); // Enable
+// Disable messages from the shader compiler
+glDebugMessageControl(GL_DEBUG_SOURCE_SHADER_COMPILER,
+	GL_DONT_CARE,
+	GL_DONT_CARE,
+	0, NULL,
+	GL_FALSE);
+</pre>
+
+</ul>
+<li>
+除了OpenGL实现产生的调试消息之外, 你还可以插入你自己的消息给调试输出流. 这样做的时候, 将会调用你的调试回调函数, 你可以使用与常规调试消息其实现相同的日志机制来记录这些消息. 为了将你自己的消息插入调试输出日志, 调用
+<pre class="brush: c++">
+void glDebugMessageInsert(GLenum source,
+	GLenum type,
+	GLuint id,
+	GLenum severity,
+	GLsizei length,
+	const char * message);
+</pre>
+
+<ul>
+<li>
+source, type, id, severity 参数与调试回调函数有相同的含义. source 可传递值 GL_DEBUG_SOURCE_SHADER_COMPILER. 但 GL_DEBUG_SOURCE_APPLICATION 则保留用于应用, GL_DEBUG_SOURCE_THIRD_PARTY 则用于工具和 utility 库. OpenGL 不会生成用于这些sources的消息. GL_DEBUG_TYPE_MARKER 保留下来用于信息消息. 工具可能截留这个消息流而后专门处理它. length 看成消息字符串的长度, 如果 length 为0, 则消息看成一个 null-terminated 字符串.
+
+</ul>
+<li>
+你可以分组消息为有层次的集合, 称之为 debug groups. OpenGL 启动时使用默认组, 通过将它们push至debug group stack来创建更进一步的组.
+<pre class="brush: c++">
+void glPushDebugGroup(GLenum source,
+	GLuint id,
+	GLsizei length,
+	const char * message);
+</pre>
+
+<ul>
+<li>
+这样做时, 当前 debug state 将被拷贝, 且拷贝至 debug stack 的顶层位置. 同时, 生成一个 debug 消息而后发送给你的回调函数. 它的类型设置为 GL_DEBUG_TYPE_PUSH_GROUP, 它的 severity 设置为 GL_DEBUG_SEVERITY_NOTIFICATION. 在 source 和 id 参数中设置它的源与标识符. 
+
+<li>
+glDebugMessageInsert(), 则 message 和 length 指定了消息字符串的地址与其长度. 如果 length 为0, 则消息为 null-terminated 字符串. 
+
+</ul>
+<li>
+如果你想要离开一个 debug group, 调用
+<pre class="brush: c++">
+void glPopDebugGroup(void);
+</pre>
+
+<ul>
+<li>
+产生另外的 debug message, 这次 type 参数设置为 GL_DEBUG_TYPE_POP_GROUP. 其他的参数都与上面的 PUSH 函数相同.
+
+</ul>
+<li>
+为了如纹理, buffer, framebuffers等object在日志中易读, 使用 glObjectLabel() 或 glObjectPtrLabel 分配 objects 名称
+<pre class="brush: c++">
+void glObjectLabel(GLenum identifier,
+	GLuint name,
+	GLsizei length,
+	const char * label);
+
+void glObjectPtrLabel(void * ptr,
+	GLsizei length,
+	const char * label);
+</pre>
+
+<ul>
+<li>
+identifier ---- 物体类型的标识符
+
+<ul>
+<li>
+GL_BUFFER
+
+<li>
+GL_FRAMEBUFFER
+
+<li>
+GL_PROGRAM_PIPELINE
+
+<li>
+GL_PROGRAM
+
+<li>
+GL_QUERY
+
+<li>
+GL_RENDERBUFFER
+
+<li>
+GL_SAMPLER
+
+<li>
+GL_SHADER
+
+<li>
+GL_TEXTURE
+
+<li>
+GL_TRANSFORM_FEEDBACK
+
+<li>
+GL_VERTEX_ARRAY
+
+</ul>
+<li>
+glObjectPtrLabel --- ptr 内是物体类型的标识符. 用于在OpenGL中有指针类型的物体, 当前仅有 sync objects.
+
+<li>
+label, length 则是物体的名称和名称的长度.
+
+</ul>
+</ul>
+
+<div id="Chapter 13  Debugging and Performance Optimization-13.2 Performance Optimization"><h2 id="13.2 Performance Optimization">13.2 Performance Optimization</h2></div>
+<ul>
+<li>
+改进性能主要是做两件事情
+
+<ol>
+<li>
+降低计算机的最小需求, 增加潜在用户基础
+
+<li>
+增加给定帧数内你可拥有的时间, 这样可以应用额外特殊的效果, 渲染更多的几何体, 或者运行更复杂的着色器.
+
+</ol>
+</ul>
+
+<div id="Chapter 13  Debugging and Performance Optimization-13.2 Performance Optimization-13.2.1 Performance Analysis Tools"><h3 id="13.2.1 Performance Analysis Tools">13.2.1 Performance Analysis Tools</h3></div>
+<ul>
+<li>
+第一个工具是 GPUView. 微软的 Windows Performance Toolkit 的一部分.
+
+<li>
+AMD 的 GPU PerfStudio 2
+
+</ul>
+
+<div id="Chapter 13  Debugging and Performance Optimization-13.2 Performance Optimization-13.2.1 Performance Analysis Tools-13.2.1.1 Windows Performance Toolkit and GPUView"><h4 id="13.2.1.1 Windows Performance Toolkit and GPUView">13.2.1.1 Windows Performance Toolkit and GPUView</h4></div>
+<ul>
+<li>
+Windows Performance Toolkit 可以用于测量窗口系统不同部分性能的工具包, 其可以测量 CPU 使用和事件, 内存和硬盘访问, 网络活跃等.
+
+<li>
+现代图形处理器处理命令 buffers, 这是一个命令序列, 编码为字节码的某种形式, 从应用发送给显卡. 有时被看着 submission.
+
+<li>
+GPUView 是一个工具, 视觉化 command buffer submission, 以及硬件和软件队列的活动. log.cmd 推荐运行时间要短, 减少其他应用的打开, 禁止用户的 Aero 接口.
+
+<li>
+暂停应用, 打开 log, 运行应用几秒钟, 而后暂停应用, 停止记录. 最后生成 merged.etl
+
+<li>
+present packets 指示操作系统显示渲染结果的事件(由 SwapBuffer() 命令触发). 点击可看到对话框显示信息.
+
+<li>
+分别有时间 creation time, SubmittedToHardwareQueueTime, GpuStartProcessingTime, CompletedByISRTime, CompletedByDPCTime. 
+
+<li>
+确保GPU尽可能有效地工作, 确保减少不需要的GPU工作.
+
+</ul>
+
+<div id="Chapter 13  Debugging and Performance Optimization-13.2 Performance Optimization-13.2.1 Performance Analysis Tools-13.2.1.2 GPU PerfStudio 2"><h4 id="13.2.1.2 GPU PerfStudio 2">13.2.1.2 GPU PerfStudio 2</h4></div>
+<ul>
+<li>
+frame profiler 需要 AMD 硬件, 但是 API trace 和 frame debugger 在任何显卡上工作的都很好. 
+
+</ul>
+
+<div id="Chapter 13  Debugging and Performance Optimization-13.2 Performance Optimization-13.2.2 Tuning Your Application for Speed"><h3 id="13.2.2 Tuning Your Application for Speed">13.2.2 Tuning Your Application for Speed</h3></div>
+<ul>
+<li>
+最小化OpenGL驱动需要做的工作量, 最大化你可以从一个GPU得到的工作量.
+
+</ul>
+
+<div id="Chapter 13  Debugging and Performance Optimization-13.2 Performance Optimization-13.2.2 Tuning Your Application for Speed-13.2.2.1 Reading State or Data from OpenGL"><h4 id="13.2.2.1 Reading State or Data from OpenGL">13.2.2.1 Reading State or Data from OpenGL</h4></div>
+<ul>
+<li>
+从 OpenGL 中将数据读回至应用不是一个好主意. 包括 glReadPixels() 读取 framebuffer, 读取 occlusion queries 的结果, transform feedback queries, 或者其他依赖于渲染的结果. 或者等待一个可能还未完成的fence. 应当从没有有必要调用 glFinish(). 
+
+<li>
+glGetError(), glGetIntegerv(), glGetUniformLocation() 等可能不会暂停 GPU, 但是其会暂停(stall)多线程驱动, 损害应用的性能. 应当尽量远离包含 "Get" 或 "Is" 的名称. 不要再应用的普通操作中频繁分配和删除 objects, 避免通过不同的 "Gen" 函数生成名称.
+
+<li>
+glReadPixels() --- 如果目的是为了将结果的数据用于OpenGL中的其他目的, 绑定一个 buffer 至 GL_PIXEL_PACK_BUFFER 目标, 将像素读取至其内, 而后绑定 buffer 至你想要使用的目标, 继续渲染. 这样无需数据从显卡内存中写入CPU内存.
+
+<li>
+如果非要从显卡内存写入CPU内存, 则有几种方式
+
+<ul>
+<li>
+调用 glReadPixels(), 将内存地址传递进该函数. 几乎所有的情况, 其会在 OpenGL 管线中产生泡沫(bubble). 你可在图 13.9 见其效果.
+
+<li>
+我们可以在调用 glReadPixels() 之前将一个 buffer 绑定至 GL_PIXEL_PACK_BUFFER 目标, 这样数据写入 pixel pack buffer 中. 但是仍有空隙出现.
+
+<li>
+改变战略, 我们仍然使用 glReadPixels() 将数据从 framebuffer 传输到一个 buffer object 上, 但是映射的 buffer 则是来自之前的帧. 创建多个 buffer objects. 
+
+</ul>
+</ul>
+
+<div id="Chapter 13  Debugging and Performance Optimization-13.2 Performance Optimization-13.2.2 Tuning Your Application for Speed-13.2.2.2 Effective Buffer Mapping"><h4 id="13.2.2.2 Effective Buffer Mapping">13.2.2.2 Effective Buffer Mapping</h4></div>
+<ul>
+<li>
+使用 glBufferData() 分配内存. 使用 glMapBufferRange() 函数映射 buffer 的一部分, 其有几个 flag 可以控制数据如何映射, 以及如何与管线其他部分同步. 原型为
+<pre class="brush: c++">
+void *glMapBufferRange(GLenum target,
+	GLintptr offset,
+	GLsizeiptr length,
+	GLbitfield access);
+</pre>
+
+<ul>
+<li>
+单位为字节.
+
+<li>
+access 设置了如何执行映射的 flags
+
+<ul>
+<li>
+READ_BIT Returned pointer may be used for reading the buffer.
+
+<li>
+WRITE_BIT Returned pointer may be used for modifying the buffer.
+
+<li>
+INVALIDATE_RANGE_BIT Signals that OpenGL can throw away the previous contents of the mapped range.  Data in the range is unde?ned unless updated by the application.
+
+<li>
+INVALIDATE_BUFFER_BIT Signals that OpenGL can throw away the previous contents of the entire buffer.  Data in the buffer is unde?ned unless updated by the application.
+
+<li>
+FLUSH_EXPLICIT_BIT Using this bit with GL_MAP_WRITE_BIT requires an application to explicitly ?ush each range updated by calling glFlushMappedBufferRange(). If this bit is not speci?ed, the entire mapped range will be ?ushed when glUnmapBuffer() is called.
+
+<li>
+UNSYNCHRONIZED_BIT Tells OpenGL to avoid trying to synchronize any pending GPU writes to this buffer before mapping.
+
+</ul>
+<li>
+GL_MAP_READ_BIT, GL_MAP_WRITE_BIT --- 设置read位标识想要从buffer读取, write位标识想要写入buffer. 比等价的glMapBuffer() 的 GL_READ_ONLY 和 GL_WRITE_ONLY 更严格. 可以使用或符号同时设置这两位.
+
+<li>
+GL_MAP_INVALIDATE_RANGE_BIT, GL_MAP_INVALIDATE_BUFFER_BIT --- 映射之后不再关心其内的数据, 可以放心的抛弃. 前者抛弃映射的数据内容, 后则抛弃buffer内的所有内容.
+
+<li>
+GL_MAP_FLUSH_EXPLICIT_BIT --- 如果你想要覆写 buffer 的一部分, 但是你不知道是哪个部分. 当你知道要覆写什么, 你会告知它, 使用函数 glFlushMappedBufferRange()
+<pre class="brush: c++">
+GLvoid glFlushMappedBufferRange(GLenum target,
+	GLintptr offset,
+	GLsizeiptr length);
+</pre>
+
+</ul>
+<li>
+同样你也可以使用 glFlushMappedBufferRange(), 如果你想要更新多个buffer的独立区域, 而且不用多次调用 glMapBufferRange(). 当你映射很大的buffer, 且超时更新了不同的range, 你可以使用 glFlushMappedBufferRange() 告知 OpenGL 你完成了更新. 这也许允许 OpenGL 重复类似数据从GPU内存移动的工作, 可能与你的应用做的工作重复, 类似于从文件读取数据. 注意设置GL_MAP_FLUSH_EXPLICIT_BIT 时, 而后不正确地调用 glFlushMappedBufferRange() 可能导致你新数据中的结果不被使用. 
+
+<ul>
+<li>
+GL_MAP_UNSYNCHRONIZED_BIT --- 告知 OpenGL 不要等待, 直到所给出指向buffer内存的指针之前完成使用 buffer 中的数据. 如果你不设置该位, 则要使用的相同内存的指针, 当其被之前的命令使用时, 在其返回之前会等待该命令完成执行, 这会降低你的应用的速度.  如果你知道不会覆写buffer内的数据, 则可以设置该位. 这里有一些同步机制, 从 glFlush() 到 fence.
+
+</ul>
+<li>
+推荐使用 glMapBufferRange() 函数代替 glMapBuffer().
+
+</ul>
+
+<div id="Chapter 13  Debugging and Performance Optimization-13.2 Performance Optimization-13.2.2 Tuning Your Application for Speed-13.2.2.3 Use the Features OpenGL Gives You"><h4 id="13.2.2.3 Use the Features OpenGL Gives You">13.2.2.3 Use the Features OpenGL Gives You</h4></div>
+<ul>
+<li>
+OpenGL 拥有不少容器 objects. 它们表示 blocks of state. 举例有vertex array objects, framebuffer objects, transform feedback objects, transform feedback objects. 通常, 尽量使用容器 objects, 而非修改许多状态. 举例, 一个 vertex array object 包含与 OpenGL 前端有关的所有顶点数组的state. 其包含 bound buffer stores, 以及这些store内的顶点属性格式, 跨度, 偏移; 允许或禁止哪个 attributes. 你可以使用 glBindVertexArray() 快速切换这些信息的完整集. 参考 sb6::object::render.
+
+<li>
+同样, framebuffer objects 包装了当前framebuffer的所有参数, 这些参数描述了颜色, 深度, stencil attachment. 初始化时创造framebuffer一次, 而后渲染时绑定.
+
+<li>
+transform feedback objects 包装了所有的state, 该state为表示 OpenGL transform feedback stage 需要的state. 使用 glBindTransformFeedback() 切换比直接重配置所有的transform-feedback-related state 更有效率, 而不仅用于 glDrawTransformFeedback() 或其他变种.
+
+</ul>
+
+<div id="Chapter 13  Debugging and Performance Optimization-13.2 Performance Optimization-13.2.2 Tuning Your Application for Speed-13.2.2.4 Use Only the Data You Need"><h4 id="13.2.2.4 Use Only the Data You Need">13.2.2.4 Use Only the Data You Need</h4></div>
+<ul>
+<li>
+位置数据, 单元化物体空间的数据, 使得其位于区间 -1.0 到 1.0 之间, 这将允许你使用有符号单元化数据存储坐标 - glVertexAttribPointer() 传递 GL_SHORT 参数, 且normalized参数设为 GL_TRUE. 而后你可以包含一个缩放因子位于任意的模型矩阵中以返回物体原先的scale. 这样你可以每个成员使用16位来存储. 对于世界空间的坐标数据, w 成分永远都是 1.0, 没必要存储这个数据. 同样的策略还可用于法线和切线. 对于法线和切线, 10位精度足够. 所以可以使用 GL_INT_2_10_10_10_REV 作为类型参数传递给 glVertexAttribPointer(). 同样, 这使用了有符号的单元化数据, 且提供了一个类似层次的精度, 如16位浮点数据以及位于 -1.0 到 1.0 之间.
+
+<li>
+如果法线存储在纹理中, 则进一步假设切线空间的法线永远朝向表面外部, z 成分永远为正. 法线单元长度, 所以可以用两个成分表示单个法线, 在片段着色器中构造第三个成分. 这里用显卡的计算换取内存带宽很划算. 两个成分使用八位的有符号单元化格式.
+
+<li>
+对normal map应用使用纹理压缩并不是很好. 易看到不连续性. 对于其他的数据, 如散射和镜面 albedos, 压缩纹理则很不错. 你应当考虑压缩为例是否足够表示你的数据.
+
+<li>
+还要关心 OpenGL 写入的数据. 如果你想要使用一个FBO渲染一个 off-screen 纹理, 并想要使用 HDR, 其可能尝试你所有的 framebuffer attachment 使用 GL_RGBA32F 内部格式. 这会占用很大的内存和带宽. 如果你不需要纹理有 alpha channel, 不要分配这个, 使用 GL_RGB32F. 如果不需要32位精度, 则考虑使用 GL_RGBA16F.
+
+<li>
+从着色器或使用transform feedback写入图像, 在你的着色器使用GLSL的打包函数构造数据, 而后将其写入整数图像或者buffer内.
+
+</ul>
+
+<div id="Chapter 13  Debugging and Performance Optimization-13.2 Performance Optimization-13.2.2 Tuning Your Application for Speed-13.2.2.5 Shader Compilation Performance"><h4 id="13.2.2.5 Shader Compilation Performance">13.2.2.5 Shader Compilation Performance</h4></div>
+<ul>
+<li>
+着色器的编译影响用户的体验. 使用 glCompileShader() 编译着色器时, 如果使用 glGetShaderiv() 查看编译状态或其 info log时, 可能会产生暂停, 这是因为必须要完成编译才能给予答案. 除了一次编译一个着色器且查询编译结果, 你还可以按照如下的做法做:
+
+<ul>
+<li>
+根据所有需要编译的着色器列表, 创建它们的 shader objects, 一次调用 glCompileShader(), 但不要查询它们的编译结果.
+
+<li>
+在你应用的调试或开发构建中, 在所有着色器编译之后查询编译结果, 或者依赖于发送给你日志的调试输出. 确保你有办法关闭它们. 一旦你已经调试了着色器, 且应用准备实用时, 不再需要编译状态, 你可以假设它们永远成功.
+
+<li>
+同样的, 对于所有程序对象的列表, 将着色器附属于它们, 而后调用 glLinkProgram(), 但不要查询链接的结果 - 仅在调试构建中包含查询链接结果.
+
+</ul>
+<li>
+在很大的应用中, 有大量的着色器, 有大量着色器的组合, 这些都需要链接至program objects. 原生的方法是创建一个着色器对象的集合用于每个组合. 重编译每个关联的着色器, 以一对一的关系附属至程序对象. 由于一个着色器可以附属至多个程序对象, 因此加载所有需要的着色器, 每个着色器编译一次, 而后附属编译好的着色器至需要它的程序对象上, 而后链接它们.
+
+<li>
+当你使用单独的着色器对象且以separable mode链接你的程序, 你将它们attach另外的container object --- the program pipeline object. 该 object 存储当前管线中关于 stages 的有效信息. 当你想要切换着色器时, 切换多个 program pipeline objects 比重配置单个program pipeline object更有效率. 当创建一个 program pipeline object 用于你应用中着色器的每个组合时, 可能让你有相同的pipeline object的组合爆炸, 维持一个大小为100的列表, 而后将该列表作为 cache, 如果你需要的 pipeline object 位于该cache中, 则取出并使用, 否则添加一个新的 object 至该 cache, 或者从取出一个 object 并重配置该 object. 这样允许你快速切换 program stages 的组合, 而无需维持一个用于各种states组合的pipeline object.
+
+<li>
+查看着色器的复杂度, 首先, 运行预处理器, 其扩展macros, 移除注释等. 而后, tokenized 着色器, 检查 syntax, 最后编译至内部格式, 此时优化和代码生成. 通常, 代码优化器通过在部分代码上通过一个 pass 来执行, 尽可能执行本地优化, 而后保存结果. 而后其会有后续pass, 重复处理直到没有更多的优化, 或者pass达到了执行的最大数量. 当优化器停止运行, 则会有两样事情会发生一个:
+
+<ul>
+<li>
+如果因为不能在你的代码上发现更多的变换而停止优化器, 则可执行的结果则可能得到该有的有效率, 但是优化器可能在着色器上采用很多 pass 达到这点, 增加了优化时间.
+
+<li>
+如果优化器是因为运行了所有可用的pass而停止, 则其可能没有达到其可有的优化. 加上优化器用光了分配给他的时间.
+
+</ul>
+<li>
+要解决这个问题, 首先, 试图写有效率的着色器代码. 你还有其他的办法来改进着色器编译器的运行性能:
+
+<ul>
+<li>
+首先, 在该着色器装配给你的应用之前, 你可以通过一个 preprocessor offline 来运行你的编译器. 这允许你使用宏, 预处理器定义, 以及其他预处理器的功能, 但是不要在产生最终着色器的着色器编译器上制造一个负担.
+
+</ul>
+<li>
+如果你想要更进一步, 你可以预优化你的着色器, 通过一个off-line着色器编译器运行它们, 将你的着色器代码预处理, 分析, 编译为一个中间的表达结果, 且在其上执行许多通用的优化(例如消除dead code, constant folding 和 propagation, common sub-expression elimination). 而后该优化的代码返回作为 GLSL. 这样使用的时候就会发现无需再作优化. 
+
+<li>
+第六章我们介绍了程序二进制, 程序二进制让你可以一次性编译着色器并链接至程序对象, 而后将结果保存至文件. 当你需要的时候, 加载程序二进制, 而后提交给 OpenGL 使用. 这样, OpenGL 可以掠过许多编译过程. 可能完全消除着色器的编译, 至少大幅度减少了其时间.
+
+</ul>
+
+<div id="Chapter 13  Debugging and Performance Optimization-13.2 Performance Optimization-13.2.2 Tuning Your Application for Speed-13.2.2.6 Making Use of Multiple GPUs"><h4 id="13.2.2.6 Making Use of Multiple GPUs">13.2.2.6 Making Use of Multiple GPUs</h4></div>
+<ul>
+<li>
+多显卡, 多GPU系统, AMD 称之为 CrossFire, NVIDIA 称之为 SLI. 使用多显卡的改进渲染的性能技术称之为 alternate frame rendering(AFR) mode, 一个 GPU 渲染一帧, 下个GPU渲染下一帧, 如此往复. 
+
+<li>
+建议: 避免在一个GPU上产生数据, 而后另一个使用该数据. 否则这意味着同步, 使得不能并行运行. 一个GPU传送数据给另一个GPU的代价很高, 比从内存发送给GPU还高.
+
+<li>
+我们不知道何种类型的操作可能会触发 OpenGL 将数据从一个GPU传递给另一个GPU. 如下行为列表可能产生这个结果:
+
+<ul>
+<li>
+渲染至一个纹理, 而后下一帧使用该纹理. 如果使用双 GPU 系统, 最好使用前两帧的纹理, 而非前一帧的纹理.
+
+<li>
+渲染一个纹理之前不清空该纹理. 现代硬件实现了某种形式的framebuffer 的压缩, 允许快速的清空 framebuffer. 不清空 framebuffer 会关闭压缩, 使得你的应用运行更慢, 即使是单GPU系统. 对于多GPU系统, OpenGL 则不会知道你是否覆写 framebuffer, 其必然会等到前一帧完全结束, 而后传送给新的GPU.
+
+<li>
+在一个 frame 写入 buffer objects, 而后在另一个 frame 使用该结果会导致同步和传输. 例如物理模拟, 运行两个物理模拟的拷贝以便并行.
+
+<li>
+使用conditional rendering, 一个GPU生成 occlusion query 的结果, 确定另一个GPU的命令执行, 这将导致 GPU 的同步. 应使用很早的frame的occlusion query 结果, 或者使用 occlusion queries 的两个集合, 以便可以使用前两帧发出的 query 结果.
+
+</ul>
+<li>
+没有标准的方法确定是否运行于多GPU系统. 除非扩展.
+
+</ul>
+
+<div id="Chapter 13  Debugging and Performance Optimization-13.2 Performance Optimization-13.2.2 Tuning Your Application for Speed-13.2.2.7 Using Multiple Threads"><h4 id="13.2.2.7 Using Multiple Threads">13.2.2.7 Using Multiple Threads</h4></div>
+<ul>
+<li>
+OpenGL 完全支持多线程, 有多线程模块. 每个线程拥有一个"current context". wglMakeCurrent, glXMakeCurrent() 会改变用于一个线程的 context, 一旦 context 是一个线程的 current context, 则该线程可以创建 objects, 编译着色器, 加载纹理, 渲染至窗口. 
+
+<li>
+多线程使用相同的 object 集可能不是你想要的. 例如, 创建两个 context 用于两个线程, 一个加载纹理和编译着色器, 另一个则进行渲染, 可能发现没有得到想要的性能提升, 这里是一个GPU和一个命令 buffer, OpenGL 保证渲染的任何东西都有明确的次序, 这表示 OpenGL 的大多数访问都会被序列化. 同步的额外开销和对OpenGL的坐标访问则会抵消多线程带来的好处.
+
+<li>
+为了避免同步问题, 在单个线程内创建两个或者多个 context, 而后使用wglMakeCurrent()切换. 这帮助你孤立context之间的state变化, 切换 context 可能是昂贵的操作. 尤其大多数绑定特定的窗口系统切换context会导致隐式的崩溃.
+
+<li>
+一般来说, 有许多方式在 OpenGL 中使用多线程, 首先, 最复杂的应用会有无图形的任务(如人工智能, 声效, 物体管理, 输入和网络处理, 物理模拟, 等等). 这些都可用其他线程处理. 在你的主"渲染"线程中创建一个 OpenGL context, 并将其作为current context. 这将是唯一和 OpenGL 对话的线程.
+
+<li>
+假设你想要从一个文件中加载纹理数据给纹理 object. 你的主 OpenGL 线程将会创建一个 buffer object, 将其绑定至 GL_PIXEL_UNPACK_BUFFER target, 而后映射它用于写入. 而后其会给一个工作线程发送信号, 而后 buffer 准备写入, 而后发送给它一个指针用于写入. 工作线程则会从文件读取纹理数组, 而后通过主线程得到的指针写入 buffer object. 最后告知主线程完成纹理的加载. 此时, 主线程可以调用 glTexSubImage2D 拷贝有加载至buffer的数据至目标纹理对象. 
+
+<li>
+这相同的技术可以用于任何存储至 buffer object 内的数据. 包括顶点和索引数据, 存储在 uniform block 的着色器常量, 来用于纹理和images的图像数据, 通过 GL_DRAW_INDIRECT_BUFFER 目标的绘制命令的参数. 在你的渲染线程中, 创建所有 buffer 的两个集合, 其可能用于你的应用的动态更新. 在渲染一帧之前, 映射所有用于下一帧的buffer, 绑定用于渲染的buffer. 现在, 在一个或多个工作线程内, 准备所有用于下一帧的数据 - 执行 CPU culling, 实现动态顶点生成, 更新常量, 设置绘制参数. 每个绘制的batch应当有它自己的常量位于任意uniform buffer内的一个新的偏移. 以线程安全的方式, 在CPU上使用原子加法(atomic additions), 你可以在这些buffer内分配空间.
+
+<li>
+一旦你的工作线程忙于准备下一帧, OpenGL 线程渲染当前帧. 该线程使用工作线程生成绘制列表, 每个绘制需要的绑定objects.  --- 例如, 纹理, buffers(或者 range of them), 等等, 而后发送绘制命令. 如果你可以将纹理合并成一个纹理数组, 而后在uniform blocks内存储数组的偏移, 即使该数据的准备可以被offloaded至其他的线程. 结果是当场景遍历, culling, 数据准备等则完全 offloaded 至工作线程, 在多个CPU core 上改进性能. (注意, 一些 CPU 时间应当保留用于声音, AI, 物理, 通讯等). 只有主 OpenGL 线程实际上调用任意的 OpenGL 命令. 主线程的工作量很轻松, 其仅执行 buffer maps 和 un-maps, 基本的状态变化和绘制. 通过多线程可以大幅改进性能.
+
+</ul>
+
+<div id="Chapter 13  Debugging and Performance Optimization-13.2 Performance Optimization-13.2.2 Tuning Your Application for Speed-13.2.2.8 Throw Out What You Don’t Need"><h4 id="13.2.2.8 Throw Out What You Don’t Need">13.2.2.8 Throw Out What You Don’t Need</h4></div>
+<ul>
+<li>
+OpenGL 允许你详细告知哪些资源应当保留, 哪些需要释放掉. 对于纹理, 我们有两个函数 glInvalidateTexImage() 和 glInvalidateTexSubImage().
+<pre class="brush: c++">
+void glInvalidateTexImage(GLuint texture,
+	GLint level);
+
+void glInvalidateTexSubImage(GLuint texture,
+	GLint level,
+	GLint xoffset,
+	GLint yoffset,
+	GLint zoffset,
+	GLsizei width,
+	GLsizei height,
+	GLsizei depth);
+</pre>
+
+<ul>
+<li>
+使得纹理某mipmap全部或部分的图像数据无效, 可以释放掉.
+
+</ul>
+<li>
+buffer object 的对应函数: glInvalidateBufferData() 和 glInvalidateBufferSubData()
+<pre class="brush: c++">
+void glInvalidateBufferData(GLuint buffer);
+void glInvalidateBufferSubData(GLuint buffer,
+	GLintptr offset,
+	GLsizeiptr length);
+</pre>
+
+<ul>
+<li>
+使得 buffer object 内的数据全部或部分无效
+
+<li>
+当中间 buffer 使用 transform feedback, 而后立即调用 glDrawTransformFeedback()从buffer中绘制, 而后调用 glInvalidateBufferData() 告知 OpenGL 你不再需要该 buffer 的数据.
+
+</ul>
+<li>
+framebuffer attachment 的对应函数: glInvalidateFramebuffer() 和 glInvalidateSubFramebuffer()
+<pre class="brush: c++">
+void glInvalidateFramebuffer(GLenum target,
+	GLsizei numAttachments,
+	const GLenum * attachments);
+
+void glInvalidateSubFramebuffer(GLenum target,
+	GLsizei numAttachments,
+	const GLenum * attachments,
+	GLint x,
+	GLint y,
+	GLint width,
+	GLint height);
+</pre>
+
+<ul>
+<li>
+target 可以为 GL_FRAMEBUFFER, GL_DRAW_FRAMEBUFFER, 或者 GL_READ_FRAMEBUFFER. 数组的元素应当为 GL_COLOR_ATTACHMENT0, GL_DEPTH_ATTACHMENT, GL_STENCIL_ATTACHMENT 这样的值.
+
+</ul>
+<li>
+资源无效可以做某些事情
+
+<ul>
+<li>
+可能回收用于buffer或纹理的不再使用的内存.
+
+<li>
+避免资源的拷贝. 尤其是多GPU系统
+
+<li>
+可以返回 framebuffer attachment 至一个压缩的state, 无需使得其内容有效.
+
+</ul>
+<li>
+当资源不再使用时, 应当调用上面的无效函数. 最坏的情况, 忽略你什么也不做, 最好的情况, 可以避免昂贵的拷贝, 清空, 页面操作, 内存渴求.
+
+</ul>
+
+    </div>
+</body>
+</html>

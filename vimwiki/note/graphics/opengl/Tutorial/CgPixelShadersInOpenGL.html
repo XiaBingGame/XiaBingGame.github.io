@@ -1,0 +1,105 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../../style.css">
+<title>CgPixelShadersInOpenGL</title>
+<meta http-equiv="Content-Type" content="text/html; charset=cp936">
+</head>
+<body>
+
+<p>
+原文:<a href="http://joshbeam.com/articles/cg_pixel_shaders_in_opengl">http://joshbeam.com/articles/cg_pixel_shaders_in_opengl</a> <br />
+介绍OpenGL的ARB_fragment_program扩展, 写Cg着色程序语言的像素着色程序<br />
+一个简单的散色光照Demo代码<br />
+</p>
+
+<h2 id="toc_0.1">Cg</h2>
+<ul>
+<li>
+由 NVIDIA 开发的高级着色器程序语言, 语法和语义类似于 C 程序语言
+
+<li>
+Cg 编译器可以生成输出文件, OpenGL 可使用该文件来渲染程序
+
+</ul>
+
+<h2 id="toc_0.2">在 OpenGL 中加载像素着色器</h2>
+<ul>
+<li>
+确认 OpenGL 支持 GL_ARB_fragment_program 扩展
+
+<li>
+为了加载着色器, 需要允许 GL_FRAGMENT_PROGRAM_ARB
+		glEnable(GL_FRAGMENT_PROGRAM_ARB);
+
+<li>
+生成和绑定着色器, 同纹理的操作一样
+		glGenProgramsARB(1, &amp;shader_num);
+		glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, shader_num);
+
+<li>
+加载着色器字符串
+		glProgramStringARB(GL_FRAGMENT_PROGRAM_ARB, GL_PROGRAM_FORMAT_ASCII_ARB, strlen(program_string), program_string);
+
+</ul>
+
+<h2 id="toc_0.3">一个简单的 Cg 像素着色器</h2>
+<ul>
+<li>
+本例仅仅是简单的计算散色光的值, 修正当前像素的颜色值
+
+<li>
+我们使用第二个纹理单元的纹理坐标来表示像素位置与光源位置的差值, 然后用这个差值计算出散色因子, 第一个纹理的颜色乘以该因子得到最终输出颜色
+
+<li>
+使用一个结构体包含我们需要的像素输入数据, 该结构体作为main函数参数的类型.
+		struct pixel_in {
+			float3 color : COLOR0;
+			float3 texcoord : TEXCOORD0;
+			float3 lightdist : TEXCOORD1;
+		};
+
+<li>
+输出类型
+		struct pixel_out {
+			float3 color : COLOR;
+		};
+
+<li>
+计算当前像素的散射光因子. 首先计算顶点位置与光源位置的距离, 然后用1.0减去这个距离, 并确保其值范围为0-1.
+		float d = clamp(1.0 - pow(dot(IN.lightdist, IN.lightdist), 0.5), 0.0, 1.0);
+
+<li>
+该因子乘以第一个纹理的颜色值得到最终颜色结果, 距离光源越远, d越小, 则最终颜色越黑
+		float3 color = tex2D(texture, IN.texcoord).rgb;
+		OUT.color = color * (d + 0.4);
+		0.4表示环境光颜色
+
+<li>
+用Cg编译器编译该cg着色器为后缀为pso的文件
+		cgc -profile arbfp1 -o shader.pso shader.cg
+		arb 表示 ARB_fragment_program
+
+<li>
+渲染代码很简单
+		glEnable(GL_FRAGMENT_PROGRAM_ARB);
+		glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, shader_num);
+
+</ul>
+	
+<p>
+		glBegin(GL_QUADS);
+			glTexCoord2f(0.0f, 0.0f);
+			VERTEX(-1.0f, 1.0f, 0.0f);
+			glTexCoord2f(0.0f, 1.0f);
+			VERTEX(-1.0f, -1.0f, 0.0f);
+			glTexCoord2f(1.0f, 1.0f);
+			VERTEX(1.0f, -1.0f, 0.0f);
+			glTexCoord2f(1.0f, 0.0f);
+			VERTEX(1.0f, 1.0f, 0.0f);
+			...
+		glEnd();
+</p>
+
+</body>
+</html>

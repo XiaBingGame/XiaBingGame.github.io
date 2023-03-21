@@ -1,0 +1,1157 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../style.css" />
+    <title>GNU Manual</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+<!--
+	<ul id="top-nav">
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+-->	
+</div>
+</div>
+    <div class="content">
+    
+<h1 id="toc_1">第一章 概述</h1>
+<ul>
+<li>
+链接过程使用的GNU的"ld"工具
+
+<li>
+静态库: 多个 .o 文件的集合
+
+<li>
+共享库: 也是多个 .o 文件的集合
+
+</ul>
+
+<h1 id="toc_2">第二章 GNU Make 介绍</h1>
+<ul>
+<li>
+描述规则
+<pre class="brush: make">
+TARGET...: PREREQUISITES...
+	COMMAND
+	...
+	...
+</pre>
+
+<li>
+反斜线(\) 实现多行
+
+<li>
+clean 目标, 伪目标, 没有依赖文件, 不会执行. 通过 make clean 来执行
+
+<li>
+依赖文件的处理:
+
+<ul>
+<li>
+如果依赖文件不存在, 则使用其描述规则创建它
+
+<li>
+如果依赖文件存在, 如果该依赖文件所依赖的文件比其更新, 则重新生成该依赖文件
+
+<li>
+否则就什么都不做
+
+</ul>
+<li>
+例子
+<pre class="brush: make">
+#sample Makefile
+edit: main.o kbd.o command.o display.o \
+	insert.o search.o files.o utils.o
+	cc -o edit main.o kbd.o command.o display.o \
+		insert.o search.o files.o utils.o
+main.o: main.c defs.h
+	cc -c main.c
+kbd.o: kbd.c defs.h command.h
+	cc -c kbd.c
+command.o: command.c defs.h command.h
+	cc -c command.c
+display.o: display.c defs.h buffer.h
+	cc -c display.c
+insert.o: insert.c defs.h buffer.h
+	cc -c insert.c
+search.o: search.c defs.h buffer.h
+	cc -c search.c
+files.o: files.c defs.h buffer.h command.h
+	cc -c files.c
+utils.o: utils.c defs.h
+	cc -c utils.c
+clean:
+	rm edit main.o kbd.o command.o display.o \
+		insert.o search.o files.o utils.o
+</pre>
+
+<li>
+使用变量
+<pre class="brush: make">
+objects = main.o kbd.o command.o display.o \
+	insert.o search.o files.o utils.o
+</pre>
+
+<li>
+使用变量和隐含规则
+<pre class="brush: make">
+#sample Makefile
+objects = main.o kbd.o command.o display.o \
+	insert.o search.o files.o utils.o
+
+edit: $(objects)
+	cc -o edit $(objects)
+
+main.o: defs.h
+kbd.o:defs.h command.h
+command.o:defs.h command.h
+display.o:defs.h buffer.h
+insert.o:defs.h buffer.h
+search.o:defs.h buffer.h
+files.o:defs.h buffer.h command.h
+utils.o:defs.h
+
+.PHONY: clean
+clean:
+	rm edit $(objects)
+</pre>
+
+<li>
+根据依赖对规则分组
+<pre class="brush: make">
+#sample Makefile
+objects = main.o kbd.o command.o display.o \
+	insert.o search.o files.o utils.o
+
+edit: $(objects)
+cc -o edit $(objects)
+
+$(objects): defs.h
+kbd.o command.o files.o: command.h
+display.o insert.o search.o files.o: buffer.h
+
+.PHONY: clean
+clean:
+	rm edit $(objects)
+</pre>
+
+<ul>
+<li>
+不推荐上面的分组方式, 尽量单目标多依赖方式 
+<pre class="brush: make">
+.PHONY: clean
+clean:
+	-rm edit $(objects)
+</pre>
+
+<li>
+.PHONY 表示 clean 为伪目标. 命令行之前使用"-", 表示忽略命令"rm"的执行错误
+
+</ul>
+</ul>
+
+<h1 id="toc_3">第三章 Makefile 总述</h1>
+<ul>
+<li>
+五项内容: 显式规则, 隐含规则, 变量定义, 指示符和注释.
+
+<li>
+显式规则
+
+<li>
+隐含规则: 根据一类目标文件自动推导出来的规则
+
+<li>
+变量定义
+
+<li>
+指示符: 读取 makefile 文件过程中所要执行的一个动作, 包括
+
+<ul>
+<li>
+读取一个文件, 读取给定文件名的文件, 将其内容作为 makefile 文件的一部分
+
+<li>
+决定(通常是根据一个变量的值)处理或忽略 Makefile 中的某一特定部分
+
+<li>
+定义一个多行变量
+
+</ul>
+<li>
+注释: "#" 字符, 如果第一个非空符为"#", 则该行为注释行, 如果注释行结尾为"\", 则下一行也为注释行.
+
+<li>
+指示符"define"定义一个多行的变量或命令包时, 其定义体("define"和"endef"之间的内容)会被完整的展开到 Makefile 中引用此变量的地方. 展开变量的过程不涉及到任何变量的具体含义和功能分析
+
+<li>
+查找的文件名顺序为: "GNUmakefile", "makefile", "Makefile"
+
+<li>
+如果make找不到Makefile文件, 还可以通过命令行指定一个目标.
+
+<li>
+make 的"-f" 或者"--file"选项来指定make读取的makefile文件. 格式为"-f NAME" 或者"--file=NAME", 可以多个文件
+
+<li>
+"include" 指示符告诉 make 暂停读取当前的 Makefile, 转去读取"include"指定的一个或者多个文件, 完成以后再继续当前 Makefile 的读取. 位于单独的一行, 形式如下
+<pre class="brush: make">
+include FILENAMES...
+</pre>
+
+<ul>
+<li>
+FILENAMES 是 shell 所支持的文件名(可以使用通配符) 多个文件以空格或[Tab]隔开
+
+<li>
+使用场合: 多个不同的程序, 通用的变量定义或者模式规则放在一个文件中. 源文件自动产生的依赖文件放在一个文件中.
+
+<li>
+如果当前目录下没有该文件或者文件不是用绝对地址指定, 则用命令行选项"-I"或者"--include"查找 "include" 指定的文件. 如果还找不到, 则查找目录 "/usr/gnu/include", "/usr/local/include" 和 "/usr/include", 如果还找不到, 则makefile文件执行完毕后, 则尝试创建该文件, 如果不能创建, 则提示致命错误.
+
+<li>
+"-include" 代替 "include", 忽略包含文件不存在或无法创建的错误提示.
+
+<li>
+为了和其他 make 程序兼容, 可以使用 "sinclude" 来代替 "-include"
+
+</ul>
+<li>
+环境变量 MAKEFILES, 此变量的值作为需要读入的Makefile文件, 多文件之间使用空格分开. 与 include 指示符不同的地方
+
+<ul>
+<li>
+文件中的目标不会作为make执行的"终极目标"
+
+<li>
+如果找不到文件也不会提示错误.
+
+<li>
+首先读取该环境变量的makefile, 而后读取工作目录下的makefile
+
+</ul>
+<li>
+变量 MAKEFILE_LIST, 所有处理的makefile文件. 测试最后一个字可以获取当前make程序正在处理的makefile文件名.
+<pre class="brush: make">
+name1 := $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))
+include inc.mk
+name2 := $(word $(words $(MAKEFILE_LIST)),$(MAKEFILE_LIST))
+all:
+	@echo name1 = $(name1)
+	@echo name2 = $(name2)
+</pre>
+
+<ul>
+<li>
+执行结果
+<pre class="brush: make">
+name1 = Makefile
+name2 = inc.mk
+</pre>
+
+</ul>
+<li>
+特殊变量 .VARIABLES, 被展开以后是此引用点之前, makefile文件中所定义的所有全局变量. 但不包括目标指定变量
+
+<li>
+还可以由其他文件生成 Makefile, 例如 RCS, SCCS. 如果由其他文件重建 Makefile, 则 make 开始解析这个 Makefile 时需要重新读取更新后的 Makefile, 而不是之前的 Makefile
+
+<li>
+make在每一次执行总会自动的试图重建那些已经存在的makefile文件, 避免make在执行过程时查找重建 makefile 的隐含规则, 例如我们书写一个明确的规则, 以makefile文件作为目标, 规则的命令定义为空.
+
+<li>
+没有依赖条件, 只有命令行的双冒号规则去更新一个文件, 则该规则的目标文件会被无条件的更新. make 在遇到目标是 makefile 文件的双冒号规则时, 会忽略该规则的执行, 避免死循环.
+
+<li>
+-t(--touch), -n(--just-print), -q(--question) 都会试图重建"makefile" 文件, 如果不希望重建 makefile 文件, 在执行make时, 在命令行中将这个 makefile 问文件作为一个最终目标, 这样防止执行这个 makefile 作为目标的规则.
+
+<li>
+如果想用makefile-A文件使用另一个makefile-B中定义的变量和规则, 可以使用"所有匹配模式"规则,  用来描述那些在"makefile-A"中没有明确创建规则的目标的重建规则.
+<pre class="brush: make">
+#sample GNUmakefile
+foo:
+	frobnicate &gt; foo
+%: force
+	@$(MAKE) -f Makefile $@
+force:;
+</pre>
+
+<ul>
+<li>
+make bar 的时候使用 %: force 的规则, 执行 $(MAKE) -f Makefile bar. force 表示即使目标文件已经存在也会执行这个规则. force 规则使用空命令是为了防止 make 程序试图寻找一个规则创建目标"force", 而后又使用了模式规则"%: force"而陷入了无限循环.
+
+</ul>
+<li>
+GNU make 的执行过程分为两个阶段
+
+<ul>
+<li>
+(1) 读取所有的 makefile 文件(包括"MAKEFILES"变量指定的, 指示符"include"指定的, 命令行选项"-f(file)"指定的makefile文件). 内建所有的变量, 明确规则和隐含规则, 并建立所有目标和依赖之间的依赖关系结构链表
+
+<li>
+(2) 根据第一阶段已经建立的依赖关系结构链表决定哪些目标需要更新, 并使用对应的规则来重建这些目标.
+
+<li>
+第一阶段中如果变量和函数被展开, 那么称此展开是"立即"的, 所有的变量和函数被展开在需要构建的结构链表的对应规则中. 其他的展开都是延后的, 直到后续某些规则须要使用时或者在 make 处理的第二阶段它们才会被展开.
+
+</ul>
+<li>
+变量定义解析的规则如下:
+
+<ul>
+<li>
+IMMEDIATE = DEFERRED
+
+<li>
+IMMEDIATE ?= DEFERRED
+
+<li>
+IMMEDIATE := DEFERRED
+
+<li>
+IMMEDIATE += DEFERRED or IMMEDIATE
+
+<li>
+define IMMEDIATE
+
+<li>
+	DEFERRED
+
+<li>
+Endef
+
+</ul>
+<li>
+当变量使用追加付(+=)时, 如果此前这个变量是一个简单变量(使用 := 定义的) 则认为它是立即展开的, 其他情况都被认为是"延后"展开的变量
+
+<li>
+条件分支的展开时"立即"的. 包括 ifdef, ifeq, ifndef, ifneq
+
+<li>
+所有规则在 make 执行时, 都按照如下的模式展开
+<pre class="brush: make">
+IMMEDIATE: IMMEDIATE; DEFERRED
+	DEFERRED
+</pre>
+
+<ul>
+<li>
+规则中目标和依赖如果引用其他的变量, 则被立即展开. 而规则中的命令行中的变量引用会被延后展开.
+
+</ul>
+<li>
+make 的执行过程
+
+<ul>
+<li>
+依次读取变量 "MAKEFILES" 定义的 makefile 文件列表
+
+<li>
+读取工作目录下的 makefile 文件(GNUmakefile, makefile, Makefile)
+
+<li>
+依次读取工作目录 makefile 文件中使用指示符"include"包含的文件
+
+<li>
+查找重建所有已读取的 makefile 文件的规则(如果存在一个目标是当前读取的某一个 makefile 文件, 则执行此规则重建此 makefile 文件, 完成以后从第一步开始重新执行)
+
+<li>
+初始化变量值并展开那些需要立即展开的变量核函数并根据预设条件确定执行分支
+
+<li>
+根据"终极目标"以及其他目标的依赖关系建立依赖关系链表
+
+<li>
+执行除"终极目标"以外所有的目标的规则
+
+<li>
+执行"终极目标"所在的规则
+
+</ul>
+</ul>
+
+<h1 id="toc_4">第四章 Makefile 的规则 </h1>
+<ul>
+<li>
+终极目标是第一个规则的目标. 如果第一个规则有多个目标, 则第一个作为终极目标. 除非第一个规则的目标是以"."开始并且其后不存在"/"(即"./"和"../"), 或者第一个规则的目标是模式规则的目标.
+
+<li>
+其他规则的顺序无关紧要.
+
+<li>
+规则的语法
+<pre class="brush: make">
+TARGETS: PREREQUISITES
+	COMMAND
+	...
+
+或者:
+
+TARGETS: PREREQUISITES; COMMAND
+	COMMAND
+	...
+</pre>
+
+<li>
+命令可以和目标及依赖放在同一行, 使用分号分隔.
+
+<li>
+规则中需要使用 "$"的地方
+
+<ul>
+<li>
+用两个连续的"$$"表示
+
+</ul>
+<li>
+两种不同类型的依赖, 一种为常规依赖, 一种为"order-only"依赖, 这种依赖更新的时候, 不需要更新规则的目标. 以管道符号"|"开始
+<pre class="brush: make">
+TARGETS: NORMAL-PREREQUISITES | ORDER-ONLY-PREREQUISITES
+</pre>
+
+<li>
+Makefile 中表示文件名时可使用通配符. 可用的通配符有: "*", "?", "[...]". 通配符可以使用在两个场合
+
+<ul>
+<li>
+可以用在规则的目标, 依赖中
+
+<li>
+可以出现在规则的命令中, 由 shell 完成
+
+</ul>
+<li>
+清空规则
+<pre class="brush: make">
+clean:
+	rm -f *.o
+</pre>
+
+<li>
+变量定义中不能使用通配符
+
+<li>
+函数 wildcard, 用于变量定义和函数引用时. $(wildcard PATTERN...). 
+
+<ul>
+<li>
+$(wildcard *.c) 获取工作目录下的所有的.c文件列表.
+
+<li>
+\((patsubst %.c,%.o,\)(wildcard *.c))  首先使用 wildcard 函数获取工作目录下的 .c 文件列表, 而后其.c替换为.o
+<pre>
+#sample Makefile
+objects := $(patsubst %.c,%.o,$(wildcard *.c))
+ 
+foo : $(objects)
+	cc -o foo $(objects)
+</pre>
+
+</ul>
+<li>
+VPATH 指定Makefile中所有文件的搜索路径, 包括规则的依赖文件和目标文件, 使用空格或者冒号(:)将多个需要搜索的目录分开
+
+<li>
+vpath 不是变量, 而是 make 的关键字, 类似于 "VPATH" 变量, 可以为不同类型的文件指定不同的搜索目录
+
+<ul>
+<li>
+vpath PATTERN DIRECTORIES --- 为符合模式的文件指定搜索目录
+
+<li>
+vpath PATTERN --- 清除之前符合模式的搜索路径
+
+<li>
+vpath --- 清除所有的文件搜索路径
+
+<li>
+使用 "%" 作为通配符
+
+<li>
+当规则的依赖文件列表中的文件不能在当前目录下找到时 make 程序将依次在"DIRECTORIES"所描述的目录下寻找此文件
+<pre class="brush: make">
+vpath %.h ../headers
+</pre>
+
+<li>
+vpath 指定的路径仅限于在 Makefile 文件内容中出现的 .h 文件, 并不能指定源文件中包含的头文件所在的路径.(这需要使用 gcc 的"-l"选项来指定)
+
+<li>
+多个具有相同"PATTERN"的 vpath 语句之间相互独立, 对工作目录的搜索永远处于最优先地位.
+
+</ul>
+<li>
+make 在解析 Makefile 文件执行规则时对文件路径保存或废弃所依据的算法如下:
+
+<ul>
+<li>
+如目标文件在工作目录下不存在, 则执行目录搜寻.
+
+<li>
+如果目录搜寻成功, 搜索到的完整的路径名被作为临时的目标文件被保存.
+
+<li>
+对于规则中的所有依赖文件使用相同的方法处理.
+
+<li>
+完成第三步的依赖处理后, make 程序就可以决定规则的目标是否需要重建, 两种情况时后续处理如下:
+
+<ol>
+<li>
+规则的目标不需要重建: 那么通过目录搜索得到的所有完整的依赖文件路径名有效, 同样, 规则的目标文件的完整路径名同样有效.
+
+<li>
+规则的目标需要重建: 那么通过目录搜索所得到的目标文件的完整的路径名无效, 规则中的目标文件将会被在工作目录下重建. 注意: 只有目标的完整路径名失效, 以来文件的完整路径名是不会失效的.
+
+</ol>
+</ul>
+<li>
+使用变量"GPATH"指定目标文件进行重建的已存在目录. make 在执行时, 如果通过目标搜寻到一个过时的完整的目标文件路径名, 而目标存在的目录又出现在 "GPATH" 变量的定义列表中, 则该目标的完整路径将不废弃, 目标将在该路径下被重建. 
+
+<li>
+例子: 目录 "prom" 的子目录"src"下存在"sum.c"和"memcp.c"两个源文件. "prom"目录下的 Makefile 部分内容如下:
+<pre class="brush: make">
+LIBS =libtest.a
+VPATH = src
+
+libtest.a: sum.o memcp.o
+	$(AR) $(ARFLAGS) $@ $^
+</pre>
+
+<ul>
+<li>
+如果在两个目录("prom"和"src")都不存在目标"libtest.a", 执行 make 时将会在当前目录下创建目标文件"libtest.a". 如果 "src" 目录下已经存在 "libtest.a", 以下两种不同的执行结果:
+
+<ol>
+<li>
+如果两个依赖文件"sum.c"和"memcp.c"没有被更新的情况下我们执行make, 则不会重建目标. 并且目标所在的目录不会发生变化
+
+<li>
+如果修改了文件"sum.c"或者"memcp.c", "libtest.a"和"sum.o"或者"memcp.o"将会被在当前目录下创建(目标完整路径名被废弃), 而不是在"src"目录下更新这些已经存在的文件.
+
+</ol>
+<li>
+如果使用"GPATH"指定目录时, 则完全不同
+<pre class="brush: make">
+LIBS =libtest.a
+GPATH = src
+VPATH = src
+LDFLAGS += -L ./. -ltest
+......
+......
+</pre>
+
+<li>
+如果两个目录都不存在目标文件 "libtest.a", 目标文件则在当前目录下创建, 如果"src"目录下存在目标文件"libtest.a", 则依赖文件更新时, 目标"libtest.a"将会被在"src"目录下更新
+
+</ul>
+<li>
+$^ --- 代表所有通过目录搜索得到的依赖文件的完整路径名(目录+一般文件名)列表, 以便规则中的命令使用. 
+
+<li>
+$@ --- 代表规则的目标
+<pre class="brush: make">
+foo.o: foo.c
+	cc -c $(CFLAGS) $^ -o $@
+</pre>
+
+<li>
+$&lt; --- 通过目录搜索得到的依赖文件列表的第一个依赖文件
+
+<li>
+通过变量 "VPATH" 或者关键字 "vpath" 指定的搜索目录, 对于隐含规则同样有效.
+
+<li>
+链接的静态库, 共享库同样也可以通过搜索目录得到, 在书写规则的依赖时制定一个类似"-lNAME"的依赖文件名, 库文件的命名也应该是 "libNAME.a"
+
+<ul>
+<li>
+搜索次序: 根据 "NAME" 首先搜索当前系统可提供的共享库, 而后搜索静态库.
+
+<li>
+在当前目录搜索一个名为"libNAME.so"的文件, 如果不存在, 则在 "VPATH" 或者 "vpath" 指定的搜索目录搜索. 如果还不存在, 则搜索系统库文件存在的默认目录, 顺序为 "/lib", "/usr/lib", "PREFIX/lib"("/usr/local/lib")
+
+<li>
+如果"libNAME.so" 还是没有搜索到, 则搜索 "libNAME.a"
+
+</ul>
+<li>
+"libNAME.so" 和 "libNAME.a" 的格式是由变量 ".LIBPATTERNS" 指定的. 其值一般是多个包含模式字符(%)的字, 多个字之间是用空格分开. 默认为 "lib%.so lib%.a"
+
+<li>
+使用伪目标是为了防止因为其没有依赖文件而不去执行命令. 伪目标不会去检查依赖文件, 查找隐含规则来创建它. 格式
+<pre class="brush: make">
+.PHONY: clean
+</pre>
+
+<li>
+make 的并行和递归执行过程中, 使用一个变量定义所有需要 make 的子目录
+<pre class="brush: make">
+SUBDIRS = foo bar baz
+
+subdirs:
+	for dir in $(SUBDIRS); do \
+		$(MAKE) -C $$dir;\
+	done
+</pre>
+
+<ul>
+<li>
+问题: 出现错误时, make 不会退出. 不能并行
+
+<li>
+使用伪目标
+<pre class="brush: make">
+SUBDIRS = foo bar baz
+
+.PHONY: subdirs $(SUBDIRS)
+
+subdirs:$(SUBDIRS)
+$(SUBDIRS):
+	$(MAKE) -C $@
+foo: baz
+</pre>
+
+<li>
+foo: baz 用来限制子目录的 make 顺序, (在处理"foo"目录之前, 需要等待"baz"目录处理完成).
+
+</ul>
+<li>
+伪目标作为依赖文件时, 改规则和该伪目标总会被执行.
+
+<li>
+创建多个可执行程序, 可以使用一个伪目标"all"做为终极目标
+<pre class="brush: make">
+#sample Makefile
+all: prog1 prog2 prog3
+.PHONY: all
+prog1 : prog1.o utils.o
+	cc -o prog1 prog1.o utils.o
+ 
+prog2 : prog2.o
+	cc -o prog2 prog2.o
+ 
+prog3 : prog3.o sort.o utils.o
+	cc -o prog3 prog3.o sort.o utils.o
+</pre>
+
+<li>
+当一个伪目标作为另外一个伪目标的依赖时, make 将其作为另外一个伪目标的子例程来处理.
+
+<li>
+内线隐含变量 "RM", RM = rm -f
+
+<li>
+如果一个规则没有命令或者依赖, 并且它的目标不是一个存在的文件名, 在执行此规则时, 目标总会被认为是最新的. 这个规则一旦被执行, make 就认为它的目标已经被更新过. 这样的目标在作为一个规则的依赖时, 起所在的规则中的定义总会被执行.
+<pre class="brush: make">
+clean: FORCE
+	rm $(objects)
+FORCE:
+</pre>
+
+<ul>
+<li>
+对于 GNU make 来说, 应当避免使用这种方式. 推荐使用伪目标方式
+
+</ul>
+<li>
+空目标文件是伪目标的一个变种; 此目标所在规则执行的目的和伪目标相同---通过 make 命令行指定将其作为终极目标来执行此规则所定义的命令. 与伪目标所不同的是, 这个目标可以是一个存在的文件, 但文件的具体内容我们并不关心, 通常此文件是一个空文件. 空目标文件只是用来记录上一次执行此规则命令的时间, 在这样的规则中, 命令部分都会使用 "touch" 在完成所有命令之后来更新目标文件的时间戳. 记录此规则命令的最后执行时间. 空目标文件应当存在一个或者多个依赖文件. 将这个目标作为终极目标, 在它所依赖的文件比它新时, 此目标所在规则的命令将被执行.
+
+<li>
+Makefile 的特殊目标
+
+<ul>
+<li>
+.PHONY: 其所有的依赖都被作为伪目标. 伪目标是这样一个目标: 当使用 make 命令行指定此目标时, 这个目标所在规则定义的命令, 无论目标文件是否存在都会被无条件执行. 
+
+<li>
+.SUFFIXES: 其所有依赖指出了一系列在后缀规则中需要检查的后缀名
+
+<li>
+.DEFAULT: 目标 ".DEFAULT" 所在规则定义的命令中, 被用在重建那些没有具体规则的目标(明确规则和隐含规则). 当一个文件是某个规则的依赖文件, 但不是另外一个规则的目标文件时, 如果 make 程序无法找到重建该文件的规则, 则执行 ".DEFAULT" 所指定的命令.
+
+<li>
+.PRECIOUS: 该目标的所有依赖文件在 make 过程中会被特殊处理: 当命令在执行过程中被中断时, make 不会删除它们. 如果目标的依赖文件是中间过程文件, 同样这些文件不会被删除. 这一点目标".PRECIOUS"和目标".SECONDAY"实现的功能相同, 目标".PRECIOUS"的依赖文件可以是一个模式, 例如 "%.o"
+
+<li>
+.INTERMEDIATE: 该目标的依赖文件在 make 时被作为中间过程文件对待, 没有任何以来文件的目标".INTERMEDIATE"没有意义
+
+<li>
+.SECONDARY: 该目标的中间文件被作为中间文件对待, 但这些文件不会被自动删除. 没有任何依赖文件的目标".SECONDARY" 的含义是: 将所有文件作为中间过程文件(不会自动删除任何文件)
+
+<li>
+.DELETE_ON_ERROR: 如果存在特殊目标".DELETE_ON_ERROR", 在执行过程中, 如果规则的命令错误, 则将删除已经被修改的目标文件.
+
+<li>
+.IGNORE: 其指定的依赖文件, 则忽略创建这些文件所执行的命令的错误. 如果该目标没有依赖文件, 则忽略所有命令执行的错误.
+
+<li>
+.LOW_RESOLUTION_TIME: 其依赖文件被认为是低分辨率时间戳文件, 该目标制定命令是没有意义的. 因为"cp -p" 这样的命令所产生的目的文件高分辨率时间戳的细粒度部分被丢弃. make 在创建或者更新静态库时, 会自动将静态库的所有成员作为目标".LOW_RESOLUTION_TIME"的依赖.
+
+<li>
+.SILENT: 对于其依赖文件, 创建这些文件时, 不打印出重建此文件所执行的命令. 没有任何以来文件的".SILENT"告诉 make 在执行过程中不打印任何执行的命令. 另外, 当前版本如果要禁止命令执行过程的打印, 可以使用 make 的命令行参数"-s"或者"--silent"
+
+<li>
+.EXPORT_ALL_VARIABLES: 一个简单的没有依赖的目标, 作用是将之后所有的变量传递给 make 进程
+
+<li>
+.NOTPARALLEL: 如果出现目标 ".NOPARALLEL", 则所有命令按照串行方式执行, 即使存在 make 的命令行参数 "-j". 但在递归调用的子 make 进程中, 命令可以并行运行. 此目标不应该有依赖文件, 所有出现的依赖文件将被忽略.
+
+</ul>
+<li>
+后缀规则, 两个 .后缀连接起来的特殊目标
+
+<li>
+一个规则可以有多个目标, 规则所定义的命令对所有的目标有效, 一个具有多目标的规则相当于多个规则. 规则的命令对不同的目标的执行效果不同. 常用于两种情况
+
+<ul>
+<li>
+仅描述依赖关系
+
+<li>
+对各具有类似重建命令的目标
+<pre class="brush: make">
+bigoutput littleoutput: text.g
+	generate text.g -$(subst output,, $@) &gt; @a
+</pre>
+
+<li>
+等效于
+<pre class="brush: make">
+bigoutput: text.g
+	generate text.g -big &gt; bigoutput
+littleoutput: text.g
+	generate text.g -little &gt; littleoutput
+</pre>
+
+<li>
+上面使用了 make 的字符串处理函数 subst
+
+</ul>
+<li>
+一个文件可以是多个规则的, 所有规则的依赖文件将合并成一个依赖文件列表. 重建此目标的命令只能出现在一个规则中. 如果多个规则都给出了重建目标的命令, 则使用最后一条规则的命令.
+
+<li>
+双冒号命令, 对相同的目标使用不同规则中所定义的命令.
+
+<li>
+通过一个变量来增加目标的依赖文件, 通过 make 的命令行来指定某一个目标的依赖头文件
+<pre class="brush: make">
+extradeps = 
+$(objects) : $(extradeps)
+</pre>
+
+<ul>
+<li>
+如果我们执行 "make extradeps=foo.h", 那么 foo.h 将作为所有的 .o 文件的依赖文件. 如果只执行"make", 就没有指定任何文件作为 .o 文件的依赖文件.
+
+</ul>
+<li>
+静态模式规则: 规则存在多个目标, 并且不同的目标可以根据目标可以根据目标文件的名字来自动构造出依赖文件. 静态模式规则中的依赖文件必须是相类似的而不是完全相同的.
+
+<ul>
+<li>
+基本语法
+<pre class="brush: make">
+TARGET ...: TARGET-PATTERN: PREREQ-PATTERNS ...
+	COMMANDS
+	...
+</pre>
+
+<li>
+"TARGETS" 列出此规则的一系列目标文件, 像普通规则的目标一样可以包含通配符. "TARGET-PATTERN" 和 "PREREQ-PATTERNS" 说明了如何为每一个目标文件生成依赖文件. 从目标模式的目标名字中抽取一部分字符串(成为"茎"), 使用"茎"替代以来模式中的相应部分来产生对应目标的依赖文件.
+
+<li>
+目标模式和依赖模式中, 一般需要包含模式字符 "%",其匹配的部分就是"茎". 
+
+<li>
+例子
+<pre class="brush: make">
+objects = foo.o bar.o
+
+all: $(objects)
+$(objects): %.o : %.c
+	$(CC) -c $(CFLAGS) $&lt; -o $@
+</pre>
+
+</ul>
+<li>
+使用静态模式规则时, 指定的目标必须和目标模式相匹配, 否则执行 make 将会得到一个错误提示. 我们可以使用"filter"函数来进行过滤
+<pre class="brush: make">
+files = foo.elc bar.o lose.o
+&amp;(filter %.0, $(files)): %.o: %.c
+	$(CC) -c $(CFLAGS) $&lt; -o $@
+&amp;(filter %.elc, $(files)): %.elc: %.el
+	emacs -f batch-byte-compile $&lt;
+</pre>
+
+<li>
+另一个例子
+<pre class="brush: make">
+bigoutput littleoutput : %output : text.g
+	generate text.g -$* &gt; $@
+</pre>
+
+<ul>
+<li>
+自动环变量"$*"被展开为"茎".
+
+<li>
+项目管理中, 对于描述整个工程中所有的 .o 文件的以来规则和编译命令, 通常的做法是将生成同一类目标的模式定义在一个 make.rules 的文件中, 在工程各个模块的 Makefile 中包含此文件.
+
+</ul>
+<li>
+静态模式规则和被定义为隐含规则的模式规则都是我们经常使用的两种方式, 两者相同的地方都是用目标模式和依赖模式来构建目标的规则中的文件依赖关系, 不同的地方是 make 在执行时使用它们的时机.
+
+<ul>
+<li>
+隐含规则可用在任何和它相匹配的目标上, 在 Makefile 中没有为这个目标指定具体的规则, 存在规则但规则没有命令行或者这个目标的依赖文件可悲搜寻到. 当存在多个隐含规则和目标模式相匹配时, 只执行其中的一个规则
+
+<li>
+静态模式规则只能用在规则中明确指出的那些文件的重建过程中, 不能用在除此之外的任何文件的重建过程中, 并且它对指定的每一个目标来说是唯一的. 如果一个目标存在于两个规则, 并且两个规则都定义了命令, make 执行时就会提示错误.
+
+</ul>
+<li>
+双冒号规则"::", 当一个文件作为多个规则的目标时, 双冒号规则的处理和普通规则的处理过程完全不同.(双冒号规则允许在多个规则中为同一个目标指定不同的重建目标的命令)
+
+<ul>
+<li>
+一个目标可以出现在多个规则中, 但是这些规则必须是同一类型的规则, 要么都是普通规则, 要么都是双冒号规则.
+
+<li>
+双冒号规则中, 当依赖文件比目标新时, 规则将会被执行. 对于一个没有依赖而只有命令行的双冒号规则, 当引用此目标时, 规则的命令将会被无条件执行.
+
+<li>
+当同一个文件作为双冒号规则的目标时, 这些不同的规则会被独立的处理, 而不是像普通规则那样合并所有的依赖到一个目标文件.
+
+</ul>
+<li>
+现代的C编译器提供了通过查找源文件中的"#include"来自动产生这种依赖关系的功能. GCC的"-M"选项. 例如: gcc -M main.c, 其输出为: main.o: main.c defs.h. 使用 "-MM" 参数, 则不需要考虑标准库的头文件.
+
+<ul>
+<li>
+旧版本中, 编译器书写一个伪目标"depend"的规则自动产生依赖关系文件, 而后 make depend 生成一个"depend"的文件, 最后使用 "include" 指示符包含这个文件
+
+<li>
+新版本中, 每一个源文件产生一个描述其依赖关系的 makefile 文件, 对于一个源文件 "NAME.c", 对应的这个 makefile 文件为 "NAME.d". 这样, 只有在源文件修改之后才会重新使用命令生成新的依赖关系描述文件.
+
+<li>
+使用如下的模式规则来自动生成每一个.c文件对应的.d文件
+<pre class="brush: make">
+%.d: %.c
+	$(CC) -M $(CPPFLAGS) $&lt; &gt; $@.$$$$; \
+	sed 's,\($*\)\.o[ :]*,\1.o $@ : ,g' &lt; $@.$$$$ &gt; $@; \
+	rm -f $@.$$$$
+</pre>
+
+<li>
+第一行, 使用c编译器自动生成依赖文件($&lt;)的头文件的依赖关系, 并输出成为一个临时文件
+
+<ul>
+<li>
+"$$$$" 表示当前进程号
+
+</ul>
+<li>
+第二行, 使用 sed 处理已产生的临时文件并生成此规则的目标文件. 例如 main.o: main.c defs.h 转换成 main.o main.d: main.c defs.h
+
+<li>
+第三行, 删除临时文件.
+
+</ul>
+<li>
+对 .d 文件处理可以参考如下
+<pre class="brush: make">
+sources = foo.c bar.c
+sinclude $(sources:.c=.d)
+</pre>
+
+<ul>
+<li>
+source 定义了当前目录下需要编译的源文件
+
+<li>
+$(sources:.c=.d) 表示根据变量 "source" 指定的 .c 文件自动产生对应的 .d 文件.
+
+<li>
+注意上面的句子要出现在终极规则之后, 避免成为终极规则.
+
+</ul>
+</ul>
+
+<h1 id="toc_5">第五章 规则的命令 </h1>
+<ul>
+<li>
+一条规则内, 多个命令行之间可以有空行和注释行, 对所有规则中命令行的解析使用"/bin/sh"来完成. 当使用默认的"/bin/sh"时, 命令中出现的字符 "#" 到行末的内容被认为是注释.
+
+<li>
+规则中的命令行以字符"@"开始, 则 make 在执行这个命令时就不会回显这个将要被执行的命令. 典型的做法是在使用"echo"命令输出信息
+<pre class="brush: make">
+@echo 开始编译 xxx 模块......
+</pre>
+
+<li>
+"-n" 或 "--just-print", make 执行时只显示所要执行的命令, 而不会真正的去执行这些命令.
+
+<li>
+"-s" 或 "--slient", 禁止所有执行命令的显示. 另外, 没有依赖的特殊目标".SILENT" 也可以禁止命令的回显.
+
+<li>
+规则中每行命令在一个独立的子shell进程中被执行, 多行命令之间的执行是相互独立的. 因此上一行的 cd 命令不会对下一场产生影响. 一行之内可以用分号分隔多个命令.
+<pre class="brush: make">
+foo: bar/lose
+	cd bar; gobble lose &gt; ../foo
+	
+foo: bar/lose
+	cd bar; \
+	gobble lose &gt; ../foo
+</pre>
+
+<li>
+make 的环境变量中"SHELL"会被重新赋值
+
+<li>
+"-j"或者"--job"告诉 make 在同一时刻可以允许多条命令同时被执行. "-j" 之后的整数是同一时刻允许执行命令的数目. 默认为1
+
+<li>
+"-k"或者"--keep-going", 遇到错误是否停止执行而退出.
+
+<li>
+"-l"或者"--max-load", 告诉 make 限制当前运行的任务的数量. 后面一般跟一个浮点数. 不带浮点数的"-l"选项用于取消前面通过"-l"给定的负荷限制.
+
+<li>
+如果规则中的某一个命令出错(返回非0状态), make 就会放弃对当前规则后续命令的执行, 也有可能终止所有规则的执行.
+
+<li>
+命令前面加一个减号"-", 告诉 make忽略此命令的执行失败.
+<pre class="brush: make">
+clean:
+	-rm *.o
+</pre>
+
+<li>
+"-i"或者"--ignore-errors", make将忽略所有规则中命令执行的错误. 没有依赖的特殊目标".IGNORE"在Makefile中有同样的效果.
+
+<li>
+make 在执行命令时如果收到一个致命信号(终止make), 那么 make 将会删除此过程中已经重建的那些规则的目标文件, 其依据是此目标文件的当前时间戳和 make 开始执行时此文件的时间戳是否相同.
+
+<li>
+".PRECIOUS" 的依赖确保某些文件在异常终止的情况下不被删除.
+
+<li>
+当前目录下实现对子目录的编译
+<pre class="brush: make">
+subsystem:
+	cd subdir &amp;&amp; $(MAKE)
+</pre>
+
+<ul>
+<li>
+进入子目录, 而后在子目录下执行 make
+
+<li>
+等价于
+<pre class="brush: make">
+subsystem:
+	$(MAKE) -C subdir
+</pre>
+
+<li>
+"-C" 选项首先进入子目录而后再执行 make.
+
+<li>
+变量 "CURDIR" 表示 make 的工作目录, 使用 "-C" 选项进入一个子目录后, 该变量将被重新赋值.
+
+<li>
+使用变量MAKE, 可以改变 make 的"-t", "-n", "-q" 命令行选项的效果. 它所实现的功能和在规则中命令行首是用字符"+"的效果相同.
+<pre class="brush: make">
+cd subdir &amp;&amp; make
+</pre>
+
+<li>
+上面的命令如果执行 "make -t", 则仅仅创建一个名为 "subsystem" 的文件, 而不会进入到目录 "subdir" 去更新此目录下文件的时间戳. 如果使用 $(MAKE) 代替 make 则可以实现这个效果, 其可以通过 "MAKEFLAGS" 传递给子目录下的
+
+<li>
+没有明确指定需要传递的变量, 上层 make 不会将其所执行的 Makefile 中定义的变量传递给子 make 过程. 使用环境变量传递上层所定义的变量时, 上层所传递给子 make 过程的变量定义不会覆盖子 make 过程所执行 makefile 文件中的同名变量定义.
+
+<li>
+如果子 make 过程所执行 Makefile 中存在同名变量定义，则上层传递的变量定义不会覆盖子 Makefile 中定义的值。就是说如果上层 make 传递的变量和子 make 所执行的 Makefile 中存在重复的变量定义，则以子 Makefile 中的变量定义为准。除非使用 make “的 -e”选项。
+
+<li>
+上层 make 过程要将所执行的 Makefile 中的变量传递给子 make 过程, GNU make 中实现此功能的指示符是 "export". 当一个变量使用export进行声明后, 变量和它的值将被加入到当前工作的环境变量中. 以后在 make 执行的所有规则的命令都可以使用这个变量. 而当没有使用指示符 export 对任何变量进行声明的情况下，上层 make 只将那些已经初始化的环境变量(在执行 make 之前已经存在的环境变量)和使用命令行指定的变量(如命令 "make CFLAGS +=-g" 或者 "make -e CFLAGS +=-g")传递给子 make 程序，通常这些变量由字符、数字和下划线组成。需要注意的是：有些 shell 不能处理那些名字中包含除字母、数字、下划线以外的其他字符的变量。
+
+<li>
+两个特殊的变量 "SHELL"和"MAKEFLAGS"，对于这两个变量除非使用指示符 "unexport" 对它们进行声明，它们在整个 make 的执行过程中始终被自动的传递给所有的子 make 
+
+<li>
+另外一个变量 "MAKEFILES"，如果此变量有值(不为空), 那么同样它会被自动的传递给子 make  。在没有使用关键字 "export" 声明的变量，make 执行时它们不会被自动传递给子 make，因此下层 Makefile 中可以定义和上层同名的变量，不会引起变量定义冲突.
+
+<li>
+需要将一个在上层定义的变量传递给子 make，应该在上层 Makefile 中使用指示符 "export" 对此变量进行声明。格式如下：
+<pre class="brush: make">
+export VARIABLE ...
+</pre>
+
+<li>
+当不希望将一个变量传递给子 make 时，可以使用指示符 "unexport" 来声明这个变量。格式如下：
+<pre class="brush: make">
+unexport VARIABLE ...
+</pre>
+
+<li>
+"export" 和 "unexport" 内的变量会被立即展开
+<pre class="brush: make">
+Y = Z
+export X = $(Y)
+</pre>
+
+<li>
+其实就是 export X = Z
+
+<li>
+"export" 更方便的用法是在定义变量的同时对它进行声明, 下面的几对写法都是等效的
+<pre class="brush: make">
+export VARIABLE = value
+
+VARIABLE = value
+export VARIABLE
+
+export VARIABLE := value
+
+VARIABLE := value
+export VARIABLE
+
+export VARIABLE += value
+
+VARIABLE += value
+export VARIABLE
+</pre>
+
+<li>
+不带任何参数的 "export" 指示符, 含义是将此 Makefile 中定义的所有变量传递给子 make 过程. 如果不需要传递其中的某一个变量, 可以单独使用指示符"unexport"来声明这个变量. 那些名字中包含其他字符(c除字母, 数字和下划线之外的字符)的变量可能不会被传递给子 make. 注意, 这种做法是老版本 GNU make 所默认的, 新版本中取消了这一默认的行为, 需要使用特殊目标 ".EXPORT_ALL_VARIABLES" 来代替"export"
+
+<li>
+不带任何参数的 "unexport" 指示符则毫无意义.
+
+<li>
+在 Makefile 中, 最后一个出现的指示符"export"或者"unexport"决定整个make运行过程中变量是否进行传递.
+
+<li>
+变量 "MAKELEVEL" 代表了调用的深度. 最上一级为0.
+<pre class="brush: make">
+#maindir Makefile
+.........
+.........
+.PHONY :test
+test:
+	@echo "main makelevel = $(MAKELEVEL)"
+	@$(MAKE) –C subdir dislevel
+
+#subdir Makefile
+.........
+.........
+.PHONY : test
+test:
+	@echo "subdir makelevel = $(MAKELEVEL)"
+</pre>
+
+<li>
+make 的递归执行过程中, make 的命令行选项"-k", "-s" 等会被自动的通过环境变量"MAKEFLAGS"传递给子 make 进程. 执行make时通过命令行给变量定义的话, 该变量和其值也会通过 "MAKEFLAGS" 传递给子 make 进程. 例如 "make CFLAGS+=-g"
+
+<li>
+有几个特殊的命令行选项不会被赋值给变量, 它们是: "-C", "-f", "-o", "-W"
+
+<li>
+"-j" 选项择同时限制主控 make 和子 make 进程所执行任务的数目不大于"N"
+
+<li>
+如果不希望 MAKEFLAGS 传递给子 make, 则该变量赋空, 如下
+<pre class="brush: make">
+subsystem:
+	cd subdir &amp;&amp; $(MAKE) MAKEFLAGS=
+</pre>
+
+<li>
+如果不希望 make 命令行中定义的变量传递给子 make 时, 将 "MAKEOVERRIDES" 赋空. 当 Makefile 出现 ".POSIX" 这个特殊的目标时, 在上层 Makefile 修改变量"MAKEOVERRIDES"对子make不会产生任何影响.
+
+<li>
+在一些系统中环境变量值的长度存在一个上限, 当"MAKEFLAGS"的值超过一定长度时, 会有错误提示.
+
+<li>
+"MFLAGS"变量, 与"MAKEFLAGS" 类似. 不同点: (1) 递归调用时不包含命令行选项中的变量定义. (2)此变量的值(除为空的情况)是以"-"开始的, 而"MAKEFLAGS"的值只有在长命令选项格式(如:"--warn-undefined-variables")时才以"-"开头. 需要明确使用
+<pre class="brush: make">
+subsystem:
+	cd subdir &amp;&amp; $(MAKE) $(MFLAGS)
+</pre>
+
+<li>
+统一的命令行选项, 可以通过设置系统环境变量 MAKEFLAGS 来实现. 
+
+<li>
+选项 "-w" 或者 "--print-directory" 可以让 make 在编译一个目录之前和完成此目录的编译之后给出相应的提示信息. 通常 "-w"会被自动打开, 可以使用 "-s" 来禁止此选项. 命令行选项 "--no-print-directory" 则禁止所有关于目录信息的打印
+
+</ul>
+<li>
+定义一组命令为一个命令包, 通过指示符"define"来完成这个功能, 同时用一个变量来代表这一组命令. 以 "endef" 结束
+<pre class="brush: make">
+define run-yacc
+yacc $(firstword $^)
+mv y.tab.c $@
+endef
+</pre>
+
+<ul>
+<li>
+"define" 定义的命令包中, 命令题中变量和函数的引用不会展开. 而在规则执行时则会完全展开.
+
+</ul>
+<li>
+空命令
+<pre class="brush: make">
+target: ;
+</pre>
+
+<ul>
+<li>
+空命令行可以防止 make 在执行时试图为重建这个目标去查找隐含命令.
+
+<li>
+如果需要实现一个不是实际文件的目标，我们只是需要通过使用这个目标来完成对它所依赖的文件的重建动作。首先应该想到伪目标而不是空命令目标。因为一个实际不存在的目标文件的依赖文件，可能不会被正确重建。
+
+<li>
+对于空命令规则，最好不要给它指定依赖文件。避免特殊情况下产生错误的情况。
+
+</ul>
+</ul>
+
+<h1 id="toc_6">第六章 Makefile 中的变量</h1>
+<ul>
+<li>
+Makefile 中变量和函数的展开(除规则命令行中的变量和函数以外), 是在 make 读取 makefile 文件时进行的，这里的变量包括了使用 "=" 定义和使用指示符 "define" 定义的。
+
+<li>
+变量可以用来代表一个文件名列表、编译选项列表、程序运行的选项参数列表、搜索源文件的目录列表、编译输出的目录列表和所有我们能够想到的事物。
+
+<li>
+变量名是不包括":", "#", "=", 前置空白和尾空白的任何字符串. 尽管在 GNU make 中没有对变量的命名有其它的限制，但定义一个包含除字母、数字和下划线以外的变量的做法也是不可取的
+
+<li>
+变量名是大小写敏感的. Makefile 传统做法是变量名是全采用大写的方式. 推荐的做法是在对于内部定义定义的一般变量（例如：目标文件列表 objects）使用小写方式，而对于一些参数列表（例如：编译选项 CFLAGS）采用大写方式，但这并不是要求的。
+
+<li>
+另外有一些变量名只包含了一个或者很少的几个特殊的字符（符号）。称它们为自动化变量。例如 "$&lt;" 之类
+
+</ul>
+
+    </div>
+</body>
+</html>

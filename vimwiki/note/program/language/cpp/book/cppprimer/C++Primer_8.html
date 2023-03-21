@@ -1,0 +1,379 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../../../style.css" />
+    <title>C++Primer_8</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<ol>
+<li>
+国际字符的支持, wchar_t类型的标准输入对象为 wcin, 标准输出为 wcout, 标准错误为 wcerr.
+
+<li>
+IO对象不可复制或赋值: (1) 由于不可复制, 所以不能存储在 vector(或其他)容器中. (2) 形参或返回类型不能为流类型, 只能为流的引用或者指针类型.
+
+<li>
+IO标准库管理一系列条件状态(condition state)用来标记给定的IO对象是否处于可用状态, 或碰到了哪种特定的错误.
+
+</ol>
+<ol>
+<li>
+流必须处于无错误状态, 才能用于输入或输出. 检测流是否可用的最简单的方法是检查其真值:
+<table>
+<tr>
+<th>
+&nbsp;
+</th>
+<th>
+IO标准库的条件状态 
+</th>
+</tr>
+<tr>
+<td>
+strm::iostate
+</td>
+<td>
+机器相关的整型名, 由各个 iostream 类定义, 用于定义条件状态 
+</td>
+</tr>
+<tr>
+<td>
+strm::badbit
+</td>
+<td>
+strm::iostate类型的值, 用于指出被破坏的流 
+</td>
+</tr>
+<tr>
+<td>
+strm::failbit
+</td>
+<td>
+strm::iostate类型的值, 用于指出失败的IO操作
+</td>
+</tr>
+<tr>
+<td>
+strm::eofbit
+</td>
+<td>
+strm::iostate类型的值, 用于指出流已经到达文件结束符
+</td>
+</tr>
+<tr>
+<td>
+s.eof()
+</td>
+<td>
+如果设置了流的eofbit值, 则函数返回true
+</td>
+</tr>
+<tr>
+<td>
+s.fail()
+</td>
+<td>
+如果设置了流的failbit值, 则函数返回true
+</td>
+</tr>
+<tr>
+<td>
+s.bad()
+</td>
+<td>
+如果设置了流的badbit值, 则函数返回true
+</td>
+</tr>
+<tr>
+<td>
+s.good()
+</td>
+<td>
+如果流a处于有效状态, 则函数返回true
+</td>
+</tr>
+<tr>
+<td>
+s.clear()
+</td>
+<td>
+将流s中的所有状态值都冲设为有效状态 
+</td>
+</tr>
+<tr>
+<td>
+s.clear(flag)
+</td>
+<td>
+将流s中的某个指定条件状态设置为有效, flag的类型是 strm::iostate
+</td>
+</tr>
+<tr>
+<td>
+s.setstate(flag)
+</td>
+<td>
+给流s添加指定条件, flag的类型是 strm::iostream
+</td>
+</tr>
+<tr>
+<td>
+s.rdstate()
+</td>
+<td>
+返回流s的当前条件, 返回值类型为 strm::iostate
+</td>
+</tr>
+</table>
+<pre c++>
+if(cin)
+	// 有效状态
+
+while(cin &gt;&gt; word)
+	// 读操作成功
+</pre>
+
+<li>
+各种io错误
+
+<ul>
+<li>
+badbit: 系统级的故障, 如无法恢复的读写错误. 通常该流不能再继续使用. 
+
+<li>
+failbit: 可恢复的错误, 如在应输入数值型数据时输入字符.
+
+<li>
+eofbit: 遇到文件结束符, 此时还同时设置了 failbit.
+
+</ul>
+<li>
+rdstate 成员函数返回一个 iostate类型的值, 表示流当前的整个条件状态
+<pre c++>
+istream::iostate old_state = cin.rdstate();
+cin.clear();
+process_input();	// 使用 cin
+cin.clear(old_state);	// 恢复到原来的状态.
+</pre>
+
+<li>
+使用或按位或操作符(OR)打开多个状态位
+<pre c++>
+is.setstate(ifstream::badbit | ifstream::failbit);		// 同时打开了 badbit和failbit
+</pre>
+
+<li>
+输出缓冲区, 何时刷新输出缓冲区
+
+<ul>
+<li>
+程序正常结束时
+
+<li>
+缓冲区满的时候, 写下一个值之前刷新
+
+<li>
+使用操纵符(manipulator)显式刷新缓冲区, 例如行结束符 endl;
+
+<li>
+每次输出操作执行完后, 用 unitbuf 操纵符设置流的内部状态, 从而清空缓冲区.
+
+<li>
+将输出流和输入流关联起来, 读输入流时刷新其关联的输出缓冲区.
+
+</ul>
+<li>
+两个刷新输出缓冲区的操纵符: flush-刷新流, 但不添加任何字符; ends-插入空字符null, 然后刷新它.
+
+<li>
+操纵符 unitbuf - 每次执行完写操作后都刷新流, 如:
+<pre c++>
+cout &lt;&lt; unitbuf &lt;&lt; "first" &lt;&lt; " second" &lt;&lt; nounitbuf;
+// 等价于
+cout &lt;&lt; "first" &lt;&lt; flush &lt;&lt; "second" &lt;&lt; flush;
+</pre>
+
+<li>
+tie成员函数用于绑定一个 ostream对象到调用该函数的对象上, 其参数为 ostream对象指针. 这样调用的类对象的任何IO操作都会刷新 ostream对象参数的缓冲区. 一个ostream对象一次只能与一个istream对象绑定到一起.
+<pre c++>
+cin.tie(cout);		// 缺省
+ostream *old_tie = cin.tie();	// 得到现在绑定的输出对象指针
+cin.tie(0);  // 取消绑定
+cin.tie(&amp;cerr);		
+// ...
+cin.tie(0);
+cin.tie(old_tie);
+</pre>
+
+<li>
+文件输入和输出流的三个类: ifstream, ofstream, fstream. 两个额外的操作函数 open 和 close. 以及形参为要打开的文件名的构造函数. 注意形参为C风格字符串.
+
+<li>
+关闭流并不能改变文件流的状态, 要调用clear()才能重置状态.
+<pre c++>
+ifstream input;
+vector&lt;string&gt;::const_iterator it = files.begin();
+while(it != files.end())
+{
+	input.open(it-&gt;c_str());
+	if(!input)
+		break;
+	while(input &gt;&gt; s)
+		process(s);
+	input.close();
+	input.clear();	// 如果不调用该函数, 则输入流的 eofbit 始终被设置.
+	++it;
+}
+</pre>
+
+<li>
+文件模式, 可用位操作符设置一个或多个模式
+
+</ol>
+<ol>
+<li>
+out模式等效于同时制定了 out和trunc模式.
+<table>
+<tr>
+<th>
+文件模式
+</th>
+<th>
+&nbsp;
+</th>
+</tr>
+<tr>
+<td>
+in
+</td>
+<td>
+打开文件做读操作
+</td>
+</tr>
+<tr>
+<td>
+out
+</td>
+<td>
+打开文件做写操作
+</td>
+</tr>
+<tr>
+<td>
+app
+</td>
+<td>
+在每次写之前找到文件尾 
+</td>
+</tr>
+<tr>
+<td>
+ate
+</td>
+<td>
+打开文件后立即将文件定位到文件尾
+</td>
+</tr>
+<tr>
+<td>
+trunc
+</td>
+<td>
+打开文件时清空已存在的文件流
+</td>
+</tr>
+<tr>
+<td>
+binary
+</td>
+<td>
+以二进制模式进行IO操作
+</td>
+</tr>
+</table>
+
+<li>
+fstream 可同时读写它所关联的文件, 默认以in和out模式打开, 不清空已存在的文件流. 如只指定out, 则会清空已存在的文件流. 如设定了trunc模式, 无论是否存在in模式都会清空文件流.
+
+<li>
+有效的文件模式组合: out, out|app, out|trunc, in, in|out, in|out|trunc. 这些模式都可增加 ate 模式.
+
+<li>
+字符串流 istringstream, ostringstream, stringstream. 该流对象增加了 string形参的构造函数以及名为str的string类型内部成员
+
+</ol>
+<ol>
+<li>
+stringstream 常用于数据类型之间实现自动格式化, 使用输入字符串流时, 空白符和换行符都会被忽略. 例如:
+<table>
+<tr>
+<th>
+stringstream特定的操作 
+</th>
+<th>
+&nbsp;
+</th>
+</tr>
+<tr>
+<td>
+stringstream strm
+</td>
+<td>
+默认构造 
+</td>
+</tr>
+<tr>
+<td>
+stringstream strm(s)
+</td>
+<td>
+s为string类型
+</td>
+</tr>
+<tr>
+<td>
+strm.str()
+</td>
+<td>
+返回strm中存储的string类型对象
+</td>
+</tr>
+<tr>
+<td>
+strm.str(s)
+</td>
+<td>
+将s复制给strm
+</td>
+</tr>
+</table>
+<pre c++>
+int val1 = 512, val2 = 1024;
+ostringstream format_message;
+format_message &lt;&lt; "Val1: " &lt;&lt; val1 &lt;&lt; "\n"
+	&lt;&lt; "val2: " &lt;&lt; val2 &lt;&lt; "\n";
+istringstream input_string(format_message.str());
+string dump;
+input_string &gt;&gt; dump &gt;&gt; val1 &gt;&gt; dump &gt;&gt; val2;
+cout &lt;&lt; val1 &lt;&lt; " " &lt;&lt; val2 &lt;&lt; endl;
+</pre>
+
+</ol>
+
+    </div>
+</body>
+</html>

@@ -1,0 +1,836 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../../style.css" />
+    <title>Chapter010</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="../index.html">首页</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<div id="Chapter 10 Compute Shaders"><h1 id="Chapter 10 Compute Shaders">Chapter 10 Compute Shaders</h1></div>
+<ul>
+<li>
+本章节内容
+
+<ul>
+<li>
+如何创建, 编译, dispatch(调度)计算着色器
+
+<li>
+如何在计算着色器之间传递数据
+
+<li>
+如何同步计算着色器以保证它们有序.
+
+</ul>
+</ul>
+
+<div id="Chapter 10 Compute Shaders-10.1 Using Compute Shaders"><h2 id="10.1 Using Compute Shaders">10.1 Using Compute Shaders</h2></div>
+<ul>
+<li>
+创建计算着色器时, 调用 glCreateShader(() 并使用 GL_COMPUTE_SHADER 参数作为着色器类型. glShaderSource() 加载着色器代码. glCompileShader() 编译, glAttachShader() 附属至程序对象, glLinkProgram() 链接程序对象.
+
+<li>
+计算着色器不能混合和匹配其他类型的着色器. 一个链接的程序只能包含计算着色器或者图形着色器, 但不能是两者的混合.
+
+<li>
+简单的计算着色器程序, 不干任何事情.
+<pre class="brush: c++">
+GLuint compute_shader;
+GLuint compute_program;
+static const GLchar * compute_source[] =
+{
+	"#version 430 core \n"
+	" \n"
+	"layout (local_size_x = 32, local_size_y = 32) in; \n"
+	" \n"
+	"void main(void) \n"
+	"{ \n"
+	" // Do nothing \n"
+	"} \n"
+};
+// Create a shader, attach source, and compile.
+compute_shader = glCreateShader(GL_COMPUTE_SHADER);
+glShaderSource(compute_shader, 1, compute_source, NULL);
+glCompileShader(compute_shader);
+// Create a program, attach shader, link.
+compute_program = glCreateProgram();
+glAttachShader(compute_program, compute_shader);
+glLinkProgram(compute_program);
+// Delete shader as we’re done with it.
+glDeleteShader(compute_shader);
+</pre>
+
+<li>
+计算程序可以使用 uniform, uniform blocks, shader storage blocks, 等等. 
+
+<li>
+glUseProgram() 使该程序为当前程序, 一旦其为当前程序, 类似 glUniform4fv() 的函数可以如常影响其状态.
+
+</ul>
+
+<div id="Chapter 10 Compute Shaders-10.1 Using Compute Shaders-10.1.1 Executing Compute Shaders"><h3 id="10.1.1 Executing Compute Shaders">10.1.1 Executing Compute Shaders</h3></div>
+<ul>
+<li>
+执行计算程序的函数
+<pre class="brush: c++">
+void glDispatchCompute(GLuint num_groups_x,
+					   GLuint num_groups_y,
+					   GLuint num_groups_z);
+
+void glDispatchComputeIndirect(GLintptr indirect);
+</pre>
+
+<ul>
+<li>
+glDispatchComputeIndirect() 函数与 glDispatchCompute() 函数的区别类似于 glDrawArrayIndirect() 函数与 glDrawArraysInstanceBaseInstance() 的区别. indirect 参数解释为一个 buffer object 内的偏移, 其内包含了一套可以传递给 glDispatchCompute() 的参数. 结构可能如下:
+<pre class="brush: c++">
+typedef struct {
+	GLuint num_groups_x;
+	GLuint num_groups_y;
+	GLuint num_groups_z;
+} DispatchIndirectCommand;
+</pre>
+
+</ul>
+</ul>
+
+<div id="Chapter 10 Compute Shaders-10.1 Using Compute Shaders-10.1.1 Executing Compute Shaders-10.1.1.1 Global and Local Work Groups"><h4 id="10.1.1.1 Global and Local Work Groups">10.1.1.1 Global and Local Work Groups</h4></div>
+<ul>
+<li>
+计算着色器在被称之为 work groups(工作组) 的地方内执行. glDispatchCompute() 或 glDispatchComputeIndirect() 的单个调用可以让单个全局工作组发送给 OpenGL 用于执行. 这个全局工作组将会被子划分为一些本地工作 - 本地工作组的数量见 x, y, z 维度的值, 由 num_groups_x, num_groups_y, num_groups_z 参数设置. 一个工作组其基本上是一个工作项(work items, 单位)的3D块, 每个工作项由你代码中运行的计算着色器的一次invocation所处理. 每个本地工作组的大小在x, y, z 维度上, 使用着色器源码中的 input layout 前缀设置. 可见上面的简单例子. 看起来就像下面的代码:
+<pre class="brush: glsl">
+layout (local_size_x = 4,
+		local_size_y = 7,
+		local_size_z = 10) in;
+</pre>
+
+<ul>
+<li>
+上面显示了有 4 x 7 x 10 个工作项, 每个工作组总共有 280 个工作项.
+
+<li>
+使用两个参数可以查询一个工作组的最大大小, GL_MAX_COMPUTE_WORK_GROUP_SIZE 和 GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS. 对于 GL_MAX_COMPUTE_WORK_GROUP_SIZE, 使用 glGetIntegeri_v() 函数, 将 0, 1, 2 作为 target 参数, 分别用来查询 x, y, 或 z 维度. x 和 y 维度的最大大小至少为 1024 项, z 维度的最大大小至少为 64. GL_MAX_COMPUTE_WORK_GROUP_INVOCATIONS 表示单个工作组中允许的最大数量的 invocations. 至少为 1024 项.
+
+</ul>
+<li>
+y 维度或 z 维度设为 1 则启动 1D 或 2D 工作组. 实际上, 所有维度的默认大小为 1. 
+<pre class="brush: glsl">
+layout (local_size_x = 512) in;
+</pre>
+
+<ul>
+<li>
+创建了 1D 本地工作组, 内有 512 x 1 x 1 项.
+<pre class="brush: glsl">
+layout (local_size_x = 64,
+		local_size_y = 64) in;
+</pre>
+
+<li>
+2D 本地工作组, 内有 64 x 64 x 1 项.
+
+<li>
+glGetProgramiv() 和 GL_COMPUTE_WORK_GROUP_SIZE 查询本地工作组的大小. 其会返回三个整数
+<pre class="brush: c++">
+int size[3];
+glGetProgramiv(program, GL_COMPUTE_WORKGROUP_SIZE, size);
+printf("Work group size is %d x %d % xd items.\n",
+		size[0], size[1], size[2]);
+</pre>
+
+</ul>
+<li>
+一旦已经定义了一个本地工作组的大小, 你可以 dispatch 一个 3D 工作组的 block 以运作. block 的大小由 glDispatchCompute() 的 num_groups_x, num_groups_y, num_groups_z 参数设置, 或者由绑定至 GL_DISPATCH_INDIRECT_BUFFER 目标的 buffer object 内的 DispatchIndirectCommand 结构的成员设置. 其大小不需要和本地工作组的大小相同.
+
+</ul>
+
+<div id="Chapter 10 Compute Shaders-10.1 Using Compute Shaders-10.1.1 Executing Compute Shaders-10.1.1.2 Compute Shader Inputs and Outputs"><h4 id="10.1.1.2 Compute Shader Inputs and Outputs">10.1.1.2 Compute Shader Inputs and Outputs</h4></div>
+<ul>
+<li>
+计算着色器没有内置的输出. 有一些内置的输入变量用于确定为位于 local work group 或者更大的 global work group 内的何处.
+
+<li>
+gl_LocalInvocationID --- local work group 内着色器 invocation 的索引, 其隐式声明为一个 uvec3 输入, 每个元素的范围为 0 到相应维度的大小减1.
+
+<li>
+gl_WorkGroupSize --- local work group 的大小, 隐式地声明为 uvec3. 
+
+<li>
+gl_NumWorkGroups 和 gl_WorkGroupID 内有工作组的数量, 全局set内当前工作组的索引. 两者都隐式声明为 uvec3 变量. 
+
+<li>
+glDispatchCompute() 或 glDispatchComputeIndirect() 命令设置的 gl_NumWorkGroups 值, 在其三个元素内包含了 num_groups_x, num_groups_y, num_groups_z 的值. gl_WrokGroupID 的元素其范围为0到gl_NumWorkGroups对应元素的值减一.
+
+<li>
+这些元素的描述可以见图形 10.1. 一个全局工作组x维度为3, y维度为4, z维度为8. 每个本地工作组 x 维度为6, y维度为4.
+
+<li>
+gl_GlobalInvocationID 内置变量得到全局的 invocation 索引. 有效地计算如下
+<pre class="brush: c++">
+gl_GlobalInvocationID = gl_WorkGroupID * gl_WorkGroupSize +
+						gl_LocalInvocationID;
+</pre>
+
+<li>
+gl_LocalInvocationIndex 则为 gl_LocalInvocatioID 的"flattend"形式
+<pre class="brush: c++">
+gl_LocalInvocationIndex =
+					gl_LocalInvocationID.z * gl_WorkGroupSize.x * gl_WorkGroupSize.y +
+					gl_LocalInvocationID.y * gl_WorkGroupSize.x +
+					gl_LocalInvocationID.x;
+</pre>
+
+<li>
+这些值可用于索引一个数组的数据, 纹理的坐标, 随机种子, 或任何其他目标.
+
+<li>
+计算着色器可以产生数据, 但是其必须通过着色器代码显式地存储在内存中. 例如, 在你的计算着色器中你可以写入一个 shader storage block, 使用类似 imageStore 或者 atomics 的image函数, 或者递增或递减原子计数器的值. 这些操作都有副效果, 通过更新内存的内容或者外部可见的结果来检测到这些操作.
+
+<li>
+见下面的代码, 从一个图像中读取数据, 反转数据, 而后数据写到另一个图像内
+<pre class="brush: glsl">
+#version 430 core
+layout (local_size_x = 32,
+		local_size_y = 32) in;
+layout (binding = 0, rgba32f) uniform image2D img_input;
+layout (binding = 1) uniform image2D img_output;
+void main(void)
+{
+	vec4 texel;
+	ivec2 p = ivec2(gl_GlobalInvocationID.xy);
+	texel = imageLoad(img_input, p);
+	texel = vec4(1.0) - texel;
+	imageStore(img_output, p, texel);
+}
+</pre>
+
+<ul>
+<li>
+由于本地工作组的大小是32x32, 所以我们的图像每个方向应当是 32 的倍数
+
+<li>
+设置好图像后, num_groups_x 和 num_groups_y 设为图像的宽度和高度除以32的结果. num_groups_z 为 1.
+<pre class="brush: c++">
+// Bind input image
+glBindImageTexture(0, tex_input, 0, GL_FALSE,
+					0, GL_READ_ONLY, GL_RGBA32F);
+// Bind output image
+glBindImageTexture(1, tex_output, 0, GL_FALSE,
+					0, GL_WRITE_ONLY, GL_RGBA32F);
+// Dispatch the compute shader
+glDispatchCompute(IMAGE_WIDTH / 32, IMAGE_HEIGHT / 32, 1);
+</pre>
+
+</ul>
+</ul>
+
+<div id="Chapter 10 Compute Shaders-10.1 Using Compute Shaders-10.1.2 Compute Shader Communication"><h3 id="10.1.2 Compute Shader Communication">10.1.2 Compute Shader Communication</h3></div>
+<ul>
+<li>
+在工作组内的工作项上执行计算着色器类似于分批在控制点上执行TCS --- 都从一组 invocations 中创建工作组和 patches. 在单个 patch 内, TCS 可以写入 patch 前缀的变量, 如果它们正确同步了, 可以读取其他invocation写入的值. 这样允许了一个有限形式的TCS invocation在单个patch内的通讯. 然而这还有些限制, patch前缀的变量其可用的存储量相当有限, 单个 patch 内的控制点数非常的小.
+
+<li>
+计算着色器提供了类似的机制, 但更有弹性和能力. 这些变量声明使用 shared storage 前缀. 在相同的本地工作组内的计算着色器可以共享该变量. 访问 shared 变量比访问通过图像或者存储块的贮存更快. 如果你期望计算着色器的多次 invocations 访问相同的数据, 将数据从主存拷贝至 shared 变量(或数组)更合理, 而后在shared处访问, 更新, 最后将结果写回主存.
+
+<li>
+虽然你仅能使用有限数量的 shared 变量, 现代显卡可能有几G的主存, 而shared变量存储空间的大小可能只有几K. 一个计算着色器可用的shared存储量可以通过 glGetIntegerv() 和 GL_MAX_COMPUTE_SHARED_MEMORY_SIZE 查询. OpenGL 中支持的shared memory要求的最小量为 32KB, 所以当你的实现可能比这个更大时, 也不应预设其更大.
+
+</ul>
+
+<div id="Chapter 10 Compute Shaders-10.1 Using Compute Shaders-10.1.2 Compute Shader Communication-10.1.2.1 Synchronizing Compute Shaders"><h4 id="10.1.2.1 Synchronizing Compute Shaders">10.1.2.1 Synchronizing Compute Shaders</h4></div>
+<ul>
+<li>
+一个工作组内的 invocations 可能并行运行, 处理器可能将每个本地工作组分割成一些更小的chunk, 而后单个chunk内其步调一致地(in lockstep)执行这些 invocations. 而后在处理器的计算资源上时间分片这些chunks, 而这些时间片(timeslices)可能以任何顺序分配. 有可能相同的本地工作组开始后, 一个chunk的invocation在其他的chunks之前完成, 更可能的是在任意时间上许多 "live(活着的)" chunks 出现在处理器<a href="..html">.</a>
+
+<li>
+我们需要一种方式确保接收器接受的信息是最近发送的. 举例, 你被告知去某人的办公室执行写在他们白板上的任务. 每天, 他们写新的消息在白板上, 但你不知道他们什么时候做了这个事情. 当你去办公室的时候, 如何知道这个消息是否你应该做的呢? 或者这个消息是否之前一天的呢? 现在, 如果办公室所有者关闭门直到他们在之内并写入消息, 之前你必须因为门锁上而等在办公室外. 这就是 barrier. 如果门打开, 你可以进入查看消息, 如果门锁上, 则你必须等到有人到达打开门.
+
+<li>
+计算着色器有一个类似的机制. 即 barrier() 函数, 其执行一个流控制 barrier. 当你在着色器中调用 barrier(), 其会阻塞住直到其他相同本地工作组的着色器 invocations 都运行到了相同的位置. 见第八章节的 "Communication between Shader Invocation", 在 TCS 的上下文中描述了 barrier() 函数. 在一个时间分片(time-slicing)架构中, 执行 barrier() 函数表示你的着色器将会放弃时间片直到本地工作组其他的invocation到达 barrier. 一旦所有本地工作组其他的 invocation 到达 barrier, 则如常执行.
+
+<li>
+流控制 barries 对于正使用的 shared 内存很重要. 如果当前的 invocation 已经写入某些 shared 内存变量, 你也可以知道其他的 invocation 也必然写入了这些变量.
+<pre class="brush: glsl">
+#version 430 core
+layout (local_size_x = 1024) in;
+layout (binding = 0, r32ui) uniform uimageBuffer image_in;
+layout (binding = 1) uniform uimageBuffer image_out;
+shared uint temp_storage[1024];
+void main(void)
+{
+	// Load from the input image
+	uint n = imageLoad(image_in, gl_LocalInvocationID.x).x;
+	// Store into shared storage
+	temp_storage[gl_LocalInvocationID.x] = n;
+	// Uncomment this to avoid the race condition
+	// barrier();
+	// memoryBarrierShared();
+	// Read the data written by the invocation ‘‘to the left’’
+	n = temp_storage[(gl_LocalInvocationID.x - 1) &amp; 1023];
+	// Write new data into the buffer
+	imageStore(image_out, gl_LocalInvocationID.x, n);
+}
+</pre>
+
+<ul>
+<li>
+取消对 barrier() 的注释可以解决 race condition 问题
+
+</ul>
+</ul>
+
+<div id="Chapter 10 Compute Shaders-10.2 Examples"><h2 id="10.2 Examples">10.2 Examples</h2></div>
+<div id="Chapter 10 Compute Shaders-10.2 Examples-10.2.1 Compute Shader Parallel Prefix Sum"><h3 id="10.2.1 Compute Shader Parallel Prefix Sum">10.2.1 Compute Shader Parallel Prefix Sum</h3></div>
+<ul>
+<li>
+prefix sum 操作是一个算法, 给定一个输入数组, 计算出一个新的数组, 其元素为输入数组当前元素之前所有元素的累计. 包括当前元素则为 inclusive prefix sum, 不包含则为 exclusive prefix sum. 下面为 C++ 的简单实现
+<pre class="brush: c++">
+void prefix_sum(const float * in_array,
+				float * out_array,
+				int elements,
+				bool inclusive)
+{
+	float f = 0.0f;
+	int i;
+	if (inclusive)
+	{
+		for (i = 0; i &lt; elements; i++)
+		{
+			f += in_array[i];
+			out_array[i] = f;
+		}
+	}
+	else
+	{
+		for (i = 0; i &lt; elements; i++)
+		{
+			out_array[i] = f;
+			f += in_array[i];
+		}
+	}
+}
+</pre>
+
+<li>
+这种累加工作看起来并不能并行. 将大任务分割成几组更小的, 独立的任务, 它们之间的完成可以相互独立. 例如
+<pre class="brush: c++">
+O0 = I0;
+O1 = I0 + I1;
+O2 = I0 + I1 + I2;
+O3 = I0 + I1 + I2 + I3;
+</pre>
+
+<ul>
+<li>
+分割成两步, 第一步
+<pre class="brush: c++">
+O0 = I0;
+O1 = I0 + I1;
+O2 = I2;
+O3 = I2 + I3;
+</pre>
+
+<li>
+第二步
+<pre class="brush: c++">
+O2 = O2 + O1;
+O3 = O3 + O1;
+</pre>
+
+<li>
+在第一步的计算中, O1 和 O3 相互独立, 所以其可以并行计算. 第一步将4个元素的 prefix sum 分割成一对2个元素的 prefix sums. 第二步中, 我们使用之前的结果更新内部求和的结果.
+
+</ul>
+<li>
+为了在计算着色器中实现这个算法, 我们加上一个chunk的输入数据至 shared variables, 计算 inner sums, 同步其他的 invocations, 累积它们的结果, 如此反复.
+<pre class="brush: glsl">
+#version 430 core
+layout (local_size_x = 1024) in;
+layout (binding = 0) coherent buffer block1
+{
+	float input_data[gl_WorkGroupSize.x];
+};
+layout (binding = 1) coherent buffer block2
+{
+	float output_data[gl_WorkGroupSize.x];
+};
+shared float shared_data[gl_WorkGroupSize.x * 2];
+void main(void)
+{
+	uint id = gl_LocalInvocationID.x;
+	uint rd_id;
+	uint wr_id;
+	uint mask;
+	// The number of steps is the log base 2 of the
+	// work group size, which should be a power of 2
+	const uint steps = uint(log2(gl_WorkGroupSize.x)) + 1;
+	uint step = 0;
+	// Each invocation is responsible for the content of
+	// two elements of the output array
+	shared_data[id * 2] = input_data[id * 2];
+	shared_data[id * 2 + 1] = input_data[id * 2 + 1];
+	// Synchronize to make sure that everyone has initialized
+	// their elements of shared_data[] with data loaded from
+	// the input arrays
+	barrier();
+	memoryBarrierShared();
+	// For each step...
+	for (step = 0; step &lt; steps; step++)
+	{
+		// Calculate the read and write index in the
+		// shared array
+		mask = (1 &lt;&lt; step) - 1;
+		rd_id = ((id &gt;&gt; step) &lt;&lt; (step + 1)) + mask;
+		wr_id = rd_id + 1 + (id &amp; mask);
+		// Accumulate the read data into our element
+		shared_data[wr_id] += shared_data[rd_id];
+		// Synchronize again to make sure that everyone
+		// has caught up with us
+		barrier();
+		memoryBarrierShared();
+	}
+	// Finally write our data back to the output image
+	output_data[id * 2] = shared_data[id * 2];
+	output_data[id * 2 + 1] = shared_data[id * 2 + 1];
+}
+</pre>
+
+<li>
+一个可分离的算法, 章节9中的 bloom 例子其实用了 Gaussian 过滤. 为了生成一个图像的 prefix sum, 我们首相沿着图像中的每行像素应用我们的 prefix sum 算法, 而后产生一个新的图像, 而后另外应用结果每一列的prefix sum 算法. 这两步的输出是一个新的2D grid, 每个点表示矩形内所有值的累积. 见图 10.6.
+
+<li>
+上面方法产生的图像称之为 summed area table, 这在计算机图形中的许多应用是一个极端重要的数据结构. 修改版本
+<pre class="brush: glsl">
+#version 430 core
+layout (local_size_x = 1024) in;
+shared float shared_data[gl_WorkGroupSize.x * 2];
+layout (binding = 0, r32f) readonly uniform image2D input_image;
+layout (binding = 1, r32f) writeonly uniform image2D output_image;
+void main(void)
+{
+	uint id = gl_LocalInvocationID.x;
+	uint rd_id;
+	uint wr_id;
+	uint mask;
+	ivec2 P = ivec2(id * 2, gl_WorkGroupID.x);
+	const uint steps = uint(log2(gl_WorkGroupSize.x)) + 1;
+	uint step = 0;
+	shared_data[id * 2] = imageLoad(input_image, P).r;
+	shared_data[id * 2 + 1] = imageLoad(input_image,
+							P + ivec2(1, 0)).r;
+	barrier();
+	memoryBarrierShared();
+	for (step = 0; step &lt; steps; step++)
+	{
+		mask = (1 &lt;&lt; step) - 1;
+		rd_id = ((id &gt;&gt; step) &lt;&lt; (step + 1)) + mask;
+		wr_id = rd_id + 1 + (id &amp; mask);
+		shared_data[wr_id] += shared_data[rd_id];
+		barrier();
+		memoryBarrierShared();
+	}
+	imageStore(output_image, P.yx, vec4(shared_data[id * 2]));
+	imageStore(output_image, P.yx + ivec2(0, 1),
+				vec4(shared_data[id * 2 + 1]));
+}
+</pre>
+
+<ul>
+<li>
+为了优化代码, 从输入图像的行读取, 写入输出图像的列. 我们应用该着色器两次, 因此图像转置两次就和原来的方位一致.
+
+</ul>
+<li>
+得到一个图像的 summed area table, 我们可以计算出该图像任意矩形内的元素之和. 加上左上和右下坐标的值, 减去右上和左下坐标的值, 得到元素之和.
+
+<li>
+summed area table 任意给定矩形内的像素数量为该矩形的面积, 根据矩形所有元素的和除以面积得到平均值. 平均一些值则是一种形式的 filter, 称之为 box filter. 因此我们可以创建一个可变大小的 filter, 每个像素的filtered 矩形的大小可以改变.
+
+<li>
+见图形 10.8, 左边的filter较轻, 右边的filter较重, 因此产生的结果就是右边的图像更模糊.
+
+<li>
+我们还可创建一个 effect --- the depth of field effect. 相机有两个和其相关的属性 --- focal distance 和 focal depth. 见图 10.9. 可以使用 box filter 来实现这个效果.
+
+<li>
+首先如常渲染我们的场景, 而后保存每个片段的深度值(近似等同于到相机的距离). 如果深度值等于我们模拟的相机focal distance, 则图像锐利并且在焦点中. 不在焦点内, 则模糊.
+
+<li>
+例子 dof. 我们使用计算着色器将渲染的图像转换为一个 summed area table. 每个像素的值使用 vec3 而不使用单个浮点值. 片段着色器里深度值存储在图像的 alpha 通道内. 片段着色器计算用于当前像素 confusion 的面积, 并使用它建立一个 filter 宽度(m), 从 summed area table 读取数据产生 blurry pixels. 下面是片段着色器:
+<pre class="brush: glsl">
+#version 430 core
+layout (binding = 0) uniform sampler2D input_image;
+layout (location = 0) out vec4 color;
+uniform float focal_distance = 50.0;
+uniform float focal_depth = 30.0;
+void main(void)
+{
+	// s will be used to scale our texture coordinates before
+	// looking up data in our SAT image.
+	vec2 s = 1.0 / textureSize(input_image, 0);
+	// C is the center of the filter
+	vec2 C = gl_FragCoord.xy;
+	// First, retrieve the value of the SAT at the center
+	// of the filter. The last channel of this value stores
+	// the view-space depth of the pixel.
+	vec4 v = texelFetch(input_image, ivec2(gl_FragCoord.xy), 0).rgba;
+	// M will be the radius of our filter kernel
+	float m;
+	// For this application, we clear our depth image to zero
+	// before rendering to it, so if it’s still zero, we haven’t
+	// rendered to the image here. Thus, we set our radius to
+	// 0.5 (i.e., a diameter of 1.0) and move on.
+	if (v.w == 0.0)
+	{
+	m = 0.5;
+	}
+	else
+	{
+	// Calculate a circle of confusion
+	m = abs(v.w - focal_distance);
+	// Simple smoothstep scale and bias. Minimum radius is
+	// 0.5 (diameter 1.0), maximum is 8.0. Box filter kernels
+	// greater than about 16 pixels don’t look good at all.
+	m = 0.5 + smoothstep(0.0, focal_depth, m) * 7.5;
+	}
+	// Calculate the positions of the four corners of our
+	// area to sample from.
+	vec2 P0 = vec2(C * 1.0) + vec2(-m, -m);
+	vec2 P1 = vec2(C * 1.0) + vec2(-m, m);
+	vec2 P2 = vec2(C * 1.0) + vec2(m, -m);
+	vec2 P3 = vec2(C * 1.0) + vec2(m, m);
+	// Scale our coordinates.
+	P0 *= s;
+	P1 *= s;
+	P2 *= s;
+	P3 *= s;
+	// Fetch the values of the SAT at the four corners
+	vec3 a = textureLod(input_image, P0, 0).rgb;
+	vec3 b = textureLod(input_image, P1, 0).rgb;
+	vec3 c = textureLod(input_image, P2, 0).rgb;
+	vec3 d = textureLod(input_image, P3, 0).rgb;
+	// Calculate the sum of all pixels inside the kernel.
+	vec3 f = a - b - c + d;
+	// Scale radius -&gt; diameter.
+	m *= 2;
+	// Divide through by area
+	f /= float(m * m);
+	// Output final color
+	color = vec4(f, 1.0);
+}
+</pre>
+
+<ul>
+<li>
+根据像素深度和相机焦点距离之差的绝对值计算出过滤的矩形(即位 confusion area), 而后计算矩形的平均值, 并写入 framebuffer.
+
+<li>
+summed area tables 可能由精度损失, 当所有像素的值加起来后, 会非常的大.
+
+</ul>
+<li>
+改进这个算法
+
+<ul>
+<li>
+16位浮点数渲染我们的最初图像胜过32位的精度
+
+<li>
+在单独的纹理中存储片段的深度值(或者从深度buffer中重构), 避免在中间图像中存储它们.
+
+<li>
+Pre-bias 我们的渲染图像 -0.5, 对于更大的图像, 保证其summed area table value 其累加值接近于0, 从而改进精度.
+
+</ul>
+</ul>
+
+<div id="Chapter 10 Compute Shaders-10.2 Examples-10.2.2 Compute Shader Flocking"><h3 id="10.2.2 Compute Shader Flocking">10.2.2 Compute Shader Flocking</h3></div>
+<ul>
+<li>
+flocking 算法则是通过更新大型组内独立于其他成员的单个成员的属性显示的一个 emergent behavior. 例如蜂群, 鸟群, 鱼群. 其内单个个体的行为依赖于组内附近成员的感知. 成员之间不会产生任意特定决定之上的协作 - 我们知道鱼群没有一个头鱼, 因此组内每个成员有效地独立, 每个属性的值可以并行地计算 - 用GPU实现非常理想.
+
+<li>
+我们在计算着色器中实现 flocking 算法. 在 shader storage buffer 中存储的单个成员表示 flock 的每个成员. 每个成员有一个位置和一个速度, 由一个计算着色器更新, 计算着色器读取一个 buffer 的当前值并将结果写入另一个 buffer. 该 buffer 绑定为一个顶点 buffer, 且作为渲染的定点着色器的 instanced input. flock 的每个成员都是一个渲染绘制中的一个 instance. 顶点着色器负责变换一个 mesh, 在第一个顶点着色器中计算出其位置和方位. 而后算法开始迭代, 再次开始计算着色器, 重新使用之前计算出来的位置和速度. 没有数据留在显卡的内存中, CPU没有参与任何计算.
+
+<li>
+我们使用一对 buffers 存储flock成员的当前位置. 我们可以用一个VAOs集表示顶点数组状态用于每个 pass以便我们可以渲染产生的结果数据. 这些 VAOs 同样保存顶点数据, 使得我们可以表示这些模型. 我们使用双缓存用于flock的位置和速度主要是因为不想同时部分更新位置或速度 buffer 时还将它们作为绘制命令的源.  图 10.12 描述了该算法的passes.
+
+<li>
+根据图 10.12 的算法描述, 左上角, 偶数帧更新, 第一个 buffer, 包含了位置和速度, 绑定为 shader storage buffer, 可以被计算着色器读取, 第二个 buffer 则被计算着色器写入. 而后进行渲染, 如右上角, 使用相同的第一个 buffers 作为输入. 所以 render pass 不依赖于 update pass. 即意味着, OpenGL 可能在 update pass 完成之前开始 render pass 的工作. 包含flock成员顶点和速度的 buffer用于源instanced顶点属性, 额外的集合buffer用于提供顶点位置数据. 
+
+<li>
+图左下角, buffer 交换了. 第二个buffer用于读取, 第一个buffer用于写入, 右下角, 使用第二个buffer作为输入. flock_geometry buffer 是两个渲染 VAOs 的成员.
+<pre class="brush: c++">
+glGenBuffers(2, flock_buffer);
+glBindBuffer(GL_SHADER_STORAGE_BUFFER, flock_buffer[0]);
+glBufferData(GL_SHADER_STORAGE_BUFFER,
+			FLOCK_SIZE * sizeof(flock_member),
+			NULL,
+			GL_DYNAMIC_COPY);
+glBindBuffer(GL_SHADER_STORAGE_BUFFER, flock_buffer[1]);
+glBufferData(GL_SHADER_STORAGE_BUFFER,
+			FLOCK_SIZE * sizeof(flock_member),
+			NULL,
+			GL_DYNAMIC_COPY);
+glGenBuffers(1, &amp;geometry_buffer);
+glBindBuffer(GL_ARRAY_BUFFER, geometry_buffer);
+glBufferData(GL_ARRAY_BUFFER, sizeof(geometry), geometry, GL_STATIC_DRAW);
+glGenVertexArrays(2, flock_render_vao);
+for (i = 0; i &lt; 2; i++)
+{
+	glBindVertexArray(flock_render_vao[i]);
+	glBindBuffer(GL_ARRAY_BUFFER, geometry_buffer);
+	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE,
+						0, NULL);
+	glVertexAttribPointer(1, 3, GL_FLOAT, GL_FALSE,
+						0, (void *)(8 * sizeof(vmath::vec3)));
+	glBindBuffer(GL_ARRAY_BUFFER, flock_buffer[i]);
+	glVertexAttribPointer(2, 3, GL_FLOAT, GL_FALSE,
+						sizeof(flock_member), NULL);
+	glVertexAttribPointer(3, 3, GL_FLOAT, GL_FALSE,
+						sizeof(flock_member),
+						(void *)sizeof(vmath::vec4));
+	glVertexAttribDivisor(2, 1);
+	glVertexAttribDivisor(3, 1);
+	glEnableVertexAttribArray(0);
+	glEnableVertexAttribArray(1);
+	glEnableVertexAttribArray(2);
+	glEnableVertexAttribArray(3);
+}
+</pre>
+
+<li>
+使用随机变量初始化 flock 的位置, 所有的速度设置为0. 使用一个渲染循环更新我们的 flock 位置并绘制 flock 的成员. 循环有两个 pass, 首先 update_program 更新 flock 成员的位置和速度, 绑定至 GL_SHADER_STORAGE_BUFFER 绑定点的两个 buffer 用于读写. 而后激活 rendering 程序.
+<pre class="brush: c++">
+glUseProgram(flock_update_program);
+vmath::vec3 goal = vmath::vec3(sinf(t * 0.34f),
+				cosf(t * 0.29f),
+				sinf(t * 0.12f) * cosf(t * 0.5f));
+goal = goal * vmath::vec3(15.0f, 15.0f, 180.0f);
+glUniform3fv(uniforms.update.goal, 1, goal);
+glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 0, flock_buffer[frame_index]);
+glBindBufferBase(GL_SHADER_STORAGE_BUFFER, 1, flock_buffer[frame_index ^ 1]);
+glDispatchCompute(NUM_WORKGROUPS, 1, 1);
+glViewport(0, 0, info.windowWidth, info.windowHeight);
+glClearBufferfv(GL_COLOR, 0, black);
+glClearBufferfv(GL_DEPTH, 0, &amp;one);
+glUseProgram(flock_render_program);
+vmath::mat4 mv_matrix =
+					vmath::lookat(vmath::vec3(0.0f, 0.0f, -400.0f),
+					vmath::vec3(0.0f, 0.0f, 0.0f),
+					vmath::vec3(0.0f, 1.0f, 0.0f));
+vmath::mat4 proj_matrix =
+					vmath::perspective(60.0f,
+					(float)info.windowWidth / (float)info.windowHeight,
+					0.1f,
+					3000.0f);
+vmath::mat4 mvp = proj_matrix * mv_matrix;
+glUniformMatrix4fv(uniforms.render.mvp, 1, GL_FALSE, mvp);
+glBindVertexArray(flock_render_vao[frame_index]);
+glDrawArraysInstanced(GL_TRIANGLE_STRIP, 0, 8, FLOCK_SIZE);
+frame_index ^= 1;
+</pre>
+
+<li>
+接下来是着色器部分, flock 的每个成员应用一套规则决定往哪个方向移动, 每个规则考虑到当前 flock 成员的属性和其他被感知到的成员的属性. 大多数规则要求访问其他成员位置和速度的数据. update_program 使用一个 shader storage buffer, 其包含了这些信息. 
+<pre class="brush: glsl">
+#version 430 core
+layout (local_size_x = 256) in;
+uniform float closest_allowed_dist2 = 50.0;
+uniform float rule1_weight = 0.18;
+uniform float rule2_weight = 0.05;
+uniform float rule3_weight = 0.17;
+uniform float rule4_weight = 0.02;
+uniform vec3 goal = vec3(0.0);
+uniform float timestep = 0.5;
+struct flock_member
+{
+	vec3 position;
+	vec3 velocity;
+};
+layout (std430, binding = 0) buffer members_in
+{
+	flock_member member[];
+} input_data;
+layout (std430, binding = 1) buffer members_out
+{
+	flock_member member[];
+} output_data;
+shared flock_member shared_member[gl_WorkGroupSize.x];
+</pre>
+
+<li>
+本例使用的规则
+
+<ul>
+<li>
+成员尽量不要击中其他成员. 相互之间至少有一个距离的间隔
+
+<li>
+围绕成员都以相同的方向飞行
+
+<li>
+flock 成员试图到达一个普通的目标
+
+<li>
+成员尽量跟上其他的成员, 他们朝向 flock 的中心.
+
+</ul>
+<li>
+下面的代码用于第一条规则, 如果我们离其他成员太近, 则相互远离.
+<pre class="brush: glsl">
+vec3 rule1(vec3 my_position,
+		vec3 my_velocity,
+		vec3 their_position,
+		vec3 their_velocity)
+{
+	vec3 d = my_position - their_position;
+	if (dot(d, d) &lt; closest_allowed_dist2)
+		return d;
+	return vec3(0.0);
+}
+</pre>
+
+<li>
+第二条规则, 成员之间的距离的平方的反比权重了速度中的变化. 给平方加上一点小小的值避免分母太接近于0. 
+<pre class="brush: glsl">
+vec3 rule2(vec3 my_position,
+vec3 my_velocity,
+vec3 their_position,
+vec3 their_velocity)
+{
+	vec3 d = their_position - my_position;
+	vec3 dv = their_velocity - my_velocity;
+	return dv / (dot(d, d) + 10.0);
+}
+</pre>
+
+<li>
+第三条规则, 每个成员应用一次. 第四条规则每个成员也应用一次, 但要求计算 flock 所有成员(flock中的成员总数量)的平均位置.
+
+<li>
+程序的主体, 将 flock 打破分割成组, 每组表示为单个本地工作组(其大小我们定义为256). 由于 flock 的每个成员需要以某种方式和flock的其他成员互动, 这个算法看成是 O(N^2) 算法. 表示 flock 的每个成员将会读取其他N个成员的位置和速度, N个成员的位置和速度每个都将被读取N次. 我们不去从整个 input shader storage buffer 为每个 flock 成员读取数据, 我们靠本一个本地工作组的worth of data 至一个shared storage buffer, 而后使用本地拷贝更新每个成员.
+
+<li>
+对于每个 flock 成员(我们计算着色器的单个 invocation), 我们循环工作组的数量, 且拷贝单个 flock 成员的数据至 shared local copy(shared_member 数组), 256 个本地 shader invocation 的每个拷贝一个元素至shared array, 而后执行 barrier() 函数以确保同步. 而后我们遍历整个存储在 shared array 的数据, 依次应用每个 intra-member 规则, 累加结果向量, 而后执行调用另一个 barrier(). 以便我们重新循环和运作一次. 
+<pre class="brush: glsl">
+void main(void)
+{
+	uint i, j;
+	int global_id = int(gl_GlobalInvocationID.x);
+	int local_id = int(gl_LocalInvocationID.x);
+	flock_member me = input_data.member[global_id];
+	flock_member new_me;
+	vec3 acceleration = vec3(0.0);
+	vec3 flock_center = vec3(0.0);
+	for (i = 0; i &lt; gl_NumWorkGroups.x; i++)
+	{
+		flock_member them =
+		input_data.member[i * gl_WorkGroupSize.x +
+		local_id];
+		shared_member[local_id] = them;
+		memoryBarrierShared();
+		barrier();
+		for (j = 0; j &lt; gl_WorkGroupSize.x; j++)
+		{
+			them = shared_member[j];
+			flock_center += them.position;
+			if (i * gl_WorkGroupSize.x + j != global_id)
+			{
+				acceleration += rule1(me.position,
+									me.velocity,
+									them.position,
+									them.velocity) * rule1_weight;
+				acceleration += rule2(me.position,
+									me.velocity,
+									them.position,
+									them.velocity) * rule2_weight;
+			}
+		}
+		barrier();
+	}
+	flock_center /= float(gl_NumWorkGroups.x * gl_WorkGroupSize.x);
+	new_me.position = me.position + me.velocity * timestep;
+	acceleration += normalize(goal - me.position) * rule3_weight;
+	acceleration += normalize(flock_center - me.position) * rule4_weight;
+	new_me.velocity = me.velocity + acceleration * timestep;
+	if (length(new_me.velocity) &gt; 10.0)
+	new_me.velocity = normalize(new_me.velocity) * 10.0;
+	new_me.velocity = mix(me.velocity, new_me.velocity, 0.4);
+	output_data.member[global_id] = new_me;	
+}
+</pre>
+
+<li>
+除了应用前两个规则作用于每个成员的 basis 而后修正 acceleration 以使得成员飞向普通目标, 且朝向 flock 的中心, 我们还应用更多的规则保证模拟合理. 首先, 如果flock成员的速度太高, 我们则将其裁减至最高允许的值, 其次, 我们不直接输出新的速度值, 而是执行一个新的速度和旧的速度权重的平均. 这形成了一个基本的 low-pass filter, 且避免 flock 成员加速或减速太快, 或方向改变太突然.
+
+<li>
+现在开始渲染, 使用计算着色器计算出来的位置和速度作为 instanced vertex arrays, 并变换一个顶点的固定集至该位置.
+<pre class="brush: glsl">
+#version 430 core
+layout (location = 0) in vec3 position;
+layout (location = 1) in vec3 normal;
+layout (location = 2) in vec3 bird_position;
+layout (location = 3) in vec3 bird_velocity;
+out VS_OUT
+{
+	flat vec3 color;
+} vs_out;
+uniform mat4 mvp;
+</pre>
+
+<li>
+position, normal 来自于geometry buffer. bird_position, bird_velocity 为 instanced attributes, 由计算着色器提供, 其 instance divisor 由 glVertexAttribDivisor() 函数设置. 着色器的主体使用 flock 成员的速度构建了 lookat 矩阵, 用于设置 airplane 模型的方位.
+<pre class="brush: glsl">
+mat4 make_lookat(vec3 forward, vec3 up)
+{
+	vec3 side = cross(forward, up);
+	vec3 u_frame = cross(side, forward);
+	return mat4(vec4(side, 0.0),
+			vec4(u_frame, 0.0),
+			vec4(forward, 0.0),
+			vec4(0.0, 0.0, 0.0, 1.0));
+}
+vec3 choose_color(float f)
+{
+	float R = sin(f * 6.2831853);
+	float G = sin((f + 0.3333) * 6.2831853);
+	float B = sin((f + 0.6666) * 6.2831853);
+	return vec3(R, G, B) * 0.25 + vec3(0.75);
+}
+void main(void)
+{
+	mat4 lookat = make_lookat(normalize(bird_velocity),
+	vec3(0.0, 1.0, 0.0));
+	vec4 obj_coord = lookat * vec4(position.xyz, 1.0);
+	gl_Position = mvp * (obj_coord + vec4(bird_position, 0.0));
+	vec3 N = mat3(lookat) * normal;
+	vec3 C = choose_color(fract(float(gl_InstanceID / float(1237.0))));
+	vs_out.color = mix(C * 0.2, C, smoothstep(0.0, 0.8, abs(N).z));
+}
+</pre>
+
+<li>
+而后添加 flock 成员的位置, 应用整个模型视图投影矩阵. 使用 lookat 矩阵设置法线的朝向, 以便进行光照计算. 根据当前的 instanceID 选择物体的颜色.
+
+<li>
+一个可能的提高就是计算着色器计算 lookat 矩阵. 顶点着色器计算, 每个顶点都计算则多余. 这里无关紧要, 因为我们的模型顶点数量不多, 如果instanced mesh很大, 则应当在计算着色器中生成, 而后传递给其他的instanced vertex attributes.
+
+<li>
+我们还可应用更多的物理模拟, 而不仅仅是 ad-hoc(特定, 专设, 临时) 规则. 例如, 我们可以模拟重力, 允许碰撞反弹.
+
+</ul>
+
+    </div>
+</body>
+</html>

@@ -1,0 +1,113 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../../style.css" />
+    <title>Chapter14</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<h1 id="toc_1">Be That Light</h1>
+<ul>
+<li>
+设置光源为相机位置
+<pre c++>
+	gluLookAt(lightPos[0], lightPos[1], lightPos[2],
+		0.0f, 0.0f, 0.0f, 0.0f, 1.0f, 0.0f);
+</pre>
+
+</ul>
+<h2 id="toc_1.1">使得场景匹配窗口</h2>
+<ul>
+<li>
+设置投影矩阵, 使得窗口中场景的大小能够最大化. 根据到光源最近和最远的物体设置远近平截平面. 估计fov使得尽可能包括整个场景.
+
+</ul>
+<h2 id="toc_1.2">No Bells or Whistles, Please</h2>
+<ul>
+<li>
+写入深度缓存
+
+</ul>
+
+<h1 id="toc_2">一个新类型的纹理 </h1>
+<ul>
+<li>
+深度纹理, 内部格式有 GL_DEPTH_COMPONENT16, GL_DEPTH_COMPONENT24, GL_DEPTH_COMPONENT32. 通用 GL_DEPTH_COMPONENT.
+<pre c++>
+glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_DEPTH_COMPONENT,
+	0, 0, shadowWidth, shadowHeight, 0);
+</pre>
+
+<li>
+如果对象和光源不移动, 则使用相同的深度纹理. 窗口大小变化时也要重新生成深度纹理.
+
+</ul>
+
+<h1 id="toc_3">Size Matters</h1>
+<ul>
+<li>
+阴影纹理的大小为小于等于窗口大小的最大2次幂大小.
+
+<li>
+因为深度缓存是写入窗口的back buffer中, 所以窗口的大小限制了深度纹理的大小.
+
+</ul>
+
+<h1 id="toc_4">Draw the Shadows First?!</h1>
+<ul>
+<li>
+使用环境光和低光散色模拟阴影部分.
+
+<li>
+某些 OpenGL 实现支持扩展 GL_ARB_shadow_ambient, 使得没必要这第一遍pass的阴影绘制. 可以同时绘制阴影和光照的区域.
+
+</ul>
+
+<h1 id="toc_5">And Then There Was Light</h1>
+<h2 id="toc_5.1">Projecting Your Shadow Map: The "Way"</h2>
+<ul>
+<li>
+将视觉空间的一点转换至光源空间.
+
+</ul>
+<h2 id="toc_5.2">Projecting Your Shadow Map: The "How"</h2>
+<ul>
+<li>
+我们设置纹理矩阵用于负责必要的纹理坐标操作.
+
+<li>
+求解出矩阵用于视觉纹理坐标生成的平面
+
+<li>
+允许深度测试 GL_LEQUAL.
+
+<li>
+纹理参数 GL_DEPTH_TEXTURE_MODE 为 GL_INTENSITY. GL_TEXTURE_COMPARE_MODE 为 GL_COMPARE_R_TO_TEXTURE
+
+<li>
+使用alpha测试放弃阴影部分的重写.
+
+<li>
+GL_ARB_shadow_ambietn 扩展
+
+<li>
+多边形偏移消除 surface acne
+
+</ul>
+
+    </div>
+</body>
+</html>

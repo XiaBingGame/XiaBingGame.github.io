@@ -1,0 +1,221 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../../style.css">
+<title>Character</title>
+<meta http-equiv="Content-Type" content="text/html; charset=cp936">
+</head>
+<body>
+
+<ul>
+<li>
+本例演示了如何实现一个角色, 该角色有不同的动作动画, 如跳舞, 出刀
+
+<li>
+构造场景的过程演示了如何设置视图的背景颜色, 雾, 场景的阴影, 环境光, 光源
+
+<ul>
+<li>
+Ogre::Viewport::setBackgroundColour()
+
+<li>
+Ogre::SceneManager::setFog
+
+<li>
+Ogre::SceneManager::setShadowTechnique, setShadowColour, setShadowTextureSize, setShadowTextureCount
+
+<li>
+Ogre::SceneManager::createLight, Ogre::Light::setType, setPosition, setSpecularColour
+
+</ul>
+<li>
+如何创建一个平面
+
+<ul>
+<li>
+Ogre::MeshManager::createPlane() 创建一个平面mesh
+
+<li>
+Ogre::SceneMager::createEntity() 从上面创建的平面mesh创建一个实体
+
+<li>
+本例的平面使用了材质 Examples/Rockwall
+
+<li>
+Ogre::Entity::setCastShadow() 设置是否投射阴影
+
+<li>
+创建常见节点挂接该平面实体
+
+</ul>
+<li>
+本例阴影的创建
+
+<ul>
+<li>
+两个基本方法用于生成阴影 Stencile-based 和 Texture-based
+
+<ol>
+<li>
+Stencile-based 方法可用于绘制非常长和远的阴影. 缺点边缘处会棱角分明, 且不能处理透明效果, 且占用一部分的CPU资源用于计算阴影锥
+
+<li>
+Texture-based 方法可以很好的处理透明效果, 只需要很少的CPU负荷. 且很易投影一个经过顶点着色程序变形的几何体, 不过对于巨大的阴影会产生"锯齿"效果,
+
+</ol>
+<li>
+支持两个类型的模板阴影, 两个类型的纹理阴影, 以及一个简单的贴花方法(decal approach)
+
+<ol>
+<li>
+两个不同的模板阴影在要求的多通道工作数量上有所不同.  modulative 方法在主渲染之后仅仅简单的"加深"阴影区域. addtive 方法执行每个光源的渲染, 以及添加其累积效果, 其代价更为昂贵. 
+
+<li>
+基于纹理的阴影两种方法大体一致, 唯一的不同就是 shadowmap 方法结果更为精确, 但是要求更好的显卡
+
+</ol>
+<li>
+一次只允许一个阴影技术
+
+<li>
+void Ogre::SceneManager::setShadowTechnique  (ShadowTechnique  technique)  
+
+<ul>
+<li>
+technique
+
+<ul>
+<li>
+SHADOWTYPE_NONE --- 无阴影
+
+<li>
+SHADOWTYPE_STENCIL_MODULATIVE --- 模板阴影技术
+
+<li>
+SHADOWTYPE_STENCIL_ADDITIVE 
+
+<li>
+SHADOWTYPE_TEXTURE_MODULATIVE 
+
+<li>
+SHADOWTYPE_TEXTURE_ADDITIVE 
+
+<li>
+SHADOWTYPE_TEXTURE_ADDITIVE_INTEGRATED
+
+<li>
+SHADOWTYPE_TEXTURE_MODULATIVE_INTEGRATED 
+
+</ul>
+</ul>
+</ul>
+<li>
+这里使用SinbadCharacterController类包装了该角色
+
+<li>
+创建了 RibbonTrail 对象用于实现刀的轨迹动画
+
+<ul>
+<li>
+Ogre::SceneManager::createMoveableObject 方法是用"RibbonTrail"创建一个RibbonTrail对象, 该对象参数numberOfChains为2, maxElements为80
+
+<li>
+材质为 Examples/LightRibbonTrail
+
+<li>
+Ogre::RibbonTrial::setTrailLength 设置长度20
+
+<li>
+Ogre::RibbonTrial::setVisible 设置是否可见
+
+<li>
+常见创建节点挂接该RibbonTrail对象
+
+<li>
+setInitialColour 设置初始颜色
+
+<li>
+setColourChange 设置颜色变化
+
+<li>
+setWidthChange 设置宽度变化
+
+<li>
+setInitialWidth 设置初始宽度
+
+<li>
+addNode, removeNode 添加和移除一个节点
+
+</ul>
+<li>
+Sinbad.mesh 创建该角色实体, Sword.mesh 创建刀剑实体, Sheath.L/R, Handle.L/R 分别为出刀收刀的额外骨骼
+
+<li>
+使用 OgreEntity::attachObjectToBone, detachAllObjectsFromBone, 挂接和卸载该实体的一部分骨骼
+
+<li>
+这里有动画 "IdleBase", "IdleTop", "RunBase", "RunTop", "HandsClosed", "HandsRelaxed", "DrawSwords", "SliceVertical", "SliceHorizontal", "Dance", "JumpStart", "JumpLoop", "JumpEnd"
+
+<li>
+这里设置了 Base 动画和 Top 动画
+
+<li>
+在该类里面控制相机 setupCamera(), updateCamera(), updateCameraGoal()
+
+<ul>
+<li>
+相机使用了一个 createChildSceneNode() 创建了 mCameraPivot 和 mCameraGoal 的父子关键, 当 mCameraPivot 节点旋转时, mCameraGoal 会自动旋转至新位置
+
+</ul>
+<li>
+updateBody() 更新角色的位置, 计算出要旋转的四元组, 而后转换为旋转的角度, 其中用到的方法有:
+
+<ul>
+<li>
+Ogre::SceneNode::getOrientation()
+
+<li>
+Ogre::Quaternion::xAxis(), zAxis()
+
+<li>
+Ogre::Vector3::getRotationTo()
+
+<li>
+Ogre::Quaternion::getYaw()
+
+<li>
+Ogre::Radian::valueDegrees()
+
+<li>
+Math::abs(), std::min, std::max
+
+<li>
+Ogre::SceneNode::yaw()
+
+<li>
+Ogre::SceneNode::translate()
+
+</ul>
+<li>
+updateAnimation()
+
+<ul>
+<li>
+计算动画的状态, 然后调用 Base 动画 和 Top 动画的 addTim().
+
+</ul>
+<li>
+fadeAnimation()
+
+<ul>
+<li>
+根据 fading in 和 fading out 状态更改各自动画的权重值
+
+</ul>
+<li>
+有 injectKey, injectMouse 的函数, 所有需要的鼠标键盘操作都在此
+
+</ul>
+
+</body>
+</html>

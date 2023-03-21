@@ -1,0 +1,87 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../../style.css">
+<title>FuSM</title>
+<meta http-equiv="Content-Type" content="text/html; charset=cp936">
+</head>
+<body>
+
+<h1 id="toc_1">FuSM</h1>
+<ul>
+<li>
+Fuzzy State Mechines (FuSM) 类似于 Finite State Machines(有限状态机), 除了他们使用 fuzzy logic 转变状态以及状态内的行为
+
+<li>
+我设计的状态有: NPC正常开车, NPC正常超车, NPC加速超车, NPC减速跟随
+
+<li>
+条件
+
+<ul>
+<li>
+NPC与玩家距离超过15, 则NPC正常开车
+
+<li>
+否则如NPC在玩家前方, 则NPC正常开车
+
+<li>
+否则如NPC在玩家旁边, 此时NPC处于加速超车或者正常超车状态
+
+<ul>
+<li>
+如玩家车速还在降低或保持不变, 则NPC保持状态不变
+
+<li>
+如玩家车速增加, 则NPC转换为正常超车状态
+
+</ul>
+<li>
+如果NPC在玩家后方
+
+<ul>
+<li>
+如果玩家速度大于或等于NPC速度, NPC正常开车
+
+<li>
+如玩家速度等于NPC速度的3-5范围之内, 则NPC降速开车
+
+<li>
+如果玩家速度更小, 则NPC准备超车
+
+<ul>
+<li>
+是否有足够的空间通过, 如果有则准备超车(存储是左还是右)
+
+<ul>
+<li>
+如果NPC速度可以加速5个单位, 则加速
+
+<li>
+如果NPC速度不可以加速, 则正常超车
+
+</ul>
+<li>
+如果没有足够的空间超过, 则降速开车
+
+</ul>
+</ul>
+</ul>
+<li>
+保存之前的状态, 保存每个状态的权重值, 每一帧降低权重值, 而后重新计算新的权重值, 模糊状态机的要点还是在于权重值随着时间变化, 实现两个状态之间的平滑过渡
+
+<li>
+上面的例子就不考虑车子是加速还是降速的问题了
+
+<li>
+状态机要保存的变量: 当前车子, 车子的当前速度, 超车位于左中右, 玩家位于左中右?
+
+<ul>
+<li>
+输入: 玩家位置, 车子当前速度, 车子当前状态(左中右), 位置, 方向  输出: 位置, 方向
+
+</ul>
+</ul>
+
+</body>
+</html>

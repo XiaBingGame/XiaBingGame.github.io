@@ -1,0 +1,102 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../../style.css">
+<title>2DPainter</title>
+<meta http-equiv="Content-Type" content="text/html; charset=cp936">
+</head>
+<body>
+
+<h1 id="toc_1">自定义类</h1>
+<ul>
+<li>
+Helper
+
+<ul>
+<li>
+该类的作用就是通过 paint 方法完成绘制操作
+
+<li>
+唯一不同的就是 painter 参数的变化, 该 painter 可以是 QWidget, 也可以是 QGLWidget 的派生类
+
+</ul>
+</ul>
+
+<h1 id="toc_2">重要类与函数</h1>
+<ul>
+<li>
+QPainter --- 在Widget执行底层的绘制操作, 以及其他的绘制设备
+
+<ul>
+<li>
+QPainter()
+
+<li>
+Begin(QPaintDevice*)
+
+<ul>
+<li>
+在该函数调用之后, 所有的painter设置(setPainter, setBrush)都重置为缺省值
+
+<li>
+可用QPaintDevice*为参数调用构造函数来避免使用该方法, 这样析构时就自动调用 End() 方法
+
+<li>
+QPaintDevice 为所有可绘制对象的基类
+
+</ul>
+<li>
+translate --- 移动坐标系统
+
+<li>
+rotate --- 根据角度顺时针旋转坐标系统
+
+<li>
+setRenderHint --- 设置一些渲染参数, 如 QPainter::Antialiasing
+
+<li>
+save(), restore() 函数可以保存和恢复设置, setBrush, setPen, setFont 可设置其他内容
+
+<li>
+drawEllipse 绘制椭圆
+
+</ul>
+<li>
+QObject
+
+<ul>
+<li>
+sender --- 用于在slot函数中调用, 得到发送该信号的对象
+
+</ul>
+<li>
+QWidget
+
+<ul>
+<li>
+setAutoFillBackground --- 可以禁止自动重绘背景
+
+<li>
+repaint
+
+<ul>
+<li>
+通过立即调用 paintEvent() 函数重回该 Widget, 除非禁止更新或者该Widget被隐藏
+
+<li>
+在绘制动画时, 最好能替代 update() 函数. 注意在一个被 paintEvent() 函数调用的函数里调用 repaint 容易引起无限循环, update则没有这个问题
+
+</ul>
+</ul>
+<li>
+QGLWidget --- 该类继承自 QWidget, 所以 repaint, paintEvent 函数一样可以作用
+
+<ul>
+<li>
+QPainter 以该类为参数进行绘制, 和QWidget* 为参数的函数调用并无区别. 个人猜想其内部实现可能有所变化
+
+</ul>
+</ul>
+
+</body>
+</html>

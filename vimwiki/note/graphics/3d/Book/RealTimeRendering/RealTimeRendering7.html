@@ -1,0 +1,476 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../../../style.css">
+<title>RealTimeRendering7</title>
+<meta http-equiv="Content-Type" content="text/html; charset=cp936">
+</head>
+<body>
+
+<ul>
+<li>
+Forsyth[352] 建议使用一些启发式更新纹理坐标(在更复杂的形状里包含物体)以减少 parallax 错误, 当 impostor 用于动态物体, 他建议 preprocessing technique 确定在整个动画中任意顶点的移动最大的距离d. 该距离除以动画中time steps的数量, 所以 △ = d/frames. 如果 impostor其在n帧内没有更新, 则 △*n 投影至图像平面(image plane), 如果距离大于用户设定的起始点(threshold), 则更新impostor. 其他的idea, 比如更新该物体靠近near plane或者光标. 为了有效更新impostors, 建议渲染若干impostors至一更大的纹理中.
+
+<li>
+Forsyth 还可以有趣的方式使用预测, 通常, 创建一个impostor用于一个确定的帧, 其只有对该帧来说是正确的. 其后的若干帧, 需要更新该 impostor. 如果在这些生成时间内, 可以完成其帧的相机和动画参数的一些预测, 则可以提升该impostor的平均质量. 对于运动物体, 例如人群中的一个很远的人物, 有用于很广范围的views和不同的运动pose的impostors集, 将该impostors集存储于纹理集中. 只是存储代价高昂, 因此最好在物体移动时渲染几何体, 在物体静止时转换到impostors.
+
+<li>
+Kavan[637]介绍了polypostors, 为纯impostors和纯几何之间的平衡方法.
+
+<li>
+Hierarchical image caching 为一个算法, 其将impostors整理为一个分层体系. 基本思想为划分场景至一个boxes分层体系, 为每个box创建一个impostor, 在该划分中为其父母创建impostors. 而已有层次地更新该impostors.
+
+<li>
+Meyer[862]使用 hierarchy of bidirectional texture functions[BTF]以逼真地渲染树木. BTF为用于存储的纹理, 每个纹素其着色的颜色为多个光照和viewing directions下的. 也可将BTF看成一个物体或表面的一系列图像, 每个为viewing 和 lighting direction的结合. 一些类似的图像, 平均地位于一球上, 而后用于一个层次结构中表示该树. 结合九个BTFs重构该树用于一特定的view和light direction. 在渲染时间上, 他们还是用一个cube maps的层次结构计算树上的阴影.
+
+</ul>
+
+<p>
+10.7.2 Billboard Cloads
+</p>
+<ul>
+<li>
+impostor的一个问题是渲染的物体必须持朝向viewer, 如果远处物体改变了其方位, 则需重新计算该impostor.
+
+<li>
+billboard cload --- 由 overlapping cutout billboards的一个小集合所标示的复杂模型. 真实世界的类似物有 paper cut-out model.
+
+<li>
+查找一系列平面比paper cut-out 类似物更通用. 模型可有数万个三角形, 可由少于100的纹理多边形组成来创建令人信服的billboard clouds. 见图10.16
+
+</ul>
+
+<p>
+10.8 Displacement Techniques
+</p>
+<ul>
+<li>
+如果 impostor 纹理扩充一个depth成分, 其定义了一个渲染的图元称之为 a depth sprite 或 a nailboard.
+
+<li>
+该纹理图像为一个RGB图像增加一个△参数, 形成RGB△纹理, △存储该depth sprite polygon 到其所表示几何体的正确深度的偏差. △ channel为view空间中的heightfield. 由于depth sprith含有深度信息, 所以其可避免visibility 问题. 附近位置的物体应该分组在一起作为一体, 已得到一个合理的结果.
+
+<li>
+当 depth sprite 渲染时, 其depth当作用于△-values的一个offset使用. 由于 depth-difference 值存储在△-成分中, 则可用更小数量的位数(bits)存储这些. 通常8位到16位的顶点位就足够了. Schaufler 派生了一个方法, 在不同的空间之间变换, 并在depth buffer中得到正确的depth. 像素着色器可以执行该算法以逐像素变化 z-depth.
+
+<li>
+Shade[1152]引入称之为 layered depth image 的图元, 每个像素含有一些深度(depths). 多个depths可避免gaps, 该gaps的创建归根于在warping期间的deocclusion(例如: 隐藏的区域开始显现).
+
+<li>
+Oliveira[963] 引进 relief texture mapping, 该relief texture 为带 heightfield 的图像, 用于表示表面的真实位置. 该图像并不直接渲染在billboard上, 而是在世界空间中一个四边形上. 可由一系列relief texture定义一个物体., 这些texture匹配它们之间的缝隙. 使用GPU时, 可以映射heightfield只surface上, 并使用ray tracing的一个形式来渲染这些, 具体见(6.7.4)
+
+<li>
+Polycarpo and Oliveira[1022]发表了在GPU上displaying relief texture 物体的方法, 单个四边形上的纹理集控制heightfield, 依次渲染它们. 可通过更多的heightfield 创建更详细的模型. 给出模型的特定view, 其所需要的heightfield等于最大的深度复杂度. 每个其内的四边形其目标是使得像素着色器对height texture 赋值. 具体可见图 10.19
+
+<li>
+一个问题是当四边形显示在边缘处(edge-on)时, 其heightfield突出在屏幕上四边形的限制之外. 这种情况不会渲染该区域的heightfield, 这是由于该区域的像素不被赋值. Risser[1067]介绍了详细的方法.
+
+<li>
+另一个问题就是纹素的着色值可以被沿着位移方向(displacement direction)过度地拉伸.
+
+<li>
+multi-mehs impostor(MMI), 其每个impostor使用一些mesh来发现不同的错误, 使用预生成和动态更新的impostor图形. Aliaga 和 Lastra[20]开发了constant-frame-rate算法, 一个自动预处理技术可创建layered depth images, 以用于替换远处的几何体. Wimmer[1358]开发了采样技术以精确地创建图元的新类型, 称之为 point-based impostors.
+
+<li>
+Sillion[1182]描述了一个impostor 适用于城市风景(urban scenery). 远的几何体被一纹理取代, 该纹理映射至一mesh, 而该mesh则粗糙地follow其近似的几何体. 这种类型的图元称之为textured depth mesh(TDM), Jeschke and Wimmer[609]描述了将模型或场景转换至TDM的处理. Wilson and Manocha[1356]则讨论了从不同viewpoints将复杂模型转换至TDM,这些 representation之间共享数据.
+
+<li>
+Gu[463]介绍了 geometry image.其思想为转换不规格的mesh为正方形的图像以掌握深度值. 该图像自身表示一个规则的mesh.
+
+</ul>
+
+<p>
+10.9 Image Processing
+</p>
+<ul>
+<li>
+post processing --- 在渲染之后执行图像处理
+
+<li>
+以某种形式将场景渲染至offscreen缓存: 颜色图像, z-depth 缓存等. 将这个结果的图像看成一个纹理, 该纹理应用于一个 screen-filling 四边形. 通过渲染该四边形来执行 Post Processing, 而后调用像素着色器程序用于每个像素. 大多数图像处理效果依赖于对应像素上的图像纹素信息. 
+
+<li>
+着色器中可以对相邻像素根据其位置权重求和得到新的值
+
+<li>
+正如 5.6.1 所介绍, 不同的filter kernels 可用于重构一个信号. 同样, filter kernel 还可用于模糊图像. rotation-invariant(不变式) filter kernel, 其纹素到中心像素的距离用于过滤操作. P122的公式5.15, 其sinc filter为一个简单的例子. Gaussian filter, 已知的钟形曲线(bell curve), 为一常用的kernel. 公式 10.6
+
+<ul>
+<li>
+x 为到纹素中心的距离, σ为标准的偏差(deviation), 更大的偏差可以作出更宽的钟形曲线. e前面的部分确保连续曲线下面的部分面积等于1. 当形成一个discrete filter kernel, 该部分是不相关的. 每个纹素计算出来的值在其覆盖区域上累加, 而后所有的值处理累加值, 确保最终的权重值累加等于1. 图10.21 演示了Gaussian二维和一维的filters
+
+</ul>
+<li>
+sinc和Gaussian过滤器的缺点就是无限大, 因此我们裁剪该过滤器至一具体半径或正方形面积大小, 当有零值时则看成越界. Cook[195]在随机采样发表了一个截头尾的Gaussian filter. 公式10.7
+
+<ul>
+<li>
+w为半径, 超过该半径, 赋值的数字为0.
+
+</ul>
+<li>
+读取纹素成为最昂贵的着色器操作(由于带宽代价), 随着时间过去, 计算代价相对下降. 使用GPU的一个优势是内置的插值和mipmapping硬件可以帮助最小化访问的纹素数量.
+
+<li>
+例如, 使用box filter, 给定纹素周边3x3的纹素网格取其平均值显示blurred结果. 像素着色器权重累加这九个纹理样本, 而后输出blurred结果至该像素上.
+
+<li>
+无需9个纹素. 使用一个纹素的双线过滤(bilinear filtering), 单个纹素访问返回至多4个相邻纹素的权重累加. 所以采样3x3 grid可能只有四个纹理访问. 见图10.22. 对于box filter, 所有的权重都相同, 故其单个样本可放在四个纹素的中间位置, 对于Gaussian filter, 其权重值并不都相同. 所以双线插值未必精确. 每个样本仍在两个纹素之间, 但是有偏移, 使其更靠近权重值高的纹素. 例如一纹素权重0.01,相邻纹素权重0.04, 则样本距离第一个纹素0.08, 距离第二纹素0.02, 样本权重0.05.
+
+<li>
+一些 filtering kernels 是可分离的, 如Gaussian 和 box filters. 及应用于两个单独的一维blurs, 其可减少纹理的访问, 代价从d的平方减少至2d, d为kernel diameter. 例子可见图 10.21
+
+<li>
+Downsampling 是另一个常用于 blurring 的 GPU相关的技术. 其思路为制作图像一个更小的版本用于操作. 例如沿着轴制作一个四分之一屏幕的图像. 使用该纹理混合至最终的全分辨率图像, 放大该纹理, 使用bilinear interpolation混合两个样本, 可产生一个更加模糊的效果. 在原始图像的更小版本上操作可极大的减少访问纹素的数量.
+
+<li>
+最后一个值得提及的处理: ping-pong buffer[951], 其思路为在两个offscreen buffers之间操作. 分别保存中间结果或最终结果. 在第一次pass中, 第一个buffer为输入纹理, 第二个buffer为输出. 下一个pass则角色转换.
+
+<li>
+GPU可通过图像处理帮助执行纹理动画. James[600]显示了如何逐帧在GPU上修改纹理来实现动画效果.
+
+<li>
+最近常见的filter类型有 bilateral filter(双边过滤), 不但使用纹素到中心像素的距离, 还是用它们之间值的差异. 其结果可以保持锐利的边沿.
+
+<li>
+像素着色还可用于post processing实现各种效果, 以及还可以配合其他缓存一起使用, 具体可见P472-P473.
+
+</ul>
+
+<p>
+10.10 Color Correction
+</p>
+<ul>
+<li>
+Color correction 在已存的图像上, 使用一些功能转换每个颜色至其他的颜色. Color correction其取单个像素的RGB值为输入, 并应用一个算法生成新的RGB值. 另一个用户是加速解码, 例如 YUV颜色空间转换至RGB颜色空间.
+
+<li>
+复杂函数的求解常用解决方案为look-up table[LUT]查找表. 对于color correction function而言, 其只有一个输入channel, 所以表格可以是一维的. 输入可看成数组的索引, 输出值也存储在数组中. 这样任意复杂的函数可缩成常量时间的查找.
+
+<li>
+当color conversion使用三个输入, 则三维LUT大小为256的立方太大. 如果 color conversion function 在相邻值之间并不快速变化, 可使用更小的LUT数组, 例如32的立方. GPU的纹理采样功能(functionality)可以用于在相邻值之间执行三线性的插值. 通常类似的表需要高于八位的精度以避免banding artifact.
+
+</ul>
+
+<p>
+10.11 Tone Mapping
+</p>
+<ul>
+<li>
+Tone mapping(也称之为Tone reproduction)为一个很宽广的照明层次调和适应至屏幕受限的范围. 当光照变化剧烈时, 眼睛需要一段时间来适应, 称之为光适应. 可在实时渲染中模拟, 方法为人工地变化光的感知.
+
+<li>
+旧的交互计算机渲染那系统不能处理0.0到1.0范围之外的颜色值. 这个限制包括着色公式的输入和输出.
+
+<li>
+现代GPUs 可以处理任意高的着色值, 允许现实的光照和高对比图像. 输出设备仍限制于他们的支持范围和精度(每通道8位)内, 所以需要在着色值上执行某种形式的tone mapping. 该mapping可即时地执行(当物体被渲染时)或在一单独的全屏幕pass中执行. 即时地tone mapping其优点是可使用低精度的颜色缓存. 但有两个缺点, 其一在高overdraw的场景中, tone mapping每像素会执行多次. 另一为alpha-blended物体. 应在blending之后执行tone mapping, 且即时地执行会产生令人厌恶的artifacts. 在单独的pass中执行则需要高精度的颜色缓存, 更多的内存带宽, 更高精度的资源.
+
+</ul>
+<p>
++ 最简单的"tone mapping operator"为简单的裁剪输出值至可显示的范围. 添加一个曝光设定在裁剪之前缩放输出颜色. 这种设定可由应用程序设计者或美工来设定.
+</p>
+<ul>
+<li>
+adaptive tone mapping 用于对场景中所有的照明做出反应. 最简单的 adaptive tone mapping operator 将最大值对应至白色. 发现的最大亮度值用于缩放结果至可显示的范围内. 缺点为单个异常明亮的像素会导致场景中其他的地方非常的暗.
+
+<li>
+Tone mapping operator 分为global和local. global算法中, 类似于"最大值为白色", 其应用图像中所有的部分相同的映射. local 算法中分析每个像素及其相邻的像素. 如相邻像素在亮度上差异很大, 则最小化像素的映射, 以便维持对比. local tone mapping operator 并不常实现与互动应用程度. Goodnight[426]发飙了一个系统, 其使用像素着色器实现了global和local tone operator.
+
+<li>
+Global tone mapping operator 分为两步: (1)采样该计算的图像确定亮度等级(levels), 而后根据该信息重映射该图像. 例如, "最大值为白色", 遍历所有的像素查找最大的亮度值, 而后根据这个最大值缩放所有的像素. 为了减少代价, 可分为几个pass. 第一个pass将screen-filling四边形渲染至更小的图像, 使用众多的纹理样本缩小大小(downsize)和平均亮度. 后续的pass该小图像进一步缩小. 最后一个像素保存了平均亮度值[152, 1206]. 
+
+<li>
+另一个方法为创建渲染结果其亮度的histogram(柱状图), 并使用它来创建一个mapping. 每个柱子的高度表示给定亮度值(或一个范围的值)的像素数量. 可创建柱状图用于单个颜色channel. 一个简单的mapping为equalization. 即重映射该柱状图, 使得每个显示的亮度level有若干bins(柱条)分配给它. 目的是使得每个display level 有近似相同的像素数量关联于它. 在更common的亮度levels之间增加对比的效果. 其缺点为对比可能被过度夸大(over-exaggerated). Scheurmann和Hensley[159, 1122]提供更有效的方法, 其使用vertex texture fetch或渲染至顶点缓存在GPU上生成histograms.
+
+<li>
+Valve[881]使用GPU occlusion queries 统计在给定亮度值范围内fall的像素数量. 建立一些帧上的亮度柱状图. 类似CUDA的系统, 允许从GPU写入不同的内存位置, 允许即时地亮度柱状图的生成, 而无需额外的passes&gt;
+
+<li>
+如果来自图像的输入范围相对地低. 其不包含许多差异的量级(magnitudes of difference). 一个简单的averaging和rescaling可很好地映射图像至可显示的范围. 仅直接取用于高动态范围图像的亮度平均值, 对于合理的tone mapping operation你还不够. Reinhard[1058]其累加像素值, 而后取亮度的对数和平均其值, 而后转换回来. 见公式 10.8
+
+<ul>
+<li>
+δ是一个很小的值, 其可避免取0的对数, 
+
+</ul>
+<li>
+其中一种方法为使用前一帧的log-average亮度和当前帧的log-average亮度一起使用. 见公式 10.9
+
+<li>
+* 一旦计算出 log-average 亮度, 种种 tone operator 则可能使用, 例如下面的一个简单mapping, 公式10.10
+
+<li>
+L(x, y)为结果亮度, 参数a为场景的key. 照片中的High-key意味着最小化对比和阴影且所有都被照得很亮. low-key 最大化亮和暗的对比. 新娘穿着白色礼服在白色背景前为high-key. 月光下的孤狼为low-key. 一般key值在 a = 0.18 左右. high-key 最大可为 0.72, low-key 最小可为 0.045. 都在tone mapping的区域内. key value 在效果上类似于相机的曝光等级. 而且有时候两者可以相互交换. 效果可见图 10.25
+
+<li>
+改进该公式, 以显示正常和低亮度值更多的视觉细节, 见公式 10.11
+
+<ul>
+<li>
+该修正压缩高亮度值至1, 低亮度值不可能达到该值.
+
+</ul>
+<li>
+有些亮度值在图像中非常地亮, 比如太阳. 可改进上面的公式来解决该问题, 见公式 10.12
+
+<li>
+该公式混合了前面的公式和线性映射.
+
+<li>
+注意非线性tone mapping 可能和伽玛修正一样的问题. 锯齿边缘的roping artifact会更引人注意. tone mapping 不考虑纹理mipmap的生成. Pers-son[1008]在DX10中用multisample buffer解决该问题
+
+</ul>
+
+<p>
+10.11.1 High Dynamic Range Imaging and lighting
+</p>
+<ul>
+<li>
+使用环境映射的一个问题就是描述光, 可捕捉的光其动态范围受限于八位每通道. 直接可见的光源其百倍或千倍亮于间接的照明. 例如, 假设一个高亮物体(黄铜烛台, 反射70%的光)和一个更暗的镜面物体(乌木雕象, 反射5%的光)使用相同的环境映射(EM). 如果EM只包含屋内的光, 则雕象看起来不错, 而烛台未必. 如果EM包含屋内的所有物体, 则相反. 这是由于雕象的亮度值能反射直接光源, 而烛台可镜面反射环境的图像. 即使以某种方式使用和缩放单个图像, 精度的不足长显示出颜色的banding artifact.
+
+<li>
+真实世界的环境数据其获取可使用专业照片方法和设备. 例如相机使用三个不同的曝光保存相同的场景, 而后组合成单个高动态范围图像. 这种处理过程称之为 high dynamic range imaging(HDRI).
+
+<li>
+Tone mapping 和 HDRI 紧密相关. 由于HDR图像不是可显示的, 除非以某种方式映射其值为可显示的. Tone-mapped 图像可以有丰富的视觉质量, 那些可能太暗或太亮区域的细节可以显示出其细节. Reinhard[1059]其讨论了在计算机图形中捕捉和使用HDR图像.
+
+<li>
+大多数图像文件格式存储显示像素值范围为0到255. 当执行物理精确的模拟, 在浮点radiance值中计算结果, 而后tone mapped, gamma-corrected, 以用于显示. Ward[1325]开发了RGBE用于计算的值. RGBE使用了三个8位尾数(mantissas)用于RGB, 以及一个八位指数用于所有的三个值. DX10 添加了一个不同的格式, R9G9B9E5. DX10 压缩HDR格式为 R11G11B10浮点格式以支持输出, 其中 R和G有6位尾数, B则有5位尾数, 每个颜色通道为一单独的5位指数
+
+<li>
+2003年工业光魔发布了他们OpenEXR格式的代码[617, 968]. 这是高动态范围文件格式, 支持许多像素深度格式, 包括16位半精度浮点格式(每通道), 以便于图形加速器的支持.
+
+</ul>
+
+<p>
+10.12 Lens Flare and Bloom
+</p>
+<ul>
+<li>
+Lens flare, 当眼睛或相机的镜片直面强光时产生的现象. 由光晕和ciliary corona(睫状的电晕)组成. halo由镜头的水晶结构的radial fiber引起. 看起来就像光线上的环物体, 其外部边缘色调为红色, 内部为紫色. 光晕有常量的外观大小, 其不考虑与光源间的距离. 
+
+<li>
+当镜头的一部分在内部反射或折射光时, 相机镜头还可以创建第二个效果. 镜头的aperture blades 可产生hexagonal pattern. 玻璃上的微小条纹可导致光条纹通过风挡. 镜头的scattering和眼睛的其他部分可产生Bloom. 在光的周围产生glow现象, 且模糊场景中其他部分的对比. 视频制作中, 相机通过使用一个charge-coupled device(CCD)转换光子为charge来捕捉图像. 当相机的一个charge size在CCD中饱满或溢出至相邻site时则出现Bloom, halos, coronae, bloom都称之为glare effect.
+
+<li>
+图10.26 显示了典型的lens flare.通过使用一系列纹理产生, 每个纹理应用一个四边形朝向viewer, 形成一个billboard. 该四边形还可以给出一个颜色(通常为纯红, 绿或蓝)用于prismatic(五光十色的, 棱柱形的) effects表示ciliary corona. 当他们叠加时, 还可以使用额外的效果得到其他颜色来混合这些sprites.
+
+</ul>
+<p>
+lens flare 随光源的位置而变化. King[662]创建了不同纹理的正方形集用于表示lens flare. 从光源位置到屏幕中心位置的一条线上产生这些效果. 当光源距离屏幕中心很远时, sprites很小且更透明. 当光源超屏幕中心移动时, 则变得越大越不透明. Maughan[826] 则通过仅适用GPU计算在光源屏幕上区域的occlusion来变化lens flare的亮度. Sekulic[1145]也介绍了相关的技术. 
+</p>
+<ul>
+<li>
+来自场景中明亮物体或者光的条纹, 它的执行是以某种类似的方式在明亮像素他们自身上绘制半透明billboard或执行post-processing filtering, Oat[951]则介绍了一个便于操作的过滤技术生成streak effect.
+
+<li>
+bloom effect, 极度亮的区域溢出至相邻的像素. 主要思路为创建一个图像仅由"过度曝光"的明亮物体组成, 然后模糊他, 合成其至normal image. 一种方法是鉴别出明亮物体, 而后仅仅渲染这些物体至bloom 图像中以便于模糊它们[602]. 另一种常用方法为进行 bright-pass filter, 保良明亮像素, 所有暗的像素为黑色, 在过渡的点上可能有一些混合和缩放.
+
+<li>
+bloom 图像可在更低的分辨率中渲染. 从原图像的二分之一高宽到八分之一高宽. 这样做可以节省时间且可帮助增加过滤的效果, 模糊之后, 当放大该图像且和原图像组合起来, 双线性插值可增加模糊的区域. 其中blur处理在两个一维pass中使用单独的Gaussian filter可以节省处理代价, 具体见章节10.9. 因为目标为图像那些亮的地方看起来过度曝光了, 所以缩放该图像的颜色且添加至原来的图像. 额外的混合可以是颜色饱满至白色. 例子可见图10.28
+
+</ul>
+
+<p>
+10.13 Depth of Field
+</p>
+<ul>
+<li>
+图像有个范围表示物体在焦点中, 焦点歪的物体会模糊, 更远外处的物体则更模糊. 控制depth of field的一个方法为依赖于tone mapping. 当光的level减少时, 让out-of-focus物体更加模糊. 另一个方法就是手动的美工控制, 改变焦点和增加用于戏剧效果的depth of field.
+
+<li>
+accumulation buffer 可用于模拟 depth of field. 见图10.29. 变化view, 确保焦点固定, 这种方法大家很高.
+
+<li>
+变化view位置的accumulation缓存技术提供了应当在每个像素记录的mental模型. Surfaces 可以分成三个区域. 焦点区域外的部分则是不同view中所有surfaces的混合* 创建三个单独的图像层(layer), 一张图像只渲染焦点中的物体, 一张包括之外的物体, 一张则渲染更近的物体. 其可通过简单地移动远近截平面位置来完成. 模糊两张out-of-focus图像. 而后以从后到前的顺序合成所有的三个图像. 缺点是当一个物体跨多个图像, 从模糊突然道焦点中的清晰.
+
+<li>
+另一个方式看depth of field 如何影响表面上的单个位置. 想象surface上一个微小的点. 当surface在焦点中时, 该点穿过单个像素. 如果该点out of focus, 则该点出现在附近的像素上, 依赖于不同的views. 在这种限制下, 该点在像素grid上定义一个填充的圆. 其术语为 circle of confusion. 在照片中称之为 bokeh, 且该圆的形状和 aperture blades 相关. 廉价的镜头产生的模糊有六角形的形状, 而不是完美的圆.
+
+<li>
+一种计算depth-of-field 效果的方式为取出surface上的每个位置, 并scatter它的shading值至圆中的邻居. 使用Sprites表示该圆. 平均所有重叠sprites的总和, 表示在一个像素上可见surface显示的颜色. 
+
+<li>
+使用 scattering 的一个问题是就是不能很好的映射至像素着色器的性能. 像素着色器可并行操作, 它们不会将其结果扩散至相邻像素. 可使用几何着色器生成sprite, 通过渲染, scatter结果至其他像素. 
+
+<li>
+另一种方式看待 circles of confusion, 假定围绕一个像素的局部相邻区域有相同的深度. 当该假设在合适的地方, 则执行gather operation. 优化像素着色器用于gathering来自之前计算的结果. 见图10.30. 其中执行depth-of-field效果的方式为基于它的深度在每个像素上模糊该surface[1204]. Wloka[1364]正常渲染场景, 除了在alpha channel 存储 circle of confusion的半径. 使用filtering技术后期处理场景图像以模糊它和进一步模糊它. 产生三个图像: 锐利, 模糊, 更模糊的. 像素着色器则访问该blur factor, 并每个像素在三个纹理间插值. 需要多个纹理这是由于GPU访问mipmaps中mip level的能力限制.
+
+<li>
+该技术背后的思路为使用blur factor 变化 filtering kernel的大小. 现代GPUs下, 可使用 mipmaps 或 summed-area 表格用于采样图像纹理的一个区域. 另一种方法是在图像和该图像更小更模糊的版本之间插值. filter kernel大小随模糊度增加, 以及模糊的图像给予更多的权重. 使用Poisson-disk pattern[P365的图9.30]最小化Sampling artifacts. Gillham[400]则讨论了在更新GPUs上的实现. 还可用类似mapping 或 reverses mapping方法, 例子可见 图10.31(???)
+
+<li>
+Scattering 和 gathering 技术的一个问题是 occlusion. 在物体的轮廓边缘处会产生问题. 主要是因为foreground中的物体其应当有个模糊的边缘. 
+
+<li>
+还有个问题就是焦点中的物体其锐利边缘靠近一个远且模糊的物体. 该模糊物体也会从焦点物体中采样,  导致一个围绕边缘的光晕效果. 可见文章[1121]和[696], [245]
+
+</ul>
+
+<p>
+10.14 Motion Blur
+</p>
+<ul>
+<li>
+对于互动应用程序而言, 令人信服的图像应当有稳定且足够高的帧率. 对于电影来说, 最重要的是每个file frame包含一个motion-blurred图像. 缺省情况, 互动图形图像没有这种图像.
+
+<li>
+motioin blur 是某种形式的temporal(时间的) antialiasing. 
+
+<li>
+一种方法是直接渲染 blur 本身. 其为绘制线条表示移动粒子的基本原理. 该概念可以扩展.
+
+<li>
+想象一个刀片通过空气, 在刀刃的前面和后面, 沿着其边缘添加两个多边形. 这个可由几何着色器即时地添加. 这些多边形每个顶点使用一个alpha的不透明, 多边形和刀相交之处, 其完全不透明, 而多边形的另一边则完全透明. 其思路为该模型在移动方向上进行透明, 模拟模糊. 图10.32 显示了该例子.
+
+<li>
+accumulation buffer 提供一种方式通过平均一系列图像创建blur. 物体在该帧内的位置集合, 将物体移动到这些位置, 混合结果图像. 最终结果给出一个blurred image. 见图10.33. 
+
+<li>
+可以以一种聪明的方式使用accumulation buffer. 想象运动中, 生成模型的八帧并存储在accumulation buffer中, 而后显示. 在第九帧时, 再次渲染该模型并accumulated, 此时再次渲染第一帧, 并从accumulation buffer中减去该帧. 该buffer现在有一blurred模型的八帧, 从第二帧到第九帧. 下一帧, 我们减去第二帧, 加上第十帧. 依次下去, 这样每次只需要渲染两帧内容以得到blur effect.
+
+<li>
+一个接受广泛的有效技术为使用 velocity(速度) buffer. 该速度可通过两个应用在模型的矩阵计算得出, 一个最后的一帧, 一个为当前帧. 顶点着色程序计算其位置间的差异, 并变换该向量至相对的屏幕空间坐标. 图10.34显示了一个velocity buffer和它的结果.
+
+<li>
+一旦该 velocity buffer 形成, 在每个像素上每个物体的速度已知. 渲染 umblurred 图像. 在每个像素上的速度和方向用于采样该图像以模糊该物体. 这种directional blurring称之为 line integral convolution(LIC). 常用语视觉化流动的液体.
+
+<li>
+使用LIC的主要问题发生在物体的边缘. 采样了不属于物体的图像部分. 物体内部可正确地模糊, 以及物体边缘附近, 正确地得到背景并混合进物体. 如果背景不模糊, 而物体边缘模糊, 则显得不真实. 
+
+<li>
+Green[446]和Shimizu[1167]则通过拉伸(stretching)物体来减轻这个问题. Wloka[1364]的思路通过拉伸模型提供 motion-blur. 想象一球通过屏幕, 该球的blurred版本看起来像是带两个带圆帽的圆柱体[1243]. 为了创建这种类型的物体, 三角形的顶点其朝向沿着速率向量向前移动半帧, 以及向后移动半帧. 有效的将球体切成半球, 且拉伸的三角形连接这两半球, 已形成该"blurred"物体表示.
+
+<li>
+使用该模型构建的velocity buffer 允许以平滑的方式采样物体边缘之外. 但是其会产生一个不同的artifact. 物体附近的背景会被模糊.
+
+<li>
+解决方案为单独计算物体的motion blur. 其思路为执行完全相同的处理过程, 但是背对一个黑色且完全透明alpha通道的背景. 当生成blurred object时, 可通过LIC采样alpha. 该结果图像则为一个带软的, 半透明边缘的blurred object. 而后该图像合成进场景. 该技术用于失落星球的DX10版本.
+
+<li>
+对于由于相继移动造成的静态物体 blurring, motion blur则很简单, 且无需详细的velocity buffer. Rosado[1082]即时地使用前一帧的相机视图矩阵计算velocity. 其思路为变换一个像素的屏幕空间和深度至一个世界空间位置, 而后使用前一帧的相机变换该世界空间点到屏幕位置. 该屏幕空间位置间的差异则为velocity vector, 其可模糊图像用于该像素. 效果可见 10.36, 有一个radial blur 效果.
+
+<li>
+一些用于motion blur计算的优化和改进. Hargreaves[504]使用preblurred images集构想motion blurring texture. Mitch[550]则讨论 motion-blurring cubic environment maps 用于给定方向的motion. Loviscach[261, 798]使用GPU的anisotropic 纹理采样硬件有效地计算LICs. 合成的物体可以以四分之一的大小渲染, 以节省像素处理和过滤掉采样的矂值.
+
+</ul>
+
+<p>
+10.15 Fog
+</p>
+<ul>
+<li>
+固定功能管线中, fog为在渲染管线尾部执行的简单大气效果. 
+
+<li>
+雾的颜色记为 Cf, 雾的因子为f∈[0,1], 其随与viewer之间的距离而变化. 假定shaded surface颜色为Cs. 则像素的最终颜色 Cp, 由公式10.13确定. 
+
+<li>
+雾因子 可以随深度线性减少. 见公式 10.14
+
+<li>
+两种指数下降的雾类型, 见公式 10.15 和 10.16
+
+<ul>
+<li>
+其中df为用于控制雾密度的参数, 图 10.38 则显示了 fog fall-off curves. 该指数由 Beer-Lambert Law 推导而来.
+
+</ul>
+<li>
+一个table(通常存储为一维纹理)有时用于在GPU中实现这些 fog functions. 对于每个depth, 事先计算和存储 fog factor f.当需要给定的depth的fog factor, 从table(或者两个最近的table entries间线性插值)中读取该fog factor. 任何值都可以放进该fog table, 而不仅仅是上面的公式.
+
+<li>
+一些用于实时系统可影响输出质量的假设:
+
+<li>
+首先, fog可以应用于顶点层次还是像素层次. 顶点层次, fog effect的计算作为照明公式的一部分, 计算的颜色由多边形上插值而来. 像素层次使用存储在每个像素的深度计算得来.
+
+<li>
+透视view中, viewer的z-value其是以非线性方式计算得出. 使用z-depth且转换回线性空间中的距离可以得到更多物理上正确的结果.
+
+<li>
+用于计算fog effect的深度值有三种类型, 分别为 plane-based fog, radial fog/range-based fog, Euclidean distance fog.见图 10.39, 关于 plane-based fog的一个错误
+
+<li>
+Hoffman 和 Preetham[556, 557]在细节上覆盖了atmospheric scattering的物理性质, 其模型为假定大气的常量密度, 其有 scattering equations 和 天空颜色与aerial perspective的统一模型的封闭形式解决方案.
+
+<li>
+还可见 Sporl[1209]的skylight实现.
+
+<li>
+还可见 O'Neil[967], Nishita[937], Wenzel[1341, 1342]
+
+<li>
+Mitchell [885] and Rohleder &amp; Jamrozik [1073]发飙了 image-processing 方法, 其使用 radial blur 创建 beam-of-light 效果用于 backlit 物体.
+
+<li>
+Sun[1229]处理 局部点光源以及它的GPU实现. Zhou[1408]扩展该方法至非均匀媒体.
+
+<li>
+关于水下物体的绘制. 海滨水的透光度RGB分别为每米(30%, 73%, 63%). 可见[174], [608], [729]
+
+<li>
+其他类型, 比如局部的雾, 雾旋转一团为某种形状. 可由重叠一些半透明公告板图像产生, 类似于如何表示云朵和灰尘.
+
+<li>
+Nuebel[942]提供用于layered fog effects的着色程序. Lengyel[762]也提供有效健壮的像素着色程序用于 layered fog. 可见图10.40. 还有 Wenzel[1341, 1342].
+
+<li>
+volumetric fog 技术思路为计算可见物体和viewer之间的空间体多大(volume of space), 而后使用该量通过雾颜色改变物体的颜色. 为了效率, 在每个像素执行 ray-object intersection.
+
+<li>
+对于高亮照亮的类似 beam of fog 这样的 volumes of space, 其思路为记录每个像素的最大和最小深度值, 而后计算雾的厚度. James[601]提供了通用的技术.
+
+<li>
+[461], [956]提供其他的方法
+
+<li>
+被光和阴影所影响的fog, [603], [1246]
+
+<li>
+[265], [878] 渲染 shafts of light
+
+</ul>
+
+<p>
+10.16 Volume Rendering
+</p>
+<ul>
+<li>
+Volume rendering, 其渲染数据由 vexels 表示, "Voxel" 为 "volumetric pixel"的缩写. 每个voxel 表示一个规则的 volume of space. vexel data 可用于形成一个三维图像.
+
+<li>
+有很多的vexel 渲染技术. implicit surface 技术可用于转换 voxel 样本至多边形表面. 该表面由相同值的位置形成, 称之为 isosurface(等面的).  [738, 1347] 每个 voxel 看成一个 volume of space, 由 alpha-blended 圆形物体表达, 称之为一个 splat. 在它的边缘其不透明度下降. 其思路为 一个surface或volume可由屏幕对齐的几何体或sprite表示, 而后一起渲染, 形成一个 surface[469].
+
+<li>
+Lacroute 和 Levoy[709]将 vexel数据看成二维图像切片的集, 而后切边歪曲这它们, 以合成结果的图像. 还有[585, 849, 879]. OpenGL volumizer[971]. Ikits[585]
+
+<li>
+Kruger 和 Westermann[701]使用GPU来casting rays通过volume. 还有 Tatarchuk and Shopf[1250]则用于医学图像, 见图10.42. Crane[205]则使用该技术绘制烟, 火, 水. 思路为在每个像素上, 生成一个ray穿过volume, 沿着它的长度在有规则的空格上收集颜色和透明信息. 更多使用该技术的例子可见图10.43
+
+</ul>
+
+<p>
+10.16.1 Related Work
+</p>
+<ul>
+<li>
+volumetric texture---使用 layers of texture 用于 volume rendering 方法. 由二维半透明纹理层表示的volume descriptions. 可用于复杂的表面, 如风景细节, 有机组织, 毛发
+
+<li>
+Lengyel[764, 765]使用八纹理集合表示表面上的毛发. 可见图10.44
+
+<li>
+Kharlamov[648]使用 fins and relief mapping 提供一个单带复杂轮廓的 tree mesh
+
+<li>
+几何着色器可以突出着色的多线头发用于带毛发的表面. 见 Lost Planet[1025]. 渲染表面, 保存值在每个像素上, 有毛发颜色, 长度, 角度. 几何着色器转换每个像素为半透明多线(polyline). 创建每个像素覆盖的一头发, 自动维持其level of detail. 渲染毛发有两个pass, 首先在屏幕空间中渲染点朝下的毛发, 从屏幕的底部向顶部排序, 正确执行混合, 从后向前. 第二个pass, 渲染其余部分点朝上的毛发, 从顶部向底部渲染, 正确混合.
+
+</ul>
+
+<p>
+Chapter 11 Non-Photorealistic Rendering
+</p>
+
+</body>
+</html>

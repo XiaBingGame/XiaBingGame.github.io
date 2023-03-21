@@ -1,0 +1,740 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../../../style.css">
+<title>CNETProgramming</title>
+<meta http-equiv="Content-Type" content="text/html; charset=cp936">
+</head>
+<body>
+
+<h1 id="toc_1">第一章 .NET基础</h1>
+<h2 id="toc_1.1">.NET技术特征</h2>
+<ul>
+<li>
+基于XML的共同语言
+
+<li>
+定制服务软件
+
+<li>
+融合多平台和设备
+
+<li>
+新一代的人机界面
+
+</ul>
+<h2 id="toc_1.2">.NET 组成</h2>
+<ul>
+<li>
+Windows.Net
+
+<li>
+NET Framework
+
+<li>
+模块构建服务
+
+<li>
+Visual studio .NET
+
+<li>
+Orchestration
+
+</ul>
+<h2 id="toc_1.3">公共语言运行时(CLR)</h2>
+<ul>
+<li>
+中间语言IL和元数据
+
+<li>
+即时编译器(JITers)
+
+</ul>
+<h2 id="toc_1.4">虚拟对象系统</h2>
+<ul>
+<li>
+VOS类型系统
+
+<li>
+元数据
+
+<li>
+公共语言规范(CLS)
+
+<li>
+虚拟执行系统 VES
+
+</ul>
+
+<h1 id="toc_2">第2章 C#语言基础</h1>
+<h2 id="toc_2.1">数据类型</h2>
+<h3 id="toc_2.1.1">值类型</h3>
+<ul>
+<li>
+简单类型
+
+<ul>
+<li>
+sbyte, byte, short, ushort, int, uint, decimal, long, ulong, char, float, double, bool. 
+
+<li>
+对应别名: System.Sbyte, System.Byte, System.Int16, System.UInt16, System.Int32, System.UInt32, System.Decimal, System.Int64, System.UInt64, System.Char, System.Single, System.Double, System.Bool
+
+</ul>
+<li>
+枚举类型 enum. 常用方法有 CompareTo(比较列表清单项目的大小), Format(转换成文字格式显示), GetName(返回代表特点常数的字符串名称), GetUnderLyingType(得到枚举类型底层的数据类型)
+
+<li>
+结构类型 struct.
+
+<li>
+引用类型
+
+<ul>
+<li>
+类
+
+<li>
+委托(delegate)---相当于C#函数中的指针原型
+<pre cnet>
+using System;
+    delegate string MyDelegate();
+    public class Mydg
+    {
+        // 非静态方法声明
+        public string Mydg_Normal()
+        {
+            return "非静态委托调用";
+        }
+
+        // 静态方法声明
+        public static string Mydg_Static()
+        {
+            return "静态委托调用";
+        }
+    }
+
+    public class UserPerson
+    {
+        // 定义程序入口
+        static void Main(string[] args)
+        {
+            Mydg dg = new Mydg();
+            MyDelegate d = new MyDelegate(dg.Mydg_Normal);
+            Console.WriteLine(d());
+            d = new MyDelegate(Mydg.Mydg_Static);
+            Console.WriteLine(d());
+            Console.ReadKey();
+        }
+    }
+
+</pre>
+
+</ul>
+<li>
+数组
+
+<ul>
+<li>
+数组有一个"秩", 即维度.
+
+<li>
+数组的声明与创建: Type[] Array-Identifier [Initializer];
+
+<li>
+使用数组之前必须初始化数组, 创建数组实例时, 需要确定数组的秩和各维度的长度. System.Array 类型是不能实例化的抽象类型
+<pre cnet>
+	// 一维数组
+	int[] numbers = new int[5];
+	// 多维数组
+	string[,] names = new string[5,4];
+	// 交错数组
+	byte[][] scores = new byte[5][];
+	for(int x = 0; x &lt; scores.Length; x++)
+	{
+		scores[x] = new byte[4];
+	}
+</pre>
+
+<li>
+数组的初始化
+<pre cnet>
+	// 一维数组
+	int[] numbers = new int[5] {1, 2, 3, 4, 5};
+	string[] names = new string[3] {"Matt", "Joanne", "Robert"};
+	// 可省略数组的大小
+	int[] numbers = new int[] {1, 2, 3, 4, 5};
+	string[] names = new string[] {"Matt", "Joanne", "Robert"};	
+	// 如提供了初始值设定项, 还可以省略new运算符
+	int[] numbers = {1, 2, 3, 4, 5};
+	string[] names = {"Matt", "Joanne", "Robert"};	
+	// 多维数组
+	int[,] numbers = new int[3, 2]{ {1, 2}, {3, 4}, {5, 6} };
+	string[,] names = new string[2, 2] { {"Mike", "Amy"}, {"Mary", "Albert"}};
+	// 省略数组大小
+	int[,] numbers = new int[,]{ {1, 2}, {3, 4}, {5, 6} };
+	string[,] names = new string[,] { {"Mike", "Amy"}, {"Mary", "Albert"}};	
+	// 省略new运算符
+	int[,] numbers = { {1, 2}, {3, 4}, {5, 6} };
+	string[,] names = { {"Mike", "Amy"}, {"Mary", "Albert"}};	
+	// 交错数组
+	int[][] numbers = new int[2][] { new int[]{2, 3, 4}, new int[]{5, 6, 7, 8, 9} };
+	// 可省略第一个数组的大小
+	int[][] numbers = new int[][] { new int[]{2, 3, 4}, new int[]{5, 6, 7, 8, 9} };
+	int[][] numbers = { new int[]{2, 3, 4}, new int[]{5, 6, 7, 8, 9} };
+</pre>
+
+<li>
+数组可通过[]来访问数组元素,  Length属性得到数组元素的数量
+
+<li>
+ArrayList, 提供方法 Count, Add, Insert, Remove, Clear, IndexOf
+
+</ul>
+</ul>
+<h3 id="toc_2.1.2">装箱和拆卸</h3>
+<ul>
+<li>
+装箱转换 --- 将一个值类型数据隐式地转换成一个object类型, 或者其他可接受该值类型的接口类型
+<pre cnet>
+	int i = 123;
+	object box = i;
+	if(box is int)
+	{
+		Console.Write("Box contains an int");
+	}
+</pre>
+
+<li>
+拆箱转换, 步骤: 1) 检查对象实例是否是给定值类型的一个装箱值. 2) 将该值从实例复制到值类型变量中
+<pre cnet>
+	int i = 123;
+	object box = i;
+	int j = (int)box;
+</pre>
+
+</ul>
+<h3 id="toc_2.1.3">类型转换</h3>
+<ul>
+<li>
+隐式转换: 从表示范围小的类型到表示范围大的类型的转换, 是一种安全转换, 例如从int转换到long
+
+<li>
+隐式美剧转换: 把十进制的整数0转换成任何枚举类型
+
+<li>
+显示转换: 从表示范围大的类型到表示范围小的类型的转换
+
+<li>
+显式枚举转换
+
+</ul>
+<h2 id="toc_2.2">表达式</h2>
+<h3 id="toc_2.2.1">变量类型</h3>
+<ul>
+<li>
+静态变量
+
+<li>
+非静态变量
+
+<li>
+数组元素
+
+<li>
+局部变量 --- 独立的程序块, switch语句, for语句, 或者using语句中声明的变量. 不会自动被初始化, 没有默认值
+
+<li>
+值参数 --- 未使用ref或out修饰符声明的参数
+
+<li>
+引用参数 --- ref修饰符声明的参数
+
+<li>
+输出参数 --- out修饰符声明的参数`
+
+</ul>
+<h3 id="toc_2.2.2">常量</h3>
+<ul>
+<li>
+const 可以使用的修饰符号有 new, public, protected, internal, private
+
+<li>
+只能用于以下范围: sbyte, byte, short, ushort, int, uint, long, ulong, char, float, double, decimal, bool, string, 枚举, 引用类型
+
+</ul>
+<h3 id="toc_2.2.3">操作符</h3>
+<h4 id="toc_2.2.3.1">赋值操作符</h4>
+<ul>
+<li>
+有 =, *=, +=, -=, /=, %=, ^=, &lt;&lt;=, &gt;&gt;=
+
+<li>
+左操作符必须为变量, 属性访问器或者索引访问器的表达式.
+
+<li>
+可以被连续赋值, 如 x=y=z;
+
+<li>
+两侧操作数类型如果不一致, 则先进行类型转换
+
+</ul>
+<h4 id="toc_2.2.3.2">算术操作符</h4>
+<ul>
+<li>
++, -, *, /, %
+
+<li>
+加法类型还可以用于 delegate类型, 这时称为合并. D operator+ (D x, D y);
+
+</ul>
+<h4 id="toc_2.2.3.3">逻辑操作符</h4>
+<ul>
+<li>
+&amp;&amp;, ||, !
+
+</ul>
+<h4 id="toc_2.2.3.4">比较操作符</h4>
+<ul>
+<li>
+==, !=, &lt;, &gt;, &lt;=, &gt;=
+
+<li>
+引用类型和字符串, 委托类型只能使用 ==, != 操作符
+
+</ul>
+<h4 id="toc_2.2.3.5">位操作符</h4>
+<ul>
+<li>
+&lt;&lt;, &gt;&gt;, &amp;, ^, !(位或), ~(取补)
+
+</ul>
+<h4 id="toc_2.2.3.6">特殊操作符</h4>
+<ul>
+<li>
+条件操作符: expression ? expression1 : expression2
+
+<li>
+自增自减操作符: ++, --
+
+<li>
+new 操作符: 创建对象, 创建数组, 创建 delegate.
+
+<li>
+typeof 操作符: 用于获得系统原型对象的类型, 也就是Type 对象
+<pre cnet>
+Type myType = typeof(int);
+</pre>
+
+<li>
+checked 和 unchecked 操作符, 用于控制整数算术当前环境的溢出情况, unchecked()表示即使溢出也忽略错误
+
+<li>
+is 操作符: 检查变量是否指定的类型
+
+<li>
+as 操作符: 用于抓换引用类型
+<pre cnet>
+	Int i = 0;
+	object obj = i as string;  // 转换失败, obj = null
+</pre>
+
+<li>
+sizeof 操作符: 用于操作非安全代码
+
+</ul>
+<h3 id="toc_2.2.4">条件语句</h3>
+<ul>
+<li>
+if 语句
+
+<li>
+串联 if 语句
+
+<li>
+switch 语句: C#要求每个case标签项后必须出现break语句或者goto. 字符串可当成常量表达式
+
+</ul>
+<h3 id="toc_2.2.5">循环语句</h3>
+<ul>
+<li>
+while
+
+<li>
+do-while
+
+<li>
+for
+
+<li>
+foreach: 处理数组及集合, foreach(type identifier in expression) 程序代码.
+
+</ul>
+<h3 id="toc_2.2.6">跳转语句</h3>
+<ul>
+<li>
+goto
+
+<li>
+break, continue
+
+<li>
+return
+
+<li>
+throw: 格式 -- throw [expression]
+
+</ul>
+
+<h1 id="toc_3">第3章 面向对象程序设计</h1>
+<h2 id="toc_3.1">基本概念</h2>
+<ul>
+<li>
+对象(Object)
+
+<li>
+消息(Message)
+
+<li>
+类(Class)
+
+<li>
+实例(Instance)
+
+<li>
+封装(Encapsulation)
+
+<li>
+抽象画(Abstraction)
+
+<li>
+继承(Inheritance)
+
+<li>
+覆盖(Overriding)和重载(Overloading)
+
+<li>
+动态联编(Dynamic Binding)与多态(Ploymophism)
+
+</ul>
+<h2 id="toc_3.2">类</h2>
+<ul>
+<li>
+类的声明
+<pre cnet>
+attributes class-modifiers class identifier class-base
+{
+	[class-body]
+}[;]
+</pre>
+
+<ul>
+<li>
+类的修饰符: new(嵌套类), public, protected, internal(所在类才能访问), private, abstract, sealed(密封类, 不能被继承)
+<pre cnet>
+class A;
+class B
+{
+	void F
+	{
+		A a = new A();
+	}
+}
+</pre>
+
+<li>
+类的继承, 只能单继承.
+
+</ul>
+</ul>
+<h3 id="toc_3.2.1">类的成员</h3>
+<ul>
+<li>
+常数, 字段, 方法, 属性, 事件, 索引器, 运算符, 构造函数, 析构函数
+
+<li>
+成员的访问级别: 共有,私有, 保护, 内部(internal修饰)
+
+<li>
+this 保留字
+
+<li>
+静态成员
+
+<li>
+成员常量, 类的常量可以加的修饰符有: new, public, protected, internal, private
+<pre cnet>
+	class Tess
+	{
+	public const double X = 1.0;
+	public const double Y = 2.0;
+	public const double Z = 3.0;
+	}
+</pre>
+
+<li>
+构造函数, 一般总是 public类型, 如果为 private 类型, 表示该类不能被实例化, 常用于静态类型的类
+
+</ul>
+<h2 id="toc_3.3">方法</h2>
+<h3 id="toc_3.3.1">方法格式</h3>
+<pre cnet>
+attributees method_modifiers return-type member-name (formal-parameter-list)
+{
+	method-body;
+}
+</pre>
+<h3 id="toc_3.3.2">方法参数</h3>
+<ul>
+<li>
+值参数
+
+<li>
+引用参数
+
+<li>
+输出参数
+
+<li>
+参数数组, 参数数组必须使用 params 修饰符明确指定. 必须放在参数列表的最后位置, 只允许有一个参数数组, 且只允许一维数组
+
+</ul>
+<h3 id="toc_3.3.3">方法重载</h3>
+<ul>
+<li>
+同一方法名称使用不同的数据类型和次序
+
+</ul>
+
+<h2 id="toc_3.4">命名空间</h2>
+<h3 id="toc_3.4.1">编译单元</h3>
+<ul>
+<li>
+一个编译单元定义了一个源文件全部的结构
+<pre cnet>
+using-directives namespace-member-declarations
+</pre>
+
+<li>
+一个C#程序包括一个或多个编译单元, 每个都包含在独立的源文件中. 
+<pre cnet>
+	File A.cs:
+	class A{}
+	File B.cs:
+	class B{}
+</pre>
+
+</ul>
+<h3 id="toc_3.4.2">命名空间声明</h3>
+<pre cnet>
+	namespace name [.name1 ...
+	{
+		type-delcarations
+	}
+</pre>
+<ul>
+<li>
+命名空间内可定义类型: 另一个命名空间, class, interface, struct, enume, delegate
+
+</ul>
+<h3 id="toc_3.4.3">using指示符</h3>
+<ul>
+<li>
+using 指示符可以引进在其他命名空间中定义的命名空间和类型
+
+<ul>
+<li>
+using 别名指示
+<pre cnet>
+namespace N1.N2
+{
+	class A{}
+}
+
+namespace N3
+{
+	using A = N1.N2.A;
+	class B : A {}
+}
+</pre>
+
+</ul>
+<li>
+using 命名空间指示符
+<pre cnet>
+namespace N1.N2
+{
+	class A
+	{}
+}
+
+namespace
+{
+	using N1.N2;
+	class B : A
+	{}
+}
+</pre>
+
+</ul>
+<h2 id="toc_3.5">封装, 继承和多态</h2>
+<h3 id="toc_3.5.1">封装</h3>
+<h3 id="toc_3.5.2">继承</h3>
+<h3 id="toc_3.5.3">多态</h3>
+<ul>
+<li>
+编译时的多态性通过重载来实现
+
+<li>
+运行时的多态性通过虚成员来实现
+
+</ul>
+<h2 id="toc_3.6">接口</h2>
+<ul>
+<li>
+接口可以从多个基接口继承, 而类和结构可以实现多个接口
+<pre cnet>
+[attributes] [modifiers] interface identifier [: base-list]
+{
+	interface-body
+}
+</pre>
+
+<li>
+接口成员: 不能是常量, 域, 操作符, 构造函数或析构函数, 且不能包含任何静态成员
+
+<li>
+接口成员定义不能包含任何修饰符
+
+<li>
+接口的成员之间不能相互同名
+
+<li>
+接口可以采用全权名. 接口名加小圆点(.)
+
+<li>
+显式接口成员执行体不能通过类的实例进行访问, 只能在类内部访问
+
+<li>
+类必须为在基类表中列出的所有接口的成员提供具体实现
+
+</ul>
+<h2 id="toc_3.7">域和属性</h2>
+<ul>
+<li>
+域格式: attributes field-modifires type variable-declarators
+
+<li>
+域修饰符: new, public, protected, internal, private,  static, readonly(只读)
+
+<li>
+实例变量初始化放在实例构造器中, 静态变量初始化会放在静态构造器中
+
+<li>
+对于所有有必要在类外可见的域, 推荐采用属性
+
+<li>
+属性格式: attributes property-modifires type"member-name" {accessor-declarations}
+
+<li>
+属性修饰符: new, public, protected, internal, private, static, virtual, scaled, override, abstract
+
+<li>
+属性种类: 可读写(实现set,get), 只读(实现get), 只写(实现set), static属性(只能存取静态资料)
+
+</ul>
+<h2 id="toc_3.8">事件和索引</h2>
+<h3 id="toc_3.8.1">事件</h3>
+<ul>
+<li>
+事件就是一个 callback 的函数指针, 通过 delegate 达成
+
+<li>
+两个角色: 事件发行者和事件订阅者
+
+<li>
+声明: attributes event-modifiers event type variable-declarators;
+
+<li>
+修饰符: new, public, protected, internal, private, static, virtual, sealed, override, abstract, extern
+
+<li>
+通过操作符 += 实现事件的订阅, -= 实现事件的撤销
+
+<li>
+事件的访问器声明由一个访问器声明和一个移除访问器声明组成. 每个访问器声明包含标记 add 或 remove, 后跟一个块
+
+<li>
+静态事件
+
+</ul>
+<h3 id="toc_3.8.2">索引器</h3>
+<ul>
+<li>
+可以让对象像使用数组那样对对象使用下标
+
+<li>
+attribute indexer-modifiers indexer-declarator
+
+</ul>
+
+<h1 id="toc_4">第4章 异常处理, 预处理和反射</h1>
+<h2 id="toc_4.1">错误和异常处理</h2>
+<h3 id="toc_4.1.1">校验语句</h3>
+<ul>
+<li>
+checked, unchecked
+
+</ul>
+<h3 id="toc_4.1.2">异常处理</h3>
+<ul>
+<li>
+引发的异常是从 System.Exception 派生的对象
+
+<li>
+一些属性: Message, InnerException, StackTrace
+
+<li>
+基类Exception下存在两类异常: SystemException派生的预定义异常类; ApplicationException 派生的用户异常类
+
+</ul>
+<h3 id="toc_4.1.3">C#预处理指令</h3>
+<ul>
+<li>
+ #define symbol
+
+<li>
+ #undef symbol
+
+<li>
+ #if cond_exp
+
+<li>
+ #else
+
+<li>
+ #elif cond_exp
+
+<li>
+ #endif
+
+<li>
+ #warning msg
+
+<li>
+ #error msg
+
+<li>
+ #line num[file]
+
+<li>
+ #region name
+
+<li>
+ #endregion
+
+</ul>
+<h2 id="toc_4.2">反射</h2>
+
+</body>
+</html>

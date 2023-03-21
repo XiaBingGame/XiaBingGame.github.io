@@ -1,0 +1,1242 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../../style.css" />
+    <title>OpenGL SuperBible 6 Chapter 7 Vertex Processing and Drawing Commands</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="../index.html">首页</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+
+<div id="Chapter 7 Vertex Processing and Drawing Commands"><h1 id="Chapter 7 Vertex Processing and Drawing Commands">Chapter 7 Vertex Processing and Drawing Commands</h1></div>
+<div id="Chapter 7 Vertex Processing and Drawing Commands-7.1 Vertex Processing"><h2 id="7.1 Vertex Processing">7.1 Vertex Processing</h2></div>
+<ul>
+<li>
+vertex fetch stage 获取到顶点着色器的输入. 顶点着色器的责任为设置顶点的位置, 而后该顶点用于后续stage. 同样其也可以设置一些用户自定义的或者内置的输出用于OpenGL在后面来描绘这些顶点.
+
+</ul>
+<div id="Chapter 7 Vertex Processing and Drawing Commands-7.1 Vertex Processing-7.1.1 Vertex Shader Inputs"><h3 id="7.1.1 Vertex Shader Inputs">7.1.1 Vertex Shader Inputs</h3></div>
+<ul>
+<li>
+首先是 vertex fetch stage, 用于形成顶点着色器的输入. glVertexAttribPointer() 函数将缓存中的数据和顶点着色器的输入挂钩起来. 
+
+<li>
+OpenGL 支持大量的顶点属性, 每个有它自己的格式, 数据类型, 成员数量等等. 同样, OpenGL 可以从不同的buffer object读取用于每个attribute的数据. glVertexAttribPointer() 其是设置了一顶点属性所有内容的便利方式. 你可以考虑一个辅助函数以及其之下的几个更底层的函数: glVertexAttribFormat(), glVertexAttribBinding(), 以及 glBindVertexBuffer(). 它们的原型为:
+<pre c++>
+void glVertexAttribFormat(GLuint attribindex, GLint size,
+						GLenum type, GLboolean normalized,
+						GLuint relativeoffset);
+void glVertexAttribBinding(GLuint attribindex,
+						GLuint bindingindex);
+void glBindVertexBuffer(GLuint bindingindex,
+						GLuint buffer,
+						GLintptr offset,
+						GLintptr stride);
+</pre>
+
+<li>
+见例子(着色器):
+<pre glsl>
+#version 430 core
+// Declare a number of vertex attributes
+layout (location = 0) in vec4 position;
+layout (location = 1) in vec3 normal;
+layout (location = 2) in vec2 tex_coord;
+// Note that we intentionally skip location 3 here
+layout (location = 4) in vec4 color;
+layout (location = 5) in int material_id;
+</pre>
+
+<li>
+我们在C中考虑一个数据结构表示我们的顶点
+<pre c++>
+typedef struct VERTEX_t
+{
+	vmath::vec4 position;
+	vmath::vec3 normal;
+	vmath::vec2 tex_coord;
+	GLubyte color[3];
+	int material_id;
+} VERTEX;
+</pre>
+
+<ul>
+<li>
+第一个结构成员 position, 我们使用 glVertexAttribFormat() 函数描述输入, 设置大小为4, 类型为 GL_FLOAT. normal 大小则为3, 类型为 GL_FLOAT. tex_coord 大小为2, 类型为 GL_FLOAT
+
+<li>
+在我们的着色器中, color 是一个4成员的浮点向量. 但应用中, color成员则是一个3个bytes的数组. 两者在大小和类型上都不同. OpenGL 可以做这些转换, 我们调用 glVertexAttribFormat() 设置大小为3, 类型为 GL_UNSIGNED_BYTE, 将3-byte color成员挂钩到shader的4成员顶点输入, 这里 normalized 要设置为 GL_TRUE, 以便将其值转换到0.0和1.0之间.
+
+<li>
+二进制补码负数有更小的值(GLbyte 有 -128, GLshort 有 -32,768, GLint 有 -2,147,483,648). 这些最小的值被特殊对待且单元化为 -1.0
+
+</ul>
+<li>
+表格 7.1 显示了可用于 type 参数的类型, 对应于 OpenGL 的类型, 可表示的值的范围
+
+<ul>
+<li>
+Type OpenGL --- Type --- Range
+
+<li>
+GL_BYTE --- GLbyte --- -128 to 127
+
+<li>
+GL_SHORT --- Glshort --- -32,768 to 32767
+
+<li>
+GL_INT --- GLint --- -2,147,483,648 to 2,147,483,647
+
+<li>
+GL_FIXED --- GLfixed --- -32,768 to 32767
+
+<li>
+GL_UNSIGNED_BYTE --- GLubyte --- 0 to 255
+
+<li>
+GL_UNSIGNED_SHORT --- GLushort --- 0 to 65535
+
+<li>
+GL_UNSIGNED_INT --- GLuint --- 4,294,967,295
+
+<li>
+GL_HALF_FLOAT --- GLhalf --- —
+
+<li>
+GL_FLOAT --- GLfloat --- —
+
+<li>
+GL_DOUBLE --- GLdouble --- —
+
+</ul>
+<li>
+浮点类型没有范围, 不能单元化. GLfixed 类型则是一个例外, 其可以有个范围, 但同样其看作一个浮点数类型, 也不能被单元化.
+
+<li>
+glVertexAttribFormat() 还支持单个整数打包的数据格式, 其存储多个成分. 两种 OpenGL 支持的打包数据格式为 GL_UNSIGNED_INT_2_10_10_10_REV 和 GL_INT_2_10_10_10_REV.GL_UNSIGNED_INT_2_10_10_10_REV 格式提供给x, y, z成分每个10位数据, w成分2位数据. GL_INT_2_10_10_10_REV 同理.
+
+<li>
+当设置上面两个打包模式中的一个, size 必须设置为 4 或特殊值 GL_BRRA, 这将在输入的数据上自动应用sizzle以翻转r, g, b 的顺序. 这提供了一种兼容性, 以那种顺序存储数据时不需要修改你的着色器.
+
+<li>
+最后, 对于前面顶点声明的例子, 最有一个成员 material_id. 这是整数. 我们使用 glVertexAttribFormat() 的一个变种, glVertexAttribIFormat(), 原型为:
+<pre c++>
+void glVertexAttribIFormat(GLuint attribindex,
+							GLint size,
+							GLenum type,
+							GLuint relativeoffset);
+</pre>
+
+<ul>
+<li>
+relativeoffset --- 为正设置属性的顶点该成员对应于开始位置的偏移
+
+<li>
+这里没有 normalized 参数. 该版本的函数只能用于有符号整数, 无符号整数, 以及打包数据格式(GL_BYTE, GL_SHORT, GL_INT 有符号整数版本). 该整数输入从不被单元化.
+<pre c++>
+// position
+glVertexAttribFormat(0, 4, GL_FLOAT, GL_FALSE, offsetof(VERTEX, position));
+// normal
+glVertexAttribFormat(1, 3, GL_FLOAT, GL_FALSE, offsetof(VERTEX, normal));
+// tex_coord
+glVertexAttribFormat(2, 2, GL_FLOAT, GL_FALSE, offsetof(VERTEX, texcoord));
+// color[3]
+glVertexAttribFormat(4, 3, GL_UNSIGNED_BYTE, GL_TRUE, offsetof(VERTEX, color));
+// material_id
+glVertexAttribIFormat(5, 1, GL_INT, offsetof(VERTEX, material_id));
+</pre>
+
+</ul>
+<li>
+设置数据读取的buffer. 参考uniform block如何映射至buffer. 每个顶点着色器提供任意数量的输入 attributes, OpenGL 为它们提供用于读取的任意数量的buffers. 一些顶点attributes可以共享buffer中的空间; 其他则位于不同的buffer object中. 除了各自指定buffer object至各自的顶点着色器输入, 我们可以替换为成组输入并将它们关联至一系列buffer绑定点. 这样, 当你改变绑定至这些绑定点中一个的buffer, 其会改变映射至该绑定点的所有属性的数据提供者的buffer.
+
+<li>
+为了建立顶点着色器输入和buffer绑定点之间的映射, 你可以调用 glVertexAttribBinding(). 第一个参数 attribindex 为顶点属性的索引, 第二个参数 bindingindex 为buffer绑定点的索引. 
+
+<li>
+在我们的例子中, 我们准备在单个buffer中存储所有的顶点属性. 我们每次调用 glVertexAttribBinding() 用于每个属性, 并每次设置 bingdingindex 参数为0.
+<pre c++>
+void glVertexAttribBinding(0, 0); // position
+void glVertexAttribBinding(1, 0); // normal
+void glVertexAttribBinding(2, 0); // tex_coord
+void glVertexAttribBinding(4, 0); // color
+void glVertexAttribBinding(5, 0); // material_id
+</pre>
+
+<li>
+我们可以建立一个更复杂的绑定方案. 例如, 我们在一个buffer中存储position, normal, tex_coord, 在第二个buffer中存储color, 在第三个buffer中存储 material_id,  我们可以设置如下
+<pre c++>
+void glVertexAttribBinding(0, 0); // position
+void glVertexAttribBinding(1, 0); // normal
+void glVertexAttribBinding(2, 0); // tex_coord
+void glVertexAttribBinding(4, 1); // color
+void glVertexAttribBinding(5, 2); // material_id
+</pre>
+
+<li>
+现在我们将buffer绑定到对应的绑定点上. 使用 glBindVertexBuffer(). 这个函数有四个参数: bindingindex, buffer, offset, stride.
+
+</ul>
+
+<div id="Chapter 7 Vertex Processing and Drawing Commands-7.1 Vertex Processing-7.1.2 Vertex Shader Outputs"><h3 id="7.1.2 Vertex Shader Outputs">7.1.2 Vertex Shader Outputs</h3></div>
+<ul>
+<li>
+OpenGL 顶点着色器内置里面除了提供 glPosition 输出, 还提供了 gl_PointSize, gl_ClipDistance[]. 它们被包装成一个叫做 gl_PerVertex 的interface block. 声明如下:
+<pre glsl>
+out gl_PerVertex
+{
+vec4 gl_Position;
+float gl_PointSize;
+float gl_ClipDistance[];
+};
+</pre>
+
+<li>
+gl_ClipDistance[] 用于 clippinig, gl_PointSize 用于控制可能渲染的点的大小.
+
+</ul>
+
+<div id="Chapter 7 Vertex Processing and Drawing Commands-7.1 Vertex Processing-7.1.2 Vertex Shader Outputs-7.1.2.1 Variable Point Sizes"><h4 id="7.1.2.1 Variable Point Sizes">7.1.2.1 Variable Point Sizes</h4></div>
+<ul>
+<li>
+默认情况下, OpenGL 绘制的点为一个片段大小. 你可以使用 glPointSize() 修改点的大小. 可设置的最大大小至少为64个像素. glGetIntegerv() 和 GL_POINT_SIZE_RANGE 可查询其限制. 你可以在顶点着色器中编程点的大小(或者在前端中的任意stage中). 设置 gl_PointSize 为你想要的点直径的大小. 注意要告诉OpenGL你想要用自己设置的点大小.
+<pre c++>
+glEnable(GL_PROGRAM_POINT_SIZE);
+</pre>
+
+<li>
+根据到观察者的距离来设置点的大小. 还可用于几何着色器中产生的点, 或者tessellation evaluation shader设置为点模式通过tessellation engine 产生的点.
+
+<li>
+公式 sqrt(1.0/(a+b*d+c*d*d)), d 为点到观察者的距离.
+
+</ul>
+
+<div id="Chapter 7 Vertex Processing and Drawing Commands-7.2 Drawing Commands"><h2 id="7.2 Drawing Commands">7.2 Drawing Commands</h2></div>
+<ul>
+<li>
+目前我们仅用 glDrawArrays() 绘制命令.
+
+<li>
+绘制命令可分类为 indexed 或者 non-indexed 和 direct 或 indirect 绘制命令.
+
+</ul>
+
+<div id="Chapter 7 Vertex Processing and Drawing Commands-7.2 Drawing Commands-7.2.1 Indexed Drawing Commands"><h3 id="7.2.1 Indexed Drawing Commands">7.2.1 Indexed Drawing Commands</h3></div>
+<ul>
+<li>
+glDrawArrays() 为 non-indexed 绘制命令. 这表示顶点是有序存放, 仅需将buffer中的顶点数据依序填充至顶点着色器即可. 
+
+<li>
+indexed 绘制, 将buffer中的数据看成一个数组, 而后依次索引它们. 为了让indexed绘制命令工作, 你需要将一个buffer绑定至 GL_ELEMENT_ARRAY_BUFFER 目标. 该buffer包含了顶点的索引. 接下来, 你调用一个indexed绘制命令. glDrawElements() 为最简单的命令:
+<pre c++>
+void glDrawElements(GLenum mode,
+					GLsizei count,
+					GLenum type,
+					const GLvoid * indices);
+</pre>
+
+<ul>
+<li>
+type 表示存储每个索引的数据的类型, 其可以是 GL_UNSIGNED_BYTE, GL_UNSIGNED_SHORT, GL_UNSIGNED_INT. 虽然 indices 类型为指针, 实际上其为绑定到 GL_ELEMENT_ARRAY_BUFFER 的 buffer 中第一个索引的偏移. 
+
+</ul>
+<li>
+glDrawArrays() 和 glDrawElements() 命令为由直接渲染命令支持的完整功能的子集. 更一般化的OpenGL绘制命令见表格 7.2 - 所有其他的绘制命令可以以这些函数的某种方式表达
+
+<ul>
+<li>
+Draw Type --- Command
+
+<li>
+Direct, Non-Indexed --- glDrawArraysInstancedBaseInstance()
+
+<li>
+Direct, Indexed --- glDrawElementsInstancedBaseVertexBaseInstance()
+
+<li>
+Indirect, Non-Indexed --- glMultiDrawArraysIndirect()
+
+<li>
+Indirect, Indexed --- glMultiDrawElementsIndirect()
+
+</ul>
+<li>
+修改第五章的立方体绘制例子, 使用8个顶点和36个索引.
+<pre c++>
+static const GLfloat vertex_positions[] =
+{
+	-0.25f, -0.25f, -0.25f,
+	-0.25f, 0.25f, -0.25f,
+	0.25f, -0.25f, -0.25f,
+	0.25f, 0.25f, -0.25f,
+	0.25f, -0.25f, 0.25f,
+	0.25f, 0.25f, 0.25f,
+	-0.25f, -0.25f, 0.25f,
+	-0.25f, 0.25f, 0.25f,
+};
+static const GLushort vertex_indices[] =
+{
+	0, 1, 2,
+	2, 1, 3,
+	2, 3, 4,
+	4, 3, 5,
+	4, 5, 6,
+	6, 5, 7,
+	6, 7, 0,
+	0, 7, 1,
+	6, 0, 2,
+	2, 4, 6,
+	7, 5, 3,
+	7, 3, 1
+};
+glGenBuffers(1, &amp;position_buffer);
+glBindBuffer(GL_ARRAY_BUFFER, position_buffer);
+glBufferData(GL_ARRAY_BUFFER,
+	sizeof(vertex_positions),
+	vertex_positions,
+	GL_STATIC_DRAW);
+glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, NULL);
+glEnableVertexAttribArray(0);
+glGenBuffers(1, &amp;index_buffer);
+glBindBuffer(GL_ELEMENT_ARRAY_BUFFER, index_buffer);
+glBufferData(GL_ELEMENT_ARRAY_BUFFER,
+	sizeof(vertex_indices),
+	vertex_indices,
+	GL_STATIC_DRAW);
+</pre>
+
+<ul>
+<li>
+渲染修改
+<pre c++>
+// Clear the framebuffer with dark green
+static const GLfloat green[] = { 0.0f, 0.25f, 0.0f, 1.0f };
+glClearBufferfv(GL_COLOR, 0, green);
+// Activate our program
+glUseProgram(program);
+// Set the model-view and projection matrices
+glUniformMatrix4fv(mv_location, 1, GL_FALSE, mv_matrix);
+glUniformMatrix4fv(proj_location, 1, GL_FALSE, proj_matrix);
+// Draw 6 faces of 2 triangles of 3 vertices each = 36 vertices
+glDrawElements(GL_TRIANGLES, 36, GL_UNSIGNED_SHORT, 0);
+</pre>
+
+</ul>
+</ul>
+<div id="Chapter 7 Vertex Processing and Drawing Commands-7.2 Drawing Commands-7.2.1 Indexed Drawing Commands-7.2.1.1 The Base Vertex"><h4 id="7.2.1.1 The Base Vertex">7.2.1.1 The Base Vertex</h4></div>
+<ul>
+<li>
+glDrawElements() 的第一个高级版本 glDrawElementsBaseVertex(), 其有额外的参数:
+<pre c++>
+void glDrawElementsBaseVertex(GLenum mode,
+							GLsizei count,
+							GLenum type,
+							GLvoid * indices,
+							GLint basevertex);
+</pre>
+
+<li>
+该函数从绑定至 GL_ELEMENT_ARRAY_BUFFER 中的 buffer 中得到索引, 而后索引添加 basevertex 后再来索引顶点数组. 这样一个buffer中可以存储几何体的不同片段, 非常方便的一个函数.
+
+</ul>
+
+<div id="Chapter 7 Vertex Processing and Drawing Commands-7.2 Drawing Commands-7.2.1 Indexed Drawing Commands-7.2.1.2 Combining Geometry using Primitive Restart"><h4 id="7.2.1.2 Combining Geometry using Primitive Restart">7.2.1.2 Combining Geometry using Primitive Restart</h4></div>
+<ul>
+<li>
+有许多用于"条带化"几何体的工具. 其将"triangle soup"(即大量的未连接三角形), 将它们合并成一个三角形带集合, 这样可以改善性能. 现有通过新的"stripifier"传递一些有名(well-known)的模型来进行测量. 对当前的目前技术水平的stripifiers产生的新工具生成的strips 比较其数量和平均长度.
+
+<li>
+不考虑这些研究, 事实就是可以通过对 glDrawArrays() 或 glDrawElements() 的单个调用来渲染一个"triangle soup". 但strips集仍需各自在OpenGL中调用.
+
+<li>
+图元重启的方法, 应用 GL_TRIANGLE_STRIP, GL_TRIANGLE_FAN, GL_LINE_STRIP, GL_LINE_LOOP 几何类型. 这是一种通知 OpenGL 的方法, 当一个strip(或fan或loop)结束的时候, 另一个strip应当开始绘制. 为了表示何处结束何处重新开始, 应当设置特殊标记, 其为元素数组的保留值. 当OpenGL从元素数组获取顶点索引之时, 其检查特殊的索引值, 一旦遇到, 则终止当前的strip, 而后用接下来的开始新的strip. 该模式默认禁止, 但可通过下面的函数允许和禁止:
+<pre c++>
+glEnable(GL_PRIMITIVE_RESTART);
+glDisable(GL_PRIMITIVE_RESTART);
+</pre>
+
+<li>
+设置 OpenGL 观察的特殊索引:
+<pre c++>
+glPrimitiveRestartIndex(index);
+</pre>
+
+<li>
+默认的 primitive restart 索引为0. 你所使用索引类型可表示的最大值也是一个好的值(例如 GL_UNSIGNED_INT 为 0xFFFFFFFF, GL_UNSIGNED_SHORT 为 0xFFFF, GL_UNSIGNED_BYTE 为 0xFF). 许多 stripping 工具都有选项, 有创建单独的strips还是床带有restart index的单个strip. stripping 工具则使用预定义的索引, 或者输出其所创建模型的stripped 版本的restart索引(例如比模型顶点数量多1的数字).
+
+</ul>
+
+<div id="Chapter 7 Vertex Processing and Drawing Commands-7.2 Drawing Commands-7.2.2 Instancing"><h3 id="7.2.2 Instancing">7.2.2 Instancing</h3></div>
+<ul>
+<li>
+假设绘制一片草原, 其有许多叶子, 每个叶子由四个三角形组成的三角形strip组成. 则代码可能如下:
+<pre c++>
+glBindVertexArray(grass_vao);
+for (int n = 0; n &lt; number_of_blades_of_grass; n++)
+{
+	SetupGrassBladeParameters();
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 6);
+}
+</pre>
+
+<li>
+这种情况, OpenGL 系统可能比实际渲染要花费更多的时间用于发送命令. 
+
+<li>
+Instanced rendering --- 使用单个函数绘制相同几何体的许多拷贝. 例如:
+<pre c++>
+void glDrawArraysInstanced(GLenum mode,
+							GLint first,
+							GLsizei count,
+							GLsizei instancecount);
+
+void glDrawElementsInstanced(GLenum mode,
+							GLsizei count,
+							GLenum type,
+							const void * indices,
+							GLsizei instancecount);
+</pre>
+
+<ul>
+<li>
+绘制相应几何体 instancecount 个拷贝. 这样OpenGL用于渲染你的几何体的准备工作只需要做一次(例如拷贝顶点数据至内存), 但渲染相同顶点却可以很多次.
+
+</ul>
+<li>
+带有 baseverterx 和 instancecount 的命令: glDrawElementInstanceBaseVertex().
+<pre c++>
+void glDrawElementsInstancedBaseVertex(GLenum mode,
+										GLsizei count,
+										GLenum type,
+										GLvoid * indices,
+										GLsizei instancecount,
+										GLint basevertex);
+</pre>
+
+<li>
+目前所介绍的所有直接绘制命令都是 glDrawArrayInstancedBaseInstance() 和 glDrawElementsInstancedBaseVertexBaseInstance() 的子集, 只是 basevertex和baseinstance 假设为0, instancecount 假设为1.
+
+<li>
+GLSL 内一个有用的特殊内置变量 gl_InstanceID. 看起来像是顶点的静态整数顶点属性. 当顶点的第一个拷贝发送给OpenGL时, gl_InstanceID 为0. 几何体的每次拷贝该变量都会加1, 最终该值会达到 instancecount - 1
+
+<li>
+glDrawArraysInstanced() 函数的操作其内部代码可能如下:
+<pre c++>
+// Loop over all of the instances (i.e., instancecount)
+for (int n = 0; n &lt; instancecount; n++)
+{
+	// Set the gl_InstanceID attribute - here gl_InstanceID is a C variable
+	// holding the location of the "virtual" gl_InstanceID input.
+	glVertexAttrib1i(gl_InstanceID, n);
+	// Now, when we call glDrawArrays, the gl_InstanceID variable in the
+	// shader will contain the index of the instance that’s being rendered.
+	glDrawArrays(mode, first, count);
+}
+</pre>
+
+<li>
+glDrawElementsInstanced() 则可能如下:
+<pre c++>
+for (int n = 0; n &lt; instancecount; n++)
+{
+	// Set the value of gl_InstanceID
+	glVertexAttrib1i(gl_InstanceID, n);
+	// Make a normal call to glDrawElements
+	glDrawElements(mode, count, type, indices);
+}
+</pre>
+
+<li>
+gl_InstanceID 的值可以直接当着着色器函数的参数, 或用于索引类似纹理或uniform arrays的数据.
+
+<li>
+绘制草原例子: 每个草叶要有不同的位置. 我们要绘制的草叶数量为2的指数, 这样, 我们使用 gl_InstanceID 一半的位数表示x坐标, 一半的位数表示z坐标. 这里我们使用2的20次方. 低10位表示x坐标, 高10位表示z坐标.
+
+<li>
+生成随机数的一个简单方法是一个很大的数乘以一个种子值, 而后采用乘积结果其位的子集作为一个函数的输入. 你可重用种子值作为随机数生成器下次迭代的输入. 我们还可仅用gl_InstanceID, 在一个随机数的序列中, 我们生成gl_InstanceID后接下来的少数叶片, 我们从gl_InstanceID生成两个连续的随机数, 而后使用它们放置叶片在平面上.
+
+<li>
+我们还可为每个叶片生成不同的颜色. 我们使用一个纹理保存叶片的信息.
+
+<li>
+我们根据 gl_InstanceID 直接得到grid坐标, 而后生成一个随机数将叶片放置于xz平面之上, 此时我们得到 x 和 z 坐标. 该坐标你可用于在一个2D纹理中查找一个纹素, 你可以在纹理中放置任何你想要存放的内容. 例如长度参数(使用红色通道), 通过乘以y坐标得到或长或短的叶子. 0值表示非常短的叶子, 1值表示最长的叶子. 绿色通道则存储叶片旋转的角度, 0表示没有旋转, 1表示旋转360度.
+
+<li>
+蓝色通道控制叶片的弯腰, 0表示不弯腰, 1表示完全倒地.
+
+<li>
+可以在纹理上存储颜色, 实现草地上的白色, 标记, 广告等. 但有点浪费. 可以使用1D纹理制作一个palette, 而后前面纹理的最后一个通道存储palette的索引. 该palette可从一个无活力的黄叶草到碧绿的草
+
+<li>
+参数纹理使用线性的纹理(linear texturing)提供草原区域间的平滑转变, 其分辨率可以相当的低. 如果想要有风中的草浪或者军队行军产生的痕迹, 你可以每帧或每两帧更新纹理, 并在渲染草原之前上传纹理的新版本. 
+
+<li>
+同样, 由于 gl_InstanceID 用于生成随机数, 添加一个offset给随机数生成器, 可以产生不同但有预定义的"随机"草原块.
+
+</ul>
+
+<div id="Chapter 7 Vertex Processing and Drawing Commands-7.2 Drawing Commands-7.2.2 Instancing-7.2.2.1 Getting Your Data Automatically"><h4 id="7.2.2.1 Getting Your Data Automatically">7.2.2.1 Getting Your Data Automatically</h4></div>
+<ul>
+<li>
+即使没有使用 instanced 绘制函数, 你也可以使用 gl_InstanceID, 只是其值为0, 因此你可以使用相同的着色器用于 instanced 和 non-instanced 渲染.
+
+<li>
+你可以使用 gl_InstanceID 索引数组, 无论是对纹理还是对 uniform 数组的索引. 
+
+<li>
+可以使用 instanced array 自动将数据填充至着色器上. 要使用 instanced array, 如常声明一个你着色器的输入, 这个输入属性将有一个索引你可以用在调用类似 glVertexAttribPointer() 的函数上. 这样, 每个顶点将读取顶点属性, 并一个新的值分发给着色器. 
+
+<li>
+要让OpenGL每个instance从数组读取属性一次, 你可以调用:
+<pre c++>
+void glVertexAttribDivisor(GLuint index,
+							GLuint divisor);
+</pre>
+
+<ul>
+<li>
+index 中设置为属性的索引
+
+<li>
+divisor --- 表示从数组读取每个新值之间的instance的数量. 如果 divisor 为0, 则数组成为常规的顶点属性数组, 每个顶点读取一个新值. 如果设为1, 每个instance都读取一次新值(每个instance都是同样的值). 如果设为2, 则每两个instance读取一个新值(每两个instance都是同样的值). 
+
+<li>
+你可以混合和匹配 divisor, 对每个attribute设置不同的值. 
+
+</ul>
+<li>
+例子代码为一系列物体渲染不同的颜色.
+<pre glsl>
+#version 430 core
+in vec4 position;
+in vec4 color;
+out Fragment
+{
+	vec4 color;
+} fragment;
+uniform mat4 mvp;
+void main(void)
+{
+	gl_Position = mvp * position;
+	fragment.color = color;
+}
+</pre>
+
+<ul>
+<li>
+color 属性每个顶点读取一次, 所以每个顶点终会有不同的颜色. 因为不可能每个物体的instance都有不同的颜色, 因为不知道要实例化多少个实例, 我们可以让颜色成为一个 instanced array, 调用下面的函数实现:
+<pre c++>
+glVertexAttribDivisor(index_of_color, 1);
+</pre>
+
+<li>
+任意具体instance内的每个顶点都将接收同样的color值, 这样产生的结果是每个object instance被渲染为不同的颜色值.
+
+</ul>
+<li>
+我们这个例子, 每个物体都在另一个物体前渲染, 为了看到所有问题, 我们使用另一个 instanced array. 下面的代码是一个简单的修改版本:
+<pre glsl>
+#version 430 core
+in vec4 position;
+in vec4 instance_color;
+in vec4 instance_position;
+out Fragment
+{
+	vec4 color;
+} fragment;
+uniform mat4 mvp;
+void main(void)
+{
+	gl_Position = mvp * (position + instance_position);
+	fragment.color = instance_color;
+}
+</pre>
+
+<li>
+设置位置的 instanced array
+<pre c++>
+glVertexAttribDivisor(index_of_instance_position, 1);
+</pre>
+
+<li>
+本例仅仅用了平移变换. 更高级的应用可以使用矩阵顶点属性或打包一些变换矩阵至unofrms变量, 而后在instanced arrays中传递矩阵权重. 这样可以使用该技术渲染士兵军队, 每个有不同的步伐, 或者太空飞船舰队中每个飞船有不同的飞行方向.
+
+<li>
+下面的代码, 我们声明一些数据并将其加载至一个buffer, 而后关联至一个vertex array object. 一些数据当作每个顶点的位置数据使用, 其他的数据则为per-instance的颜色和位置.
+<pre c++>
+static const GLfloat square_vertices[] =
+{
+	-1.0f, -1.0f, 0.0f, 1.0f,
+	1.0f, -1.0f, 0.0f, 1.0f,
+	1.0f, 1.0f, 0.0f, 1.0f,
+	-1.0f, 1.0f, 0.0f, 1.0f
+};
+static const GLfloat instance_colors[] =
+{
+	1.0f, 0.0f, 0.0f, 1.0f,
+	0.0f, 1.0f, 0.0f, 1.0f,
+	0.0f, 0.0f, 1.0f, 1.0f,
+	1.0f, 1.0f, 0.0f, 1.0f
+};
+static const GLfloat instance_positions[] =
+{
+	-2.0f, -2.0f, 0.0f, 0.0f,
+	2.0f, -2.0f, 0.0f, 0.0f,
+	2.0f, 2.0f, 0.0f, 0.0f,
+	-2.0f, 2.0f, 0.0f, 0.0f
+};
+GLuint offset = 0;
+glGenVertexArrays(1, &amp;square_vao);
+glGenBuffers(1, &amp;square_vbo);
+glBindVertexArray(square_vao);
+glBindBuffer(GL_ARRAY_BUFFER, square_vbo);
+glBufferData(GL_ARRAY_BUFFER,
+			sizeof(square_vertices) +
+			sizeof(instance_colors) +
+			sizeof(instance_positions), NULL, GL_STATIC_DRAW);
+glBufferSubData(GL_ARRAY_BUFFER, offset,
+				sizeof(square_vertices),
+				square_vertices);
+offset += sizeof(square_vertices);
+glBufferSubData(GL_ARRAY_BUFFER, offset,
+				sizeof(instance_colors), instance_colors);
+offset += sizeof(instance_colors);
+glBufferSubData(GL_ARRAY_BUFFER, offset,
+				sizeof(instance_positions), instance_positions);
+offset += sizeof(instance_positions);
+glVertexAttribPointer(0, 4, GL_FLOAT, GL_FALSE, 0, 0);
+glVertexAttribPointer(1, 4, GL_FLOAT, GL_FALSE, 0,
+						(GLvoid *)sizeof(square_vertices));
+glVertexAttribPointer(2, 4, GL_FLOAT, GL_FALSE, 0,
+						(GLvoid *)(sizeof(square_vertices) +
+						sizeof(instance_colors)));
+glEnableVertexAttribArray(0);
+glEnableVertexAttribArray(1);
+glEnableVertexAttribArray(2);
+</pre>
+
+<li>
+现在所有剩下的就是设置the vertex attrib divisors用于instance_color和instance_position属性数组:
+<pre c++>
+glVertexAttribDivisor(1, 1);
+glVertexAttribDivisor(2, 1);
+</pre>
+
+<li>
+渲染
+<pre c++>
+static const GLfloat black[] = { 0.0f, 0.0f, 0.0f, 0.0f };
+glClearBufferfv(GL_COLOR, 0, black);
+glUseProgram(instancingProg);
+glBindVertexArray(square_vao);
+glDrawArraysInstanced(GL_TRIANGLE_FAN, 0, 4, 4);
+</pre>
+
+<li>
+当你有个 instanced vertex attributes, 你可以将 baseInstance 参数传递给类似 glDrawArraysInstancedBaseInstance() 的渲染命令, 以用来偏移它们各自缓存中数据读取的位置.
+
+<li>
+用于计算属性获取的索引的实际公式: floor(instance/divisor) + baseInstance
+
+<li>
+我们将之后的一些例子中使用 baseInstance, 用来偏移 instanced vertex arrays
+
+</ul>
+
+<div id="Chapter 7 Vertex Processing and Drawing Commands-7.2 Drawing Commands-7.2.3 Indirect Draws"><h3 id="7.2.3 Indirect Draws">7.2.3 Indirect Draws</h3></div>
+<ul>
+<li>
+之前的渲染命令, 我们传递给绘制的参数比如顶点数量或instance数量, 它们直接传递给函数. 这里有一套绘制命令, 允许每个绘制的参数存储在一个 buffer object 中. 这意味着, 在你的应用调用绘制命令时, 它不需要知道这些参数, 仅需要知道参数存储在buffer中的位置. 这让我们有了一些有趣的可能性, 例如:
+
+<ul>
+<li>
+你的应用可以预先甚至离线生成用于渲染命令的参数, 将它们加载至buffer中, 而后在其不准备绘制的时候发送给 OpenGL
+
+<li>
+你可以运行时生成参数, 在一个着色器中将它们存储在一个buffer object中, 以用于场景后面部分的渲染.
+
+</ul>
+<li>
+OpenGL 有四个间接绘制命令, 前两个有等价的直接绘制命令; glDrawArraysIndirect() 为 glDrawArraysInstancedBaseInstance 的间接等价版, glDrawElementIndirect() 则为 glDrawElementsInstancedBaseVertexBaseInstance() 的间接等价版.
+<pre c++>
+void glDrawArraysIndirect(GLenum mode,
+						const void * indirect);
+
+void glDrawElementsIndirect(GLenum mode,
+						GLenum type,
+						const void * indirect);
+</pre>
+
+<ul>
+<li>
+mode 为图元模式中的一个, 如 GL_TRIANGLES 或 GL_PATCHES. 
+
+<li>
+对于第二个函数, type 为索引的类型, 可以是 GL_UNSIGNED_BYTE, GL_UNSIGNED_SHORT, GL_UNSIGNED_INT. 
+
+<li>
+indirect 表示 buffer object 的偏移, 该 buffer object 绑定至 GL_DRAW_INDIRECT_BUFFER 目标, 但是在该地址上 buffer 的内容是不同的, 其依赖于使用哪个函数. 
+
+</ul>
+<li>
+当表示为 C-style struct 定义, 对于 glDrawArraysIndirect(), buffer 中的数据形式为:
+<pre c++>
+typedef struct {
+	GLuint vertexCount;
+	GLuint instanceCount;
+	GLuint firstVertex;
+	GLuint baseInstance;
+} DrawArraysIndirectCommand;
+</pre>
+
+<li>
+对于 glDrawElementsIndirect(), buffer 中的数据形式为:
+<pre c++>
+typedef struct {
+	GLuint vertexCount;
+	GLuint instanceCount;
+	GLuint firstIndex;
+	GLint baseVertex;
+	GLuint baseInstance;
+} DrawElementsIndirectCommand;
+</pre>
+
+<li>
+和对应的直接版本有一点不同, firstIndex 参数是以索引数为单位的, 而非字节, 因此需要乘以索引类型的大小得到和传递给glDrawElements()一样的offset.
+
+<li>
+两个函数的 multi 版本
+<pre c++>
+void glMultiDrawArraysIndirect(GLenum mode,
+							const void * indirect,
+							GLsizei drawcount,
+							GLsizei stride);
+void glMultiDrawElementsIndirect(GLenum mode,
+							GLenum type,
+							const void * indirect,
+							GLsizei drawcount,
+							GLsizei stride);
+</pre>
+
+<ul>
+<li>
+类似于 glDrawArraysIndirect() 和 glDrawElementsIndirect(). 两个额外的参数 drawcount 和 stride.
+
+<li>
+drawcount 表示数组中结构(structures)的数量.
+
+<li>
+stride 表示 buffer object 中相邻两个structure开始位置之间的距离(以字节为单位). 为0的时候表示紧密靠在一起, 否则, 允许你在structure之间有额外的数据. OpenGL 将会在遍历数组时略过这些数据.
+
+</ul>
+<li>
+使用这些函数 batch 一起的绘制命令的实际上限依赖于可存储它们的内存量. drawcount参数可以达到十亿量级, 但每个命令只占16或20个字节, 十亿的绘制命令将耗用20G的内存, 以及可能需要数秒甚至数分钟去执行. 然而, 在单个buffer中一起批处理数千个绘制命令将非常合理. 有了这个, 你可以预先加载用于许多绘制命令的参数, 或者生成大量在GPU上的命令. 当你使用GPU直接写入buffer object生成用于绘制命令的参数, 在调用间接绘制命令之前你不需要等待它们, 而接使用它们, 而且参数不需要在GPU和你的应用间走个来回. 
+
+<li>
+下面的代码是如何使用 glMultiDrawArraysIndirect() 的简单例子:
+<pre c++>
+typedef struct {
+				GLuint vertexCount;
+				GLuint instanceCount;
+				GLuint firstVertex;
+				GLuint baseInstance;
+} DrawArraysIndirectCommand;
+DrawArraysIndirectCommand draws[] =
+{
+	{
+		42, // Vertex count
+		1, // Instance count
+		0, // First vertex
+		0 // Base instance
+	},
+	{
+		192,
+		1,
+		327,
+		0,
+	},
+	{
+		99,
+		1,
+		901,
+		0
+	}
+};
+// Put "draws[]" into a buffer object
+GLuint buffer;
+glGenBuffers(1, &amp;buffer);
+glBindBuffer(GL_DRAW_INDIRECT_BUFFER, buffer);
+glBufferData(GL_DRAW_INDIRECT_BUFFER, sizeof(draws),
+			draws, GL_STATIC_DRAW);
+// This will produce 3 draws (the number of elements in draws[]), each
+// drawing disjoint pieces of the bound vertex arrays
+glMultiDrawArraysIndirect(GL_TRIANGLES,
+						NULL,
+						sizeof(draws) / sizeof(draws[0]),
+						0);
+</pre>
+
+<li>
+使用一个星河例子来证明这些函数的能力, 该星河由3万个小行星组成. 
+
+<ul>
+<li>
+首先, 我们用 sb6::object 类在单个文件中存储多个meshes. 
+
+<li>
+当我们从硬盘加载这样的数据后, 所有的顶点数据加载至单个 buffer 中, 该buffer 关联至单个vertex array object. 每个sub-objects 有一个起始顶点和一个顶点量用于描述它. 我们可以使用 sb6::object::get_sub_object_info() 得到这些信息. sb6::object::get_sub_object_count() 得到可用的 sub-objects 数量.因此我们可以使用下面的代码构造一个间接的 draw buffer 用于我们的星河
+<pre c++>
+object.load("media/objects/asteroids.sbm");
+glGenBuffers(1, &amp;indirect_draw_buffer);
+glBindBuffer(GL_DRAW_INDIRECT_BUFFER, indirect_draw_buffer);
+glBufferData(GL_DRAW_INDIRECT_BUFFER,
+			NUM_DRAWS * sizeof(DrawArraysIndirectCommand),
+			NULL,
+			GL_STATIC_DRAW);
+DrawArraysIndirectCommand * cmd = (DrawArraysIndirectCommand *)
+			glMapBufferRange(GL_DRAW_INDIRECT_BUFFER,
+			0,
+			NUM_DRAWS * sizeof(DrawArraysIndirectCommand),
+			GL_MAP_WRITE_BIT | GL_MAP_INVALIDATE_BUFFER_BIT);
+for (i = 0; i &lt; NUM_DRAWS; i++)
+{
+	object.get_sub_object_info(i % object.get_sub_object_count(),
+	cmd[i].first,
+	cmd[i].count);
+	cmd[i].primCount = 1;
+	cmd[i].baseInstance = i;
+}
+glUnmapBuffer(GL_DRAW_INDIRECT_BUFFER);
+</pre>
+
+<li>
+接下来, 我们需要一种方式通知哪个小行星在着色器中进行间接渲染. 所有渲染命令都为 instanced 渲染命令, 因此, 我们可以设置 instanced 顶点属性, 设置间接渲染命令结构的baseInstance成员, 以便在属性数据数组中索引, 该顶点属性数据数组我们会传递给顶点着色器. 见下面代码
+<pre glsl>
+#version 430 core
+layout (location = 0) in vec4 position;
+layout (location = 1) in vec3 normal;
+
+layout (location = 10) in uint draw_id;
+</pre>
+
+<li>
+draw_id 存储了我们的绘制索引, 用于instanced以及关联至一个buffer, 该buffer包含一个 identity mapping. 我们准备使用 sb6::object loader 函数去访问和修改它的vertex array object以inject我们额外的顶点属性, 见下面代码:
+<pre c++>
+glBindVertexArray(object.get_vao());
+glGenBuffers(1, &amp;draw_index_buffer);
+glBindBuffer(GL_ARRAY_BUFFER, draw_index_buffer);
+glBufferData(GL_ARRAY_BUFFER,
+			NUM_DRAWS * sizeof(GLuint),
+			NULL,
+			GL_STATIC_DRAW);
+GLuint * draw_index =
+	(GLuint *)glMapBufferRange(GL_ARRAY_BUFFER,
+								0,
+								NUM_DRAWS * sizeof(GLuint),
+								GL_MAP_WRITE_BIT |
+								GL_MAP_INVALIDATE_BUFFER_BIT);
+for (i = 0; i &lt; NUM_DRAWS; i++)
+{
+	draw_index[i] = i;
+}
+glUnmapBuffer(GL_ARRAY_BUFFER);
+glVertexAttribIPointer(10, 1, GL_UNSIGNED_INT, 0, NULL);
+glVertexAttribDivisor(10, 1);
+glEnableVertexAttribArray(10);
+</pre>
+
+</ul>
+<li>
+一旦我们设立了我们的draw_id顶点着色器输入, 我们可以使用它使得每个mesh唯一. 没有它, 每个 asteroid 将是一个在原点的简单岩石. 在这个例子中, 我们直接在顶点着色器中从 draw_id 中创建一个方位和平移矩阵. 完整的顶点着色器如下:
+<pre glsl>
+glBindVertexArray(object.get_vao());
+if (mode == MODE_MULTIDRAW)
+{
+	glMultiDrawArraysIndirect(GL_TRIANGLES, NULL, NUM_DRAWS, 0);
+}
+else if (mode == MODE_SEPARATE_DRAWS)
+{
+	for (j = 0; j &lt; NUM_DRAWS; j++)
+	{
+		GLuint first, count;
+		object.get_sub_object_info(j % object.get_sub_object_count(),
+								first, count);
+		glDrawArraysInstancedBaseInstance(GL_TRIANGLES,
+	}
+}
+</pre>
+
+<ul>
+<li>
+我们通过 object.get_vao(), 而后调用 glBindVertexArray() 绑定对象的顶点数组对象(vertex array object). 
+
+<li>
+当 mode 为 MODE_MULTIDRAW, 整个场景使用单个调用 glMultiDrawArrayIndirect() 绘制.如果 mode 为 MODE_SEPARATE_DRAWS, 则我们将要遍历加载的sub-objects, 而后各自传递相同的参数来绘制, 这些参数都加载至 indirect draw buffer, 之后用 glDrawArrayInstancedBaseInstance() 绘制. 
+
+</ul>
+<li>
+本书显卡我们可以绘制30000不同的模型每秒且达到60 fps, 其等同于每秒 180 万绘制命令. 每个mesh近似有 500个顶点, 则近乎每秒十亿个顶点.
+
+<li>
+我们可以使用纹理映射应用于表面细节, 存储许多不同的surface在一个数组纹理中(array texture), 而后使用 draw_id 选择一个layer. 
+
+<li>
+indirect draw buffer 的内容不必是静态的, 我们可以使用不同的技术在图形处理上直接生成它的内容, 这样不需应用介入就可以产生非常动态的渲染效果.
+
+<li>
+注意 baseInstance 只能影响读取的instanced array数组中的位置, 其不影响着色器内 gl_InstanceID 的值. 所以上面的例子, 通过 baseInstance 命令成员修改了读取 draw_id instance数组的位置.
+
+<li>
+以后写该程序可以先写出直接版本, 而后修改成非直接版本
+
+</ul>
+
+<div id="Chapter 7 Vertex Processing and Drawing Commands-7.3 Storing Transformed Vertices"><h2 id="7.3 Storing Transformed Vertices">7.3 Storing Transformed Vertices</h2></div>
+<ul>
+<li>
+OpenGL 中, 可以将顶点着色器, tessellation evaluation 着色器, 几何着色器的结果存储至一个或多个buffer对象中, 这就是 transform feedback, 其为前端的最后stage. 这是一个不可编程的固定功能stage, 虽然其可以高度定制. 
+
+<li>
+当使用 transform feedback 时, 来自当前着色器管线最后stage的一个具体attributes组的输出(无论是顶点, tessellation evaluation, 还是几何着色器)被写入一组buffer中. 如果没有几何着色器, 顶点着色器和tessellation evaluation着色器处理的顶点则被记录. 如果有几何着色器, EmitVertex() 函数生成的顶点则被存储, 根据着色器所作的事情, 其允许记录大小可变的数据.
+
+<li>
+用于捕捉顶点和几何着色器输出的buffer被称之为transform feedback buffers. 一旦已经用transform feedback将数据放入buffer中. 其可以用 glGetBufferSubData() 或 glMapBuffer() 读取数据. 其还可以作为后续绘制命令的数据源使用. 
+
+<li>
+本章节剩余部分, 我们将顶点着色器作为前端的最后stage. 注意, 如果存在 tessellation evaluation 着色器和几何着色器, 谁的输出通过transform feedback保存, 则谁为last stage.
+
+</ul>
+
+<div id="Chapter 7 Vertex Processing and Drawing Commands-7.3 Storing Transformed Vertices-7.3.1 Using Transform Feedback"><h3 id="7.3.1 Using Transform Feedback">7.3.1 Using Transform Feedback</h3></div>
+<ul>
+<li>
+glTransformFeedbackVaryings() 函数 --- 告知 OpenGL 哪个要记录输出.
+<pre c++>
+void glTransformFeedbackVaryings(GLuint program,
+	GLsizei count,
+	const GLchar * const * varying,
+	GLenum bufferMode);
+</pre>
+
+<ul>
+<li>
+program --- program object 的名称. 该 transform feedback varying state 其作为 program object 的部分来保持. 这表示不同的程序可以记录不同的vertex attributes集合, 即使它们之内使用了相同的顶点或几何着色器.
+
+<li>
+count --- 要记录的输出的数量, 其也是第三个参数varying其地址所表示数组的长度.
+
+<li>
+varying --- 其为C风格字符串数组, 表示记录的 varying 名称.
+
+<li>
+bufferMode --- 记录的模式. 其必须为 GL_SEPARATE_ATTRIBS 或 GL_INTERLEAVED_ATTRIBS. 如果模式为 GL_INTERLEAVED_ATTRIBS, 则 varying 一个接一个的记录至单个buffer中. 如果模式为 GL_SEPARATE_ATTRIBS, 则每个 varying 记录至其自身的buffer中. 
+
+</ul>
+<li>
+下面顶点着色器的代码, 声明了输出 varyings:
+<pre glsl>
+out vec4 vs_position_out;
+out vec4 vs_color_out;
+out vec3 vs_normal_out;
+out vec3 vs_binormal_out;
+out vec3 vs_tangent_out;
+</pre>
+
+<ul>
+<li>
+将上述的变量写入单个交错的transform feedback buffer, 接下来的 C 代码
+<pre c++>
+static const char * varying_names[] =
+{
+	"vs_position_out",
+	"vs_color_out",
+	"vs_normal_out",
+	"vs_binormal_out",
+	"vs_tangent_out"
+};
+const int num_varyings = sizeof(varying_names) /
+	sizeof(varying_names[0]);
+glTransformFeedbackVaryings(program,
+	num_varyings,
+	varying_names,
+	GL_INTERLEAVED_ATTRIBS);
+</pre>
+
+</ul>
+<li>
+不是你顶点(或几何)着色器的所有输出都需要存储至 transform feedback buffer. 其可能存储 vertex shader 输出的子集至 transform feedback buffer, 而后由于插值发送更多的输出给片段着色器. 同样地, 其也可能存储某些不被片段着色器所使用的顶点着色器输出至transform feedback buffer. 
+
+<li>
+glTransformFeedbackVaryings() 指定transform feedback varyings 的一个新集合, 需要使用下面的函数链接至程序对象
+<pre c++>
+glLinkProgram(program);
+</pre>
+
+<li>
+如果你改变了 transform feedback 捕捉的 varyings 集合, 你需要再次链接程序对象, 除非你的改变没有任何效果. 
+
+<li>
+一般 transofrm feedback varying 已经设置好, 程序已经链接, 则如常使用. 在真正捕捉任何东西之前, 你需要创建一个 buffer, 而后将其绑定至一个 indexed transform feedback buffer binding point. 另外, 需要为该 buffer 分配空间, 下面的函数可以分配空间而无需设置数据.
+<pre c++>
+GLuint buffer;
+glGenBuffers(1, &amp;buffer);
+glBindBuffer(GL_TARNSFORM_FEEDBACK_BUFFER, buffer);
+glBufferData(GL_TRANSFORM_FEEDBACK_BUFFER, size, NULL, GL_DYNAMIC_COPY);
+</pre>
+
+<ul>
+<li>
+分配 buffer 存储空间的 usage 参数, GL_DYNAMIC_COPY 则是一个非常好的选择. DYNAMIC 部分告知数据可能经常变化, 但两次更新之间可能只使用少数几次. COPY 部分告知你计划在buffer中使用OpenGL的功能(例如transform feedback)来更新数据, 而后数据送回给OpenGL以便在其他的操作中使用(例如绘制).
+
+<li>
+当你使用 GL_INTERLEAVED_ATTRIBS 的 transform feedback 模式, 所有要存储的顶点属性将一个接一个地写入单个缓存中. 为了设置transform feedback 的数据写入到哪个buffer中, 你需要绑定一个 buffer 至一个 indexed transform feedback 绑定点. 有多个 GL_TRANSFORM_FEEDBACK_BUFFER 绑定点用于该目标, 它们概念上分离, 但是都涉及到通用绑定 GL_TRANSOFRM_FEEDBACK_BUFFER 绑定点.
+
+</ul>
+<li>
+为了将一个 buffer 绑定至任意 indexed binding points 上, 调用:
+<pre c++>
+glBindBufferBase(GL_TRANSFORM_FEEDBACK_BUFFER, index, buffer);
+</pre>
+
+<ul>
+<li>
+buffer --- buffer object 的名字.
+
+<li>
+index --- GL_TRANSFORM_FEEDBACK_BUFFER 绑定点. 
+
+</ul>
+<li>
+注意的是, glBindBufferBase() 所提供的额外绑定点, 不能通过类似 glBufferData() 或 glCopyBufferSubData() 的函数寻址(address).
+
+<li>
+当你调用 glBindBufferBase(), buffer 实际上绑定至 indexed binding point 和 generic binding point 上. 因此, 如果你在调用 glBindBufferBase() 之后访问 general binding point, 你可以使用额外的绑定点在buffer中分配空间.
+
+<li>
+一个比 glBindBufferBase() 较高级的版本是 glBindBufferRange(), 原型为:
+<pre c++>
+void glBindBufferRange(GLenum target,
+	GLuint index,
+	GLuint buffer,
+	GLintptr offset,
+	GLsizeiptr size);
+</pre>
+
+<ul>
+<li>
+该函数允许你绑定 buffer 的部分内容至一个 indexed binding point, 然而 glBindBuffer() 和 glBindBufferBase() 仅能一次绑定整个 buffer. 
+
+<li>
+前三个参数和 glBindBufferBase 有一样的含义. offset 和 size 参数用于设置 buffer 该部分的起始位置与长度. 
+
+<li>
+你可以同时绑定相同 buffer 的不同部分至不同的 indexed binding points. 这允许你在 GL_SEPARATE_ATTRIBS 模式中将输出顶点的每个attribute写至单个buffer的不同部分. 如果你的应用打包所有的属性至单个顶点buffer, 并使用 glVertexAttribPointer() 设置在buffer中非0的偏移, 这将允许你让 transfprm feedback 的输出匹配你顶点着色器的输入.
+
+</ul>
+<li>
+如果你在 glTransformFeedbackVaryings() 使用 GL_INTERLEAVED_ATTRIBS 参数将所有的attributes记录至单个transform feedback buffer, 则数据会被紧密地打包, 并写入绑定至第一个 GL_TRANSFORM_FEEDBACK_BUFFER 绑定点的 buffer 中(index为0). 
+
+<li>
+如果你使用 GL_SEPARATE_ATTRIBS, 则顶点着色器的每个输出写入自己单独的buffer(或相同buffer的不同部分)中. 这种情况, 你需要绑定多个buffers或多个buffer部分作为transform feedback buffers. index参数则从0到varying最大数量减一. 该最大数量为使用 transform feedback mode 记录的buffer的最大数量. 该限制依赖于显卡和驱动, 可以通过 glGetIntegerv() 和参数 GL_MAX_TRANSFORM_FEEDBACK_SEPARATE_ATTRIBS 查询. 该限制同样也用于 glTransfromFeedbackVaryings() 的count参数. 
+
+<li>
+对于GL_INTERLEAVED_ATTRIBS 模式可以写入 transform feedback buffer 的各自varying的数量则没有固定限制. 但是可以写入一个 buffer 的成分(component)数量则有最大限制. 例如, 使用 transform feedback 在一个 buffer 中写 vec3 varying 则比写 vec4 varying 数量更多. 该限制依赖于显卡, 可通过 glGetIntegerv() 和 GL_MAX_TRANSFORM_FEEDBACK_INTERLEAVED_COMPOINENTS 参数查询. 你可以在 transform feedback buffer 中存储的输出结构中留下空隙. 如果你这样做, OpenGL 则会写一些元素, 而后掠过output buffer的一些空间, 然后写入更多的成分. 如此反复.  buffer中留下那些不修改的不使用空间. 这样做你可以包含一个"virtual" varying 名字: gl_SkipComponents1, gl_SkipComponents2, gl_SkipComponents3, gl_SkipComponents4, 用来在输出buffer中掠过一个, 两个, 三个, 或四个成分的存储空间.
+
+<li>
+最后, 可以将输出 varying 的一个集合交错写入一个buffer, 而另一个集合写入另一个 buffer. 要做到这样, 我们使用特殊的 "virtual" varying 名字: gl_NextBuffer, 其告知 glTransformFeedbackVaryings() 移动到下一个 buffer binding index. 当你使用 gl_NextBuffer, bufferMode 参数必须为 GL_INTERLEAVED_ATTRIBS. 
+
+<li>
+见下面的例子:
+<pre c++>
+static const char * varying_names[] =
+{
+	"carrots",
+	"peas",
+	"gl_NextBuffer",
+	"beans",
+	"potatoes"
+};
+const int num_varyings = sizeof(varying_names) / sizeof(varying_names[0]);
+glTransformFeedbackVaryings(program,
+	num_varyings,
+	varying_names,
+	GL_INTERLEAVED_ATTRIBS);
+</pre>
+
+<li>
+在运行了该段代码而后调用 glLinkProgram(), 则这样配置 transform feedback stage, carrots, peas 将被写入第一个 transform feedback buffers, beans, patatoes 则被写入第二个 transform feedback buffers. 你还可以设置第一个 varying 名称为 gl_NextBuffer, 这样可以完全略过第一个 buffer binding
+
+</ul>
+
+<div id="Chapter 7 Vertex Processing and Drawing Commands-7.3 Storing Transformed Vertices-7.3.2 Starting, Pausing, and Stopping Transform Feedback"><h3 id="7.3.2 Starting, Pausing, and Stopping Transform Feedback">7.3.2 Starting, Pausing, and Stopping Transform Feedback</h3></div>
+<ul>
+<li>
+当准备接收 transform feedback 结果的buffer已经绑定之后, 调用下面的函数激活 transform feedback mode.
+<pre c++>
+void glBeginTransformFeedback(GLenum primitiveMode);
+</pre>
+
+<ul>
+<li>
+无论顶点何时通过 OpenGL 的前端, 来自最后的stage的输出varyings 则将被写入 transform feedback buffers.
+
+<li>
+primitiveMode --- 告知 OpenGL 预期什么类型的几何. 可以接受的参数有 GL_POINTS, GL_LINES, GL_TRIANGLES. 当你调用 glDrawArrays() 或其他的绘制函数, 基本的几何类型必须匹配你设置的transform feedback primitive mode, 或者你必须有一个几何着色器, 其输出合适的图元类型. 例如, 如果 primitiveMode 为 GL_TRIANGLES, 则前端的最后stage必须产生三角形. 即如果你有一个几何着色器, 则必须输出 triangle_strip 图元, 如果你有一个 tessellation evaluation 着色器(且没有几何着色器), 其输出模式必须为三角形. 如果都没有, 则 glDrawArrays 必须使用 GL_TRIAGNLES, GL_TRIANGLE_STRIP, GL_TRIANGLE_FAN.
+
+</ul>
+<li>
+transform feedback primitive mode 和绘制类型的映射如下:
+
+<ul>
+<li>
+Value of primitiveMode --- Allowed Draw Types
+
+<li>
+GL_POINTS --- GL_POINTS
+
+<li>
+GL_LINES --- GL_LINES, GL_LINE_STRIP, GL_LINE_LOOP
+
+<li>
+GL_TRIANGLES --- GL_TRIANGLES, GL_TRIANGLE_STRIP, GL_TRIANGLE_FAN
+
+</ul>
+<li>
+除了上述表格所列出的modes, 还可用 GL_PATCHES 作为绘制命令的mode参数, 只要tessellation evaluation shader或几何着色器输出图元的正确类型即可.
+
+<li>
+可以用下面的函数暂停记录varying输出.
+<pre c++>
+void glPauseTransformFeedback();
+</pre>
+
+<li>
+暂停后可用下面的函数恢复:
+<pre c++>
+void glResumeTransformFeedback();
+</pre>
+
+<li>
+记录开始后, 只有退出transform feedback mode 或用光了 transform feedback buffers 分配的空间才会停止记录. 
+
+<li>
+下面的函数用于退出 transform feedback mode
+<pre c++>
+glEndTransformFeedback();
+</pre>
+
+<li>
+每次 glBeginTransformFeedback() 调用的时候, OpenGL 都会在 buffer 的起始处写入, 覆盖之前的内容. 
+
+<li>
+注意, transform feedback mode 激活后, 在 glBeginTransformFeedback() 和 glEndTransformFeedback() 调用之间, 改变其 transform feedback state 是不允许的. 例如, 当transform feedback mode激活后, 不能改变 transform feedback buffer 绑定或者重设大小或重分配任意的transform feedback buffers, 即使暂停 transform feedback 也不行.
+
+</ul>
+
+<div id="Chapter 7 Vertex Processing and Drawing Commands-7.3 Storing Transformed Vertices-7.3.3 Ending the Pipeline with Transform Feedback"><h3 id="7.3.3 Ending the Pipeline with Transform Feedback">7.3.3 Ending the Pipeline with Transform Feedback</h3></div>
+<ul>
+<li>
+在许多 transform feedback 的应用中, 你可能仅需要存储transform feedback stage产生的顶点, 而不想要绘制任何东西. 你可以用下面的函数关闭光栅化
+<pre c++>
+glEnable(GL_RASTERIZER_DISCARD);
+</pre>
+
+<li>
+打开光栅化:
+<pre c++>
+glDisable(GL_RASTERIZER_DISCARD);
+</pre>
+
+</ul>
+
+<div id="Chapter 7 Vertex Processing and Drawing Commands-7.3 Storing Transformed Vertices-7.3.4 Transform Feedback Example --- Physical Simulation"><h3 id="7.3.4 Transform Feedback Example --- Physical Simulation">7.3.4 Transform Feedback Example --- Physical Simulation</h3></div>
+<ul>
+<li>
+关于位置和速度信息, 我们用了 double-buffer. 类似于渲染的双缓存技术. 一个读一个写. 其中两个VAO使用相同的连接信息缓存. 使用两个 TBO, 一个作为位置VBO, 一个作为TBO, 交替使用.
+
+<li>
+该例子可以模拟衣物, 决定论方式的粒子交互, 可以仅用顶点着色器和transform feedback建模和模拟.
+
+<li>
+总的原理就是顶点着色器的计算结果放入反馈缓存中, 而后使用纹理缓存将该缓存读取到一个纹理中, 而后在顶点着色器中再次使用纹理数据用于访问相邻顶点的信息.
+
+</ul>
+
+<div id="Chapter 7 Vertex Processing and Drawing Commands-7.4 Clipping"><h2 id="7.4 Clipping">7.4 Clipping</h2></div>
+<ul>
+<li>
+点要么接受, 要么完全放弃
+
+<li>
+线条要么完全接受, 要么完全放弃, 要么部分接受(创建一个更短的线条)
+
+<li>
+三角形则完全放弃, 完全接受, 或者创建多个的小三角形.
+
+</ul>
+<div id="Chapter 7 Vertex Processing and Drawing Commands-7.4 Clipping-7.4.0.1 The Guard Band"><h4 id="7.4.0.1 The Guard Band">7.4.0.1 The Guard Band</h4></div>
+<ul>
+<li>
+由于clip产生多个三角形可能会产生性能问题, 有些情况, 可能允许这样的三角形无修改地通过clipping阶段, 而后由光栅器抛弃这不可见的部分. 为了实现这个, 一些GPU包含了一个 guard band. 即一个允许三角形无修改通过的外部clip空间. 
+
+<li>
+guard band 的宽度可能相当大, 至少和viewport一样大.
+
+</ul>
+
+<div id="Chapter 7 Vertex Processing and Drawing Commands-7.4 Clipping-7.4.1 User-Defined Clipping"><h3 id="7.4.1 User-Defined Clipping">7.4.1 User-Defined Clipping</h3></div>
+<ul>
+<li>
+通过点到平面的有符号距离来确定点位于平面的哪一边. 你可以用该方法实现你自己的clipping算法
+
+<li>
+可以在顶点或几何着色器内写入额外的 clip 距离. 内置变量 gl_ClipDistance[]. 该内置变量可以在顶点着色器, tessellation evaluation 或几何着色器写入. 
+
+<li>
+所支持的clip distance 数量依赖于你的OpenGL实现. 
+
+<li>
+如果着色器作者想要使用用户自定义的clip distance, 应当调用:
+<pre c++>
+glEnable(GL_CLIP_DISTANCE0 + n);
+</pre>
+
+<li>
+GL_CLIP_DISTANCE1, GL_CLIP_DISTANCE2, 到 GL_CLIP_DISTANCE5 定义域标准的 OpenGL 头文件. 所支持的最大n可以由glGetIntegerv() 和参数 GL_MAX_CLIP_DISTANCES 查询.
+
+<li>
+你可以调用 glDisable() 以及相同的 token 来禁止该用户自定义的clip distance
+
+<li>
+在着色器中, gl_ClipDistance[] 写入的值其符号确定一个顶点是否位于用户自定义的clip volume 内部. 如果所有的值为负数, 则三角形被clip掉. 如果三角形部分可见, 则三角形线性插值clip distance, 在每个像素上做出可视性决定. 
+
+<li>
+点到平面的距离通过一个点乘就可以求出.
+
+<li>
+gl_ClipDistance[] 数组还可作为片段着色器的输入. 如果片段其 gl_ClipDistance[] 有一个元素为负值则clip掉, 不能到达片段着色器. 
+
+<li>
+片段着色器中, 其得到的 gl_ClipDistance[] 都是正值, 可用于任何目的. 一个例子就是用于 fade 片段. 通过减少其alpha值, 根据其到各clip plane的距离. 这样裁减的部分则显得 smoothly.
+
+<li>
+一个很大的点图元, 如果其中心被clip掉, 则不会渲染该点. 
+
+<li>
+例子: 两个clip distance, 第一个模型空间(object-space)的顶点到一个由四成员向量定义的平面的距离, 第二个 clip distance, 则是每个顶点到一个球体的距离. 根据视觉坐标系中顶点到球心的长度, 而后减去球的半径.
+
+</ul>
+
+    </div>
+</body>
+</html>

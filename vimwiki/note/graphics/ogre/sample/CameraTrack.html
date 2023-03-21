@@ -1,0 +1,54 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../../style.css">
+<title>CameraTrack</title>
+<meta http-equiv="Content-Type" content="text/html; charset=cp936">
+</head>
+<body>
+
+<ul>
+<li>
+OgreBites::SdkCameraMan
+
+<ul>
+<li>
+setStyle(CS_MANUAL) --- 表示手动操作详细
+
+</ul>
+<li>
+实现相机动画
+
+<ul>
+<li>
+Ogre::Camera::setAutoTracking --- 设置相机始终朝向某个场景节点
+
+<li>
+创建一个场景节点 camNode 作为相机节点, 挂接相机
+
+<li>
+Ogre::SceneManager::createAnimation --- 创建一个动画, 注意动画名称, 可根据该名称创建动画状态
+
+<li>
+Ogre::Animation::setInterpolationMode --- 设置动画的插值模式
+
+<li>
+Ogre::Animation::createNodeTrack --- 创建一个节点轨迹, 参数为camNode
+
+<li>
+Ogre::NodeAnimationTrack::createNodeKeyFrame --- 创建关键帧
+
+<li>
+Ogre::SceneManger::createAnimationState --- 创建动画状态
+
+<li>
+Ogre::AnimationState::setEnable --- 允许播放该动画
+
+<li>
+Ogre::AnimationState::addTime --- 播放动画
+
+</ul>
+</ul>
+
+</body>
+</html>

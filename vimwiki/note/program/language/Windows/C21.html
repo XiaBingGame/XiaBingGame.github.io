@@ -1,0 +1,205 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../style.css" />
+    <title>C21</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<h1 id="toc_1">库基础</h1>
+<ul>
+<li>
+DLL 是一个分离的文件, 可以被程序或其他DLL调用, 以执行某个作业.
+
+<li>
+"dynamic linking" 表示一种进程, 即Windows将一模块中的一个函数调用链接至库模块中的实际函数上. 
+
+<li>
+"static linking" 表示在程序开发过程中, 当你链接不同的object(.OBJ)模块, 运行时库(.LIB)文件, 一个已编译的资源(.RES)文件创建一个Windows的.EXE文件时, 发生静态链接. 动态链接则发生于运行时.
+
+<li>
+kernel32.dll, user32.dll, gdi32.dll, 以及种种驱动文件, 如 keyboard.drv, system.drv, 显卡和打印机驱动都是动态链接库.
+
+<li>
+一些动态链接库(如字体文件)为 "resource-only", 它们仅有数据(常为资源形式)而无代码.
+
+<li>
+动态链接库的一个目标是提供函数和资源以被许多不同的程序使用. 
+
+<li>
+只有后缀为 .dll 时, Windows 自动加载. 其他后缀则需要显式加载, 函数为 LoadLibrary 或 LoadLibraryEx.
+
+</ul>
+<h2 id="toc_1.1">Library: 一个单词, 许多意思 </h2>
+<ul>
+<li>
+一个 object library 为一后缀为 .lib 的文件, 在运行linker的静态链接过程中, 将该lib文件添加至你程序的 .exe 文件中.
+
+<li>
+一个 import library 则是一个 object library 文件的一个特殊形式. 其也有 .lib 后缀, 由linker使用, 以解析你源码中的函数调用. 导入库不包含代码, 其提供给linker必要的信息, 设置 .exe 文件中用于动态链接的重定位表格(relocation tables). kernel32.lib, user32.lib, gdi32.lib 都为 import library.
+
+<li>
+object library 和 import library 都仅用于程序开发中. 动态链接库则用于运行时, 
+
+<li>
+库文件必须位于 .exe 文件的相同目录中, 当前目录中, system 目录中, windows 目录中, 或者 Path 环境变量指定的目录中.
+
+</ul>
+<h2 id="toc_1.2">一个简单的DLL</h2>
+<ul>
+<li>
+当创建一个DLL时, 如果函数参数包含字符或字符串, 则应当创建该函数的Unicode和非Unicode版本
+
+<li>
+DllMain 为入口函数
+
+<li>
+EXPORT 宏定义
+<pre class="brush: c++">
+#ifdef __cplusplus
+#define EXPORT extern "C" __declspec (dllexport)
+#else
+#define EXPORT __declspec (dllexport)
+#endif
+</pre>
+
+<ul>
+<li>
+确保函数名添加至 Lib(这样当应用使用该函数时, 链接器可以解析该函数名). 该宏包括 storage-class 前缀 __declspec (dllexport).
+
+<li>
+extern "C" 确保Dll可以被C和C++程序使用.
+
+</ul>
+</ul>
+<h2 id="toc_1.3">库的入口和出口点</h2>
+<ul>
+<li>
+当库最初调用和终止时, 其会调用函数 DllMain. 该函数的第一个参数为该库的实例句柄, 如果你的库使用要求实例句柄的资源时, 你应当将 hInstance 保存为全局变量. DllMain 的最后一个参数为系统保留参数.
+<pre class="brush: c++">
+int WINAPI DllMain(HINSTANCE hInstance, DWORD fdwReason, PVOID pvReserved)
+</pre>
+
+<li>
+fdwReason 有四个值, 表示Windows调用该函数的原因.
+
+<ul>
+<li>
+DLL_PROCESS_ATTACH 表示动态链接库被映射至进程的地址空间中. 可用于做任何初始化的任务, 例如内存分配. 如果初始化成功, 则 DllMain 返回非0值.
+
+<li>
+如果 fwdReason 值为 DLL_PRCESS_DETACH, 表示该进程不再需要该Dll, 这里应当做清理工作.
+
+<li>
+如果 fdwReason 值为 DLL_THREAD_ATTACH, 表示一个 attached process 创建了一个新的线程, 当线程终止时, Windows 使用参数 DLL_THREAD_DETACH 调用 DllMain. 注意, 可能会在之前没有 DLL_THREAD_ATTACH 的情况下有 DLL_THREAD_DETACH 调用.
+
+<li>
+注意, 当 DLL_THREAD_DETACH 调用之时, 线程仍存在. 其仍可在该进程中发送线程消息, 但不能使用 PostMessage, 因为当消息返回时线程可能已消失.
+
+</ul>
+</ul>
+<h2 id="toc_1.4">在 Dll 中共享内存 </h2>
+<ul>
+<li>
+使用 #pragma data_set 实现共享内存, 注意要初始化期内的变量, 否则编译器会将其放入普通的未初始化section, 而不是放入共享的section中.
+<pre class="brush: c++">
+#pragma data_seg ("shared")
+int   iTotal = 0 ;
+WCHAR szStrings [MAX_STRINGS][MAX_LENGTH + 1] = { '\0' } ;
+#pragma data_seg ()
+</pre>
+
+<li>
+必须告诉链接器其为共享的, 在项目设置中, 选择Link tab, 包含接下来的链接器参数: /SECTION: shared, RWS
+
+<ul>
+<li>
+RWS表示读, 写, 共享属性.
+
+<li>
+还可以在源码中设置链接器选项
+<pre class="brush: c++">
+#pragma comment(linker,"/SECTION:shared,RWS")
+</pre>
+
+</ul>
+<li>
+这里发送了 HWND_BROADCAST 类型的消息, 用于通知所有的进程收到这个消息.
+
+<li>
+如想要多个应用程序动态地共享内存空间, 可以看 file mapping objects. 可见文档 /Platform SDK/Windows Base Services/Interprocess Communication/File Mapping
+
+</ul>
+
+<h1 id="toc_2">Miscellaneous DLL Topics</h1>
+<ul>
+<li>
+动态链接库模块不能接收消息, 然而, 一个库模块可以调用 GetMessage 和 PeekMessage. 通常, 库主要用于被程序调用.
+
+<li>
+动态链接库可以从库文件或者调用库的程序文件中加载资源(如icon, 字符串, 位图), 加载资源的函数需要一个实例句柄. 如果该库有自身的实例句柄(在初始化过程中传递给库), 库可以获取它自身文件的资源. 如果要程序的.exe文件中的资源, 这需要该程序的实例句柄.
+
+<li>
+在库中注册窗口类和创建窗口可能需要点技巧, 窗口类的structure和CreateWindow调用都需要一个实例句柄, 你可以使用库模块的实例句柄, 但库所创建窗口的窗口消息仍会通过调用该库的程序的消息队列. 所以库中窗口类的struecture和CreateWindow最好使用调用程序的实例句柄.
+
+<li>
+因为模式对话框的消息在程序的消息循环之外返回, 你可以在库中用DialogBox创建一个模式对话框, 其实例句柄可以是库的实例句柄, hwndParent参数可以设置为NULL.
+
+</ul>
+<h2 id="toc_2.1">不用Imports动态链接 </h2>
+<ul>
+<li>
+可以当程序运行时链接一个库模块.
+
+<li>
+例如, Rectangle 函数: Rectangle(hdc, xLeft, yTop, xRight, yBottom), 该函数位于 GDI32.LIB 库中.
+<pre class="brush: c++">
+typedef BOOL (WINAPI * PFNRECT) (HDC, int, int, int, int);
+HANDLE hLibrary;
+PFNRECT pfnRectangle;
+hLibrary = LoadLibrary(TEXT("GDI32.DLL"));
+pfnRectangle = (PFNPRECT)GetProcAddress(hLibrary, TEXT("Rectangle"));
+
+pfnRectangle (hdc, xLeft, yTop, xRight, yBottom) ;
+FreeLibrary (hLibrary) ;
+</pre>
+
+<li>
+LoadLibrary 函数在库文件不能发现时或有错误时返回NULL 
+
+<li>
+LoadLibrary 和 FreeLibrary 函数, Windows 会维护所有库模块的"引用计数". LoadLibrary 加一, FreeLibrary 减一.  但引用计数为0时, Windows 会从内存中不再使用该库.
+
+</ul>
+<h2 id="toc_2.2">仅有资源的库</h2>
+<ul>
+<li>
+本书例子 bitlib.dll, 拥有9个位图, bitlib.rc 列出所有位图文件且每个都分配了一个号码
+
+<li>
+WM_CREATE 消息返回 -1, 可以导致 CreateWindow 返回 NULL.
+
+<li>
+LoadBitmap 可以加载位图.
+
+<li>
+WM_DESTROY 做清理工作.
+
+</ul>
+
+    </div>
+</body>
+</html>

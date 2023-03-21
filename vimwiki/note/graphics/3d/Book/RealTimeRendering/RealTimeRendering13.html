@@ -1,0 +1,1131 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../../../style.css">
+<title>RealTimeRendering13</title>
+<meta http-equiv="Content-Type" content="text/html; charset=cp936">
+</head>
+<body>
+
+<h1 id="toc_1">Chapter13 Curves and Curved Surfaces</h1>
+<ul>
+<li>
+由公式精确描述曲线和曲面. 求解公式及创建三角形集并向下发送给管线以便渲染.
+
+<li>
+曲线和曲面美好的地方有四个: (1) 它们有比多边形集更紧凑的表达. (2) 它们提供scalable几何图元. (3) 它们提供更平滑和更连续的图元胜过直接的线和平面多边形. (4) 动画和碰撞检测变得更简单和快速
+
+<li>
+实时紧凑曲线表达式的优点. 首先, 节省用于模型存储的内存, 对于 game consoles(游戏控制台) 特别有用, 对于PC而言其需要更少的内存. 变换曲面通常包含更少的矩阵乘法. 从 host CPU 发送给图形硬件的数据量也大大减少.
+
+<li>
+类似 N-patch and subdivision surface 的曲面模型描述, 其模型带几个多边形就变得令人信服和真实. 单独的多边形可看成曲面. 所以创建surface上更多的顶点, 更高顶点密度的结果导致更好的surface光照和更高质量的轮廓边.
+
+<li>
+曲面的另一个主要优点为scalable, 一个曲面描述可以转换为2个三角形多2000个三角形.
+
+<li>
+在动画中, 只有更少数量的点需要动画, 这些点可以形成一个曲面及生成一个平滑surface. 另外, 碰撞检测可以更有效率和更加精确[699, 700].
+
+<li>
+曲线和曲面主题为这些书[332, 569, 905, 1073, 1328]的主题.
+
+</ul>
+
+<h2 id="toc_1.1">13.1 Parametric Curves</h2>
+<ul>
+<li>
+对于实时图形, 参数化曲线常用于沿着预定义的路径移动viewer或一些物体
+
+<li>
+如果你想要移动相机在一定时间量内从一个点到另一个点. 独立于其下硬件的性能. 例如, 假设一秒内相机在一些点内移动, 每帧渲染有50ms, 则一秒20帧. 如果每帧25秒, 则我们希望移动40个不同的位置. 可以通过参数曲线查找所有可能的点集合.
+
+<li>
+参数曲线其使用参数t的函数来描述曲线. 数学上记为p(t). 
+
+<li>
+在下一章节中, 我们开始贝塞尔曲线的直观和几何的描述. 章节13.1.4和13.1.5介绍另外两种有用的曲线, cubic hermites 和 Rochanek-Bartels splines.
+
+</ul>
+
+<h3 id="toc_1.1.1">13.1.1 Bezier Curves</h3>
+<p>
+公式13.1 描述两点兼的直线.
+</p>
+
+<ul>
+<li>
+如果多个点这样使用线性插值, 则会在连接点处突兀的转折, 为了解决该问题, 我们可以用贝塞尔曲线. 首先, 我们添加更多的点, 例如三个点, a, b, c, 称之为控制点. 我们想要发现 p(1/3), 即曲线 t = 1/3 处的点. 我们则计算出新的点 d 和 e 分别为 ab 和 be 间1/3处的点, 可见图13.3. 最后我们计算出 f, 其为 de 间1/3处的点. 我们定义 p(t) = f. 我们有如下的关系: 
+
+</ul>
+<p>
+公式13.2
+</p>
+
+<ul>
+<li>
+由于t为二次的, 所以其为抛物线(parabola). 如果给予 n+1 的控制点, 则曲线的度数为n. 其意味着更多的控制点给予曲线更多的自由度. 
+
+<li>
+这种类型的重复或递归线性插值可当作 de Casteljau 算法[332, 569]. 图13.4显示5个控制点, 图13.3中, 控制点记为Pi, 所以P0=a, P1=b, P2=c. 在线性插值被应用了k次之后, 则得到控制点 (Pi)k, 在我们的例子中, (P0)1=d, (P1)1=e, (P0)2=f. 则n+1个控制点的贝塞尔曲线可被描述为如下的递归公式. 其 (Pi)0 为初始的控制点:
+
+</ul>
+<p>
+公式13.3
+</p>
+
+<ul>
+<li>
+注意 p(t) = (P0)n(t). 如何工作可见图13.5
+
+</ul>
+
+<p>
+Bezier Curves Using Bernstein Polynomials
+</p>
+<ul>
+<li>
+二次贝塞尔曲线可以用代数学公式描述. 即你无需进行重复插值. 可见公式13.4. 其生成公式13.3同样的曲线, 贝塞尔曲线的这个描述称之为 Bernstein form:
+
+</ul>
+<p>
+公式13.4
+</p>
+
+<ul>
+<li>
+该函数包含 Bernstein Polynomials.
+
+</ul>
+<p>
+公式13.5
+</p>
+
+<ul>
+<li>
+第一个部分的二项系数可见第一章的公式1.5, Bernstein polynomial的两个基本属性如下:
+
+</ul>
+<p>
+公式13.6
+</p>
+
+<ul>
+<li>
+公式13.6其中第一个式子表示当t从0到1时, Bernstein polynomials 也在0到1的范围之内. 第二个公式表示, 对于所有不同度数的曲线, 公式13.4中的Bernstein polynomial部分总和为1.
+
+<li>
+图13.6 显示了 n = 1, n = 2, n = 3 的Bernstein polynomials. 它们也称之为 blending functions. 对于所有的贝塞尔曲线, 其p(0) = P0, p(1) = Pn. 对于贝塞尔曲线另一个有趣的属性, 对于旋转曲线而言, 先旋转控制点, 而后计算曲线.
+
+<li>
+对于贝塞尔曲线的Bernstein版本如何运作, 假设n=2, 为二次曲线, 则公式13.4转换为如下:
+
+</ul>
+<p>
+公式13.7
+</p>
+
+<ul>
+<li>
+其等同于公式13.2. 同样的方式, n=3的公式如下:
+
+</ul>
+<p>
+公式13.8
+</p>
+
+<ul>
+<li>
+这个公式可以重写为矩阵形式
+
+</ul>
+<p>
+公式13.9
+</p>
+
+
+<ul>
+<li>
+点乘在GPU上其实现更有效率. Wyatt[1384]讨论可以以相同的方式实现B-spline曲线(只是一个不同的矩阵). 任意的贝塞尔曲线可以转换为 B-Spline, 任意的B-spline则可以转换为一个或多个贝塞尔曲线.  Shene的网站[1165]和Andersson的在线文章[22]有概述.
+
+<li>
+收集公式13.4中t的k次方部分, 则可以写成如下的形式, 
+
+</ul>
+<p>
+公式13.10
+</p>
+
+<ul>
+<li>
+而后求导该贝塞尔曲线
+
+</ul>
+<p>
+公式13.11
+</p>
+
+<ul>
+<li>
+求导结果也为贝塞尔曲线, 其比P(t)少一个度数.
+
+</ul>
+
+<p>
+Rational Bezier Curves
+</p>
+<ul>
+<li>
+rational Beizier curve 由公式13.12所表示:
+
+</ul>
+<p>
+公式13.12
+</p>
+
+<ul>
+<li>
+分母为 Bernstein polynomials 的权重和, 而分子为标准贝塞尔曲线(公式13.4)的权重版本. Wi 权重值为额外的自由度.  具体可见 Hoschek and Lasser's[569]和Farin's的书[332].
+
+</ul>
+
+<h3 id="toc_1.1.2">13.1.2 Bounded Bezier Curve on the GPU</h3>
+<ul>
+<li>
+关于在GPU上渲染贝塞尔曲线的方法[788, 791], 尤其其目标为"bounded Bezier curves", 其为曲线与直线间的区域被填充, 该直线为第一个控制点和最后一个控制点间的连线. 其可通过专用像素着色器渲染一个三角形来完成.
+
+<li>
+我们使用二次的度数为2的贝塞尔曲线, 其控制点为P0, P1, P2. 设置这些顶点的纹理坐标分别为 t0 = (0, 0), t1 = (0.5, 0), t2 = (1, 1). 就像平时渲染三角形一样插值其纹理坐标, 对于三角形内的每个像素, 求解标量函数 13.13. u和v为插值的纹理坐标. 
+
+</ul>
+<p>
+公式13.13	f(u, v) = u^2 - v.
+</p>
+<ul>
+<li>
+像素着色器可以确定像素是在其内(f(u,v) &lt; 0)还是其外. 具体可见图13.7.
+
+<li>
+这种类型的技术还可以用于渲染Truetype字体, 例子可见图13.8
+
+</ul>
+
+<h3 id="toc_1.1.3">13.1.3 Continuity and Piecewise Bezier Curves</h3>
+<ul>
+<li>
+假设我们有两个三次方的贝塞尔曲线, 每个曲线有4个控制点, 第一个曲线定义为Qi, 第二个曲线定义为Ri, i = 0, 1, 2, 3. 为了连接曲线, 我们设置 Q3= R0. 这个点我们称之为joint. 由图13.9可见, 使用简单的技术该joint不会很平滑. 这由几个曲线片(curve piece)组合形成的合成曲线我们称之为piecewise Bezier curve. 且记为p(t). 进一步假设 p(0) = Q0, p(1) = Q3 = R0, P(3) = R3. 记号可见图13.9. t0 = 0.0, t1= 1.0, t2 = 3.0. 第一部分的曲线可以很好的映射至[0, 1], 第二部分的曲线需要重映射至[0, 1]. 使用如下的公式:
+
+</ul>
+<p>
+公式13.4
+</p>
+
+<ul>
+<li>
+这是最简单的连接几个贝塞尔曲线的方法.
+
+</ul>
+<li>
+连接曲线更好的方式为在joint上两个曲线其切线相连. 具体可见下面公式:
+
+<p>
+公式13.15
+</p>
+
+<ul>
+<li>
+即入射切线 Q3 - q2 的方向等于出射切线 R1 - R0
+
+<li>
+为了达到更好的continuity, 公式13.15中的c由公式13.16表示:
+
+</ul>
+<p>
+公式13.16
+</p>
+
+<ul>
+<li>
+这一点可以在图13.9中体现, 如果我们设置 t2 = 2.0, 则 c = 1.0, 即每个曲线断的时间间隔相同, 则入射和出射切线向量应当相同. 然而, 当t2=3.0. 虽然曲线看起来相等的, 但是p(t)在合成曲线上移动的速度不会平滑, 公式13.16就是解决这个问题. 
+
+<li>
+使用piecewise curve的另一个优点为可以使用更低度数的曲线. 以及其结果曲线可以穿过一个点集. 例如上面的例子, cubic curve为可以称之为S-shaped curve最低度数的曲线. 称之为infelction(反弯曲), 其结果曲线插值通过点q0, q3=r0, r3.
+
+<li>
+通常曲线, 我们使用C^n记号区分joint上其conintuity的不同类型. 这意味着所有的n:th一阶导数在整个曲线上应当为连续的和非零的.
+
+<li>
+C^0的连续性意味着在相同的点上连接曲线线段. 这为本节中的第一个例子
+
+<li>
+C^1的连续性则意味着我们在任意点上求导一次, 且结果仍为连续的, 这为本节中的第三个例子, 即使用公式13.16的例子
+
+<li>
+这里还有记号G^n
+
+<ul>
+<li>
+如G^1(几何)连续性. 其在连接点上两个曲线的切线方向相同, 但不假设其长度相同. G的continuity弱于C的continuity. 
+
+<li>
+图13.9中的中间图显示了G^1-连接性.
+
+</ul>
+</ul>
+
+<h3 id="toc_1.1.4">13.1.4 Cubic Hermite Interpolation</h3>
+<ul>
+<li>
+贝塞尔曲线不直观, 我们使用cubic Hermite interpolation(三次厄米插值), 这样便于控制, 其有起点和终点p0和p1定义, 还有起始和重点切线m0和m1. 则 p(t), t ∈ [0，1] 如下:
+
+</ul>
+<p>
+公式13.17
+</p>
+
+<ul>
+<li>
+我们也称p(t)为Hermite curve segment或cubic spline segment. 下面公式用于控制这个曲线:
+
+</ul>
+<p>
+公式13.18
+</p>
+<ul>
+<li>
+公式13.17中的blending function可见图13.10. 例子可见图13.11, 所有这些例子在相同的点上插值, 但是有不同的切线, 不同的切线长度给出不同的结果. 更长的切线在总的形状上有更大的影响.
+
+<li>
+cubic hermite interpolation可用于渲染Nalu demo中的头发[929](见图13.1).
+
+<li>
+coarse control hair可用于动画和碰撞检测, 而后计算切线, tessellate和渲染cubic curves.
+
+</ul>
+
+<h3 id="toc_1.1.5">13.1.5 Kochanek-Bartels Curves</h3>
+<ul>
+<li>
+当使用 Hermite 曲线时, 需要在多于两个点之间插值. 需要一种方式控制共享的切线. 这里我们介绍一种方式计算这样的切线, 称之为 Kochanek-Bartels curves. 假设我们有n各点, P0, ..., Pn-1, 需要插值n-1个Hermite曲线段. 我们假设每个点只有一个切线. 我们首先查看"内部"的切线, M1, ..., Mn-2, 在Pi点上的切线由两个chords组合Pi - Pi-1 和 Pi+1 -Pi, 可见图13.12的左部分图
+
+<li>
+首先, 有一个tension参数a用于修改切线向量的长度, 控制该joint的曲线如何锐利. 计算切线如下:
+
+</ul>
+<p>
+公式13.19
+</p>
+
+<ul>
+<li>
+图13.12的右上部分显示了不同tension参数的结果, 缺省为a=0, 更高的值给出一个更shaper的弯曲. 负数则给出一个较少taut的曲线. 另外, 还有个偏移参数b, 用于影响切线的方向. 假设我们忽视tension(a=9), 则切线计算如下:
+
+</ul>
+<p>
+公式13.20
+</p>
+
+<ul>
+<li>
+缺省值 b = 0. 正值使得其弯曲朝向 Pi-Pi-1, 负数则朝向Pi+1-Pi-1. 可见图13.12中的右下部分所示. 混合tension和bias可有如下公式:
+
+</ul>
+<p>
+公式13.21
+</p>
+
+<ul>
+<li>
+用户可以同时设置tension and bias值, 或者让它们为缺省值给出一个Catmull-Rom spline[160]. 还可以由这些公式计算出第一个和最后一个点的切线: 只需点单的设置其中一个chord的长度为0.
+
+<li>
+另一个参数可以控制joint的行为, 其已包含于切线公式中[349, 680]. 首先, 每个关节点的两个切线, 入射切线记为 Si, 出射切线记为 Di, 见图13.13. 曲线段 Pi 和 Pi+i 使用切线 Di 和 Si+1, 切线计算如下, c为连续性(continuity)参数:
+
+</ul>
+<p>
+公式13.22
+</p>
+
+<ul>
+<li>
+c=0为缺省值, 使得 Si = Di, 设置 c = -1, 给出 Si = Pi - Pi-1, Di = Pi+1 - Pi, 在该关节点生成一个 sharp corner, 即仅为 C^0. c=1, 则 Si = Pi+1 - Pi, Di = Pi - Pi-1. 
+
+<li>
+tension, bias, conintuity组合起来, 缺省值为 a = b = c = 0. 可有公式13.23
+
+</ul>
+<p>
+公式13.23
+</p>
+
+<ul>
+<li>
+公式13.21和13.23只作用于所有的曲线段有相同的时间间隔. 为了考虑曲线段的不同时间长度, 需要修正切线, 类似于章节13.1.3所做, 修正的切线, 记为 Si' 和 Di', 显示如下:
+
+</ul>
+<p>
+公式13.24
+</p>
+
+<ul>
+<li>
+△i = Ti+1 - Ti, 这个产生结果Kochanek-Bartels slpline的外观, 其给用户三个直观的参数, bias, tension, continuity, 用来设计曲线.
+
+</ul>
+
+<h2 id="toc_1.2">13.2 Parametric Curved Surfaces</h2>
+<h3 id="toc_1.2.1">13.2.1 Bezier Patches</h3>
+<ul>
+<li>
+章节13.1.1中介绍的贝塞尔曲线, 可以扩展一个参数为两个参数, 则形成一个曲面. 扩展线性插值为双线性插值. 不再使用两个点, 而是使用四个点, a, b, c, d. 见图13.14, 不再使用一个参数t, 而是使用两个参数(u, v). 使用u在 a&amp;b 和 c&amp;d 上插值得到e和f:
+
+<li>
+接下来, 在e和f间沿着方向v线性插值, 这产生双线性插值(注, ab和cd之间都是为直线, 而非曲线):
+
+</ul>
+<p>
+公式13.26
+</p>
+
+<ul>
+<li>
+公式13.26描述了最简单的空间参数面, 不同的(u, v)值生成曲面上不同的点. 有效域为 (u, v) ∈ [0, 1] x [0, 1], 结果的surface常被称为 patch.
+
+<li>
+为了从线性插值中扩展贝塞尔曲线, 添加更多的点和重复插值. 相同的策略也可以用于patch, 假设有九个点, 安排进一个 3x3 的网格中, 可见图13.15, 从这些点上形成一个biquadratic bezier patch. 首先我们需要双线性插值4次产生4个中间值, 可见图13.15中所示. 而后曲面上最终的点则为从之前创建的点双线性插值而得.
+
+<li>
+该重复的双线性插值为之前 de Casteljau 算法到patches的扩展. 我们定义一些记号. surface的度数为n, 控制点为Pi,j. i和j范围都在[0, ..., n]内. (n+1)^2个控制点用于度数为n的patch上. Bezier patch 描述如下:
+
+</ul>
+<p>
+de Casteljau [patches]:
+公式13.27
+</p>
+
+<ul>
+<li>
+Bezier patch 还可使用Bernstein polynomials以Bernstein形式描述: 可见公式13.28:
+
+</ul>
+<p>
+Bernstein [patches]:
+公式13.28
+</p>
+
+<ul>
+<li>
+公式13.28, 两个参数m,n, 为surface的度数, 可记为mxn, 大多数情况 m = n. 如 m &gt; n, 则首先双线性插值 n 次, 而后线性插值 m-n次. 具体由图13.16所示, 公式13.28的一个有趣诠释可被重写为如下:
+
+</ul>
+<p>
+公式13.29
+</p>
+
+<ul>
+<li>
+这里 Qi(v)的值为___________________, i = 0, ..., m. 假设 v = 0.35, 则点 Qi(0.35)则可以从一个贝塞尔曲线中计算得出. 公式13.29描述了一条在贝塞尔面的贝塞尔曲线, 即 v = 0.35的曲线.
+
+</ul>
+<li>
+设置 (u, v) = (0, 0), (u, v) = (0, 1), (u, v) = (1, 0), (u, v) = (1, 1), 在公式13.28中, 四个角落点 P0,0, P0,n, Pn,0, Pn,n. patch的每个边界由度数为n的贝塞尔曲线描述, 而贝塞尔曲线则由边界上的控制点所形成. 因此由边界的贝塞尔曲线定义角控制点上的切线. 每个角控制点有两个切线, 分别为u和v方向. 
+
+<li>
+另有与公式12.28部分不同的公式如下:
+
+<p>
+Derivatives [patches]:
+公式13.30
+</p>
+
+<ul>
+<li>
+可见在一个方向上可以减少一个patch度数, 为单元化的法线向量形成如下:
+
+</ul>
+<p>
+公式13.31
+</p>
+
+<p>
+Rational Bezier Patches
+</p>
+<ul>
+<li>
+扩展Bezier patch 为一个rational Bezier patch:
+
+</ul>
+<p>
+公式13.32
+</p>
+
+<ul>
+<li>
+Farin的书[332]和Hochek and Lasser的书[569]有更多该类型patch的信息.
+
+</ul>
+
+<h3 id="toc_1.2.2">13.2.2 Bezier Triangle</h3>
+<ul>
+<li>
+Bezier triangle不像Bezier patch那样简单的, 可用于形成一个N-patches, 由某些GPU直接支持. 
+
+<li>
+控制点位于三角网格上, 如图13.19所示. Bezier triangle 的度数为n, 则表示每条边有n+1个控制点. 这些控制点记为 (Pi,j,k)^0, 有时可缩写为Pijk. 注意 i+j+k = n, i,j,k&gt;=0. 控制点的总数目为:
+
+</ul>
+<p>
+p598
+</p>
+
+<ul>
+<li>
+Bezier也基于repeated interpolation. 使用重心(barycentric)坐标插值. 有三角形△P0P1P2, 则P(u, v) = P0 + u(P1-P0) + v(P2-P0) = (1-u-v)P0 + uP1 + vP2. (u, v)为重心坐标.为了保证u,v在三角形内部, 有 u &gt;= 0, v &gt;=0, u+v &lt;= 1. 则有用于Bezier triangle的de Casteljau算法:
+
+</ul>
+<p>
+公式13.33
+de Casteljau [triangles]:
+</p>
+
+<ul>
+<li>
+Bezier triangle上在(u, v)最终的点为 (P000)^n(u,v), Bezier triangle在Bernstein形式为:
+
+</ul>
+<p>
+公式13.34
+</p>
+
+<ul>
+<li>
+Bernstein polynomials 如下:
+
+</ul>
+<p>
+公式13.35
+</p>
+
+<ul>
+<li>
+偏求导为:
+
+</ul>
+<p>
+Derivatives [triangles]:
+公式13.36
+</p>
+
+<h3 id="toc_1.2.3">13.2.3 N-patches</h3>
+<ul>
+<li>
+"N-patches"为"normal patches"的缩写, 这些patche也称为PN triangles. 该算法只需要给出一个flag告知是否生成N-patches以及tessellation的level.
+
+<li>
+假设我们有一个三角形其有顶点P300, P030, P003, 以及法线 N200, N020, N002. 基本思路为使用这些信息创建一个cubic Bezier triangle 用于每个原始的三角形. 以及根据需要从该Bezier triangle生成许多三角形.
+
+<li>
+简化记号 w = 1 - u - v. 一个 cubic Bezier triangle 由以下给出:
+
+</ul>
+<p>
+公式 13.37
+</p>
+
+<ul>
+<li>
+为了确保border上两个N-patch triangles之间的C^0连续性, 可以由角控制点和各自控制点的法线(假设相邻三角形共享法线)来确定边上的控制点. 另外为了得到表面在该控制点上合理的行为, 该法线应当为公式13.37中表面的法线. 因此, 采纳接下来的策略计算border上六个不同的控制点.
+
+<li>
+如我们想要使用控制点P300, P030, P300上的法线N200计算P210, 可见图13.22描述. 点P210可计算如下:
+
+</ul>
+<p>
+公式13.38
+</p>
+
+<ul>
+<li>
+其他border上控制点的计算类似, 唯一剩下就是内部点P111的计算, 可用公式13.39完成:
+
+</ul>
+<p>
+公式13.39
+</p>
+
+<ul>
+<li>
+Vlachos[1304]选择使用quadratic scheme插值法线, 显示如下:
+
+</ul>
+<p>
+公式13.40
+</p>
+
+<ul>
+<li>
+这可以看成度数为2的Bezier triangle, 控制点为6个不同的法线. 在公式13.40中, 度数为二次的选择, 这是由于导出会低于实际贝塞尔三角形一个度数, 且法线的线性插值不能描述一个反弯曲(inflection). 见图13.23.
+
+<li>
+为了能够使用公式13.40, 需要计算出法线控制点N110, N101, N011. 直观但有缺陷的解决方案为使用N200和N020的平均计算出N110. 另外一种做法, 首先取N200和N020的平均, 而后在平面π中反射, 具体可见图13.24. 该平面的法线平行于P300和P030之间差, 平面π通过原点, 为单元化的N110表达如下:
+
+</ul>
+<p>
+公式13.41
+</p>
+
+<ul>
+<li>
+在公式中, van Overveld and Wyvill 使用因子3/2代替2, 该值有图像上判定. 但是2则给出了平面中真实反射的更好插值.
+
+<li>
+此时, 计算出 cubic Bezier triangle 的所有Bezier点和用于二次插值的所有法线向量. 只剩下在Bezier triangle上创建三角形以便于渲染. 接下来所需要做的就是tessellation降至某LOD.
+
+<li>
+具体指定某LODs的方法如下: 原始三角形数据为LOD 0, 随着在三角形边上新引入的顶点数目的增加, LOD数也增加. 所以LOD 1每条边引入一个新的顶点, 所以在Bezier triangle创建了四个子三角形. LOD 2 每条边引入2个新的顶点, 生成9个三角形. 通常 LOD n 生成 (n+1)^2 个三角形. 为了避免Bezier triangles之间的cracking,  mesh中的每个三角形必须以相同的LOD来tessellated. 这是一个很大的缺点, 一个极小的三角形也会和一个大的三角形被tessellate一样多的子三角形.. 类似 adaptive tessellation(13.6.4)和function tessellation(13.6.2)可以用于避免该问题.
+
+<li>
+N-patch的一个问题就是很难控制crease. 且常需要在需要的crease附近上插入额外的三角形. Bezier triangle之间的continuity仅为C0, 但是它们看起来许多情况可以接受. 由于法线连续通过三角形, 所以N-patches集模拟G1 surface. 一个更好的解决方案由Boubekeur[131]推荐,其一个顶点可以有两个法线, 以及两个生成一个crease的连接顶点. 注意为了得到good-looking texturing, 经过三角形间的border要求C1 continuity. 注意如果毗邻的三角形没有共享相同的三角形, 则会出现crack.
+
+</ul>
+
+<h3 id="toc_1.2.4">13.2.4 Continuity</h3>
+<ul>
+<li>
+图13.35显示了一个例子, 每个bezier patch有4x4个控制点. 确保边上相同的控制点 a3j = b 0j.
+
+<li>
+为了有C1连续性, 限制最靠近共享控制点的两列控制点位置, 这里为a2j 和 b1j. 对每个j, 点 a2j, b0j, b1j 必须共线. 此外, 他们要有相同的比率, 即 ||a2j - b0j|| = k||b0j - b1j||, 这里k为常量, 可见图13.25和图13.26所示.
+
+<li>
+这种类型的构造可用于尽可能多的度设置控制点. 例如可以连接4个patch, 共享一个相同的角. 见图13.27. 围绕共享点的八个控制点. 这九个控制点必须共面, 必须形成一个bilinear patch, 见图13.14. 如果其中一个在corners满足G1连续性, 其足够使得九个点共面, 它们使用更少的自由度.
+
+<li>
+当构造一个许多Bezier surface的复杂物体, 它常很难在所有的边上有合理的连续性. 一个解决方案为转至subdivision surface, 见章节13.5.
+
+<li>
+对于反射和着色, 从G1连续性可以得到合理的结果, C1或者更高的连续性有更好的结果. 例子可见图13.26.
+
+</ul>
+
+<h2 id="toc_1.3">13.3 Implicit Surface</h2>
+<ul>
+<li>
+隐式函数表示:
+
+</ul>
+<p>
+公式13.42
+</p>
+
+<ul>
+<li>
+隐式函数常用于光线的相交测试(intersection testing with rays)[见章节16.6-16.9]. 另一个implicit surface的优点为可以很容易的应用constructive solid geometry, 物体可以相互减去, 互相and:ed 或 or:ed. 同样, 物体可以很容易混合(blended)和变形.
+
+<li>
+最简单的例子为单元球. 
+
+<li>
+implicit surface的法线由偏导数表示, 称之为 gradient 以及记为 倒三角形 f:
+
+</ul>
+<p>
+公式13.43
+</p>
+
+<ul>
+<li>
+为了能够求解, 公式13.43必须可微的, 且连续的.
+
+<li>
+inplicit surface的混合可用于blobby modeling[99], 软物体, metaballs[117]. 图13.28为一个简单的例子. 基本思想为使用几个简单的图元, 例如球体或椭圆体, 平滑地混合. 每个球体看成一个原子, 而后混合原子得到分子, 该blended surface 描述如下:
+
+</ul>
+<p>
+公式13.44
+</p>
+
+<ul>
+<li>
+公式13.44中, 我们假设n个图元物体(原子), 每个原子计算一个距离ri, ri为点p到球中心的距离, 或者其他距离. 最后混合函数h描述第i个原子的影响区域. h(0) = 1, 当r&gt;=R时, h(r) = 0, R为影响结束的区域. 由Wyvill[117]给出second-order continuity的混合函数:
+
+</ul>
+<p>
+公式13.45
+</p>
+
+<ul>
+<li>
+Wyvill推荐使用 c=1/2, 使用由f(p)=1/2定义的implicit surface.
+
+<li>
+每个implicit surface可以转换至由三角形组成的surface, 这里有一些算法用于执行该操作[115, 117, 624, 1299]. 一个著名的例子为marching cubes algorithm[795]. 放置一个三维网格遍布整个surface, 在每个网格点上采样implicit function, 每个点在implicit surface内或外. 由于一个cube有8个角的网格点, 其有256个不同的组合, 每个组合生成0到4个三角形在cube内来表示该implicit surface.
+
+<li>
+Karkanis and Stewart的文章为以往implicit surface三角形化著作的概述[624]. 在网上, Wyvill and Bloomenthan的算法执行多边形化的代码可用[116]. Tatarchuk and Shopf[1250]描述了marching tetrahedra的技术, GPU可用之在三维数据集中查找isosurfaces. 页面42的图3.7显示了使用几何着色器isosurface extraction的例子.
+
+</ul>
+
+<h2 id="toc_1.4">13.4 Subdivision Curves</h2>
+<ul>
+<li>
+subdivision 技术为创建曲线和曲面相对新的方式.
+
+<li>
+subdivision curve可以由使用corner cutting的例子来解释, 见图13.29. 最左的多边形其角的顶点被切掉, 以在该处创建两个或更多顶点的新多边形. 然后再切掉新多边形的角顶点, 进一步subdivision, 以至于无穷. 最终的曲线, 我们称之为limit curve. 可写为P0-&gt;P1-&gt;P2...-&gt;P∞.
+
+<li>
+图13.29中的subdivision scheme称之为Chaikin's scheme. chaikin's scheme在后面的一对顶点中创建两个新的顶点, 有公式:
+
+</ul>
+<p>
+公式13.46
+</p>
+
+
+<ul>
+<li>
+有两个subdivision schemes的不同类别, 称之为approximating和interpolating. Chaikin的方案为approximating。interpolating类别其在下一步的subdivision步骤中保留现有的所有顶点， 所以有限曲线P∞经过所有的点P0, P1, P2等等. 例如用图13.30的多边形, 其方案使用4个最近的点创建一个新的点:
+
+</ul>
+<p>
+公式13.47
+</p>
+
+<ul>
+<li>
+该权重值w称之为 tension parameter. 当w=0时, 其结果为线性插值, 当w=1/16, 我们可以得到图13.30的行为. 当0&lt;w&lt;1/8时可以得到C1连续性的结果曲线. 如果是非封闭的曲线, 对于其两个端点, 可以通过靠近端点的顶点反射该端点得到一个新的顶点, 以解决该处缺少顶点的问题. 具体可见图13.31.
+
+<li>
+另一个有趣的approximating scheme如下:
+
+</ul>
+<p>
+公式13.48
+</p>
+
+<ul>
+<li>
+这个方案生成一个cubic B-spline曲线， 可查询SIGGRAPH（计算机绘图专业组）在subdivision上的课程[68]。 Warren and Weimer的subdivision书籍[1328], 或者 Farin的CAGD书籍[332]有更多的这类曲线内容。
+
+</ul>
+
+<h2 id="toc_1.5">13.5 Subdivision Surfaces</h2>
+<ul>
+<li>
+通常surfaces(及curves)有两个处理阶段[679], 从一个多边形mesh开始, 称之为 control mesh. 第一个阶段, 称之为 refinement phase, 创建新的顶点和重连接新顶点以创建新的更小的三角形. 第二个阶段称之为smoothing phase, 对于mesh中部分或所有的顶点计算新的位置. 这个在图13.33中有诠释. 第一个阶段中, 多边形可以以不同方式分割, 第二个阶段中, subdivision rule的选择可以给出不同的特性, 例如level of continuity, surface为approximating还是interpolating.
+
+<li>
+一个 subdivision scheme 可以其是否静止的(stationary), 是否一致的(uniform), 是triangle-based还是polygon-based的来描述. 一个 stationary scheme其在每个 subdivision 步骤中使用相同的subdivision rule, 而 nonstationary scheme 则会根据当前正在处理的步骤改变rules. 一个 uniform scheme 在每个顶点或边上使用相同的rules, 而nonuniform scheme则在不同的顶点或边上可能使用不同的rules. 
+
+</ul>
+
+<h3 id="toc_1.5.1">13.5.1 Loop Subdivision</h3>
+<ul>
+<li>
+Loop's subdivision scheme[787]类似于章节13.4的上一个scheme, 其为approximating, 更新每个已有顶点并每条边创建一个新顶点. 图13.34显示了其连通性(connectivity), 每个三角形划分成四个新的三角形, 经过n个subdivision步骤, 一个三角形被子划分成 4^n 个三角形.
+
+<li>
+首先让我们关注已有的顶点 (P)k, k为subdivision步骤序号, 即意味着(P)0为控制mesh顶点.[这里使用括号代表上标].
+
+<li>
+则有 (P)0 -&gt; (P)1 -&gt; (P)2 -&gt; ... -&gt; (P)∞, 其中  (P)∞ 为 limit point. 如果(P)k的valence(化合价)为n, 则(P)k有n个相邻的顶点, (Pi)k, i ∈ {0, 1, ..., n-1}. 见图13.35中上面所描述的记号. 当然, 一个顶点有 valence 6则称之为 regular 或者 ordinary; 否则称之为 irregular 或 extraordinary.
+
+<li>
+下面, 给出 Loop方案的subdivision rules, 第一个公式为更新已有顶点(P)k到(P)k+1的rule, 第二个公式为在(P)k和(Pi)k之间创建一个新的顶点(Pi)k+1. 再一次, (P)k的valence为n:
+
+</ul>
+<p>
+公式13.49
+</p>
+
+<ul>
+<li>
+假设索引可以模n, 如i=n-1, 则i+1=0; 如i=0, 则i-1=n-1. 注意所有的权重值之和为1. 常量β实际上为n的函数. 有:
+
+</ul>
+<p>
+公式13.50
+</p>
+
+<ul>
+<li>
+对于β函数, Loop建议在所有的regular vertex上有C2 continuity的surface, 在其他地方, 即所有irregular vertices有C1 continuity. 当只有在subdivision中创建regular vertices, 在control mesh中我们有irregular vertices, 其仅有C1 continuity surface. 见图13.37, 其为Loop'scheme的mesh subdivid例子. 公式13.50的一个变种可以避免三角函数, 由 Warren and Weimer[1328]提供:
+
+</ul>
+<p>
+公式13.51
+</p>
+
+<ul>
+<li>
+对于非封闭的mesh, 我们不能使用当前的subdivision rules. 在类似的边界使用特殊的rules. 对于Loop's scheme, 可以使用公式13.48的reflection rules. 在13.5.5中也有处理.
+
+<li>
+经过无限多的subdivision steps之后的surface称之为 limit surface. 一个顶点的limit position可以使用公式13.49的第一行计算得出, 只需要替换 β(n)为如下公式:
+
+</ul>
+<p>
+公式13.52
+</p>
+
+<ul>
+<li>
+对于一个顶点(P)k其两个limit tangent可以通过权重最靠近的相邻顶点来计算出, 称之为 1-ring 或 1-neighborhood, 如下所示:
+
+</ul>
+<p>
+公式13.53
+</p>
+
+<ul>
+<li>
+而后法线则为 n = Tu x Tv, 该方法比章节12.3所述方法更廉价. 
+
+<li>
+approximating subdivision scheme的主要优点为其结果surface趋向于得到相当的fair. 更高度数的 fairness 意味着更平滑的曲线或surface. approximating scheme的另一个优点为其converge(聚集, 会聚)比interpolating scheme更快. 然而这意味着其形状常收缩起来. 对于小而凸出的mesh该收缩值得注意的. 具体可见图13.38的四面体. 减少这种效果的一种方式为在control mesh中使用更多的顶点, 当建模control mesh时应当更加注意. Mailot and Stam发表了一个框架组合了subdivisions以便于可以控制该收缩(shrinking). Loop surface其包含在原始control point的凸包(convex hull)内.
+
+<li>
+该loop subdivision scheme 生成一个通用的three-directional quartic(四次的) box spline, 所以, 对于一个只由regular vertices组成的mesh, 我们实际上可以描述该surface为一个spline surface的类型. 然而这种描述对于不规则setting则不可能.
+
+</ul>
+
+<h3 id="toc_1.5.2">13.5.2 Modified Butterfly subdivision</h3>
+<ul>
+<li>
+这里我们展示由Zorin[1411, 1413]提出的subdivision方案, 其为Dyn[291]的butterfly scheme的修改版. 因此常将其看成 modified butterfly(MB) scheme. 该scheme为nonuniform, 这是由于其在边界上使用不同的rules&gt;, 且其使用的rules依赖于vertices的valence. 与loop subdivision最大的不同在于其为interpolating. 图13.39为interpolating和approximating scheme的例子. 
+
+<li>
+MB scheme使用4个不同的subdivision rules在两个已有顶点间创建新的顶点, 见如下描述, 以及在图13.40显示对应的mask.
+	1. Regular setting. 假设我们在两个已存顶点 v和w之间生成一个新的顶点, 每个顶点其有valence 6, 这些顶点称之为regular或ordinary, 我们称该situation为 a regular setting. 可见图13.40的左边.
+	2. Semiregular setting. 一个顶点为regular(n=6), 另一个顶点为irregular(n!=6), 也称之为 extraordinary. 可以使用下面的公式计算新的顶点, n为irregular vertex的valence:
+	公式13.54
+
+</ul>
+
+
+<p>
+		注意我们仅使用irregular vertex最好进的邻近区域计算新的顶点, 可见图13.40中的mask.
+	3. Irregular setting. 两个顶点都为irregular(n!=6). 我们使用用于semiregular setting的公式计算两个顶点的新顶点, 而后平均这两个顶点得到新的顶点. 这个只能发生在first subdivision step, 这是由于在之后mesh中只有regular 和 semiregular settings. Zorin[1411]可以注意到这个rule生成的形状有更好的fairness.
+	4. Boundaries. 在边界上, triangle mesh中只有一个三角形连接该边. 该 interpolating scheme [290] 有 w = 1/16, 见章节13.4中的描述(见图13.30和公式13.47). 更多已有的边界类型情况可查询SIGGRAPH course[1415]. 实现细节见Sharp[1160]. 由于该scheme为interpolating, 所以顶点的limit positions为其顶点自身位置. limit tangents的计算更复杂些. 对于 extraordinary vertices(n!=6),可以使用公式13.53计算其切线. 对于ordinary vertices(n=6), 使用 2-ring(也称之为2-neighborhood), 一个ordinary vertex p的 1-ring和2-ring, 可见图13.41. 切线向量Tu和Tv计算如下:
+	公式13.55
+</p>
+	
+<p>
+	其中r为整个2-ring的Pi-P, u和v为标量向量(vectors of scalars), 见如下:
+	公式13.56
+</p>
+
+
+<p>
+	即意味着, Tu计算如下:
+	公式13.57
+</p>
+
+<p>
+	计算完Tu和Tv之后, 求解法线 n = Tu x Tv.
+</p>
+<ul>
+<li>
+当需要一个interpolating scheme, MB scheme为一个好的选择. 一个 interpolating scheme 会生成一个很像 control mesh 的surface, 尤其是当使用很少的三角形表示的mesh时更值得注意. 对于更大的meshes, 则差异消失. interpolation可能生成有"不自然"波动起伏的古怪形状, 以及更少的fairness. 图13.42为一个例子. 另一个缺点为其mask比在Loop's scheme中使用的更大, 以及章节13.5.3中的√(3) (根号3)-scheme 其求解更昂贵.
+
+<li>
+除了这些缺点, 类似MB的interpolating scheme很适合实时渲染的工作. 该MB scheme在整个surface上为C1连续, 即使在irregular vertices上. 页面616的图13.38和图13.43为两个例子. 更多关于该scheme的内容可见Zorin的Ph.D论文[1413]和Sharp的文章[1159, 1160].
+
+</ul>
+
+<h3 id="toc_1.5.3">13.5.3 根号3-Subdivision</h3>
+<ul>
+<li>
+Loop's和MB scheme其都将每个三角形划分成四个新的三角形. 而Kobbelt的根号3-scheme[679]在每个subdivision step中只创建3个三角形. 其窍门为在每个三角形中间创建一个新的顶点(称之为mid-vertex). 见图13.44.为了得到一致形状的三角形, 翻转(flip)旧的边, 使得旧的边连接两个相邻的midvertices.
+
+<li>
+subdivision rules可见公式13.58, Pm表示该midvertex, 其为三个顶点Pa, Pb, Pc的平均. 每个旧的顶点(P)k使用第二行的公式更新. (Pi)k为最近的相邻顶点. n为其valence. subdivision step 公式如下:
+
+</ul>
+<p>
+公式13.58
+</p>
+<ul>
+<li>
+其中β为valence n的函数, 接下来β的选择可生成一个C2连续的surface, 其中除了irregular vertices(n!=6)处其连续性至少为C1.
+	公式13.59
+
+</ul>
+
+<ul>
+<li>
+该mask, 用于图13.45中所示的根号3-scheme.
+
+<li>
+该scheme的主要优点为其支持更简单方式的adaptive subdivision. 不需要额外的三角形避免cracks. Kobbelfs 论文有更多细节[679]. 其他的优点相对于Loop's和MB scheme有更小的mask, 更慢的三角形增长率, 其continuity和Loop's一样, 其缺点有flip导致一些复杂度, 以及第一个subdivision step 有时会生成非直观(nonintuitive)的形状. 见图13.46, 使用根号3-scheme的subdivd一个蠕虫, 还有页面P616中图13.38四面体的subdivided.
+
+</ul>
+
+<h3 id="toc_1.5.4">13.5.4 Catmull-Clark Subdivision</h3>
+<ul>
+<li>
+处理多边形mesh的两个最著名的scheme为Catmull-Clark[163] and Doo-Sabin[274]. DeRose[250]指出, Catmull-Clark surface 趋向于生成更对称的surface.
+
+<li>
+Catmull-Clark背后的思路可见图13.47所示, 以及页面P611中图13.32所示的实际例子, 该方案生成的面有4个顶点, 实际上, 在第一步subdivision之后, 只有valence 4的顶点被生成. 所以类似的顶点称之为ordinary或regular.
+
+<li>
+见图13.48中的记号, 顶点(V)k有n个围绕的edge point(ei)k, i = 0, ..., n-1. 对于每个面, 新的face point (f)k+1计算为面的矩心. 则subdivision rule为[163, 494, 1415]:
+
+<li>
+可见, 新的edge point计算为所有其考虑顶点的平均. 而顶点则计算为所有考虑顶点的权重.
+
+</ul>
+<p>
+公式13.60
+</p>
+
+
+<ul>
+<li>
+Catmull-Clark surface描述了一个普遍的bicublic B-spline surface. 如果mesh只由regular vertices组成, 则可描述为一个B-spline surface. 也可以计算limit positions 和 tangents. 见章节13.6.5中如何在图形硬件上和tessellation shader一起渲染Catmull-Clark subdivision surface的有效率的技术.
+
+</ul>
+
+<h3 id="toc_1.5.5">13.5.5 Piecewise Smooth Subdivision</h3>
+<ul>
+<li>
+从某种意义上来说, 曲面其缺少细节. 两种方式改进类似surfaces, 使用bump 或 displacement map(章节13.5.6). 第三种方法为 piecewise smooth subdivision. 其基本思路为改变subdivision rules以便darts, corners, 以及creases 能够使用. Hoppe[559]描述了该方法用于Loop's subdivision surface, 见图13.49两者的比较.
+
+<li>
+为了能够在surface边上使用类似的features, 我们给那些想要sharp的边打上标签, 这样我们知道哪里进行不同的subdivide. 一个顶点其进入的sharp边数为s, 则顶点可分类为: smooth(s=0), dart(s=1), crease(s=2), corner(s&gt;2). 因此, crease为surface上的一个平滑曲线(smooth curve), 通过该曲线的continutiy为C0. 一个dart为一个nonboundary vertex, 即crease的端点, 以及平滑混合进surface. corner为三个或更多的crease交集处. 可以通过标记每个边界边为sharp来定义边界.
+
+<li>
+在分类不同的顶点类型之后, Hoppe使用一个表格来确定哪个mask用于不同的组合(combinations). 他们还显示如何计算limit surface points和limit tangents. Biermaann[86]发表了一些改进的subdivsion rules. 例如位于边界的extrodinary vertices, 之前的rules会导致gap, 可以通过新的rule来避免该问题. 他们的rules还可以在一个顶点上指定一个法线, 作为结果的surface还可以适应在该点上获取法线. DeRose[250]发表了一个技术用于创建软crease. 基本上, 他们允许首先subdivided as sharp一些次数(包括fraction), 而后, 使用标准的subdivision.
+
+</ul>
+
+<h3 id="toc_1.5.6">13.5.6 Displaced Subdivision</h3>
+<ul>
+<li>
+bump mapping的natural extionsion为displacement mapping[194]. 其偏移该surface, 通常沿着法线的方向. 如surface上点为p, 法线为n, 偏移的标量为d, 则计算如下:
+
+</ul>
+<p>
+公式13.61
+</p>
+
+<ul>
+<li>
+基本思想为描述一个displaced surface为一个coars control mesh被subdivided为一个smooth surface. 而后使用一个scalar field沿着它的法线偏移该surface. 在 displacement subdivision surface 的上下文, 公式13.61中的p为(coarse control mesh的)subdivision surface的limit point, 以及n为在p上的单元化法线. 计算如下:
+
+</ul>
+<p>
+公式13.62
+</p>
+
+<ul>
+<li>
+在公式13.62中, Pu 和 Pv 为subdivision surface的一阶导数. 从而, 他们描述P上的两个切线. Lee[745]使用一个Loop subdivision surface用于该coarse control mesh, 以及使用公式13.53计算出它的切线, 注意符号在这里有点不同, 这里我们使用Pu和Pv代替Tu和Tv. 公式13.61描述该resulting surface的dispaced position, 但是我们也需要一个法线 Ns, 在该displaced subdivision surface上. 以便于正确渲染它. 其计算如下:
+
+</ul>
+<p>
+公式13.63
+</p>
+
+<ul>
+<li>
+为了简化该运算, Blinn[98]建议如果displacements很小的话第三个term可以忽视掉. 接下来的表达式可以用于计算Nu(以及类似的Nv)[745]
+
+</ul>
+<p>
+公式13.64
+</p>
+
+<ul>
+<li>
+注意 Nu 不是新的记号, 其仅仅为计算中"暂时"的变量, 对于一个ordinary vertex(其valence n = 6), 其一阶和二阶导数尤其简单. 它们的mask可见图13.50. 对于一个extraordinary vertex(valence n != 6), 公式13.63中第一行和第二行的第三个term被省略掉.
+
+<li>
+在coarse mesh中, 对于一个三角形其displacement map为一个scalar field, 即为一个height field. 对于一个三角形其存储要求为 (2^k + 1) 平方的一半, k为displacement map应当能够处理的subdivisions数, 其依赖于所需的精确度. 该displacement map使用和其内部subdivision mesh相同的参数化. 所以, 例如, 当一个三角形被subdivided, 创建了三个新的点. 这三个点的displacement从displacement map中返回得到. 完成这些用于k subdivision levels. 如果subdivision还可以继续, 以至过了k levels最大值, 这样也使用Loop's subdivision schem来subdivid该displacement map. 该使用公式13.61添加该subdivided dispacement d. 当物体远离之时, 则推该displacement map进the limit points, 并构建displacement pyramid的一个mipmap金字塔为一个process, 以及使用该mipmap pyramid.作为结果的displaced subdivision surface为C1连续性, 除了extraordinary vertices为C0连续性. 记住经过足够多的subdivision步骤, 则只有很少部分的顶点为extraordinary, 例子可见图13.51.
+
+<li>
+当一个displaced surface远离viewer之时, 标准的bump mapping可以用于给出该displacement的幻觉. 这样做可以节省几何处理. 一些bump mapping scheme需要一个在顶点上的切线空间坐标系统, 以及接下来可以用于: (b, t, n),  t = Pu/||Pu||, b = n x t.
+
+<li>
+Lee[745]发表了如何使用adaptive tessellation和backpatch culling来加速渲染. 更重要地, 他们发表算法从一个detailed polygon mesh中衍生出该control mesh和displacement field.
+
+</ul>
+
+<h3 id="toc_1.5.7">13.5.7 Normal, Texture, and Color Interpolation</h3>
+<ul>
+<li>
+本章节, 我们发表不同的策略处理法线, 纹理坐标, 和每个顶点的颜色.
+
+<li>
+见章节13.5.1中的Loop's scheme, 以及章节13.5.2中的MB scheme, 可显式地计算limit tangents以及limit normals. 这些包含三角函数使得求解昂贵. 对于 Catmull-Clark surface的法线在章节13.6.5中有一个近似的技术, 可以看到normal field为一个相对于实际surface更高度数的"surface". 其暗示仅需计算control mesh顶点的limit normal, 而后使用一些subdivision scheme用于这些顶点来subdivide法线. 另外, 类似的技术应该会增加存储.
+
+<li>
+假设在一个mesh中的每个顶点有一个纹理坐标和颜色, 为了能够用于subdivision surface, 我们还要为每个新的生成顶点创建颜色和纹理坐标. 最明显的做法就是使用相同的subdivision scheme. 例如, 你可以把颜色看成一个四维向量(RGBA), 而后subidivide颜色为每个新顶点创建新的颜色[1160].这是由于颜色也有一个连续的导数(假设该subdivision至少为C1). 因此避免surface上颜色的突然变化, 这点纹理所作的一样[250]. 注意纹理空间中的边界, 假设我们有两个patch共享一个边, 但是沿着这条边它们使用不同的纹理坐标. subdivide该几何体所用surface rule如常, 但是应当使用boundary rules来subdivide该纹理坐标.
+
+<li>
+由Piponi and Borshukov[1017]提出的用于texturing subdivision surface的sophisticated scheme.
+
+</ul>
+
+<h2 id="toc_1.6">13.6 Efficient Tessellation</h2>
+<ul>
+<li>
+创建surface的三角形mesh表示的过程称之为tessellation. tessellation最简单的形式称之为 uniform tessellation. 假设我们有个参数化贝塞尔曲线, P(u, v), 如公式13.28所描述, 通过每个patch side计算11个点来tessellate该patch, 结果有10x10x2=200个三角形. 完成这个的最简单方式为在uv-space中一致地采样. 然而, 求解所有 (Uk, Vl) = (0.1k, 0.1l)的P(u, v), k和l为0到10之间的整数. 这可以通过两个嵌套的for-loops来完成. 可以创建2个三角形用于4个surface points P(Uk, Vl), P(Uk+1, Vl), P(Uk+1, Vl+1), P(Uk, Vl+1).
+
+</ul>
+
+<h3 id="toc_1.6.1">13.6.1 Hardware Tessellation Pipeline</h3>
+<ul>
+<li>
+提供廉价的几何数据扩展(data expansion of geometry)的一个有效方式为发送 higher-order surfaces 给 GPU, 以及让其tessellate该surface. 其会给渲染管线中一种相当小但重要的变化. 如图13.52中所描述.
+
+<li>
+图13.52, Input ---&gt; Tessellator ---&gt; Vertex Shader(evaluation shader) ---&gt; Triangle traversal ---&gt; Pixel shader ---&gt; Output, 含硬件 tessellator 的管线. 新的部分为Tessellator 和 Vertex Shader(evaluation shader), 几何图元, 例如三角形, 可以在tessellator中被tessellated为许多更小的图元. 这些生成的顶点发送给vertex shader, 其为一个标准的vertex shader, 除了其知道图元内顶点的参数坐标. 这使得其可以在vertex shader中计算三维位置和顶点的法线.
+
+<li>
+tessellator使用一个fractional tessellation 技术, 其在之后的章节有描述. sides 0f a parametric surface上的independent fracional tessellation factors可以被使用, 类似的factor允许这些surface的一个连续level of detail, 及因此避免poping artfact. 完成tessellation之后, 顶点发送给顶点着色器, 以产生三角形, 计算顶点位置, 着色器可见章节13.6.3的描述, 例如, 顶点着色器可求解公式用于贝塞尔三角形以便创建一个平滑的曲面.
+
+</ul>
+
+<h3 id="toc_1.6.2">13.6.2 Fractional Tessellation</h3>
+<ul>
+<li>
+为了得到更平滑的level of detail 用于参数面, Moreton引入fractional tessellation factors[904]. 这些fators允许adaptive tessellation有限的形式, 这是由于不同的tessellation factors可用于parametric surface的不同sides.
+
+<li>
+图13.53中, 左边为常量的tessellator factors用于行和列. 右边则为independent tessellation factors用于所有四个边. 注意一个边的tessellation factor为在该边上生成点的数量, 减去一.  
+
+<li>
+fractional tessellation factors的概念可见图13.54中的一个边所示. 对于一个为n的整数tessellation factor, 在k/n处生成了n+1个点, k = 0, ..., n. 对于一个fractional tessellation factor r, 大于r的最小整数个点生成在k/r出, k = 0, ..., 小于r的最大整数. 可见图13.54, 该pattern不是对称的, 这会导致问题, 这是由于一个相邻的patch也许会在其他方向上生成点, 使得在surface之间产生crack. Moreton通过创建点的对称pattern来解决该问题. 见图13.54的底下一行, 也可见图13.55的例子.
+
+<li>
+此时, 我们已经看到方法用于在矩形方面tessellating surface, 然而, 我们还可以对三角形使用fraction tessellate[1252]. 见图13.56. 和四边形类似, 指定一个每个三角形边的independent fractional tessellation rate. 这样允许adaptive tesselllation, 见图13.57所诠释, 渲染displacement mapped terrain. 一旦三角形和四边形被创建, 进行管线中下一步.
+
+</ul>
+
+<h3 id="toc_1.6.3">13.6.3 Vertex + Evaluation Shader</h3>
+<ul>
+<li>
+顶点着色器现在也为一个为求值着色器的函数. 其任务为计算位于曲面上每个顶点的位置, 一个例子为求解一个N-patch或求解一个Catmull-Clark surface. 该subdivision surface必须转换为不需要相邻三角形或四边形的一个representation, 例如章节13.6.5中描述的一个结束. 另一个技术为使用displacement mapping, 其每个顶点从它的tessellated positioni上偏移, 这点只需要一个scalar value. 类似的displacement可通过使用顶点着色器中的texture fetch来完成, 或者通过使用procedural computation(例如使用noise), 或者其他函数来完成(Gerstner waves 创建一个真实的水), 例子可见图13.58.
+
+<li>
+该顶点着色器必须以某种方式得到信息知道其求解在哪个surface location上, 其解决很简单, 硬件tessellator仅仅简单地将参数坐标发给vertex shader. 对于四边形, 你得到一对坐标, (u, v), 在三角形中, 则对应顶点在原三角形内的重心坐标, 重心坐标为(u, v, w). 其中 w = 1 - u - v. 
+
+<li>
+以后, 更符合逻辑的管线发展为添加另一种类型的着色器在硬件tessellator之前[134]., 其应当为 control point shader, 任务为在硬件tessellation之前计算曲面控制点的位置. 如果没有这个stage, 贝塞尔三角形的控制点必须在CPU上计算. 另一种想法为在第一个pass中完成低分辨率mesh的动画, 以及输出结果mesh至一个顶点的纹理上. 在接下来的pass中, tessellate该animated model. 如和一个控制点着色器一起, 你可添加一个曲面的简单动画.
+
+</ul>
+
+<h3 id="toc_1.6.4">13.6.4 Adaptive Tessellation</h3>
+<ul>
+<li>
+当采样率很高时, 一致tessellation给出一个好的结果. 然而suface的某些区域不和其他区域一样需要high tessellation. 也许surface弯曲处需要higher tessellation, 而其他平坦的部分仅仅少数几个三角形来approximate它们. 解决该生成不必要三角形的一个方案为 adaptive tessellation, 这个算法依赖某种measure来修改tessellation rate使其适应(例如curvature, triangle edge length或者一些屏幕大小测量). 注意避免不同tessellated regions之间出现的cracks. 见图13.59. 这个章节, 我们首先描述一个three-pass算法, 其使用 tessellation硬件, fractional rate, evaluation shaders来计算adaptive tessellation. 更进一步, 我们发表某些通用技术用于计算fractional tessellation rate或决定何时终止进一步的tessellation.
+
+</ul>
+
+<p>
+A Three-Pass Technique for Adaptive Tessellation
+</p>
+<ul>
+<li>
+Tatarchuk[1252]描述一个技术用于计算该fractional tessellation factors, 以及如何命令硬件使用这些factors渲染tessellated surfaces.
+
+<li>
+在第一个pass中, 首先displace原始mesh的顶点. 而后, 这些顶点转换至相机空间, 渲染至一个二维的纹理中. 其假设每个顶点有一个唯一的顶点ID, 以及从这个ID计算出纹理中顶点的位置. 每个base triangle这里输出所有三个顶点, 例如你不能使用indexed primitives. 注意, 该pass的结果仅为一个二维纹理, 其包含了相机空间的顶点.
+
+<li>
+第二个pass计算fractional tessellation factors, 同样也将其输出到一个二维纹理中, 该pass发送原始mesh的所有顶点通过管线, 我们使用顶点ID访问纹理中变换后的顶点. 现在, 假设每个顶点也要计算一个fractional tessellation factor. 一个三角形的三个顶点, △V0V1V2, 依次向顶点着色器提供, 对于第一个顶点, V0, 我们希望计算一个基于V0和V1的tessellation factor, F0, 类似还有F1基于V1和V2, F2 基于V2和V0. 由于我们使用 non-indexed primitives, 我们可以很容易的 通过使用顶点ID从第一个pass中的纹理中查找到变换后的边顶点. 当完成这些后, 我们计算一个 fraction tessellation factor, Fi, 同样也写入一个二维纹理中. 这个技术之后描述, 称之为 Terminating Adaptive Tessellation. 注意由于 tessellation factor 完全依赖于边的两个顶点计算, 且由于fraction tessellation 为完全对称的, 这个技术不能有任何cracks. 设计整个系统以避免类似问题, 然而开发者注意边应当有相同的次序, 这是由于浮点的不精确度可能会创造crack, 如果没有保持相同次序的话.
+
+<li>
+在最后一个pass中, 我们使用第一个和第二个pass中的两个纹理作为输入数据至tessellation hardware, 其会自动在每个边上使用正确的fraction tessellation factor. 在tessellation之后, 顶点着色器程序求解该曲面, 以及还有displacement, 而后渲染三角形. 可见图13.57所示的结果.
+
+</ul>
+
+<p>
+Terminating Adaptive Tessellation
+</p>
+<ul>
+<li>
+为了提供adaptive tessellation, 我们需要确定何时停止tessellation, 或如何计算fractional tessellation factors. 你可以使用边的信息, 或者整个三角形的信息, 或者两者组合来确定tessellation是否应当终止.
+
+<li>
+注意, 如果一个帧到下一个帧某个确定边的tessellation factors变化太大, 则会有artifacts出现. 这也是当计算tessellation factors时也应考虑的因子.
+
+<li>
+给出一条边, (a, b), 以及其关联的曲线, 我们可以尝试估计a和b之间的曲线有多flat. 见图13.60, 中点m, 在a和b之间的参数空间中, 以及计算其对应的三维坐标c, 最后在c和其投影的位置d之间的长度l, 该长度l用于确定该条边的曲线段是否足够flat. 注意S形状的曲线段也可能被错误的认为flat. 一个解决方法为使用随机地扰动该参数样本点[343], 或使用多个随机地扰动的样本点[1300]. 另一个可选方法, 不使用l, 而是使用l/||a-b||,.另外还可以扩展至考虑一个三角形, 计算三角形中心的surface point, 以及该点到三角形平面的距离. 这种类型的算法可用于设置可以subdivision数量的上限. 对于fractional tessellation, c到d的向量可以投影至屏幕, 以及它的长度用于当作tessellation rate.
+
+<li>
+除了只从surface的形状考虑如何tessellation rate, 还可用其他的factors用于即时地tessellation, 其包括一个顶点的local neighborhood为[561, 1392]:
+	1.	在view frustum内部.
+	2.	Frontfacing, 面向前方.
+	3.	在屏幕空间中占据很大的区域.
+	4.	靠近物体的边缘, 且
+	5.	被大量(significant amount of specular lighting)的镜面光照照明.
+
+<li>
+对于view frustum culling, 可以放置一个球体包围该边, 而后测试球体和该view frustum, 如果其在外面, 则我们不需要进一步subdivide该边.
+
+<li>
+对于face culling, 可以从surface描述中计算在a, b, c上的法线, 这些法线和a, b, c定义了三个平面, 如果所有都为背向, 则无需对该边进行进一步的subdivided.
+
+<li>
+这里有许多方式实现屏幕空间的coverage(见章节14.7.2), 所有的方法投影简单物体至屏幕上, 且估计其在屏幕空间中的长度和面积. 很大的面积或长度意味着其需要继续tessellation. 一个从a到b的线段在屏幕空间的投影其快速估计法可见图13.61. 首先, 平移该线段使得其中点位于view ray上, 而后, 该线段假设平行近处的截平面n, 以及从该线段中计算出屏幕空间的投影s. 使用线段点a', b',  屏幕空间的投影如下:
+
+</ul>
+<p>
+公式13.65
+</p>
+
+<ul>
+<li>
+分子为线段的长度, 其除以中点到眼睛的距离. 而后计算出来的屏幕空间的投影s和 threshold t进行比较. 重写前面的公式避免计算平方根, 如果下面的条件为真, tessellation继续:
+
+</ul>
+<p>
+公式13.66
+</p>
+
+<ul>
+<li>
+注意 t的平方为一个常量, 所以其可以预先计算. 对于fractional tessellation, 来自公式13.65的s可以用于作为tessellation rate, 和一个scaling factor一起应用.
+
+<li>
+增加用于轮廓的tessellation rate很重要, 这是由于其在物体的感知质量上扮演很重要的角色. 查找一个三角形是否靠近轮廓边可以通过测试在a上的法线与眼睛到a向量的点乘来实现, 查看是否接近于0, 其对于a, b, c任意点都为真的话, 都需要进一步的tessellation.
+
+<li>
+surface上的镜面照明变化很快, 所以其常出现shading artifacts(见页116的图5.17). 因此当镜面高亮出现的区域就应当增加tessellation. 该点光照向量在法线上的反射和该点到眼睛的向量的点乘是否接近于1, 如果是, 则该点镜面高亮很强, 以及需要继续tessellation. 这些可以在a, b, c上进行.
+
+<li>
+很难去将那个方法可以作用域所有的应用, 最好的建议是测试一些已发表的启发式法, 以及组合它们.
+
+<li>
+另一种常用的adaptive tessellation方法是在一个quad basis上, 假设使用一个矩形patch, 则在参数域(parametric domain)中开始递归流程. 例如从(0, 0)到(1, 1)的四方形. 使用前面描述的subdivision准则, 测试是否tessellate足够了, 如果足够了, 则终止tessellation, 否则分割该domain为四个不同的相等大小的正方形, 以及对这四个子正方形进行递归流程. 持续递归知道surface已经进行了足够的tessellation或者达到了预定义的递归次数. 这个会导致crack, 因此需要保证相邻的子正方形其tessellate level只相差1. 这个称之为 restricted quadtree. 该技术可见图13.59的右图, 其用于填充该crack. 该方法的缺点为其簿记(bookkeeping)很复杂.
+
+<li>
+LIndstrom[779]和Sharp[1158]发表了用于避免crack算法的不同变种. 这些方法中的Bookkeeping更复杂. Lindstrom[779]发表了一个几何空间用于heightfield的flatness test, 而Hoppe[561]则归纳为任意的几何体. 所有这些测试它们的设计都用于mesh simplification. Eberly描述了许多不同的flatness  test, 包括曲线和曲面[294]. Chhugani and Kumar[173]发表了一个算法用于spline surface的adaptive tessellation, 其tessellation 为 view-dependent.
+
+</ul>
+
+<h3 id="toc_1.6.5">13.6.5 Camull-Clark Surface with Hardware Tessellation</h3>
+<ul>
+<li>
+Catmull-Clark surface (章节 13.5.4)常用语建模软件和feature film的渲染中, Loop and Schaefer[700]发表了一个技术转换 Cutmull-Clark surface为一个 representation使得其可以发送给hardware tessellator, 以及在顶点着色器中快速的求解(不需要知道多边形的邻居).
+
+<li>
+如章节13.5.4所介绍, 当所有的顶点为ordinary时Catmull-Clark surface可被描述为 B-spline surface. Loop and Schaefer 在原始的Catmull-Clark subdivision中转换一个四边形为一个bi-cubic Bezier surface(见章节13.2.1).这对于non-quadrilaterals不可能, 以及我们假设没有那样的多边形(subdivision的第一步之后, 只剩下quadrilateral 多边形). 当一个顶点的valence不同于4时, 其不可能创建一个bicubic bezier patch. 因此发表一个近似的表达(approximative representation), 其对于四边形和valence-four顶点来说很精确, 以及在别处非常接近于Catmull-Clark surface. 在最后, 使用几何patches和切线patches.
+
+<li>
+该几何patch为简单地一个bicubic Bezier patch, 见图13.62所示, 有4x4控制点. 我们将描述这些控制点如何计算. 一旦完成这个, tessellate该patch, vertex shader则快速地在任意参数坐标(u, v)求解贝塞尔patch. 所以, 假设我们有一个仅由四边形及valence为4的顶点组成的mesh, 我们想要计算对应Bezier patch的控制点用于mesh中一个确定的四边形(a certain quad). 在最后, 需要围绕该四边形的相邻区域, 完成这个的标准方式可见图13.63所示, 显示了三个不同的mask. 他们可以旋转和反射以创建所有的16个控制点. 注意在一个实现中, mask的权重累计为1. 为了clarity(清晰)可以忽略该处理(process).
+
+<li>
+上面的技术计算一个Bezier patch用于该ordinary case,. 当至少有一个extraordinary顶点, 我们计算一个extraordinary patch[790]. 其mask可见图13.64, 灰色方块中的左下顶点为一个extraordinary vertex.
+
+<li>
+注意, 该近似Catmull-Clark subdivision surface的patch中结果沿着其边的一个extraordinary vertex仅有C0连续性. 当添加着色时其昌看起来distracting, 因此当用于N-patches(章节13.2.3)时建议一个类似的技巧. 然而, 为了减少计算复杂度, 推导出两个切线patches, 一个在u方向, 一个在v方向, 而后通过两个向量的叉乘得到法线. 通常, 使用公式13.30计算一个贝塞尔patch的derivative. 然后, 当derived Bezier patches近似该Catmull-Clack surface时, 切线patch不会形成一个连续的normal field. 查阅Loop and Schaefer的论文[790]看如何克服这些问题. 图13.65显示了早期实现中这类型artifacts发生的例子, 这个方法能够在一个Xbox 360上产生1亿多边形/每秒.(100 million/second)
+
+</ul>
+
+</body>
+</html>

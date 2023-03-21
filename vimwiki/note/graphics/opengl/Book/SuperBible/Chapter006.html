@@ -1,0 +1,901 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../../style.css" />
+    <title>OpenGL SuperBible 6 Chapter 6 Shaders and Programs</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="../index.html">首页</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+
+<div id="第六章 着色器和程序 "><h1 id="第六章 着色器和程序 ">第六章 着色器和程序 </h1></div>
+<div id="第六章 着色器和程序 -语言概览"><h2 id="语言概览">语言概览</h2></div>
+<ul>
+<li>
+C 和 GLSL 之间的一个主要不同是matrix和vector类型为GLSL的第一类公民. 另一个主要的不同为 GLSL 被设计为在大规模地并行实现上运行. 大多数图形处理器将会同时运行着色器的数千拷贝(或invocations). 例如, 不允许在GLSL中有递归, 浮点数的精度要求并不和IEEE标准一样严格, 这点和大多数C实现不同.
+
+</ul>
+<div id="第六章 着色器和程序 -语言概览-数据类型"><h3 id="数据类型">数据类型</h3></div>
+<ul>
+<li>
+GLSL 支持标量和向量数据类型, 数组和结构, 以及一些不透明的数据用于表示纹理和其他数据结构.
+
+</ul>
+<div id="第六章 着色器和程序 -语言概览-数据类型-标量类型"><h4 id="标量类型">标量类型</h4></div>
+<ul>
+<li>
+GLSL中标量数据类型支持 32位和64位浮点数, 32位有符号和无符号整数, 以及布尔值. 不提供类似 short, char, string 的支持, 不支持指针或大于32位的整数. 支持的标量类型见表格 6.1
+
+<ul>
+<li>
+Type --- Definition
+
+<li>
+bool --- A Boolean value that can either be true or false
+
+<li>
+float --- IEEE-754 formatted 32-bit floating-point quantity
+
+<li>
+double --- IEEE-754 formatted 64-bit floating-point quantity
+
+<li>
+int --- 32-bit two’s-complement signed integer
+
+<li>
+unsigned int --- 32-bit unsigned integer
+
+</ul>
+<li>
+有符号整数存储为二进制补码, 范围为 -2,147,483,648 到 2,147,487,647, 无符号整数其范围为 0 到 4,294,967,295. 浮点数则有1个符号位, 8个指数位, 23个尾数位. 双精度数有1个符号位, 11个指数位, 52个尾数位.
+
+<li>
+类似三角函数的内置函数, GLSL 给了更多的余地, 最后, GLSL 不支持异常
+
+</ul>
+
+<div id="第六章 着色器和程序 -语言概览-数据类型-向量和矩阵 "><h4 id="向量和矩阵 ">向量和矩阵 </h4></div>
+<ul>
+<li>
+支持所有标量类型的向量, 支持单精度和双精度浮点数的矩阵
+
+<li>
+可从其他向量, 单标量, 标量序列, 标量和合适类型向量的任意组合来构造向量. 只要它们有足够的域来填充目标.
+<pre glsl>
+vec3 foo = vec3(1.0);
+vec3 bar = vec3(foo);
+vec4 baz = vec4(1.0, 2.0, 3.0, 4.0);
+vec4 bat = vec4(1.0, foo);
+</pre>
+
+<li>
+可以以数组方式来访问一个向量
+<pre glsl>
+vec4 foo;
+
+float x = foo[0];
+float y = foo[1];
+float z = foo[2];
+float w = foo[3];
+</pre>
+
+<li>
+还可以以域的方式访问向量, 分别为
+
+<ul>
+<li>
+x, y, z, w
+
+<li>
+r, g, b, a
+
+<li>
+s, t, p, q
+
+</ul>
+<li>
+向量还支持 swizzling. 即可以将域堆积成它们自己的向量. 例如, foo 是一个 vec4 类型, 可通过写 foo.xyz 来解压(或 foo.rgb, foo.stp)出其前三个元素. 可以以任意的顺序设置这些域, 注意不能混淆域的类型, 例如 foo.xyza
+
+<li>
+矩阵同样也是 GLSL 中的 first-class 类型, 可以当成数组对待, 看成是向量的数组. 同样, 向量也可看成数组. 所以矩阵可看成二维数组. 例如 bar 是一个 mat4 类型, 则 bar[0] 是 vec4 向量, 表示第一列. bar[0][0] 则是该向量的第一个元素.
+
+<li>
+像 + 和 - 这样的标准操作符, 已为向量和矩阵定义了, 乘法操作符 (*) 对于两个向量则是逐元素相乘. 对于矩阵之间和矩阵与向量的乘法则和线性代数一致. 向量和矩阵对标量的除法则和预期一致. 向量和矩阵与向量和矩阵的除法则是逐元素相除, 因此要求两个操作数必须相同的维度.
+
+</ul>
+
+<div id="第六章 着色器和程序 -语言概览-数据类型-数组和结构 "><h4 id="数组和结构 ">数组和结构 </h4></div>
+<ul>
+<li>
+你可以构造聚合类型如数组和结构, 包括结构的数组和数组的结构(arrays of structures and structures of arrays). 没有 typedef 关键字. GLSL 中的结构定义其隐式地声明了一个新的类型.
+
+<li>
+有两种方式在 GLSL 中声明一个数组, 第一个类似于 C 或 C++, 变量名后又数组大小
+<pre glsl>
+float foo[5];
+ivec2 bar[13];
+dmat3 baz[29];
+</pre>
+
+<ul>
+<li>
+第二种方法则是在类型后放置数组大小
+<pre glsl>
+float[5] foo;
+ivec2[13] bar;
+dmat3[29] baz;
+</pre>
+
+<li>
+这样做使得不需要 typedef 隐式地定义了一个数组类型. 其一个例子就是声明返回一个数组的函数.
+<pre glsl>
+vec4[4] functionThatReturnsArray()
+{
+	vec4[4] foo = ...
+	return foo;
+}
+</pre>
+
+</ul>
+<li>
+以这种形式定义的数组同样有其对应的构造函数
+<pre glsl>
+float[6] var = float[6](1.0, 2.0, 3.0, 4.0, 5.0, 6.0);
+</pre>
+
+<li>
+GLSL 的最近版本允许传统的C风格的数组初始化式
+<pre glsl>
+float var[6] = { 1.0, 2.0, 3.0, 4.0, 5.0, 6.0 };
+</pre>
+
+<li>
+结构内可以有数组, 也可有结构数组
+<pre glsl>
+struct foo
+{
+	int a;
+	vec2 b;
+	mat4 c;
+};
+struct bar
+{
+	vec3 a;
+	foo[7] b;
+};
+bar[29] baz;
+</pre>
+
+<li>
+数组有一个特殊的方法: .length(). 注意 length() 在向量上返回其大小, 在矩阵上则返回其有多少列.
+<pre glsl>
+float a[10]; // Declare an array of 10 elements
+float b[a.length()]; // Declare an array of the same size
+mat4 c;
+float d = float(c.length()); // d is now 4
+int e = c[0].length(); // e is the height of c (4)
+int i;
+// This loop iterates 10 times
+for (i = 0; i &lt; a.length(); i++)
+{
+	b[i] = a[i];
+}
+</pre>
+
+<li>
+多维数组
+<pre glsl>
+float a[10]; // "a" is an array of 10 floats
+float b[10][2]; // "b" is an array of 2 arrays of 10 floats
+float c[10][2][5]; // "c" is an array of 5 arrays of 2 arrays of 10 floats
+</pre>
+
+<ul>
+<li>
+b.length() 返回 2, b[1].length() 返回 10
+
+</ul>
+</ul>
+
+<div id="第六章 着色器和程序 -语言概览-内置函数"><h3 id="内置函数">内置函数</h3></div>
+<div id="第六章 着色器和程序 -语言概览-内置函数-术语"><h4 id="术语">术语</h4></div>
+<ul>
+<li>
+genType 表示任意单精度标量或向量, 或者浮点, vec2, vec3, vec4 中的一个
+
+<li>
+genUType 表示任意无符号整数标量或向量, 或者 uint, uvec2, uvec3, uvec4 中的一个
+
+<li>
+genIType 表示任意有符号整数标量或向量, 或者 int, ivec2, ivec3, ivec4 中的一个
+
+<li>
+genDType 表示任意双精度浮点数或向量, 或者 double, dvec2, dvec3, dvec4 中的一个
+
+<li>
+mat 表示任意单精度浮点矩阵
+
+<li>
+dmat 表示任意双精度浮点矩阵
+
+</ul>
+
+<div id="第六章 着色器和程序 -语言概览-内置函数-内置的矩阵和向量函数"><h4 id="内置的矩阵和向量函数">内置的矩阵和向量函数</h4></div>
+<ul>
+<li>
+matrixCompMult() 函数执行两个矩阵逐成员的乘法, 两个矩阵的 * 操作执行传统的矩阵乘法. transpose() 函数转置矩阵. inverse() 求出逆矩阵. determinant() 求解出矩阵的行列式.
+
+<li>
+outerProduct() 函数计算两个向量的外积. 将两个向量当作输入, 第一个当成是 1 x N 矩阵, 第二个当成 N x 1 矩阵, 而后进行矩阵乘法, 产生 N x N 的矩阵.
+
+<li>
+比较两个向量得到另一个向量. lessThan(), lessThanEqual(), greaterThan(), greaterThanEqual(), equal(), notEqual(). 这些函数返回了相同大小的布尔向量.
+
+<li>
+any() 测试一个布尔向量是否有一个成员为真. all() 测试是否所有成员为真, not() 反转一个布尔向量的值.
+
+<li>
+length() 返回向量长度, distance() 返回两点间的距离. normalize() 单元化向量. dot(), cross() 向量的点乘和叉乘. reflect(), refract() 根据一个输入的向量, 输入的法线和平面, 计算出反射或折射向量. faceforward() 其输入为一个向量和两个面法线, 如果输入向量和第二个面法线的点乘为负数, 则返回第一个法线向量, 否则, 返回第一个法线向量相反方向的向量. 其可用于判断对于特定观察角度一个面是正面还是背面
+
+</ul>
+
+<div id="第六章 着色器和程序 -语言概览-内置函数-内置的数学函数 "><h4 id="内置的数学函数 ">内置的数学函数 </h4></div>
+<ul>
+<li>
+abs(), sign(), ceil(), floor(), trunc(), round(), roundEven(), fract(), mod(), modf(), min(), max(). 这些函数可作用域向量和标量. roundEven() 如果小数部分是0.5, 则四舍五入至最近的偶数.
+
+<li>
+clamp() 函数的两个隐式声明为
+<pre glsl>
+vec4 clamp(vec4 x, float minVal, float maxVal);
+vec4 clamp(vec4 x, vec4 minVal, vec4 maxVal);
+</pre>
+
+<li>
+mix(), step(), smoothstep().  mix() 使用第三个参数作为权重因子来执行两个输入的线性插值. 其有效实现为:
+<pre glsl>
+vec4 mix(vec4 x, vec4 y, float a)
+{
+	return x + a * (y - x);
+}
+</pre>
+
+<li>
+step() 函数根据他两个输入生成一个 step 功能, 定义为
+<pre glsl>
+vec4 step(vec4 edge, vec4 x);
+</pre>
+
+<ul>
+<li>
+如果 x &lt; edge 返回 0.0, 如果 x &gt;= edge 返回 1.0
+
+<li>
+smoothstep() 则没有如此激进, 其基于第三个参数返回一个两个输入间平滑的衰减, 定义如下
+<pre glsl>
+vec4 smoothstep(vec4 edge0, vec4 edge1, vec4 x);
+</pre>
+
+<li>
+其实现可能为:
+<pre glsl>
+vec4 smoothstep(vec4 edge0, vec4 edge1, vec4 x)
+{
+	vec4 t = clamp((x - edge0) / (edge1 - edge0), 0.0, 1.0);
+	return t * t * (vec4(3.0) - 2.0 * t);
+}
+</pre>
+
+<li>
+smoothstep() 产生的形状为 Hermite curve. 其执行的操作为 Hermite interpolation
+
+</ul>
+<li>
+fma() 函数执行一个 fused multiply-add 操作. 其前两个参数的乘法而后加上第三个参数. 其中间结果比原操作数有更高的精度.
+
+<li>
+大多数GLSL中的数学函数假设你主要是用浮点数. uaddCarry(), usubBorrow() 允许你执行带carry的加法和带borrow的减法. imulExtended() 和 umulExtended() 允许你一对32位有符号和无符号整数值的乘法. 产生一个64位的结果, 以一对32位的值表示. 
+
+<li>
+三角函数. sin(), cos(), tan(), asin(), acos(), atan(). 这些函数的 hyperbolic 形式 sinh(), cosh(), tanh(), asinh(), acosh(), atanh(). 
+
+<li>
+指数函数. pow(), exp(), log(), exp2(), log2(), sqrt(), inversqrt(). 
+
+<li>
+GLSL 主要以弧度表示角度. radians(), degrees(). 
+
+</ul>
+
+<div id="第六章 着色器和程序 -语言概览-内置函数-内置的数据操作函数 "><h4 id="内置的数据操作函数 ">内置的数据操作函数 </h4></div>
+<ul>
+<li>
+frexp() 允许你将一个浮点数转换成尾数和指数部分. ldexp() 允许你根据一个尾数和指数构建一个浮点数
+
+<li>
+intBitsToFloat(), uintBitsToFloat() 允许你根据一个有符号和无符号整数, 将其它的原始二进制重新解释成32位浮点数. 相反的函数为 floatBitsToInt(), floatBitsToUint()
+
+<li>
+注意构造的浮点数未必有效, 判断一个浮点数是否为 NaN 或一个无穷数, 调用 isnan() 或 isinf()
+
+<li>
+GLSL 提供了一些函数, 其输入一个浮点向量, 将其缩放成不同的位深度(例如 8- 或 16- 位值), 而后将它们打包一起形成单个32位数.例如 packUnorm4x8(), packSnorm4x8() 函数打包一个 vec4 值为4个无符号或有符号8位整数值. unpackUnorm4x8, unpackSnorm4x8 打包4个八位值为单个无符号整数. packUnorm2x16(), packSnorm2x16, unpackUnormx16, unpackSnorm16 函数为处理 vec2 变量, 打包和解包它们为16位数为uint的等价函数. 
+
+<li>
+norm 术语在这些函数中和单元化有关. 单元化本质上意思为将一个值缩放映射至一个新的范围, 无符号整数映射至 0.0 到 1.0, 有符号数映射至 -1.0 到 1.0. 输入范围的终点映射至输出范围的下限和上限. 例如 8位无符号单元化数据, 0 对应于 0.0, 255 对应于 1.0 
+
+<li>
+packDouble2x32() 和 unpackDouble2x32() 函数在双精度浮点数上执行类似的操作, packHalf2x16 函数则在 16 位浮点量上执行这些操作. 注意 GLSL 不包含对 16位浮点数变量的直接支持, 虽然可以以该种格式存储数据. 所以GLSL在着色语言中包含解压其为可用数据类型的功能.
+
+<li>
+如果你想要得到有符号或无符号整数中的部分位, 你可以使用 bitfieldExtract() 函数. bitfieldInsert() 函数可将其放回整数中.
+
+<li>
+GLSL支持的其他位操作包括 bitfieldReverse(), bitCount(), findLSB(), findMSB() 函数. 可以囚犯整数中的位的子集, 统计整数中设置位的数量, 查找整数中设置的 least signficant 或者 significant bit.
+
+</ul>
+
+<div id="第六章 着色器和程序 -编译, 链接和测试程序 "><h2 id="编译, 链接和测试程序 ">编译, 链接和测试程序 </h2></div>
+<div id="第六章 着色器和程序 -编译, 链接和测试程序 -从编译器中得到信息 "><h3 id="从编译器中得到信息 ">从编译器中得到信息 </h3></div>
+<ul>
+<li>
+一旦你设置了着色器的源码并调用了 glCompileShader() 编译后, 你可用 glGetShaderiv() 得到编译状态.
+<pre c++>
+void glGetShaderiv(GLuint shader,
+					GLenum pname,
+					GLint * params);
+</pre>
+
+<ul>
+<li>
+shader --- 着色器对象的名称
+
+<li>
+pname --- 你想要从着色器对象中得到的信息
+
+<li>
+params --- 返回结果的变量地址.
+
+</ul>
+<li>
+GL_COMPILE_STATUS --- 查询是否编译成功. 失败返回0, 成功返回1
+
+<li>
+glGetShaderiv() 其 pname 参数还可设置的值
+
+<ul>
+<li>
+GL_SHADER_TYPE --- 返回着色器的类型(GL_VERTEX_SHADER, GL_FRAGMENT_SHADER, 等)
+
+<li>
+GL_DELETE_STATUS --- 返回 GL_TRUE 或 GL_FALSE 表示着色器对象是否已经调用了 glDeleteShader()
+
+<li>
+GL_SHADER_SOURCE_LENGTH --- 返回着色器对象其关联源码的总长度
+
+<li>
+GL_INFO_LOG_LENGTH --- 着色器对象内信息日志的长度
+
+</ul>
+<li>
+glGetShaderInfoLog() --- 得到着色器对象中的日志.
+<pre c++>
+void glGetShaderInfoLog(GLuint shader,
+						GLsizei bufSize,
+						GLsizei * length,
+						GLchar * infoLog);
+</pre>
+
+<ul>
+<li>
+shader --- 着色器名称
+
+<li>
+infoLog --- 缓存
+
+<li>
+bufSize --- 缓存大小
+
+<li>
+length --- 实际写入的数据大小
+<pre c++>
+// Create, attach source to, and compile a shader...
+GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
+glShaderSource(fs, 1, &amp;source, NULL);
+glCompileShader(fs);
+// Now, get the info log length...
+GLint log_length;
+glGetShaderiv(fs, GL_INFO_LOG_LENGTH, &amp;log_length);
+// Allocate a string for it...
+std::string str;
+str.reserve(log_length);
+// Get the log...
+glGetShaderInfoLog(fs, log_length, NULL, str.c_str());
+</pre>
+
+</ul>
+<li>
+错误信息开头为 ERROR 或 WARNING, 后跟字符串索引(因为可能连接了多个着色器字符串), 而后跟着行号.
+
+<li>
+glShaderSource() 允许你连接多个源字符串至单个着色器对象.
+
+</ul>
+
+<div id="第六章 着色器和程序 -编译, 链接和测试程序 -从链接器中得到信息 "><h3 id="从链接器中得到信息 ">从链接器中得到信息 </h3></div>
+<ul>
+<li>
+glLinkProgram() 链接程序. 一个程序对象含有一些属性, 包括它的链接状态, 资源使用等等. 你可以使用 glGetProgramiv() 返回其状态
+<pre c++>
+void glGetProgramiv(GLuint program,
+	GLenum pname,
+	GLint * params);
+</pre>
+
+<ul>
+<li>
+program --- 程序对象的名称.
+
+<li>
+params --- 返回信息的变量地址
+
+<li>
+pname --- 查询参数
+
+</ul>
+<li>
+可查询的值:
+
+<ul>
+<li>
+GL_DELETE_STATUS --- 是否已经调用了 glDeleteProgram()
+
+<li>
+GL_LINK_STATUS --- 是否成功链接了程序
+
+<li>
+GL_INFO_LOG_LENGTH --- 日志长度
+
+<li>
+GL_ATTACHED_SHADERS --- 连接到程序的着色器数量
+
+<li>
+GL_ACTIVE_ATTRIBUTES --- 返回程序中顶点着色器实际使用的attributes数量
+
+<li>
+GL_ACTIVE_UNIFORMS --- 返回程序中一致变量使用的数量
+
+<li>
+GL_ACTIVE_UNIFORMS_BLOCKS --- 返回程序使用的一致变量块的数量.
+
+</ul>
+<li>
+glGetProgramiv() 使用参数 GL_LINK_STATUS 判断是否成功的链接到一个程序. glGetProgramInfoLog() 得到其信息日志.
+<pre c++>
+void glGetProgramInfoLog(GLuint program,
+						GLsizei bufSize,
+						GLsizei * length,
+						GLchar * infoLog);
+</pre>
+
+</ul>
+
+<div id="第六章 着色器和程序 -编译, 链接和测试程序 -分离程序"><h3 id="分离程序">分离程序</h3></div>
+<ul>
+<li>
+OpenGL 支持在 separable mode 中链接程序对象. 其可以链接仅包含管线中一个或几个stage的着色器. 多个程序对象, 其每个表示 OpenGL 管线的一部分. 它们可以连接至一个程序管线对象且在运行时匹配在一起.
+
+<li>
+使用 separable mode, 在链接之前调用 glProgramParameteri() 其 pname 参数为 GL_PROGRAM_SEPARABLE , value 参数为 GL_TRUE. 其告知OpenGL不要消除来至一个着色器的输出, 虽然其可能不被使用. 其会安排任一内部数据的布局. 例如程序对象中的最后一个着色器其可和另一个程序对象中的第一个着色器以相同的输入布局来通讯. 接着, 你应用 glGenProgramPipelines() 创建一个程序管线对象, 而后将程序连接至此. 之后调用 glUseProgramStages(), 传递程序管线对象的名称, 其位域表示使用哪个stage, 以及包含了这些stages的程序对象名称. 
+
+<li>
+下面的例子设置了两个程序对象, 分别包含顶点着色器和片段着色器, 而后连接至程序管线对象.
+<pre c++>
+// Create a vertex shader
+GLuint vs = glCreateShader(GL_VERTEX_SHADER);
+// Attach source and compile
+glShaderSource(vs, 1, vs_source, NULL);
+glCompileShader(vs);
+// Create a program for our vertex stage and attach the vertex shader to it
+GLuint vs_program = glCreateProgram();
+glAttachShader(vs_program, vs);
+// Important part - set the GL_PROGRAM_SEPARABLE flag to GL_TRUE *then* link
+glProgramParameteri(vs_program, GL_PROGRAM_SEPARABLE, GL_TRUE);
+glLinkProgram(vs_program);
+// Now do the same with a fragment shader
+GLuint fs = glCreateShader(GL_FRAGMENT_SHADER);
+glShaderSource(fs, 1, fs_source, NULL);
+glCompileShader(fs);
+GLuint fs_program = glCreateProgram();
+glAttachShader(fs_program, vs);
+glProgramParameteri(fs_program, GL_PROGRAM_SEPARABLE, GL_TRUE);
+glLinkProgram(fs_program);
+// The program pipeline represents the collection of programs in use:
+// Generate the name for it here.
+GLuint program_pipeline;
+glGenProgramPipelines(1, &amp;program_pipeline);
+// Now, use the vertex shader from the first program and the fragment shader
+// from the second program.
+glUseProgramStages(program_pipeline, GL_VERTEX_SHADER_BIT, vs_program);
+glUseProgramStages(program_pipeline, GL_FRAGMENT_SHADER_BIT, fs_program);
+</pre>
+
+<li>
+通常 tessellation control 和 tessellation evaluation shader 常常打包在一起. 同时, 当 tessellation 使用之时, 其可能使用一个 pass-through(转发) 顶点着色器, 其也许在 tessellation control shader 或者在 tessellation evaluation shader 中做顶点着色器的工作. 在这种情况下, 应将顶点着色器和tessellation着色器打包在一个程序对象中. 
+
+<li>
+如果你想要创建一个仅含一个着色器对象在其内的简单程序对象, 你可以采取一个简便方法:
+<pre c++>
+GLuint glCreateShaderProgramv(GLenum type,
+	GLsizei count,
+	const char ** strings);
+</pre>
+
+<li>
+一旦一个程序管线对象就绪, 调用 glBindProgramPipeline() 来将其作为当前的管线.
+<pre c++>
+void glBindProgramPipeline(GLuint pipeline);
+</pre>
+
+</ul>
+
+<div id="第六章 着色器和程序 -编译, 链接和测试程序 -接口匹配"><h3 id="接口匹配">接口匹配</h3></div>
+<ul>
+<li>
+当你将一套着色器链接成单个程序对象, OpenGL 链接器会告知你是否匹配不同stage的输入和输出.
+
+<li>
+当每个stage使用单独的程序对象时, 当你切换程序对象时其会进行匹配, 如果不能正确地将事情线型排列则会影响程序的微妙失败, 导致所有事情完全不能工作. 因此需要遵守以下规则, 尤其是使用分离的程序对象时.
+
+<li>
+通常, 当名称和类型完全匹配时, 一个着色器stage的输出变量连接至后续stage的输入. 变量同样也必须匹配前缀. 对于 interface blocks, 两边的blocks其interface必须有相同的次序相同的成员相同的名称. 如果 interface 变量是一个数组, 两边的应当在数组中声明相同数量的成员. 唯一的例外是tessellation和geometry着色器的输入和输出, 其沿着路径有单个元素到数组的改变
+
+<li>
+要记住以相同的方式在每个着色器中命名你所有的输入和输出变量相当痛苦. 然而可在一套着色器中使用 layout qualilfier 对每个输入和输出分配一个位置, OpenGL 将使用每个输入和输出的位置来将它们匹配在一起, 这种情况, 变量的名称则没有关系, 它们仅需要在类型和前缀上匹配即可. 使用 glGetProgramInterfaceiv() 和 glGetProgramResourceiv() 来查询一个程序对象的输入和输出interface
+<pre c++>
+void glGetProgramInterfaceiv(GLuint program,
+	GLenum programInterface,
+	GLenum pname,
+	GLint * params);
+
+void glGetProgramResourceiv(GLuint program,
+	GLenum programInterface,
+	GLuint index,
+	GLsizei propCount,
+	const Glenum * props,
+	GLsizei bufSize,
+	GLsizei * length,
+	GLint * params);
+</pre>
+
+<ul>
+<li>
+program --- 程序对象的名称
+
+<li>
+programInterface --- 应当为 GL_PROGRAM_INPUT 或 GL_PROGRAM_OUTPUT
+
+<li>
+对于 glGetProgramInterfaceiv(), pname 应当为 GL_ACTIVE_RESOURCES, 则程序性的单独输入或输出的数量则写入params指向的变量中. 而后你可通过函数 glGetProgramResourceiv() 的 index 参数根据所传递的资源索引来读取输入和输出的列表.
+
+<li>
+glGetProgramResourceiv() 在单个函数调用中返回多个属性, 以及返回属性的数量. props 为tokens数组, 表示你想要返回的属性. 这些属性则会写入一个数组中, 它们的地址在params给出, 大小由 bufSize 给出, 如果 length 不是 NULL, 则实际的属性数量则写入其所指向的变量中
+
+<li>
+props 数组中的值可以是以下值:
+
+<ul>
+<li>
+GL_TYPE --- interface 成员的类型
+
+<li>
+GL_ARRAY_SIZE --- interface 数组的长度
+
+<li>
+GL_REFERECED_BY_VERTEX_SHADER, GL_REFERECED_BY_TESS_CONTROL_SHADER, GL_REFERECED_BY_EVALUATION_SHADER, GL_REFERECED_BY_GEOMETRY_SHADER, GL_REFERECED_BY_FRAGMENT_SHADER, GL_REFERECED_BY_COMPUTE_SHADER --- 根据各自着色器是否关联到输入和输出而返回0或非0.
+
+<li>
+GL_LOCATION --- 返回用于输入或输出的着色器具体的位置或者OpenGL生成的位置.
+
+<li>
+GL_LOCATION_INDEX --- 当 programInterface 设置为 GL_PROGRAM_OUT, 其返回片段着色器输出的索引
+
+<li>
+GL_IS_PER_PATCH --- 了解一个 tessellation control shader 的输入或一个 tessellation evaluation shader 的输出是否声明为 per-patch interface
+
+</ul>
+</ul>
+<li>
+你可以使用 glGetProgramResourceName() 确定一个输入或输出的名称
+<pre c++>
+void glGetProgramResourceName(GLuint program,
+	GLenum programInterface,
+	GLuint index,
+	GLsizei bufSize,
+	GLsizei * length,
+	char * name);
+</pre>
+
+<ul>
+<li>
+bufSize --- 为name所表示的缓存的大小.
+
+</ul>
+<li>
+下面的代码显示一个简单的程序, 打印出一个程序对象活跃输出的信息.
+<pre c++>
+// Get the number of outputs
+GLint outputs;
+glGetProgramInterfaceiv(program, GL_PROGRAM_OUTPUT,
+						GL_ACTIVE_RESOURCES, &amp;outputs);
+// A list of tokens describing the properties we wish to query
+static const GLenum props[] = { GL_TYPE, GL_LOCATION };
+// Various local variables
+GLint i;
+GLint params[2];
+GLchar name[64];
+const char * type_name;
+for (i = 0; i &lt; outputs; i++)
+{
+	// Get the name of the output
+	glGetProgramResourceName(program, GL_PROGRAM_OUTPUT, i,
+							sizeof(name), NULL, name);
+	// Get other properties of the output
+	glGetProgramResourceiv(program, GL_PROGRAM_OUTPUT, i,
+							2, props, 2, NULL, params);
+	// type_to_name() is a function that returns the GLSL name of
+	// type given its enumerant value
+	type_name = type_to_name(params[0]);
+	// Print the result
+	printf("Index %d: %s %s @ location %d.\n",
+		i, type_name, name, params[1]);
+}
+</pre>
+
+<ul>
+<li>
+例子和输出如下
+<pre c++>
+// 着色器的变量例子
+out vec4 color;
+layout (location = 2) out ivec2 data;
+out float extra;
+// 输出内容
+Index 0: vec4 color @ location 0.
+Index 1: ivec2 data @ location 2.
+Index 2: float extra @ location 1.
+</pre>
+
+<li>
+活跃输出变量的顺序和声明的顺序一致.
+
+</ul>
+</ul>
+
+<div id="第六章 着色器和程序 -编译, 链接和测试程序 -接口匹配-着色器子程序(Shader Subroutines)"><h4 id="着色器子程序(Shader Subroutines)">着色器子程序(Shader Subroutines)</h4></div>
+<ul>
+<li>
+separable mode 使用程序, 其切换程序对象性能代价仍相当昂贵. 因此使用 subroutine uniforms. 这是一个特殊的uniform类型, 行为类似C的函数指针. 为了使用 subroutine uniform, 我们声明一个 subroutine 类型, 声明一个或多个 compatible subroutines(本质上为带有特殊声明格式的函数), 而后在这些函数上"指向" 我们的 subroutine uniform, 一个简单例子如下:
+<pre glsl>
+#version 430 core
+// First, declare the subroutine type
+subroutine vec4 sub_mySubroutine(vec4 param1);
+// Next declare a couple of functions that can be used as subroutine...
+subroutine (sub_mySubroutine)
+vec4 myFunction1(vec4 param1)
+{
+	return param1 * vec4(1.0, 0.25, 0.25, 1.0);
+}
+subroutine (sub_mySubroutine)
+vec4 myFunction2(vec4 param1)
+{
+	return param1 * vec4(0.25, 0.25, 1.0, 1.0);
+}
+// Finally, declare a subroutine uniform that can be "pointed"
+// at subroutine functions matching its signature
+subroutine uniform sub_mySubroutine mySubroutineUniform;
+// Output color
+out vec4 color;
+void main(void)
+{
+// Call subroutine through uniform
+	color = mySubroutineUniform(vec4(1.0));
+}
+</pre>
+
+<li>
+当你链接一个包含 subroutines 的程序, 每个stage的每个subroutine都分配了一个索引. 在GLSL version 430 或者更新的版本中, 你可以自己在着色器中使用 layout 前缀分配索引. 所以你可以按如下代码声明 subroutines
+<pre glsl>
+layout (index = 2)
+subroutine (sub_mySubroutine)
+vec4 myFunction1(vec4 param1)
+{
+	return param1 * vec4(1.0, 0.25, 0.25, 1.0);
+}
+layout (index = 1);
+subroutine (sub_mySubroutine)
+vec4 myFunction2(vec4 param1)
+{
+	return param1 * vec4(0.25, 0.25, 1.0, 1.0);
+}
+</pre>
+
+<li>
+用下面的函数查找索引
+<pre c++>
+GLuint glGetProgramResourceIndex(GLuint program,
+								GLenum programInterface,
+								const char * name);
+</pre>
+
+<ul>
+<li>
+programInterface --- GL_VERTEX_SUBROUTINE, GL_TESS_CONTROL_SUBROUTINE, GL_TESS_EVALUATION_SUBROUTINE, GL_GEOMETRY_SUBROUTINE, GL_FRAGMENT_SUBROUTINE, GL_COMPUTE_SUBROUTINE. 表示你查询哪个stage.
+
+<li>
+name --- subroutine 的名称. 如果该名称没有在对应的程序stage中找到, 则该函数返回 GL_INVALID_VALUE
+
+</ul>
+<li>
+给定程序中subroutine的索引, 你可以通过下面的函数得到它们的名称:
+<pre c++>
+void glGetProgramResourceName(GLuint program,
+							GLenum programInterface,
+							GLuint index,
+							GLsizei bufSize,
+							GLsizei * length,
+							char * name);
+</pre>
+
+<ul>
+<li>
+programInterface 和 glGetProgramResourceIndex() 的参数一样.
+
+<li>
+index 为 subroutine 的index
+
+</ul>
+<li>
+glGetProgramStageiv() --- 确定具体stage的活跃subroutine的数量.
+<pre c++>
+void glGetProgramStageiv(GLuint program,
+						GLenum shadertype,
+						GLenum pname,
+						GLint *values);
+</pre>
+
+<ul>
+<li>
+为了得到程序相关stage中的活跃subroutines的数量, pname 应当设置为 GL_ACTIVE_SUBROUTINES
+
+</ul>
+<li>
+当你调用 glGetActiveSubroutineName() 时, index 应当在0和活跃数之间. 
+
+<li>
+一旦你知道了程序对象中的 subroutines 名称, 你可以调用下面的函数设置其值.
+<pre c++>
+void glUniformSubroutinesuiv(GLenum shadertype,
+							GLsizei count,
+							const GLunit *indices);
+</pre>
+
+<ul>
+<li>
+设置 count 个 subroutine uniform, 其索引位于 indices 中.
+
+</ul>
+<li>
+subroutines uniform 和其他 uniform 在一些地方有所不同
+
+<ul>
+<li>
+subroutine uniforms 的状态存储于当前的 OpenGL 上下文, 而非在程序对象中. 这允许 subroutine uniform 在相同的程序对象中有不同的值, 只需在不同的上下文中使用.
+
+<li>
+当使用 glUseProgram() 改变当前的程序对象时, subroutine uniforms 的值会丢失. 当你调用 glUseProgramStages() 或 glBindProgramPipeline() 或你重新链接当前的程序对象时, 意味着你每次使用新的程序或新的程序stages时需要重新设置它们.
+
+<li>
+不可能在一个程序对象stage内修改subroutine uniform的子集. glUniformSubroutinesuiv() 设置 count 个 uniform 的值, 从0开始. 任意count之外的uniform仍然保持为之前的值. 记住, 没有声明所谓的subroutine uniform的默认值, 如果不全部设置它们, 调用它们时则会发生糟糕的事情. 
+
+</ul>
+<li>
+在我们的简单例子中, 链接我们的程序对象后, 我们运行之后的代码以确定我们 subroutine function的索引, 这里我们没有在着色器代码中显式地分配位置给它们.
+<pre c++>
+subroutines[0] = glGetProgramResourceIndex(render_program,
+											GL_FRAGMENT_SHADER_SUBROUTINE,
+											"myFunction1");
+subroutines[1] = glGetProgramResourceIndex(render_program,
+											GL_FRAGMENT_SHADER_SUBROUTINE,
+											"myFunction2");
+</pre>
+
+<li>
+我们的渲染循环如下:
+<pre c++>
+void subroutines_app::render(double currentTime)
+{
+	int i = (int)currentTime;
+	glUseProgram(render_program);
+	glUniformSubroutinesuiv(GL_FRAGMENT_SHADER, 1, &amp;subroutines[i &amp; 1]);
+	glDrawArrays(GL_TRIANGLE_STRIP, 0, 4);
+}
+</pre>
+
+<li>
+注意, 当你改变当前程序的时候, 所有subroutine uniforms 的值都会"消失".  本例每秒会改变 subroutine uniform.
+
+<li>
+设置单个 subroutine uniform 的值比改变程序对象的时间更少. 因此, 如果你有数个类似的着色器, 你可以将它们组合在一起使用一个subroutine uniform来选择执行哪个路径. 你可以声明多个版本的main函数(使用不同的函数), 创建一个 subroutine uniform 来指向它们中的一个, 而后调用你真正的main函数.
+
+</ul>
+
+<div id="第六章 着色器和程序 -编译, 链接和测试程序 -程序的二进制结果(Program Binaries)"><h3 id="程序的二进制结果(Program Binaries)">程序的二进制结果(Program Binaries)</h3></div>
+<ul>
+<li>
+一旦你编译和链接了一个程序, 你可以请求 OpenGL 给出一个二进制对象表示该程序的内部版本. 以后可能让OpenGL放入程序的二进制版本而绕过编译器和链接器. 如果你想要使用这个功能, 你应当在调用 glLinkProgram()之前调用 glProgramParameteri() 并将 pname 设置为 GL_PROGRAM_BINARY_RETRIEVABLE_HINT, 而后设置为 GL_TRUE. 这告知 OpenGL 你计划得到二进制数据并使用.
+
+<li>
+在你返回二进制数据之前, 你应当知道其有多大, 并分配内存存储它. 为了完成这个, 你应当调用 glGetProgramiv() 而后设置 pname 为 GL_PROGRAM_BINARY_LENGTH. 返回的大小以字节为单位. 而后你调用 glGetProgramBinary() 程序对象的二进制表达
+<pre c++>
+void glGetProgramBinary(GLuint program,
+						GLsizei bufsize,
+						GLsizei * length,
+						GLenum * binaryFormat,
+						void * binary);
+</pre>
+
+<li>
+给定程序中程序对象的名称, 其会写入程序的二进制表达至内存中, 并写入一个 token 表示该程序二进制的格式为binaryFormat. 
+
+<li>
+二进制的格式是私有和特殊的, 和显卡的OpenGL驱动有关. 但是保持写入binaryFormat的值很重要, 你之后可能需要将其传递给OpenGL以及二进制的内容在此被加载回.
+<pre c++>
+// Create a simple program containing only a vertex shader
+static const GLchar source[] = { ... };
+// First create and compile the shader
+GLuint shader;
+shader = glCreateShader(GL_VERTEX_SHADER);
+glShaderSource(shader, 1, suorce, NULL);
+glCompileShader(shader);
+// Create the program and attach the shader to it
+GLuint program;
+program = glCreateProgram();
+glAttachShader(program, shader);
+// Set the binary retrievable hint and link the program
+glProgramParameteri(program, GL_PROGRAM_BINARY_RETRIEVABLE_HINT, GL_TRUE);
+glLinkProgram(program);
+// Get the expected size of the program binary
+GLint binary_size = 0;
+glGetProgramiv(program, GL_PROGRAM_BINARY_SIZE, &amp;binary_size);
+// Allocate some memory to store the program binary
+unsigned char * program_binary = new unsigned char [binary_size];
+// Now retrieve the binary from the program object
+GLenum binary_format = GL_NONE;
+glGetProgramBinary(program, binary_size, NULL, &amp;binary_format,
+program_binary);
+</pre>
+
+<li>
+你可以将程序二进制保存至硬盘内以便下次使用. 注意其不能跨机器, 甚至不能同机器跨驱动使用.
+
+<li>
+OpenGL 的大多数功能被现代显卡处理器直接支持. 然而, 它们中的某些需要在着色器中的某层次的工作. 当你的应用编译着色器, OpenGL 实现将假设大多数通用用例用于大多数状态, 编译着色器时假设将使用这种方法. 如果着色器的默认编译不能处理这种方法, OpenGL 实现也许至少需要着色器的部分重编译来处理这个改变, 因此其会导致应用程序的执行中可见的卡住(stutter)
+
+<li>
+由于这个原因, 强烈建议你编译你的着色器和链接你的程序时将 GL_PROGRAM_BINARY_RETRIEVABLE_HINT 为 GL_TRUE. 等到返回这些二进制之前, 你在实际的渲染中使用它们几次后, 你可以给 OpenGL 的实现一个机会重新编译任意的着色器, 而后存储每个程序的一些版本至单个二进制中. 下次你加载二进制, OpenGL 实现将了解它需要程序的特定变种, 其会查找之前你二进制blob中已经编译的内容. 一旦你准备将程序二进制给予 OpenGL, 在一个fresh程序对象上调用 glProgramBinary() , 而后设置binaryFormat和length为你从 glGetProgramBinary() 返回的值. 并将数据以二进制传递加载至 buffer 中. 其会重加载程序对象. 如果你的OpenGL驱动不能认出二进制或不能加载, 则 glProgramBinary() 调用将会失败. 这种情况下, 你需要原始用于着色器的GLSL源码并重编译它们.
+
+</ul>
+
+    </div>
+</body>
+</html>

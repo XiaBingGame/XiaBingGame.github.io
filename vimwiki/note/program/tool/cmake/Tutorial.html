@@ -1,0 +1,60 @@
+ï»¿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../style.css" />
+    <title>Tutorial</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/index.html">é¦–é¡µ</a>
+		</li>
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/diary/diary.html">æ—¥è®°</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<h1 id="toc_1">¿ªÊ¼(µÚÒ»²¿)</h1>
+<ul>
+<li>
+CMakeLists ÎÄ¼þÖÁÉÙÓÐÁ½ÐÐ, ÈçÏÂ
+<pre>
+cmake_minimum_required (VERSION 2.6)
+project (Tutorial)
+add_executable(Tutorial tutorial.cxx)
+</pre>
+
+<li>
+Ìí¼ÓÒ»¸ö°æ±¾ºÅºÍÅäÖÃÍ·ÎÄ¼þ
+<pre c++>
+cmake_minimum_required (VERSION 2.6)
+project (Tutorial)
+# The version number.
+set (Tutorial_VERSION_MAJOR 1)
+set (Tutorial_VERSION_MINOR 0)
+ 
+# configure a header file to pass some of the CMake settings
+# to the source code
+configure_file (
+  "${PROJECT_SOURCE_DIR}/TutorialConfig.h.in"
+  "${PROJECT_BINARY_DIR}/TutorialConfig.h"
+  )
+ 
+# add the binary tree to the search path for include files
+# so that we will find TutorialConfig.h
+include_directories("${PROJECT_BINARY_DIR}")
+ 
+# add the executable
+add_executable(Tutorial tutorial.cxx)
+</pre>
+
+</ul>
+
+    </div>
+</body>
+</html>

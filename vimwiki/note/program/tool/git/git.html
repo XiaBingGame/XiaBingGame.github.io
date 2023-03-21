@@ -1,0 +1,398 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../style.css" />
+    <title>git</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<h1 id="toc_1">第一章 Getting Started</h1>
+<pre>
+$ git config --global user.name "John Doe"
+$ git config --global user.email johndoe@example.com
+$ git config --global core.editor emacs
+$ git config --global merge.tool vimdiff
+$ git config --list
+</pre>
+<ul>
+<li>
+查看特定项
+<pre>
+$ git config user.name
+</pre>
+
+<li>
+帮助
+<pre>
+$ git help &lt;verb&gt;
+$ git &lt;verb&gt; --help
+$ man git-&lt;verb&gt;
+</pre>
+
+</ul>
+
+<h1 id="toc_2">第二章 Git Basics</h1>
+<ul>
+<li>
+初始化: git init
+
+<li>
+提交
+<pre>
+$ git add *.c
+$ git add README
+$ git commit m 'initial project version'
+</pre>
+
+<li>
+复制已有的repository: git clone
+
+<li>
+记录Repository的变化.
+
+<ul>
+<li>
+工作目录中的每个文件有两个状态: tracked或untracked.
+
+<li>
+tracked文件为上次快照中的文件, 可以是unmodified, modified, staged. 
+
+<li>
+untraced为其他文件, 不在你上次的快照中, 也不在你的staging区域内.
+
+<li>
+编辑文件, 则成为modified, stage这些modified文件, 而后提交你的所有staged变化. 
+
+</ul>
+<li>
+检查你文件的状态
+
+<ul>
+<li>
+git status
+
+</ul>
+<li>
+Tracking新的文件
+
+<ul>
+<li>
+git add
+
+<li>
+add添加一个目录, 会递归添加该目录内的所有文件.
+
+</ul>
+<li>
+Staging Modified文件
+
+<ul>
+<li>
+修改一个已经tracked的文件. 得到一个 modified 文件
+
+<li>
+提交的文件版本是你上次git add时候的版本, 而非git commit时候的版本.
+
+</ul>
+<li>
+忽视文件
+
+<ul>
+<li>
+在 .gitignore 创建一个文件列表模式.
+<pre>
+$ cat .gitignore
+*.[oa]
+*~
+</pre>
+
+<li>
+第一行告知Git忽略任意以 .o 或 .a结尾的文件.
+
+<li>
+规则
+
+<ul>
+<li>
+空白行或者以#开头的行被忽略
+
+<li>
+标准glob模式
+
+<li>
+你可以在模式后加一个'/'表示为一个目录
+
+<li>
+你可以否定一个模式, 在其前加一个感叹号即可(!)
+
+</ul>
+<li>
+glob模式像是简化的正则表达式. (*)表示0个或多个字符, [abc]匹配中括号内的任意字符. 问好匹配单个字符, [0-9] 匹配0到9之间的任意字符.
+
+</ul>
+<li>
+git diff 命令可以查看更详细的变化.
+
+<ul>
+<li>
+比较工作目录和staging区域的差异.
+
+<li>
+查看哪些已经staged git diff --cached/git diff --staged
+
+</ul>
+<li>
+提交你的变化
+
+<ul>
+<li>
+git commit --- 会出现编辑器, 更详细的消息, 可使用 -v 参数, -m 参数添加自己的消息.
+
+</ul>
+<li>
+略过 Staging 区域
+
+<ul>
+<li>
+git commit 使用 -a 参数. 则自动stage已经traced的文件, 这样可以略过 git add 部分.
+
+</ul>
+<li>
+移除文件
+
+<ul>
+<li>
+git rm 从你的工作目录移除文件.
+
+<li>
+git rm --cached readMe.txt  移除staging区域的文件, 并放到 .gitignore 文件里.
+
+</ul>
+<li>
+移动文件
+
+<ul>
+<li>
+git mv file_from file_to 重命名
+
+</ul>
+<li>
+查看提交历史
+
+<ul>
+<li>
+git log
+
+<li>
+参数 -p 显示每次提交的不同 -2 表示最近两次提交
+
+<li>
+--stat 查看简短状态
+
+<li>
+--pretty 改变log输出格式, 有oneline
+
+<li>
+short, full, fuller 选项
+
+<li>
+页面 37 输出格式
+
+<li>
+--graph 添加 ASCII图
+
+<li>
+--since --until 时间限制输出结果
+
+<li>
+--author 限制作者, --grep 限制提交消息的关键词, --all--match 多个条件
+
+<li>
+特定目录或文件的提交变化 --加上路径.
+
+</ul>
+<li>
+使用GUI
+
+<li>
+撤销事情
+
+<ul>
+<li>
+git commit --amend  可以修改之前的提交消息
+
+<li>
+添加忘记的文件
+<pre>
+git commit -m 'initial commit'
+git add forgotten_file
+git commit --amend
+</pre>
+
+</ul>
+<li>
+Unstaging 一个 staged 的文件
+
+<ul>
+<li>
+git reset
+
+</ul>
+<li>
+Unmodifying 一个修改的文件
+
+<ul>
+<li>
+git checkout   这是一个危险的命令.
+
+</ul>
+<li>
+远程工作.
+
+<ul>
+<li>
+显示你的远程 : git remote 
+
+<ul>
+<li>
+克隆来源的服务器默认git名称为origin
+
+<li>
+-v 显示 URL
+
+</ul>
+<li>
+添加远程 Repositories
+
+<ul>
+<li>
+git remote add [shortname] [url]
+
+</ul>
+<li>
+从你的远程中获取或者pulling
+
+<ul>
+<li>
+git fetch [remote-name]   不合并
+
+<li>
+git pull   合并
+
+<li>
+clone的服务器默认为 origin
+
+</ul>
+<li>
+pushing至你的远程服务器
+
+<ul>
+<li>
+git push [remote-name] [branch-name]
+
+</ul>
+<li>
+Inspecting 一个远程
+
+<ul>
+<li>
+git remote show [remote-name]
+
+</ul>
+<li>
+移动和重命名远程
+
+<ul>
+<li>
+git remote rename
+
+<li>
+git remote rm
+
+</ul>
+</ul>
+<li>
+Tagging
+
+<ul>
+<li>
+列出你的tags
+
+<ul>
+<li>
+git tag
+
+<li>
+可以使用模式: git tag -l 'v1.4.2.*' 
+
+</ul>
+<li>
+创建一个tag
+
+<ul>
+<li>
+两种类型的tags: lightweight 和 annotated(有注释的)
+
+<li>
+创建 annotated tag: git tag -a v1.4 -m 'my version 1.4'
+
+<li>
+signed tags: git tag -s v1.5 -m 'my signed 1.5 tag'
+
+<li>
+lightweight tags: git tag v1.4-lw
+
+<li>
+验证tags: git tag -v [tag-name]  使用GPG验证signature. 你需要你的钥匙圈中 signer 的公共钥匙使得它正确地工作.
+
+<li>
+稍后tagging: 根据部分校验码指定具体commit的tag --- git tag -a v1.2 9fceb02
+
+<li>
+共享tag: git push origin [tagname], 多个tags则使用 --tags选项给git push命令.
+
+</ul>
+</ul>
+<li>
+技巧
+
+<ul>
+<li>
+自动补充: 源码 contrib/completion/git-completion.bash 文件拷贝至你的home目录, 将添加语句: source ~/.git-completion.bash
+
+<li>
+Windows 系统预配置了自动补充.
+
+<li>
+git命令别名, 使用 git config 修改
+<pre>
+$ git config --global alias.co checkout
+$ git config --global alias.br branch
+$ git config --global alias.ci commit
+$ git config --global alias.st status
+$ git config --global alias.unstage ’reset HEAD --’
+$ git config --global alias.last ’log -1 HEAD’
+$ git config --global alias.visual "!gitk"
+</pre>
+
+</ul>
+</ul>
+
+<h1 id="toc_3">第三章 Git Branching</h1>
+
+    </div>
+</body>
+</html>

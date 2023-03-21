@@ -1,0 +1,1306 @@
+<!DOCTYPE html>
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../../style.css">
+<title>osgearth�ĵ�</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</head>
+<body>
+
+<div id="用户指南"><h1 id="用户指南">用户指南</h1></div>
+<div id="用户指南-工具"><h2 id="工具">工具</h2></div>
+<div id="用户指南-工具-osgearth_viewer"><h3 id="osgearth_viewer">osgearth_viewer</h3></div>
+<ul>
+<li>
+osgearth_viewer 可以通过命令行加载和显示 map, osgEarth 其 EarthManipulator 可以用于控制相机并优化地理空间数据的显示
+<pre>
+osgearth_viewer earthfile.earth [options]
+</pre>
+
+<ul>
+<li>
+sky, kml, kmlui, coords(显示光标下的坐标), ortho, logdepth, logdepth2, uniform, ico(OSG’s IncrementalCompileOperation, 帧间编译分页对象)
+<pre>
+osgearth_version
+osgearth_cache: 使用 --sead 参数以非互动的方式放置一个 cache.
+	osgearth_cache --seed file.earth
+</pre>
+
+<li>
+cache 参数: list, seed, estimate, mp(多进程), mt(多线程), concurrency, min-level level, max-level.level, bounds, index, cache-path, cache-type, purge
+<pre>
+osgeartch_conv
+	osgearth_conv --in driver gdal --in url  world.tif --out driver mbtiles --out filename world.db
+</pre>
+
+<li>
+将一个 TileSource 的内容拷贝至另一个, 所有的参数为名称/值对. 需要在头文件中查看每个驱动的选项结构, 同样, 输出驱动需要支持写入.
+
+<li>
+in, out, elevation ,profile, min-level, max-level, threads, extents
+<pre>
+osgearth_package
+	osgearth-package --tms file.earth --out package
+</pre>
+
+<li>
+将一个 earth 文件打包成基于 TMS 的包
+<pre>
+osgearth_tfs
+</pre>
+
+<li>
+从一个 feature source 创建一个 TFS 数据集, 如 shapefile.
+<pre>
+osgearth_backfill
+</pre>
+
+<li>
+用于 TMS 数据集的后期处理
+
+<li>
+解决不同 lod 的数据显示问题
+<pre>
+osgearth_boundarygen
+	osgearth_boundarygen model_file [options]
+</pre>
+
+<li>
+可以使用 osgEarth &lt;mask&gt; 层生成边界几何体, 将一个外部的模型贴在地形上
+<pre>
+osgearth_overlayviewer
+</pre>
+	用于调试 overlay decorator 的能力, 显示两个窗口
+
+</ul>
+</ul>
+	
+<div id="用户指南-使用 Earth 文件"><h2 id="使用 Earth 文件">使用 Earth 文件</h2></div>
+<div id="用户指南-使用 Earth 文件-Earth 文件的内容 "><h3 id="Earth 文件的内容 ">Earth 文件的内容 </h3></div>
+<ul>
+<li>
+可以设置的内容
+
+<ul>
+<li>
+要创建的 map 类型
+
+<li>
+设置 image, elevation, vector 和 model 的源
+
+<li>
+哪些数据被 cache.
+
+</ul>
+</ul>
+
+<div id="用户指南-使用 Earth 文件-一个简单的 Earth 文件"><h3 id="一个简单的 Earth 文件">一个简单的 Earth 文件</h3></div>
+<pre>
+&lt;map name="MyMap"&gt;
+    &lt;image name="bluemarble" driver="gdal"&gt;
+        &lt;url&gt;world.tif&lt;/url&gt;
+    &lt;/image&gt;
+&lt;/map&gt;
+</pre>
+<ul>
+<li>
+创建一个地心球形地图, 名为 MyMap, 使用单个 GeoTIFF 图像源, 名为 bluemarble. driver 为加载插件.
+
+<li>
+image 内的一些子元素可能需要使用特定的 driver
+
+</ul>
+
+<div id="用户指南-使用 Earth 文件-多个图像层 "><h3 id="多个图像层 ">多个图像层 </h3></div>
+<ul>
+<li>
+支持地图带多个图像源. 比如基layer有一个 transportation overlay(运输overlay), 或者高分辨率插图用于特定区域, 而后放在低分辨率的底层地图上.
+<pre>
+&lt;map name="Transportation"&gt;
+
+    &lt;!--Add a base map of the blue marble data--&gt;
+    &lt;image name="bluemarble" driver="gdal"&gt;
+        &lt;url&gt;c:/data/bluemarble.tif&lt;/url&gt;
+    &lt;/image&gt;
+
+    &lt;!--Add a high resolution inset of Washington, DC--&gt;
+    &lt;image name="dc" driver="gdal"&gt;
+        &lt;url&gt;c:/data/dc_high_res.tif&lt;/url&gt;
+    &lt;/image&gt;
+
+&lt;/map&gt;
+</pre>
+
+<ul>
+<li>
+顺序很重要
+
+<li>
+相对路径是相对 earth 文件所在目录路径而言
+
+</ul>
+</ul>
+
+<div id="用户指南-使用 Earth 文件-增加海拔数据"><h3 id="增加海拔数据">增加海拔数据</h3></div>
+<pre>
+&lt;map name="Elevation"&gt;
+
+    &lt;!--Add a base map of the blue marble data--&gt;
+    &lt;image name="bluemarble" driver="gdal"&gt;
+        &lt;url&gt;c:/data/bluemarble.tif&lt;/url&gt;
+    &lt;/image&gt;
+
+    &lt;!--Add SRTM data--&gt;
+    &lt;elevation name="srtm" driver="gdal"&gt;
+        &lt;url&gt;c:/data/SRTM.tif&lt;/url&gt;
+    &lt;/elevation&gt;
+
+&lt;/map&gt;
+</pre>
+<ul>
+<li>
+可以添加多个海拔数据
+
+<li>
+注意次序同样重要, 一般先指定底层海拔数据
+
+<li>
+osgEarth 仅支持单通道 16 位整数或 32 位浮点数数据用于海拔层.
+
+</ul>
+
+<div id="用户指南-使用 Earth 文件-Caching"><h3 id="Caching">Caching</h3></div>
+<ul>
+<li>
+cache 数据可以保存, osgEarch 可以下次使用其结果, 不用每次都处理 tile, 避免多次下载相同的数据
+<pre>
+&lt;map name="TMS Example"&gt;
+
+    &lt;image name="metacarta blue marble" driver="tms"&gt;
+        &lt;url&gt;http://readymap.org/readymap/tiles/1.0.0/7/&lt;/url&gt;
+    &lt;/image&gt;
+
+    &lt;options&gt;
+        &lt;!--Specify where to cache the data--&gt;
+        &lt;cache type="filesystem"&gt;
+            &lt;path&gt;c:/osgearth_cache&lt;/path&gt;
+        &lt;/cache&gt;
+    &lt;/options&gt;
+
+&lt;/map&gt;
+</pre>
+
+</ul>
+
+<div id="用户指南-Caching"><h2 id="Caching">Caching</h2></div>
+<ul>
+<li>
+在成为一个地形数据之前, osgEarth 必须执行一些处理, 其包含下载, 重投影, 裁剪, moscing, 或 compositing.
+
+<li>
+可用 Cache 保存上面的结果
+
+<li>
+caching 数据不用于公开, 如要公开请使用 osgearth_package
+
+</ul>
+<div id="用户指南-Caching-设置一个 Cache"><h3 id="设置一个 Cache">设置一个 Cache</h3></div>
+<pre>
+&lt;map&gt;
+    &lt;options&gt;
+        &lt;cache type="filesystem"&gt;
+            &lt;path&gt;folder_name&lt;/path&gt;
+        &lt;/cache&gt;
+</pre>
+<ul>
+<li>
+对应的 c++ 代码如下
+<pre c++>
+FileSystemCacheOptions cacheOptions;
+cacheOptions.path() = ...;
+
+MapOptions mapOptions;
+mapOptions.cache() = cacheOptions;
+</pre>
+
+<li>
+可以设置环境变量, 注意其会覆盖 earth 文件的 cache 设置
+<pre>
+set OSGEARTH_CACHE_DRIVER=leveldb
+set OSGEARTH_CACHE_PATH=folder_name
+</pre>
+
+<li>
+代码在 osgEarth resgistry 中设置全局 cache
+<pre c++>
+osgEarth::Registry::instance()-&gt;setCache(...);
+osgEarth::Registry::instance()-&gt;setDefaultCachePolicy(...);
+</pre>
+
+</ul>
+
+<div id="用户指南-Caching-Caching Policies"><h3 id="Caching Policies">Caching Policies</h3></div>
+<ul>
+<li>
+一旦设置了 cache, osgEarth 默认用于所有的图像和海拔层, 如果你要覆盖这些行为, 你可以使用 cache policy, 其用于告诉一特定对象如何使用 cache
+<pre>
+&lt;map&gt;
+    &lt;options&gt;
+        &lt;cache_policy usage="cache_only"/&gt;
+</pre>
+
+<ul>
+<li>
+用于整个地图
+<pre>
+&lt;image&gt;
+    &lt;cache_policy usage="no_cache"/&gt;
+    ...
+</pre>
+
+<li>
+用于某层
+
+<li>
+read_write:	默认.
+
+<li>
+no_cache:	直接从数据源中读取.
+
+<li>
+cache_only:	如设置 cache, 仅使用 cache 中的数据, 不用数据源的数据.
+
+</ul>
+<li>
+max_age 属性设置何时到期
+<pre>
+&lt;cache_policy max_age="3600"/&gt;
+</pre>
+
+<ul>
+<li>
+秒为单位
+
+</ul>
+</ul>
+
+<div id="用户指南-Caching-环境变量"><h3 id="环境变量">环境变量</h3></div>
+<ul>
+<li>
+OSGEARTH_NO_CACHE, OSGEARTH_CACHE_ONLY, OSGEARTH_CACHE_MAX_AGE
+
+<li>
+OSGEARTH_CACHE_PATH, OSGEARTH_CACHE_DRIVER
+
+</ul>
+
+<div id="用户指南-Caching-Cache 策略的优先级"><h3 id="Cache 策略的优先级">Cache 策略的优先级</h3></div>
+<ul>
+<li>
+Map Setting, 最弱的级别, 位于 &lt;map&gt;&lt;options&gt; 中
+
+<li>
+Layer 设置
+
+<li>
+环境变量
+
+<li>
+Driver policy hint
+
+</ul>
+
+<div id="用户指南-Caching-Seeding the Cache"><h3 id="Seeding the Cache">Seeding the Cache</h3></div>
+<ul>
+<li>
+对感兴趣的区域 pre-seed 你的 cache. 可以使用工具 osgearth_cache 完成这个工作.
+
+</ul>
+
+<div id="用户指南-Spatial References"><h2 id="Spatial References">Spatial References</h2></div>
+<ul>
+<li>
+空间参照系统
+
+<li>
+一个 Spatial Reference(SRS) 映射一个坐标集至地球上一个对应的真实位置
+
+<li>
+例如: (-121.5, 36.8, 2000.0)
+
+<li>
+参照信息为
+<pre>
+Coordinate System Type: Geographic
+Units:                  Degrees
+Horizontal datum:       WGS84
+Vertical datum:         EGM96
+</pre>
+
+</ul>
+<div id="用户指南-Spatial References-SRS 的组成 "><h3 id="SRS 的组成 ">SRS 的组成 </h3></div>
+<ul>
+<li>
+	- 坐标系统类型
+
+<ul>
+<li>
+水平数据
+
+<li>
+垂直数据
+
+<li>
+投影
+
+</ul>
+</ul>
+<div id="用户指南-Spatial References-SRS 的组成 -坐标系统类型"><h4 id="坐标系统类型">坐标系统类型</h4></div>
+<ul>
+<li>
+Geographick - 全球, 椭圆模型, 坐标为球形角度(度数为单位), 如 WGS84, NAD83
+
+<li>
+Projected --- 本地坐标系统, 地球上一个有限的区域投影到 2D cartesian 平面, 如 UTM, US State Plane, Mercator.
+
+<li>
+ECEF --- 全球, cartesian 系统. Earth Centered Earth Fixed. 是一个 3D cartesion 系统, 圆心在地球中心.
+
+</ul>
+
+<div id="用户指南-Spatial References-SRS 的组成 -Horizontal Datum"><h4 id="Horizontal Datum">Horizontal Datum</h4></div>
+<ul>
+<li>
+相同的位置可能有不同的坐标系, 依赖于使用何种 datum
+
+<li>
+地球不是一个完美的圆形或椭圆, 常用数据为 WGS84, NAD83, ETR89
+
+</ul>
+
+<div id="用户指南-Spatial References-SRS 的组成 -Vertical Datum"><h4 id="Vertical Datum">Vertical Datum</h4></div>
+<ul>
+<li>
+计算海拔, osgEarth 支持 geodetic(基于椭圆), geoid(基于星球的海拔样本集).
+
+<li>
+内置 vertical datum
+
+<ul>
+<li>
+Geodetic
+
+<li>
+EGM84
+
+<li>
+EGM96
+
+<li>
+EGM2008
+
+</ul>
+</ul>
+
+<div id="用户指南-Spatial References-Projection"><h3 id="Projection">Projection</h3></div>
+<ul>
+<li>
+这是一个用于转换椭圆的点至2D平面的数学公式
+
+<li>
+osgEarth 支持数千种已知的投影(通过 GDAL/OGR 工具包)
+
+<ul>
+<li>
+UTM(Universal Transverse Mercator)
+
+<li>
+Sterographic
+
+<li>
+LCC(Lambert Conformal Conic)
+
+</ul>
+</ul>
+
+<div id="用户指南-Spatial References-SRS 表示"><h3 id="SRS 表示">SRS 表示</h3></div>
+<ul>
+<li>
+WKT(Well Known Text)
+
+<ul>
+<li>
+见于 ".prj" 文件, 常带几何空间数据, 如 shape 文件或图像
+<pre>
+PROJCS["NAD_1983_UTM_Zone_15N",
+    GEOGCS["GCS_North_American_1983",
+        DATUM["D_North_American_1983",
+            SPHEROID["GRS_1980",6378137.0,298.257222101]],
+        PRIMEM["Greenwich",0.0],
+        UNIT["Degree",0.0174532925199433]],
+    PROJECTION["Transverse_Mercator"],
+    PARAMETER["False_Easting",500000.0],
+    PARAMETER["False_Northing",0.0],
+    PARAMETER["Central_Meridian",-93.0],
+    PARAMETER["Scale_Factor",0.9996],
+    PARAMETER["Latitude_Of_Origin",0.0],
+    UNIT["Meter",1.0]]
+</pre>
+
+</ul>
+<li>
+PROJ4
+
+<ul>
+<li>
+这是一个地图投影工具包
+<pre>
++proj=utm +zone=15 +ellps=GRS80 +units=m +no_defs
+</pre>
+
+<li>
+更简洁, 不用和 WKT 一样定义每个东西
+
+</ul>
+<li>
+EPSG Codes
+
+<li>
+Aliases
+
+</ul>
+
+<div id="用户指南-Spatial References-Using Spatial References in osgEarth"><h3 id="Using Spatial References in osgEarth">Using Spatial References in osgEarth</h3></div>
+<ul>
+<li>
+最简单的方法是使用 GeoPoint 类
+
+</ul>
+<div id="用户指南-Spatial References-Using Spatial References in osgEarth-SpatialReference API"><h4 id="SpatialReference API">SpatialReference API</h4></div>
+<ul>
+<li>
+SpatialReference 类表示 SRS
+<pre c++>
+const SpatialReference* srs = SpatialReference::get("epsg:4326");
+</pre>
+
+<ul>
+<li>
+第二个参数放 vertical datum
+<pre c++>
+srs = SpatialReference::get("epsg:4326", "egm96");
+</pre>
+
+</ul>
+<li>
+还可以访问 SRS 的组件类型, 例如投影的 SRS 得到基层的 geographic SRS
+<pre c++>
+geoSRS = srs-&gt;getGeographicSRS();
+</pre>
+
+<li>
+还可以抓取对应于任意 SRS 的一个 geocentric(ECEF) SRS
+<pre c++>
+geocentricSRS = srs-&gt;getGeocentricSRS();
+</pre>
+
+<li>
+最好使用 GeoPoint 代替 SpaticalReference
+
+</ul>
+
+<div id="用户指南-Spatial References-Using Spatial References in osgEarth-GeoPoint API"><h4 id="GeoPoint API">GeoPoint API</h4></div>
+<ul>
+<li>
+GeoPoint 是一个几何相关的2D或3D点.
+
+<li>
+另有 GeoExtent 类 和 GeoCircle 类(围绕盒和围绕圆)
+<pre c++>
+GeoPoint point(srs, x, y);
+GeoPoint point(srs, x, y, z, ALTMODE_ABSOLUTE);
+</pre>
+
+<li>
+转换至其他 SRS
+<pre c++>
+GeoPoint point(srs, x, y);
+GeoPoint newPoint = point.transform(newSRS);
+</pre>
+
+<li>
+例子
+<pre c++>
+const SpatialReference* wgs84 = SpatialReference::get("wgs84");
+const SpatialReference* utm15 = SpatialReference::get("+proj=utm +zone=15 +ellps=GRS80 +units=m");
+...
+GeoPoint wgsPoint( wgs84, -93.0, 34.0 );
+GeoPoint utmPoint = wgsPoint.transform( utm15 );
+
+if ( utmPoint.isValid() )
+   // do something
+</pre>
+
+</ul>
+
+<div id="开发要点 "><h1 id="开发要点 ">开发要点 </h1></div>
+<ul>
+<li>
+map 是 osgEarth 内的中心数据模型, 其是图像, 海拔以及特色层的容器.
+
+</ul>
+<div id="开发要点 -从 Earth 文件中加载地图 "><h2 id="从 Earth 文件中加载地图 ">从 Earth 文件中加载地图 </h2></div>
+<pre c++>
+osg::Node* globe = osgDB::readNodeFile("myglobe.earth");
+</pre>
+
+<div id="开发要点 -程序代码创建地图"><h2 id="程序代码创建地图">程序代码创建地图</h2></div>
+<ul>
+<li>
+步骤如下:
+
+<ul>
+<li>
+创建一个 Map 对象
+
+<li>
+添加 imagery 和 elevation 层
+
+<li>
+创建一个 MapNode 用来渲染 Map 对象
+
+<li>
+将你的 MapNode 添加至你的场景图
+<pre c++>
+using namespace osgEarth;
+using namespace osgEarth::Drivers;
+
+#include &lt;osgEarth/Map&gt;
+#include &lt;osgEarth/MapNode&gt;
+#include &lt;osgEarthDrivers/tms/TMSOptions&gt;
+#include &lt;osgEarthDrivers/gdal/GDALOptions&gt;
+
+using namespace osgEarth;
+using namespace osgEarth::Drivers;
+...
+
+// Create a Map and set it to Geocentric to display a globe
+Map* map = new Map();
+
+// Add an imagery layer (blue marble from a TMS source)
+{
+    TMSOptions tms;
+    tms.url() = "http://labs.metacarta.com/wms-c/Basic.py/1.0.0/satellite/";
+    ImageLayer* layer = new ImageLayer( "NASA", tms );
+    map-&gt;addImageLayer( layer );
+}
+
+// Add an elevationlayer (SRTM from a local GeoTiff file)
+{
+    GDALOptions gdal;
+    gdal.url() = "c:/data/srtm.tif";
+    ElevationLayer* layer = new ElevationLayer( "SRTM", gdal );
+    map-&gt;addElevationLayer( layer );
+}
+
+// Create a MapNode to render this map:
+MapNode* mapNode = new MapNode( map );
+...
+
+viewer-&gt;setSceneData( mapNode );
+</pre>
+
+</ul>
+</ul>
+
+<div id="开发要点 -运行时使用 MapNode"><h2 id="运行时使用 MapNode">运行时使用 MapNode</h2></div>
+<ul>
+<li>
+获取 MapNode
+<pre c++>
+// Load the map
+osg::Node* loadedModel = osgDB::readNodeFile("mymap.earth");
+
+// Find the MapNode
+osgEarth::MapNode* mapNode = MapNode::get( loadedModel );
+</pre>
+
+<li>
+从 MapNode 得到 map
+<pre c++>
+// Add an OpenStreetMap image source
+TMSOptions driverOpt;
+driverOpt.url() = "http://tile.openstreetmap.org/";
+driverOpt.tmsType() = "google";
+
+ImageLayerOptions layerOpt( "OSM", driverOpt );
+layerOpt.profile() = ProfileOptions( "global-mercator" );
+
+ImageLayer* osmLayer = new ImageLayer( layerOpt );
+mapNode-&gt;getMap()-&gt;addImageLayer( osmLayer );
+</pre>
+
+<li>
+可以移除或重排序层
+<pre c++>
+// Remove a layer from the map.  All other layers are repositioned accordingly
+mapNode-&gt;getMap()-&gt;removeImageLayer( layer );
+
+// Move a layer to position 1 in the image stack
+mapNode-&gt;getMap()-&gt;moveImageLayer( layer, 1 );
+</pre>
+
+</ul>
+
+<div id="开发要点 -运行时使用 MapNode-使用 Layers"><h3 id="使用 Layers">使用 Layers</h3></div>
+<ul>
+<li>
+可以动态修改其属性
+<pre c++>
+ImageLayer* layer;
+...
+layer-&gt;setOpacity( 0.5 );  // makes the layer partially transparent
+</pre>
+
+</ul>
+
+<div id="开发要点 -Utilities SDK"><h2 id="Utilities SDK">Utilities SDK</h2></div>
+<ul>
+<li>
+Utils 名称空间内有一些有用的类与地图进行互动
+
+</ul>
+<div id="开发要点 -Utilities SDK-DataScanner"><h3 id="DataScanner">DataScanner</h3></div>
+<ul>
+<li>
+DataScanner 可以递归搜索一个目录树, 查找出可以加载为 ImageLayer 对象的文件, 其可以快速加载整个目录的图像作为层.
+
+<ul>
+<li>
+注: 只有 MP Terrain Engine 支持无限数量的图像层
+<pre c++>
+DataScanner scanner;
+ImageLayerVector imageLayers;
+scanner.findImageLayers( rootFolder, extensions, imageLayers );
+</pre>
+
+<li>
+而后可以将这些图像层添加至你的 Map 对象
+
+</ul>
+</ul>
+
+<div id="开发要点 -Utilities SDK-DetailTexture"><h3 id="DetailTexture">DetailTexture</h3></div>
+<ul>
+<li>
+这是一个地形控制器, 应用于地形上的非几何空间的纹理, 给低分辨率的地形生成"噪值", 是的看起来细节更丰富
+<pre c++>
+DetailTexture* detail = new DetailTexture();
+detail-&gt;setImage( osgDB::readImageFile("mytexture.jpg") );
+detail-&gt;setIntensity( 0.5f );
+detail-&gt;setImageUnit( 4 );
+mapnode-&gt;getTerrainEngine()-&gt;addEffect( detail );
+</pre>
+<pre>
+osgearth_detailtex readymap.earth
+</pre>
+
+</ul>
+
+<div id="开发要点 -Utilities SDK-Logarithmic Depth Buffer"><h3 id="Logarithmic Depth Buffer">Logarithmic Depth Buffer</h3></div>
+<ul>
+<li>
+z-fighting 问题
+
+<li>
+LogarithmicDepthBuffer 可以解决这个问题, 其使用着色器重映射 GPU 的 depth buffer 值.
+<pre c++>
+LogarithmicDepthBuffer logdepth;
+logdepth-&gt;install( view-&gt;getCamera() );
+</pre>
+
+<li>
+使用工具
+<pre>
+osgearth_viewer --logdepth ...
+</pre>
+
+</ul>
+
+<div id="开发要点 -Utilities SDK-Formatters"><h3 id="Formatters">Formatters</h3></div>
+<ul>
+<li>
+Formatters 格式化几何空间坐标为字符串, 有两类 formatters, LatLongFormatter 和 MGRSFormatter.
+<pre c++>
+LatLongFormatter formatter;
+GeoPoint point;
+....
+std::string = formatter.format( point );
+</pre>
+
+</ul>
+
+<div id="开发要点 -Utilities SDK-Formatters-LatLongFormatter"><h4 id="LatLongFormatter">LatLongFormatter</h4></div>
+<ul>
+<li>
+支持如下的格式
+
+<ul>
+<li>
+FORMAT_DECIMAL_DEGREES:
+
+<ul>
+<li>
+34.04582
+
+</ul>
+<li>
+FORMAT_DEGREES_DECIMAL_MINUTES:
+
+<ul>
+<li>
+34.20:30
+
+</ul>
+<li>
+FORMAT_DEGREES_MINUTES_SECONDS:
+
+<ul>
+<li>
+34:14:30
+
+</ul>
+</ul>
+<li>
+用于输出字符串的选项
+
+<ul>
+<li>
+USE_SYMBOLS:	Use the degrees, minutes and seconds symbology
+
+<li>
+USE_COLONS:	Use colons between the components
+
+<li>
+USE_SPACES:	Use spaces between the components
+
+</ul>
+</ul>
+
+<div id="开发要点 -Utilities SDK-Formatters-MGRSFormmatter"><h4 id="MGRSFormmatter">MGRSFormmatter</h4></div>
+<ul>
+<li>
+使用 Military Grid Reference System 构造字符串, 一个 MGRS 坐标表示一个区域, 而非一个点. 所以你需要指定一个精度前缀来控制表示区域的大小
+<pre c++>
+MGRSFormatter mgrs( MGRFormatter::PRECISION_1000M );
+std::string str = mgrs.format( geopoint );
+</pre>
+
+</ul>
+
+<div id="开发要点 -Utilities SDK-MouseCoordsTool"><h3 id="MouseCoordsTool">MouseCoordsTool</h3></div>
+<ul>
+<li>
+MouseCoordsTool 用来输出鼠标下的地图坐标, 安装一个回调响应该输出.  MouseCoordsTool 是一个 osgGA::GUIEventHandler, 所以你可以在 Viewer 或任意 Node 上设置, 如
+<pre c++>
+MouseCoordsTool* tool = new MouseCoordsTool();
+tool-&gt;addCallback( new MyCallback() );
+viewer.addEventHandler( tool );
+</pre>
+
+<li>
+例子
+<pre c++>
+struct PrintCoordsToStatusBar : public MouseCoordsTool::Callback
+{
+public:
+    PrintCoordsToStatusBar(QStatusBar* sb) : _sb(sb) { }
+
+    void set(const GeoPoint&amp; p, osg::View* view, MapNode* mapNode)
+    {
+        std::string str = osgEarth::Stringify() &lt;&lt; p.y() &lt;&lt; ", " &lt;&lt; p.x();
+        _sb-&gt;showMessage( QString(str.c_str()) );
+    }
+
+    void reset(osg::View* view, MapNode* mapNode)
+    {
+        _sb-&gt;showMessage( QString("out of range") );
+    }
+
+    QStatusBar* _sb;
+};
+</pre>
+
+<li>
+MouseCoordsTool 还可以输出坐标至 osgEarthUtil::Controls::LabelControl
+
+</ul>
+
+<div id="开发要点 -Shder Composition"><h2 id="Shder Composition">Shder Composition</h2></div>
+<ul>
+<li>
+使用着色器有如下问题
+
+<ul>
+<li>
+着色器程序是一个整体内容, 添加新的着色器代码需要你拷贝, 修改, 替换已有代码, 这样可以不丢失它的功能
+
+<li>
+代码变化时有时需要同时改变着色器
+
+<li>
+维护多个版本的着色器 main() 是很笨重的
+
+<li>
+随着复杂度和功能的增加, 着色器愈加不易管理
+
+</ul>
+<li>
+Shader Composition 用于解决这些问题, 其可以模块化着色器管线. 你可以在程序中的任意点上增加和移除功能, 或者更改其他人的 GLSL 的代码. 
+
+</ul>
+<div id="开发要点 -Shder Composition-框架基础"><h3 id="框架基础">框架基础</h3></div>
+<ul>
+<li>
+Shader Composition 框架自动提供 main(). 你不需要写 main(). 你写入模块化函数, 并告诉框架何时何地执行它们
+
+<li>
+LOCATION_* 标识符允许你在着色器的执行管线中的任意点上插入函数
+
+<li>
+下面是 osgEarth 的内置 main 函数的伪代码
+<pre c++>
+// VERTEX SHADER:
+
+void main(void)
+{
+    vec4 vertex = gl_Vertex;
+
+    // "LOCATION_VERTEX_MODEL" user functions are called here:
+    model_func_1(vertex);
+    model_func_2(vertex);
+    ...
+
+    vertex = gl_ModelViewMatrix * vertex;
+
+    // "LOCATION_VERTEX_VIEW" user functions are called here:
+    view_func_1(vertex);
+    ...
+
+    vertex = gl_ProjectionMatrix * vertex;
+
+    // "LOCATION_VERTEX_CLIP" user functions are called last:
+    clip_func_1(vertex);
+    ...
+
+    gl_Position = vertex;
+}
+
+
+// FRAGMENT SHADER:
+
+void main(void)
+{
+    vec4 color = gl_Color;
+    ...
+
+    // "LOCATION_FRAGMENT_COLORING" user functions are called here:
+    coloring_func_1(color);
+    ...
+
+    // "LOCATION_FRAGMENT_LIGHTING" user functions are called here:
+    lighting_func_1(color);
+    ...
+
+    gl_FragColor = color;
+}
+</pre>
+
+</ul>
+
+<div id="开发要点 -Shder Composition-VirtualProgram"><h3 id="VirtualProgram">VirtualProgram</h3></div>
+<ul>
+<li>
+osgEarth 引入了一个新的 OSG 状态属性: VirtualProgram， 用于执行运行时着色器组合. 由于VirtualProgram 是一个 osg::StateAttribute, 你可以在场景图中任意 node 上挂接它. 属于一个 VirtualProgram 的着色器可以覆盖场景图中更高层的着色器。这样你可以在 osgEarth 中创建, 组合, 覆盖单个着色器功能.
+
+</ul>
+
+<div id="开发要点 -Shder Composition-VirtualProgram-添加一个函数 "><h4 id="添加一个函数 ">添加一个函数 </h4></div>
+<ul>
+<li>
+一个简单的 "haze" 特效(薄雾)
+<pre c++>
+// haze_vertex:
+out vec3 v_pos;
+void setup_haze(inout vec4 vertexView)
+{
+    v_pos = vertexView.xyz;
+}
+
+// haze_fragment:
+in vec3 v_pos;
+void apply_haze(inout vec4 color)
+{
+    float dist = clamp( length(v_pos)/10000000.0, 0, 0.75 );
+    color = mix(color, vec4(0.5, 0.5, 0.5, 1.0), dist);
+}
+
+// C++:
+VirtualProgram* vp = VirtualProgram::getOrCreate( stateSet );
+
+vp-&gt;setFunction( "setup_haze", haze_vertex,   ShaderComp::LOCATION_VERTEX_VIEW);
+vp-&gt;setFunction( "apply_haze", haze_fragment, ShaderComp::LOCATION_FRAGMENT_LIGHTING);
+</pre>
+
+<li>
+六个插入点
+
+<ul>
+<li>
+ShaderComp::LOCATION_VERTEX_MODEL 	VERTEX 	void func(inout vec4 vertex)
+
+<li>
+ShaderComp::LOCATION_VERTEX_VIEW 	VERTEX 	void func(inout vec4 vertex)
+
+<li>
+ShaderComp::LOCATION_VERTEX_CLIP 	VERTEX 	void func(inout vec4 vertex)
+
+<li>
+ShaderComp::LOCATION_FRAGMENT_COLORING 	FRAGMENT 	void func(inout vec4 color)
+
+<li>
+ShaderComp::LOCATION_FRAGMENT_LIGHTING 	FRAGMENT 	void func(inout vec4 color)
+
+<li>
+ShaderComp::LOCATION_FRAGMENT_OUTPUT 	FRAGMENT 	void func(inout vec4 color)
+
+</ul>
+<li>
+关于片段着色器最后一个阶段, 可见 osgearth_mrt 例子
+
+</ul>
+
+<div id="开发要点 -Shder Composition-ShaderPackage"><h3 id="ShaderPackage">ShaderPackage</h3></div>
+<ul>
+<li>
+提供更高级的方法进行着色器管理
+
+</ul>
+
+<div id="开发要点 -Shder Composition-ShaderPackage-VirtualProgram MetaData"><h4 id="VirtualProgram MetaData">VirtualProgram MetaData</h4></div>
+<ul>
+<li>
+通常做法
+<pre c++>
+VirtualProgram* vp;
+....
+vp-&gt;setFunction( "color_it_red", shaderSource, ShaderComp::LOCATION_FRAGMENT_COLORING );
+</pre>
+
+<ul>
+<li>
+如果函数名称和插入位置变化, 你需要记住用 setFunction() 同步
+
+</ul>
+<li>
+ShaderPackage 可以让你更方便
+<pre c++>
+#version 110
+
+#pragma vp_entryPoint  color_it_red
+#pragma vp_location    fragment_coloring
+#pragma vp_order       1.0
+
+void color_it_red(inout vec4 color)
+{
+    color.r = 1.0;
+}
+
+ShaderPackage package;
+package.add( shaderFileName, shaderSource );
+package.load( virtualProgram, shaderFileName );
+</pre>
+
+<ul>
+<li>
+filename 表示可以是外部文件, 但这不是必须的.
+
+<li>
+vp_location 可以是如下值
+<pre>
+vertex_model
+vertex_view
+vertex_clip
+fragment_coloring
+fragment_lighting
+fragment_output
+</pre>
+
+</ul>
+<li>
+ShaderPackage 可以让你从一个文件或一个字符串中加载 GLSL 代码, 当你调用 add 方法时, 其会告诉 package 进行如下工作
+
+<ul>
+<li>
+首先根据名称查找文件, 而后从该文件加载
+
+<li>
+如果文件不存在, 使用位于 source string 内的代码
+<pre c++>
+ShaderPackage package;
+package.add( "myshader.frag.glsl", backupSourceCode );
+...
+package.load( virtualProgram, "myshader.frag.glsl" );
+</pre>
+
+<li>
+其会在 OSG_FILE_PATH 内查找 GLSL 文件.
+
+</ul>
+</ul>
+
+<div id="开发要点 -Shder Composition-ShaderPackage-包含文件"><h4 id="包含文件">包含文件</h4></div>
+<ul>
+<li>
+ShaderPackage 支持包含文件的概念, 你的 GLSL 代码可以包含相同 package 内的其他 shaders, 只需要关联到它们的文件名称. 使用 #pragma 包含其他文件
+<pre c++>
+#pragma include myCode.vertex.glsl
+</pre>
+
+</ul>
+
+<div id="开发要点 -Shder Composition-osgEarth 独有的概念 "><h3 id="osgEarth 独有的概念 ">osgEarth 独有的概念 </h3></div>
+<div id="开发要点 -Shder Composition-osgEarth 独有的概念 -地形变量"><h4 id="地形变量">地形变量</h4></div>
+<ul>
+<li>
+"oe_" 或 "osgearth_" 开头的变量都是 osgEarth 内部保存使用
+
+<li>
+Uniform
+
+<ul>
+<li>
+oe_tile_key:	(vec4) elements 0-2 hold the x, y, and LOD tile key values; element 3 holds the tile’s bounding sphere radius (in meters)
+
+<li>
+oe_layer_tex:	(sampler2D) texture applied to the current layer of the current tile
+
+<li>
+oe_layer_texc:	(vec4) texture coordinates for current tile
+
+<li>
+oe_layer_tilec:	(vec4) unit coordinates for the current tile (0..1 in x and y)
+
+<li>
+oe_layer_uid:	(int) Unique ID of the active layer
+
+<li>
+oe_layer_order:	(int) Render order of the active layer
+
+<li>
+oe_layer_opacity: (float) Opacity [0..1] of the active layer
+
+</ul>
+<li>
+顶点属性
+
+<ul>
+<li>
+oe_terrain_attr: 	(vec4) elements 0-2 hold the unit height vector for a terrain vertex, and element 3 holds the raw terrain elevation value
+
+<li>
+oe_terrain_attr2: (vec4) element 0 holds the parent tile’s elevation value; elements 1-3 are currently unused.
+
+</ul>
+</ul>
+
+<div id="开发要点 -Shder Composition-osgEarth 独有的概念 -共享的图像层"><h4 id="共享的图像层">共享的图像层</h4></div>
+<ul>
+<li>
+在 Map 内, 使用 ImageLayerOptions::shared() 标志一个图像层为共享的, 
+
+</ul>
+  
+  
+<div id="开发要点 -使用数据"><h2 id="使用数据">使用数据</h2></div>
+<div id="开发要点 -使用数据-哪里得到数据"><h3 id="哪里得到数据">哪里得到数据</h3></div>
+<ul>
+<li>
+光栅数据
+
+<ul>
+<li>
+ReadyMap.org - Free 15m imagery, elevation, and street tiles for osgEarth developers
+
+<li>
+USGS National Map - Elevation, orthoimagery, hydrography, geographic names, boundaries, transportation, structures, and land cover products for the US.
+
+<li>
+NASA BlueMarble - NASA’s whole-earth imagery (including topography and bathymetry maps)
+
+<li>
+Natural Earth - Free vector and raster map data at various scales
+
+<li>
+Virtual Terrain Project - Various sources for whole-earth imagery
+
+<li>
+Bing Maps - Microsoft’s worldwide imagery and map data ($)
+
+</ul>
+<li>
+海拔数据
+
+<ul>
+<li>
+CGIAR - World 90m elevation data derived from SRTM and ETOPO (CGIAR European mirror)
+
+<li>
+SRTM30+ - Worldwide elevation coverage (including batymetry)
+
+<li>
+GLCF - UMD’s Global Land Cover Facility (they also have mosaiced LANDSAT data)
+
+<li>
+GEBCO - Genearl Batymetry Chart of the Oceans
+
+</ul>
+<li>
+特色数据
+
+<ul>
+<li>
+OpenStreetMap - Worldwide, community-sources street and land use data (vectors and rasterized tiles)
+
+<li>
+Natural Earth - Free vector and raster map data at various scales
+
+<li>
+DIVA-GIS - Free low-resolution vector data for any country
+
+</ul>
+</ul>
+
+<div id="开发要点 -使用数据-准备你自己的数据"><h3 id="准备你自己的数据">准备你自己的数据</h3></div>
+<div id="开发要点 -使用数据-准备你自己的数据-处理本地源数据 "><h4 id="处理本地源数据 ">处理本地源数据 </h4></div>
+<ul>
+<li>
+通常使用 GDAL 加载数据.如发现太慢, 可以有几个技巧
+
+<ul>
+<li>
+Reproject your data
+
+<ul>
+<li>
+osgEarth 可以在没有必须的坐标系统下重新投影你的数据.
+<pre>
+gdalwarp -t_srs epsg:4326 my_utm_image.tif my_gd_image.tif
+</pre>
+
+</ul>
+<li>
+Build internal tiles
+
+<ul>
+<li>
+通常类似 GeoTiff 的格式以扫描行的方式存储它们的像素. 如果使用 tiled 的数据集会更有效率
+
+<li>
+使用 gdal_translate 创建一个 tiled GeoTiff
+<pre>
+gdal_translate -of GTiff -co TILED=YES input.tif output.tif
+</pre>
+
+<li>
+如果不含透明信息, 可以进一步使用 JPEG 压缩数据
+<pre>
+gdal_translate -of GTiff -co TILED=YES -co COMPRESS=JPG input.tif output.tif
+</pre>
+
+</ul>
+<li>
+Build overviews
+
+<ul>
+<li>
+构建略图(或称之为"金字塔"或"rsets")可以增加大数据源的性能
+<pre>
+gdaladdo -r average myimage.tif 2 4 8 16
+</pre>
+
+</ul>
+<li>
+使用 osgearth_conv 构建 tile sets
+
+<li>
+Pre-tiling 你的图像可以加速你的加载时间
+
+<li>
+该方法仅支持写入(MBTiles, TMS)的Driver
+<pre>
+osgearth_conv --in driver gdal --in url myLargeFile.tif
+              --out driver mbtiles --out filename myData.mbtiles
+              --out format jpg
+</pre>
+
+<li>
+如想网络上使用 tiles, 使用 TMS
+<pre>
+osgearth_conv --in driver gdal --in url myLargeData.tif
+              --out driver tms --out url myLargeData/tms.xml
+              --out format jpg
+</pre>
+
+<ul>
+<li>
+如想要 tiling 海拔数据, 需要加上 --elevation 选项
+
+<li>
+jpg 格式不支持透明度, 如要支持透明度, 请使用 png
+
+</ul>
+<li>
+使用 packager 构建 tile 集
+
+<ul>
+<li>
+加速加载的另一种方法
+
+<li>
+将数据切成四叉树形式.
+
+</ul>
+<li>
+osgearth_package
+
+<ul>
+<li>
+用于优化你的数据以获得最大性能
+<pre>
+osgearth_package file.earth --tms --out output_folder
+</pre>
+
+<li>
+可用参数
+			--out path 	Root output folder of the TMS repo
+			--ext extension Output file extension
+			--max-level level Maximum level of detail
+
+</ul>
+<li>
+Spatial indexing for feature data
+<pre>
+ogrinfo -sql "CREATE SPATIAL INDEX ON myfile" myfile.shp
+</pre>
+
+<ul>
+<li>
+“.qix” 包含空间索引信息
+
+</ul>
+</ul>
+</ul>
+
+</body>
+</html>

@@ -1,0 +1,206 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../../style.css" />
+    <title>Chapter6</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<h1 id="toc_1">语言概览</h1>
+<ul>
+<li>
+不允许递归
+
+</ul>
+<h1 id="toc_2">数据类型</h1>
+<h2 id="toc_2.1">标量</h2>
+<ul>
+<li>
+bool, float, double, int, unsigned int
+
+<li>
+整数溢出会wrap around.
+
+</ul>
+<h2 id="toc_2.2">向量和矩阵 </h2>
+<ul>
+<li>
+向量可以被当作数组访问, 也可当作结构访问, 多元素访问.
+
+<li>
+矩阵看成向量的数组.
+
+<li>
+向量和矩阵除以其他向量和矩阵为逐成员除法
+
+</ul>
+<h2 id="toc_2.3">数组和结构 </h2>
+<ul>
+<li>
+两种方式声明数组
+<pre class="brush: glsl">
+float foo[5];
+ivec2 bar[13];
+
+float[5] foo;
+ivec2[13] bar;
+</pre>
+
+<li>
+隐式定义
+<pre class="brush: glsl">
+float[6] var = float[6](1.0, 2.0, 3.0, 4.0, 5.0, 6.0);
+</pre>
+
+<li>
+允许传统的初始化
+<pre class="brush: glsl">
+float var[6] = {1.0, 2.0, 3.0, 4.0, 5.0, 6.0};
+</pre>
+
+<li>
+数组特殊的方法 .length(), lenth() 方法还可用于向量和矩阵上.
+
+<li>
+多重数组以数组的数组来实现.
+<pre class="brush: glsl">
+float a[10]; // "a" is an array of 10 floats
+float b[10][2]; // "b" is an array of 2 arrays of 10 floats
+float c[10][2][5]; // "c" is an array of 5 arrays of 2 arrays of 10 floats
+</pre>
+
+</ul>
+<h1 id="toc_3">内置函数</h1>
+<h2 id="toc_3.1">内置矩阵和向量函数 </h2>
+<ul>
+<li>
+matrixCompMult() --- 矩阵逐成员相乘
+
+<li>
+transpose() --- 矩阵转置
+
+<li>
+inverse() --- 逆矩阵, 注意该计算昂贵
+
+<li>
+determinant() --- 矩阵行列式
+
+<li>
+outerProduct() --- 计算两个向量的外积
+
+<li>
+lessThan(), lessThanEqual(), greaterThan(), greaterThan(), equal(), notEqual() --- 逐向量比较两个向量
+
+<li>
+布尔向量 --- any() 是否有一个成员为真, all() 所有成员为真, not() 反转布尔向量
+
+<li>
+lengh() 向量长度, distance() 两点间的距离, normalize() 单元化, dot(), cross() 点乘叉乘
+
+<li>
+reflect(), refract() --- 输入有一个向量, 平面法线, 计算出反射和折射向量
+
+<li>
+faceforward() --- 有一个输入向量和两个面法线, 如果输入向量和第二个面法线的点乘为负数, 则返回第一个法线向量, 否则返回第一个法线向量的反方向向量.
+
+</ul>
+<h2 id="toc_3.2">内置数学函数</h2>
+<ul>
+<li>
+abs(), sign(), ceil(), floor(), trunc(), round(), roundEven(), fract(), mod(), modf(), min(), max()
+
+<li>
+clamp() 函数的两个隐式声明
+<pre class="brush: glsl">
+vec4 clamp(vec4 x, float minVal, float maxVal);
+vec4 clamp(vec4 x, vec4 minVal, vec4 maxVal);
+</pre>
+
+<li>
+mix() 线性插值
+<pre class="brush: glsl">
+vec4 mix(vec4 x, vec4 y, float a)
+{
+	return x + a * (y - x);
+}
+</pre>
+
+<li>
+step(), smoothstep()
+<pre class="brush: glsl">
+vec4 step(vec4 edge, vec4 x);	// x 小于 edge 返回0.0, x 大于 edge 返回 1.0
+vec4 smoothstep(vec4 edge0, vec4 edge1, vec4 x) // 实现的是一个 Hermite curve
+{
+	vec4 t = clamp((x - edge0) / (edge1 - edge0), 0.0, 1.0);
+	return t * t * (vec4(3.0) - 2.0 * t);
+}
+</pre>
+
+<li>
+fma() --- fused multiply-add 操作, 带保险的乘法加法操作. 前两个参数相乘后加上第三个参数.
+
+<li>
+uaddCarry(), usubBorrwo() --- 允许加减有carry和borrow操作. imulExtended, umulExtended 允许乘以一对32位有符号和无符号整数, 产生一个64位的结果, 表示为一个32位值对.
+
+<li>
+sin(), cos(), tan(), asin(), acos(), atan(), 以及它们的双曲形式(hyperbolic form)sinh(), cosh(), tanh(), asinh(), acosh(), atanh().
+
+<li>
+pow(), exp(), log(), exp2(), log2(), sqrt(), inversesqrt()
+
+<li>
+randians(), degrees() --- 弧度角度转换
+
+</ul>
+<h2 id="toc_3.3">内置数据操作函数</h2>
+<ul>
+<li>
+frexp() --- 将一个数分割成mantissa(尾数)和exponent部分, ldexp() --- 根据你提供的mantissa和exponent构建新的浮点数.
+
+<li>
+intBitsToFloat(, uintBitsToFloat() --- 根据一个有符号或无符号整数, 将其重解释为一个32位浮点数. floatBitsToInt(), floatBitsToUnit() 则为反方向操作.
+
+<li>
+isnan(), isinf() --- 测试一个浮点数是否为一个 NaN 或者一个无穷数.
+
+<li>
+GLSL 包含一些函数, 输入为浮点向量, 将它们缩放至不同的位深度(如8-或者16-位值), 而后打包为单个32-位quantity. 举例: packUnorm4x8() 和 packSnorm4x8() 将一个vec4值打包成4个无符号或有符号八位整数值. 而后将4个8位值合并为单个uint. unpackUnorm4x8() 和 unpackSnorm4x8() 则是另一种方式. packUnorm2x16(), packSnorm2x16(), unpackUnormx16, unpackSnorm16() 则是处理 vec2 变量的等价函数.
+
+<li>
+上述函数的 norm 表示 normalized, 浮点数表示为[0.0, 1.0] 或者 [-1.0, 1.0]
+
+<li>
+packDouble2x32() 和 unpackDouble2x32() 则在 double 变量上执行类似的操作. packHalf2x16() 函数则在 16位浮点数上执行操作. 注, GLSL 不直接支持 16 位浮点数.
+
+<li>
+bitfieldExtract() 可以从无符号整数或无符号整数向量中抽取一段位的内容. 如果输入为有符号整数, 则结果有符号扩展, 否则结果为0扩展. bitfieldInsert() 可以将一段位的内容放回整
+
+<li>
+bitfieldReverse(), bitCount(), findLSB(), findMSB() 函数 --- 反转整数的位子集, 计算整数中位集的数量, 查找最近或significant bit 的索引.
+
+</ul>
+
+<h1 id="toc_4">编译, 链接, 测试程序</h1>
+<h2 id="toc_4.1">从编译器中得到信息 </h2>
+<ul>
+<li>
+查询编译状态 glGetShaderiv()
+
+</ul>
+
+    </div>
+</body>
+</html>

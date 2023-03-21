@@ -1,0 +1,31 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../../style.css">
+<title>Tray</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+</head>
+<body>
+
+<pre c++>
+LRESULT XXXXX::OnTrayMessage(WPARAM wParam, LPARAM lParam)
+{
+	if (lParam == WM_LBUTTONDOWN)
+	{
+		ShowWindow(SW_RESTORE);
+		Shell_NotifyIcon(NIM_DELETE, &amp;m_traydata);
+	}
+	if (lParam == WM_RBUTTONDOWN)
+	{
+		m_pSubMenu = (CIconMenu *)m_menu.GetSubMenu(0);
+		CPoint point;
+		::GetCursorPos(&amp;point);
+		m_pSubMenu-&gt;TrackPopupMenu(TPM_LEFTALIGN | TPM_RIGHTBUTTON, point.x, point.y, AfxGetApp()-&gt;m_pMainWnd, 0);
+	}
+
+	return 0;
+}
+</pre>
+
+</body>
+</html>

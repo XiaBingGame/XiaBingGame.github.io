@@ -1,0 +1,55 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../style.css" />
+    <title>SceneRender</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="../index.html">首页</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<p>
+一. RenderSystem
+</p>
+<ul>
+<li>
+RenderSystem 虚基类, 派生D3D9RenderSystem, D3DRenderSystem, GLRenderSystem
+
+<li>
+RenderSystem 还负责 RenderWindow 的管理: initialise, createRenderWindow, destroyRenderWindow
+
+<li>
+各种 RenderTarget 都是由 RenderSystem 统一管理
+
+</ul>
+<p>
+二. RenderTarget
+</p>
+<ul>
+<li>
+RenderTarget --- 用来接收渲染操作的结果, 可以是屏幕上的窗口
+
+<li>
+RenderTarget负责FPS信息的统计,创建维护Viewport. 一Viewport对应一Camera和个RenderTarget. 一个Camera对应一Viewport, 一RednderTarget对应多Viewport
+
+</ul>
+<p>
+三. 渲染过程
+</p>
+<ul>
+<li>
+Root -&gt; RenderSystem -&gt; RenderTarget -&gt; Viewport -&gt; Camera -&gt; SceneManager -&gt; RednerSystem 
+
+</ul>
+
+    </div>
+</body>
+</html>

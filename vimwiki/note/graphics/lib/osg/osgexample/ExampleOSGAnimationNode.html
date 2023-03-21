@@ -1,0 +1,114 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../../style.css" />
+    <title>ExampleOSGAnimationNode</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="../index.html">首页</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<ul>
+<li>
+演示了 osgAnimation::Vec4LinearSampler 和 osgAnimation::Vec3CubicBezierSampler 如何创建动画
+
+<li>
+osg::Node::setInitialBound --- 设置节点的围绕球
+
+<li>
+osg::Timer::instance()-&gt;tick() --- 获取当前时间
+
+<li>
+Sampler 的使用
+
+<ul>
+<li>
+osgAnimation::Vec3CubicBezierSampler 设置
+
+<li>
+getStartTime() 获取开始时间
+
+<li>
+getEndTime() 获取结束时间
+
+<li>
+getValueAt() 获取其值
+
+</ul>
+<li>
+演示了如何使用节点回调, 几个要点:
+
+<ul>
+<li>
+nv-&gt;getVisitorType() == osg::NodeVisitor::UPDATE_VISITOR 可以用来判断是否在更新的时候调用了它
+
+<li>
+在回调中获取帧号 nv-&gt;getFrameStamp()-&gt;getFrameNumber()
+
+<li>
+通过 dynamic_cast 
+
+</ul>
+<li>
+dynamic_cast&lt;osg::Material*&gt;(state-&gt;getAttribute(osg::StateAttribute::MATERIAL)): 获取材质
+
+<li>
+material-&gt;setDiffuse: 设置材质属性
+
+<li>
+fmod(t, duration) 求模
+
+<li>
+TemplateSampler::getOrCreateKeyframeContainer 获得关键帧容器
+
+<ul>
+<li>
+keys-&gt;push_back(osgAnimation::Vec4Keyframe(0, osg::Vec4(0,0,0,0))); 插入关键帧
+
+</ul>
+<li>
+osg::StateSet::Callback 派生类用于设置 osg::State 的回调 
+
+<li>
+geode-&gt;addDrawable(new osg::ShapeDrawable(new osg::Box(osg::Vec3(0.0f,0.0f,0.0f),2))) 创建一个立方体
+
+<li>
+AnimtkUpdateCallback 自 osg::NodeCallback 派生而来, 实现贝塞尔曲线运动一个节点
+
+<ul>
+<li>
+使用 osgAnimation::Vec3CubicBezierSampler 进行插值
+
+<li>
+osg::Matrix::translate 更新 osg::MatrixTransform
+
+<li>
+创建相应的 osgAnimation::Vec3CubicBezierKeyframeContainer
+
+<ul>
+<li>
+插入关键帧 osgAnimation::Vec3CubicBezierKeyframe
+
+<ul>
+<li>
+设置位置 osgAnimation::Vec3CubicBezier
+
+</ul>
+</ul>
+</ul>
+<li>
+osg::Box 立方体
+
+</ul>
+
+    </div>
+</body>
+</html>

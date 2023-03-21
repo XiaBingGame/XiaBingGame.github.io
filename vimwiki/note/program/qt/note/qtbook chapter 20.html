@@ -1,0 +1,103 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../style.css" />
+    <title>qtbook chapter 20</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+<!--
+	<ul id="top-nav">
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+-->	
+</div>
+</div>
+    <div class="content">
+    
+<h1 id="toc_1">3D Graphics</h1>
+<ul>
+<li>
+QtOpenGL模块提供了 QGLWidget 类. 第一个例子绘制四面体(tetrahedron).
+
+<li>
+可以在 QGLWidget 上使用 QPainter, 这样对于大多数绘制操作可以得到 OpenGL 的高性能. 例如变换和像素绘制. 对于 QPainter 还可使用它用于2D图形的高层 API, 与 OpenGL 结合在一起执行 3D 图形. 第二个例子演示了如何组合 2D 和 3D 绘制.
+
+<li>
+可通过 QGLPixelBuffer 和 QGLFramebufferObject 来使用 pbuffer 和 framebuffer object 扩展
+
+</ul>
+
+<h2 id="toc_1.1">Drawing Using OpenGL</h2>
+<ul>
+<li>
+派生 QGLWidget, 重新实现虚函数, 与 QWidget 相似, 但主要的不同是使用标准 OpenGL 函数代替 QPainter 执行绘制操作.
+
+<li>
+initializeGL(), resizeGL(), paintGL() 函数重实现.
+
+<li>
+QGLWidget::qglClearColor() 设置清空颜色.
+
+</ul>
+
+<h2 id="toc_1.2">Combining OpenGL and QPainter</h2>
+<ul>
+<li>
+可以使用 QPainter 在 QGLWidget 进行绘制, 使用 QGLWidget::renderText() 函数绘制文本
+
+<li>
+QGLWidget::setFormat() 设置 GL 格式, 如 QGL::SampleBuffers
+
+<li>
+本例的 paintEvent() 实现, 分几个步骤
+
+<ul>
+<li>
+创建 QPainter
+
+<li>
+使用 QPainter 绘制背景
+
+<li>
+保存 OpenGL 状态
+
+<li>
+使用 OpenGL 操作绘制场景.
+
+<li>
+恢复 OpenGL 状态
+
+<li>
+使用 QPainter 绘制前景
+
+<li>
+销毁 QPainter
+
+</ul>
+<li>
+如果无效注意设置 setAutoFillBackground(false).
+
+<li>
+swapBuffers() 交换缓存
+
+<li>
+QPainter 构造函数自动调用 glClear(), 除非我们设置 setAutoFillBackground(false).
+
+<li>
+QPainter 析构函数自动调用 QGLWidget::swapBuffers(), 除非我们设置 setAutoFillBackground(false).
+
+<li>
+OpenGL 可以和 QPainter 交叉使用, 只是需要保存和恢复 OpenGL 状态.
+
+</ul>
+
+    </div>
+</body>
+</html>

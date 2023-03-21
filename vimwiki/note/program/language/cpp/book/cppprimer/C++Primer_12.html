@@ -1,0 +1,509 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../../../style.css" />
+    <title>C++Primer_12</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<p>
+第12章 类
+</p>
+<ul>
+<li>
+类中 const 成员不能改变其所操作的对象的数据成员, const 必须同时出现在声明和定义中.
+
+<li>
+如果一个类具有多个同一类型的数据成员, 则这些成员可以在一个成员声明中指定
+
+<li>
+类可以定义自己的局部类型名字, 以使用类型别名来简化类. 例如:
+<pre class="brush: c++">
+class Screen{
+public:
+	typedef std::string::size_type index;
+	// ...
+};
+</pre>
+
+<li>
+在类内部定义的成员函数, 将自动作为 inline 处理. 不在类体内定义的 inline 成员函数, 其定义通常应该放在有类定义的同一头文件中, 注意如不在类体内定义, 则应在类体内声明时或类体外定义时加上 inline 关键字
+
+<li>
+声明一个类而不定义它, 称为前向声明, 一个类在声明之后, 定义之前是一个不完全类型(incompete type), 不完全类型只能用于定义指向该类型的指针和引用的定义, 或者使用该类型作为形参或返回值的声明. 类的前向声明一般用来编写相互依赖的类.
+
+<li>
+在创建类的对象时, 必须已经完整地定义了该类. 在使用引用或指针访问该类的成员之前, 也必须已经完整地定义了该类. 如果类已经完整地定义了, 则之后的类可以使用该类类型作为数据成员的类型, 如果是不完整类型, 则只能使用该类型的指针或引用作为数据成员的类型. 因此类不能具有自身类型的数据成员, 但类的数据成员可以是指向自身类型的指针或引用. 
+
+<li>
+定义了一个类之后, 有两种方式使用该类: (1) 类的名字直接作为类型名. (2) 指定关键字class或struct, 后面跟着类的名字.
+<pre class="brush: c++">
+Sales_item item1;
+class Sales_item item1;		// 两者等价
+</pre>
+
+<li>
+因为在类定义之后可以用接一个对象定义列表, 所以定义必须以分号结束:
+<pre class="brush: c++">
+class Sales_item { /* ... */ };
+class Sales_item { /* ... */ } accum, trans;
+</pre>
+
+<li>
+何时使用 this, 当成员函数返回调用该函数的对象的引用时. 例如: 这样的函数返回值可以使得一些操作连接成一个单独的表达式, 如下
+<pre class="brush: c++">
+myScreen.move(4, 0).set('#');
+
+Screen&amp; Screen::set(char c)
+{
+	contents[cursor] = c;
+	return *this; // 这里的 this 是指向非常量 Screen 的指针.
+}
+</pre>
+
+<li>
+普通的非const成员函数中, this的类型是一个指向类类型的const指针类型(可以改变指针所指的对象, 但不能改变指针地址), 在const成员函数中, this为指向const类类型的const指针.
+
+<li>
+基于const的重载, 可以定义两个同名的成员重载函数, 可以根据是否为const成员函数重载, 也可以根据形参指针是否指向const重载. 例如:
+<pre class="brush: c++">
+class Screen
+{
+	//...
+	Screen&amp; display(std::ostream &amp;os);
+	const Screen&amp; dispaly(std::ostream &amp;os) const;
+	//...
+};
+
+Screen myScreen(5, 3);
+const Screen blank(5, 3);
+myScreen.set('#').display(cout); // 调用非const版本
+blank.display(cout);			// 调用 const 版本
+</pre>
+
+<li>
+可变数据成员 mutable, const成员函数可以改变 multable成员. 可变数据成员永远不能为 const. 必须将 mutable 放在成员声明之前:
+<pre class="brush: c++">
+class Screen{
+public:
+private:
+	mutable size_t access_ctr;
+};
+</pre>
+
+<li>
+类定义的类型成员使用作用域操作符(::)来访问.
+<pre class="brush: c++">
+class Screen
+{
+public:
+	typedef std::string::size_type index;
+	// ...
+};
+
+Screen::index i;
+</pre>
+
+<li>
+类定义体外的函数定义, 在类的作用域操作符限定成员函数名之后, 形参表和成员函数体都已经位于类作用域中. 
+<pre class="brush: c++">
+char Screen::get(index r, index c) const
+{ /* ... */ }
+</pre>
+
+<ul>
+<li>
+其中 index 是Screen 定义的一个类型, 无需加上类的作用域操作符.
+
+</ul>
+<li>
+类定义体外的成员函数返回值类型不一定在类作用域中, 如果返回类型使用由类定义的类型, 则必须使用完全限定名
+<pre class="brush: c++">
+// 其中index是在Screen类里定义的类型
+inline Screen::index Screen::get_cursor() const
+{
+	return cursor;
+}
+</pre>
+
+<li>
+编译器如何处理类的定义:
+
+<ol>
+<li>
+首先, 编译成员的声明
+
+<li>
+在所有成员之后, 才编译这些成员的定义
+
+</ol>
+<li>
+查找在类成员声明中用到的名称, 
+
+<ul>
+<li>
+检查出现在名称使用之前的类成员的声明
+
+<li>
+如果没有成功, 则检查包含类定义的作用域中出现的声明, 以及出现在类定义之前的声明
+
+</ul>
+<li>
+编译器按照成员声明在类中出现的次序来处理它们, 一旦一个名字被用作类型名, 该名字就不能重复定义
+<pre class="brush: c++">
+typedef double Money;
+class Account
+{
+public:
+	Money balance() { return bal; }	// 使用Money的全局定义. 使用了之后就不能重复定义该名字
+private:
+	typedef long double Money;		// 出错, 不能改变 Money 的意思
+	Money bal;
+};
+</pre>
+
+<li>
+查找成员函数的函数体中出现的名称
+
+<ul>
+<li>
+首先检查成员函数局部作用域中的声明
+
+<li>
+如果不成功, 则检查对所有类成员的声明
+
+<li>
+如果还不成功, 则检查在此成员函数定义之前的作用域中出现的声明.
+<pre class="brush: c++">
+int height;
+class Screen {
+public:
+	void dummy_fcn(index height) {
+		cursor = width * height;	// 这里使用的是形参表内的 height
+		cursor = width * this-&gt;height;		// 数据成员的height
+		cursor = width * Screen::height;	// 同上
+		cursor = width * ::height;			// 全局作用域中的height
+	}
+private:
+	index cursor;
+	index width, height;
+}
+</pre>
+
+<li>
+可以用类作用域操作符或者this来使用数据成员 height
+
+<li>
+可以用全局作用域操作符来引用全局变量 height
+
+</ul>
+<li>
+考虑类外定义的成员函数之前出现的全局作用域声明.
+<pre class="brush: c++">
+class Screen {
+public:
+	// ...
+	void setHeight(index);
+private:
+	index height;
+}
+Screen::index verify(Screen::index);
+void Screen::setHeight(index var)
+{
+	height = verify(var); // var 为形参, height 是数据成员, verify 则是全局函数.
+}
+</pre>
+
+<li>
+构造函数不能被声明为 const
+
+<li>
+从概念上讲, 可以认为构造函数分两个阶段进行: (1)初始化阶段.(初始化列表) (2)普通的计算阶段(构造函数函数体内).
+
+<ul>
+<li>
+类类型的数据成员总是在初始化阶段初始化.
+
+</ul>
+<li>
+必须对任何 const 或引用类型的数据成员以及没有默认构造函数的类类型的数据成员使用初始化式. 因为没有其他的办法初始化这些数据成员.
+
+<li>
+对于非类类型的数据成员进行赋值或使用初始化式在结果和性能上都是等价的. (例如内置类型成员int, double)
+
+<li>
+成员被初始化的次序就是其在类中声明的顺序, 和初始化式列表的顺序没有关系. 
+
+<li>
+按照与成员声明一致的次序编写构造函数初始化式列表是个好主意. 
+
+<li>
+尽可能避免使用成员来初始化其他成员
+
+<li>
+初始化式可以是任意复杂的表达式
+<pre class="brush: c++">
+Sales_item(const std::string &amp;book, int cnt, double price):
+	isbn(book), units_sold(cnt), revenue(cnt * price) {}
+</pre>
+
+<li>
+为所有形参提供默认实参的构造函数也定义了默认构造函数
+
+<li>
+类类型的数据成员在初始化式中可以使用该类的任意构造函数.
+
+<li>
+一个类哪怕只定义了一个构造函数, 编译器也不会再生成默认构造函数. 只有当一个类没有定义构造函数时, 编译器才会自动生成一个默认构造函数. 
+
+<li>
+默认合成构造函数中, 具有类类型的数据成员会运行各自的默认构造函数进行初始化. 内置类型和复合类型(数组和指针)的成员, 只有当该类的对象为全局变量时, 才进行初始化, 当类的对象为局部变量时, 不进行初始化.
+
+<li>
+构造函数中, 一个数据成员没有初始化, 则按照上面默认构造函数的初始化方式初始化该成员.
+
+<li>
+如果一个类没有默认构造函数:
+
+<ol>
+<li>
+该类作为其他类的数据成员类型时, 必须在其他类的构造函数初始化式列表中显示初始化.
+
+<li>
+该类作为其他类的数据成员类型时, 其他类则无法合成默认构造函数
+
+<li>
+该类类型不能用作动态分配数组的元素类型. 
+
+<li>
+静态分配数组必须为每个元素提供一个显示的初始化式. 
+
+<li>
+在容器中, 如vector中, 不能使用仅有容器大小而没有提供一个元素初始化式的构造函数.
+
+</ol>
+<li>
+使用默认构造函数定义一个对象的错误方式:
+<pre class="brush: c++">
+	Sales_item myobj();		// 这不会看成一个对象, 而是看成一个函数
+</pre>
+	定义一个对象正确的方式
+<pre class="brush: c++">
+	Sales_item myobj;
+	Sames_item myobj = Sales_item();
+</pre>
+
+<li>
+隐式类类型转换, 只有一个形参的构造函数定义了从形参类型到该类类型的隐式转换, 例如:
+<pre class="brush: c++">
+// 下面的类定义了string到Sales_item和istream到Sales_item的隐式转换
+class Sales_item{
+public:
+	Sales_item(const std::string &amp;book = ""):isbn(book), units_sold(0), revenue(0.0) {}
+	Sales_item(std::istream &amp;is);
+};
+// 假设Sales_item有成员函数same_isbn, 其形参类型为 const Sales_item&amp;
+string null_book = "9-999-99999-9";
+item.same_isbn(null_book);	// 实现了 string 到 Sales_item 的隐式转换
+</pre>
+
+<li>
+关键字 explicit 用于避免隐式转换的产生, 只能用于类内部的函数声明上, 在类的定义体外部所做的定义不再重复它. 除非有明显的理由想要定义隐式转换, 否则, 单形参构造函数应该为 explicit.
+<pre class="brush: c++">
+class Sales_item{
+public:
+	explicit Sales_item(const std::string &amp;book = ""):isbn(book), units_sold(0), revenue(0.0) {}
+	explicit Sales_item(std::istream &amp;is);
+};	
+</pre>
+
+<li>
+另外一种避免隐式转换的方法是显示地使用构造函数, 例如:
+<pre class="brush: c++">
+	item.same_isbn(Sales_item(null_book));
+</pre>
+
+<li>
+类成员的显式初始化, 对于没有定义构造函数并且全体数据成员均为 public 的类, 可以采用与初始化数组元素相同的方式初始化其成员, 根据数据成员的声明次序来使用初始化式. 例如:
+<pre class="brush: c++">
+struct Data{
+	int iVal;
+	char *ptr;
+};
+Data val1 = { 0, 0};
+Data val2 = { 1024, "Anna Livia Plurabelle" };
+</pre>
+
+<li>
+友元机制允许一个类将对其非公有成员的访问权授予指定的函数或类, 只能出现在类定义的内部, 友元声明不受声明出现部分的访问控制影响
+
+<li>
+友元可以是普通的非成员函数, 或前面定义的其他类的成员函数, 或整个类. 将一个类设为友元, 友元类的所有成员函数都可以访问授予友元关系的那个类的非公有成员.
+<pre class="brush: c++">
+class Screen {
+	friend Window_Mgr&amp;
+		Window_Mgr::relocate(Window_Mgr::index,
+							Window_Mgr::index,
+							Screen&amp;);
+	// ...
+};
+
+Window_Mgr&amp;
+Window_Mgr::relocate(Window_Mgr::index r,
+					Window_Mgr::index c,
+					Screen&amp; s)
+{
+	s.height += r;
+	s.width += c;
+	return *this;
+}
+</pre>
+
+<li>
+友元声明与友元定义之间的互相依赖:
+
+<ul>
+<li>
+如果要将一个类的成员函数声明为另一个类的友元, 必须在友元声明之前定义该类.
+
+<li>
+对于友元类和友元非成员函数, 则无需预先声明就可以将它们设置为友元
+
+</ul>
+<li>
+友元声明将友元类和友元非成员函数引入到外围作用域中. 友元非成员函数可以在类的内部定义.
+
+<li>
+用友元引入的类名和函数, 就已经预先声明了该类和函数, 后面可以使用该类和函数.
+<pre class="brush: c++">
+class X {
+	friend class Y;		// 声明了该类
+	friend void f() { /* 可以在类内定义, 其作用域为全局作用域 */ }
+};
+
+class Z {
+	Y *ymen;	// Y 已经在之前声明了
+	void g() { return ::f(); }	// f() 在全局作用域中.
+};
+</pre>
+
+<li>
+类静态成员 static, 独立于该类的任意对象存在, static 成员函数没有 this形参, static 成员函数可以直接访问所属类的static成员, 但不能直接使用非static成员.
+
+<li>
+static 成员遵循正常的公有私有访问规则
+<pre class="brush: c++">
+class Account{
+public:
+	void applyint() ( amount += amount * interestRate; )
+	static double rate() { return interestRate; }
+	static void rate(double);	// 设置新的 rate
+private:
+	std::string owner;
+	double amount;
+	static double interestRate;
+	static double initRate();
+};
+</pre>
+
+<li>
+可以通过作用域操作符从类直接调用 static 成员, 或者通过对象, 引用或指向该类类型对象的指针间接调用. 类的成员函数可以不用作用域操作符来引用类的static成员.
+<pre class="brush: c++">
+Account ac1;
+Account *ac2 = &amp;ac1;
+double rate;
+rate = ac1.rate();
+rate = ac2-&gt;rate();
+rate = Account::rate();
+
+class Accout {
+public:
+	void applyint() { amount += amount * interestRate; }
+}
+</pre>
+
+<li>
+static 成员函数在类定义体外定义的时候, 无需重复指定 static保留字. 该保留字只出现在类定义体内部的声明处.
+
+<li>
+static 成员函数不能被声明为 const, 也不能被声明为虚函数.
+
+<li>
+static 数据成员必须在类定义体的外部定义一次, 在定义时进行初始化, 最好将 static数据成员的定义放在包含类的非内敛成员函数定义的文件中.
+<pre class="brush: c++">
+// 当成员名出现时, static成员的定义就在类作用域中, 所以 initRate()前不需要加上类作用域.
+double Account::interestRate = initRate();
+</pre>
+
+<li>
+当我们在类的外部定义static成员时, 无需重复制定static保留字, 该保留字只出现在类定义体内部的声明处.
+
+<li>
+static 成员函数不能被声明为 const, static 成员函数不能被声明为虚函数.
+
+<li>
+static 数据成员必须在类定义体的外部定义(正好一次), 在定义时初始化
+
+<ul>
+<li>
+保证对象正好定义一次的最好办法, 将 static 数据成员的定义放在包含类的非内联成员函数定义的文件中.
+
+<li>
+定义 static 数据成员: 类型名, 成员的完全限定名
+<pre class="brush: c++">
+double Account::interestRate = initRate();	// 一旦 Account:: 出现, 就表示在类的作用域内, 因此 initRate() 无需加上类作用域操作符限定.
+</pre>
+
+</ul>
+<li>
+const static 数据成员可以在类定义体内初始化, 但该数据成员仍然要在类定义体外定义一次, 此时可不需要再指定初始值. 用常量值初始化的const static数据成员是一个常量表达式, 可以用在任何需要常量表达式的地方, 例如数组. 例如:
+<pre class="brush: c++">
+class Account{
+public:
+	static double rate() { return interestRate; }
+	static double rate(double);
+private:
+	static const int period = 30;
+	double daily_tbl[period];
+};
+
+const int Account::period;
+</pre>
+
+<li>
+static 的特殊用法: static数据成员的类型可以是所属类的类型.  static 数据成员可以作为默认实参.
+<pre class="brush: c++">
+class Bar {
+public:
+	// ...
+private:
+	static Bar mem1;
+	Bar* mem2;
+}
+
+class Screen {
+public:
+	Screen&amp; clear(char = bkground);
+private:
+	static const char bkground = '#';
+};
+</pre>
+
+</ul>
+
+    </div>
+</body>
+</html>

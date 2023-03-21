@@ -1,0 +1,20 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../../style.css">
+<title>readme</title>
+<meta http-equiv="Content-Type" content="text/html; charset=cp936">
+</head>
+<body>
+
+<p>
+1. 运行, 直接进入 bin/release, 运行 CharacterAnimation.exe 程序
+2. 程序操作: W/A/S/D 键和方向键可以移动相机, 鼠标移动则改变相机方向.
+3. 界面操作: 左上角有个 Setting 按钮, 点击该按钮弹出设置界面, 分别可以设置忍者数量, 跳跃代价, 爬行代价.  其中跳跃代价越大, 则当忍者遇到可以跳跃的障碍物时, 则可能选择绕行. 爬行代价也是这样的意思.
+4. 程序主要文件: Application.h, Application.cpp 文件主要用于构建场景以及进行鼠标, 键盘控制; NinjaCharacter.h, NinjaCharacter.cpp 主要用于设置每个忍者的位置和动画. NinjaMachine.h 主要用于管理忍者的四个状态; Scenemap.h, Scenemap.cpp 则由每个忍者调用该类进行路径查找.
+5. 主要原理; 每个忍者根据跳跃代价, 爬行代价, 以及场景信息, 使用A*算法找出一条路行走. 在行走过程中, 遇到不同的障碍物, 做出不同的选择. 并且如果前进方向有忍者, 则会停下来等待其过去.
+6. 场景默认30个忍者, 当忍者到达目的地后, 会重新回到起点.
+</p>
+
+</body>
+</html>

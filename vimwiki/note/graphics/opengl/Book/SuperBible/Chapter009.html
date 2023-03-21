@@ -1,0 +1,3046 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../../style.css" />
+    <title>Chapter009</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="../index.html">首页</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<div id="Chapter 9 Fragment Processing and the Framebuffer"><h1 id="Chapter 9 Fragment Processing and the Framebuffer">Chapter 9 Fragment Processing and the Framebuffer</h1></div>
+<div id="Chapter 9 Fragment Processing and the Framebuffer-9.1 Fragment Shaders"><h2 id="9.1 Fragment Shaders">9.1 Fragment Shaders</h2></div>
+<ul>
+<li>
+片段着色器每个片段运行一次, 一个片段是一个虚拟的元素, 其处理的结果可能是用于一个像素的最终颜色. 
+
+<li>
+片段着色器的输入, 是由固定功能的插值阶段生成, 该固定功能是作为光栅化的一部分而执行的. 
+
+<li>
+默认情况下, 片段着色器的input block在被光栅化的图元上平滑插值. 你可以对如何插值进行一点控制, 以及是否执行插值.
+
+</ul>
+
+<div id="Chapter 9 Fragment Processing and the Framebuffer-9.1 Fragment Shaders-9.1.1 Interpolation and Storage Qualifiers"><h3 id="9.1.1 Interpolation and Storage Qualifiers">9.1.1 Interpolation and Storage Qualifiers</h3></div>
+<ul>
+<li>
+一些 storage 前缀可以用于高级渲染, 包括 flat, noperspective. 
+
+</ul>
+
+<div id="Chapter 9 Fragment Processing and the Framebuffer-9.1 Fragment Shaders-9.1.1 Interpolation and Storage Qualifiers-9.1.1.1 Disabling Interpolation"><h4 id="9.1.1.1 Disabling Interpolation">9.1.1.1 Disabling Interpolation</h4></div>
+<ul>
+<li>
+当你声明一个片段着色器的输入, 在被渲染的图元上生成或者插值该输入. 然而, 无论你何时将一个整数从前端传递至后端, 必须禁止插值. OpenGL 不能平滑地插值整数. 也可显式禁止片段着色器浮点数输入的插值. 
+
+<li>
+使用 flat 输入禁止插值(相对应的是 smooth 输入). 使用 flat storage 前缀
+<pre class="brush: glsl">
+flat in vec4 foo;
+flat in int bar;
+flat in mat3 baz;
+</pre>
+
+<li>
+插值前缀同样可以用于 input blocks 上, 应用于blocks的插值前缀继承自其成员, 它们自动应用于block的所有成员. 其也可对block的不同成员应用不同的前缀.
+<pre class="brush: glsl">
+flat in INPUT_BLOCK
+{
+	vec4 foo;
+	int bar;
+	smooth mat3 baz;
+};
+</pre>
+
+<li>
+在本例中, foo 禁止插值, 这是因为其继承了父块的 flat 前缀. bar 自动为 flat, 因为它是一个整数.  baz 则为平滑插值, 这是因为其在内部使用了 smooth 插值前缀.
+
+<li>
+使用 storage 和插值前缀时, 用于前端中的对应输出必须匹配片段着色器的输入. 这表示, 当你前端的最后输出在片段着色器中对应输入使用 flat 前缀时, 其值仅来自图元中的一个顶点. 渲染线条或三角形时, 只使用图元中的第一个或最后一个顶点. 所取的顶点称之为 provoking 顶点. 可通过下面代码确定是第一个还是最后一个顶点.
+<pre class="brush: c++">
+void glProvokingVertex(GLenum provokeMode);
+</pre>
+
+<ul>
+<li>
+provokeMode --- 其值可以为 GL_FIRST_VERTEX_CONNECTION, GL_LAST_VERTEX_CONNECTION. 默认为 GL_LAST_VERTEX_CONNECTION.
+
+</ul>
+</ul>
+
+<div id="Chapter 9 Fragment Processing and the Framebuffer-9.1 Fragment Shaders-9.1.1 Interpolation and Storage Qualifiers-9.1.1.2 Interpolating without Perspective Correction"><h4 id="9.1.1.2 Interpolating without Perspective Correction">9.1.1.2 Interpolating without Perspective Correction</h4></div>
+<ul>
+<li>
+OpenGL 在屏幕空间中逐像素执行插值. 由于透视缩短的问题, 像素之间的步长(steps)不是常量. OpenGL 使用 perspective-correct 插值修正它. 为了实现这点, 其在屏幕空间内是线性插值, 而后使用其结果推导出每个像素其着色器输入的实际值. 
+
+<li>
+三角形上的纹理坐标 uv, u和v并不在屏幕空间中线性插值, 而是 u/w 和 v/w 在屏幕空间中插值, 1/w 为片段坐标的第四个元素. 所以 OpenGL 实际的插值为 u/w, v/w 和 1/w. 在每个像素上, 根据 1/w 得到 w, 而后 u/w 和 v/w 乘以 w 得到 u 和 v. 这样得到片段着色器每个实例插值的透视修正值.
+
+<li>
+如果你想要插值在屏幕空间内执行, 且无视图元的方位, 你可以使用 noperspective storage 前缀:
+<pre class="brush: glsl">
+noperspective out vec2 texcoord;
+</pre>
+
+<ul>
+<li>
+该代码位于顶点着色器中(或者前端的任意最后一个着色器)
+<pre class="brush: glsl">
+noperspective in vec2 texcoord;
+</pre>
+
+<li>
+该代码则位于片段着色器中. 
+
+</ul>
+<li>
+例子
+
+</ul>
+
+<div id="Chapter 9 Fragment Processing and the Framebuffer-9.2 Per-Fragment Tests"><h2 id="9.2 Per-Fragment Tests">9.2 Per-Fragment Tests</h2></div>
+<ul>
+<li>
+OpenGL 在片段上执行一些测试以确定是否以及如何将片段写入至 framebuffer.
+
+</ul>
+<div id="Chapter 9 Fragment Processing and the Framebuffer-9.2 Per-Fragment Tests-9.2.1 Scissor Testing"><h3 id="9.2.1 Scissor Testing">9.2.1 Scissor Testing</h3></div>
+<ul>
+<li>
+scissor 矩形是一个任意的举行, 你可以在屏幕坐标中设置, 允许你进一步裁减至一个特定的区域. 通过单个片段是否在矩形内进行处理, 这作为 post-rasterization 处理的一部分, OpenGL 支持一个 scissor 矩形数组. 为了设置它们, 你可以调用 glScissorIndexed() 或 glScissorIndexedv(), 原型为:
+<pre class="brush: c++">
+void glScissorIndexed(GLuint index,
+					GLint left,
+					GLint bottom,
+					GLsizei width,
+					GLsizei height);
+void glScissorIndexedv(GLuint index,
+					const GLint * v);
+</pre>
+
+<ul>
+<li>
+index 参数表示你想要改变的 scissor 矩形索引. 
+
+</ul>
+<li>
+为了选择一个 scissor 矩形, 使用来自几何着色器使用的 gl_ViewportIndex 内置输出(是的, 同样可以选择viewport的那个). 这表示, 给出一个 viewport 数组和 scissor 矩形数组, 相同的索引用于两个数组.
+
+<li>
+允许 scissor 测试
+<pre class="brush: c++">
+glEnable(GL_SCISSOR_TEST);
+</pre>
+
+<li>
+禁止 scissor 测试
+<pre class="brush: c++">
+glDisable(GL_SCISSOR_TEST);
+</pre>
+
+<li>
+本例使用一个 instanced geometry shader 写入 gl_ViewportIndex, 允许 scissor 测试, 设置了一些 scissor 矩形. 例子为 multiscissor. 
+
+<li>
+关于 scissor 测试要记住的重要一点, 当你使用 glClear() 或 glClearBufferfv() 清理 framebuffer 时, 第一个 scissor 矩形则应用得很好. 这表示你可以使用 scissor 矩形来清理 framebuffer 的任意矩形, 就是要注意在清理完毕之后禁用 scissor 测试. 否则下一帧清理 framebuffer 的时候, 则只能清理 scissor 矩形内的内容.
+
+</ul>
+
+<div id="Chapter 9 Fragment Processing and the Framebuffer-9.2 Per-Fragment Tests-9.2.2 Stencil Testing"><h3 id="9.2.2 Stencil Testing">9.2.2 Stencil Testing</h3></div>
+<ul>
+<li>
+如果 framebuffer 的 pixel format 包含一个 stencil buffer, 则可以在 framebuffer 中进行 stencil test. 
+
+<li>
+glEnable() 和 GL_STENCIL_TEST 用于允许 stencil test. 
+
+<li>
+大多数实现仅支持包含 8 位的 stencil buffers. 但一些配置可能支持更少的位数(或者更多, 但这极不通用).
+
+<li>
+你的绘制命令可对 stencil buffer 有直接影响. stencil buffer 的值可以对你绘制的像素有直接影响. 
+
+<li>
+为了控制与 stencil buffer 的互动, OpenGL 提供了两个命令: glStencilFuncSeparate() 和 glStencilOpSeparate(). OpenGL 让你各自设置正面和背面的几何. 
+<pre class="brush: c++">
+void glStencilFuncSeparate(GLenum face,
+							GLenum func,
+							GLint ref,
+							GLuint mask);
+
+void glStencilOpSeparate(GLenum face,
+						GLenum sfail,
+						GLenum dpfail,
+						GLenum dppass);
+</pre>
+
+<ul>
+<li>
+glStencilFuncSeparate() --- 控制 stencil test 通过或失败的条件. 
+
+<li>
+face 有 GL_FRONT, GL_BACK, GL_FRONT_AND_BACK.
+
+<li>
+func 的值可见表格 9.1
+
+<li>
+ref 的值为用于计算通过或失败结果的参考值
+
+<li>
+mask 让你控制参考值的哪个位和buffer进行比较. 
+
+</ul>
+<li>
+stencil 测试实现的伪代码
+<pre class="brush: c++">
+GLuint current = GetCurrentStencilContent(x, y);
+if (compare(current &amp; mask,
+			ref &amp; mask,
+			front_facing ? front_op : back_op))
+{
+	passed = true;
+}
+else
+{
+	passed = false;
+</pre>
+
+<li>
+表 9.1
+
+<ul>
+<li>
+GL_NEVER --- Never pass test.
+
+<li>
+GL_ALWAYS --- Always pass test.
+
+<li>
+GL_LESS --- Reference value is less than buffer value.
+
+<li>
+GL_LEQUAL --- Reference value is less than or equal to buffer value.
+
+<li>
+GL_EQUAL --- Reference value is equal to buffer value.
+
+<li>
+GL_GEQUAL --- Reference value is greater than or equal to buffer value.
+
+<li>
+GL_GREATER --- Reference value is greater than buffer value.
+
+<li>
+GL_NOTEQUAL--- Reference value is not equal to buffer value.
+
+</ul>
+<li>
+接下来用于告知当通过或者没有通过 stencil test 时 OpenGL 应当做什么, 这使用函数 glStencilOpSeparate(), 这个函数有四个参数, 第一个表示影响哪个面. 接下来三个参数控制执行 stencil 后发生何事. 其为表格 9.2 中的一个值. 
+
+<ul>
+<li>
+sfail 参数 --- stencil 测试失败后如何处理.
+
+<li>
+dpfail 参数 --- depth buffer 测试失败后如何处理.
+
+<li>
+dppass 参数 --- depth buffer 测试成功后如何处理.
+
+</ul>
+<li>
+注意, 如果 stencil 测试失败, 则不会进行后续测试.
+
+<li>
+glClearBufferiv() 对 stencil buffer 进行清空. 
+
+<li>
+表 9.2
+
+<ul>
+<li>
+GL_KEEP --- Do not modify the stencil buffer.
+
+<li>
+GL_ZERO --- Set stencil buffer value to 0.
+
+<li>
+GL_REPLACE --- Replace stencil value with reference value.
+
+<li>
+GL_INCR --- Increment stencil with saturation.
+
+<li>
+GL_DECR --- Decrement stencil with saturation.
+
+<li>
+GL_INVERT --- Bitwise invert stencil value.
+
+<li>
+GL_INCR_WRAP --- Increment stencil without saturation.
+
+<li>
+GL_DECR_WRAP --- Decrement stencil without saturation.
+
+</ul>
+<li>
+另外两个 stencil 函数: glStencilFunc() 和 glStencilOp(). 类似于 glStencilFuncSeparate() 和 glStencilOpSeparate(), 只是 face 设为 GL_FRONT_AND_BACK.
+
+</ul>
+
+<div id="Chapter 9 Fragment Processing and the Framebuffer-9.2 Per-Fragment Tests-9.2.2 Stencil Testing-9.2.2.1 Controlling Updates to the Stencil Buffer"><h4 id="9.2.2.1 Controlling Updates to the Stencil Buffer">9.2.2.1 Controlling Updates to the Stencil Buffer</h4></div>
+<ul>
+<li>
+glStencilMaskSeparate() 函数根据一个位域控制 stencil buffer 中的哪位应当更新, 哪位不更新, 原型为:
+<pre class="brush: c++">
+void glStencilMaskSeparate(GLenum face, GLuint mask);
+</pre>
+
+<ul>
+<li>
+和 stencil test 函数一样, 这里有两套状态 --- 一个用于正面一个用于背面图元.
+
+<li>
+mask 参数则是位域(bitfield), 其映射 stencil buffer 中的位. - 如果 stencil buffer 少于 32 位(当前大多数 OpenGL 实现支持的最大数字为 8), 则仅有许多最重要的位mask被使用. 如果一个 mask 位设置为1, 则stencil buffer 对应的位可以更新, 如果为0, 则不能更新. 举例, 看如下代码:
+<pre class="brush: c++">
+GLuint mask = 0x000F;
+glStencilMaskSeparate(GL_FRONT, mask);
+glStencilMaskSeparate(GL_BACK, ~mask);
+</pre>
+
+<li>
+在上面的例子中, 正面允许写入stencil buffer的低四位. 背面则写入高四位(如果stencil buffer为8位buffer).
+
+</ul>
+</ul>
+
+<div id="Chapter 9 Fragment Processing and the Framebuffer-9.2 Per-Fragment Tests-9.2.3 Depth Testing"><h3 id="9.2.3 Depth Testing">9.2.3 Depth Testing</h3></div>
+<ul>
+<li>
+stencil 操作完成后, 允许深度测试的话, OpenGL 则进行片段的深度值和depth buffer已有内容的测试. 如果允许深度测试, 且片段通过深度测试, 则更新深度buffer为该片段的深度值. 如果深度测试失败, 则该片段被抛弃, 不传递给接下来的片段操作.
+
+<li>
+你可以选择何种比较操作符用于片段通过深度测试. 使用 glDepthFunc() 函数:
+<pre class="brush: c++">
+void glDepthFunc(GLenum func);
+</pre>
+
+<ul>
+<li>
+func 是可用的深度比较操作符之一, 该参数的可选值见表 9.3
+
+<li>
+如果禁用深度测试, 则好像深度测试永远通过一样(深度函数为 GL_ALWAYS). 仅有一个不同: 仅当允许深度测试时才能更新深度 buffer. 如果你想无条件地写入深度 buffer, 你必须允许深度测试, 且设置深度函数为 GL_ALWAYS.
+
+<li>
+默认情况禁用深度测试. 打开深度测试:
+<pre class="brush: c++">
+glEnable(GL_DEPTH_TEST);
+</pre>
+
+<li>
+关闭则使用 glDisable() 和 GL_DEPTH_TEST 参数.
+
+</ul>
+<li>
+表 9.3
+
+<ul>
+<li>
+GL_ALWAYS --- The depth test always passes — all fragments are considered to have passed the depth test.
+
+<li>
+GL_NEVER --- The depth test never passes — all fragments are considered to have failed the depth test.
+
+<li>
+GL_LESS --- The depth test passes if the new fragment’s depth value is less than the old fragment’s depth value.
+
+<li>
+GL_LEQUAL --- The depth test passes if the new fragment’s depth value is less than or equal to the old fragment’s depth value.
+
+<li>
+GL_EQUAL --- The depth test passes if the new fragment’s depth value is equal to the old fragment’s depth value.
+
+<li>
+GL_NOTEQUAL --- The depth test passes if the new fragment’s depth value is not equal the old fragment’s depth value.
+
+<li>
+GL_GREATER --- The depth test passes if the new fragment’s depth value is greater than the old fragment’s depth value.
+
+<li>
+GL_GEQUAL --- The depth test passes if the new fragment’s depth value is greater than or equal to the old fragment’s depth value.
+
+</ul>
+</ul>
+
+<div id="Chapter 9 Fragment Processing and the Framebuffer-9.2 Per-Fragment Tests-9.2.3 Depth Testing-9.2.3.1 Controlling Updates of the Depth Buffer"><h4 id="9.2.3.1 Controlling Updates of the Depth Buffer">9.2.3.1 Controlling Updates of the Depth Buffer</h4></div>
+<ul>
+<li>
+可以打开和关闭深度 buffer 的写入, 而无需考虑深度测试的结果. 
+
+<li>
+glDepthMask() 函数可以打开和关闭对 depth buffer 的写入. GL_TRUE 打开, GL_FALSE 关闭.
+<pre class="brush: c++">
+glDepthMask(GL_FALSE);
+</pre>
+
+<li>
+这样做, 可以进行深度测试但不更新深度 buffer. 默认该 depth mask 为 GL_TRUE.
+
+</ul>
+
+<div id="Chapter 9 Fragment Processing and the Framebuffer-9.2 Per-Fragment Tests-9.2.3 Depth Testing-9.2.3.2 Depth Clamping"><h4 id="9.2.3.2 Depth Clamping">9.2.3.2 Depth Clamping</h4></div>
+<ul>
+<li>
+片段的深度值, 0.0 表示在近截平面, 1.0 表示在远截屏面. 为了消除远截屏面并可以绘制任意距离的东西, 我们需要存储任意大的数字在 depth buffer 中. OpenGL 可以关闭近截平面和远截屏面的裁减, 并取代对深度值位于0到1的clamp. 为了允许 depth clamping(同时关闭近截平面和远截屏面的裁减), 调用:
+<pre class="brush: c++">
+glEnable(GL_DEPTH_CLAMP);
+</pre>
+
+<ul>
+<li>
+禁止 depth clamping
+<pre class="brush: c++">
+glDisable(GL_DEPTH_CLAMP);
+</pre>
+
+</ul>
+</ul>
+
+<div id="Chapter 9 Fragment Processing and the Framebuffer-9.2 Per-Fragment Tests-9.2.4 Early Testing"><h3 id="9.2.4 Early Testing">9.2.4 Early Testing</h3></div>
+<ul>
+<li>
+逻辑上, 深度和stencil测试时在片段着色之后执行. 但大多数图形硬件允许在你的着色器之前执行测试, 可以节省着色器的运行. 
+
+<li>
+如果你的着色器有副作用(例如直接写入一个纹理)或者其他影响测试的效果, 则不能事先执行测试, 必须要运行你的着色器. 
+
+<li>
+一个特殊的例子, 你可以在你的着色器阻止 OpenGL 执行深度测试, 其在执行深度测试之前将值写入 gl_FragDepth 内置输出变量.
+
+<li>
+内置变量 gl_FragDepth, 可以写入一个更新的深度值. 如果片段着色器不写入该变量, 则 OpenGL 插值生成的深度值则被用作片段的深度值. 你的片段可以计算一个完全的新值给 gl_FragDepth, 或者其可以从 gl_FragCoord.z 值推导出一个. 这个新值可以在之后被 OpenGL 用作深度测试的参考值和深度测试通过后的写入深度 buffer 的值. 例如, 其可以轻微地扰乱深度buffer中的值并创建物理的肿块表面. 
+
+<li>
+应用一个 gl_FragDepth 的重声明(redeclaration). 用于告知你计划对深度值要做的事情, 形式如下:
+
+<li>
+如果你设置深度测试函数为 GL_LESS(仅会通过比framebuffer中更靠近观察者的片段), 则你只有设置 gl_FragDepth 比之前更小的值才行. 片段将通过深度测试而无需考虑着色器做的事情, 因此原先的深度测试仍有效
+<pre class="brush: glsl">
+layout (depth_any) out float gl_FragDepth;
+layout (depth_less) out float gl_FragDepth;
+layout (depth_greater) out float gl_FragDepth;
+layout (depth_unchanged) out float gl_FragDepth;
+</pre>
+
+<ul>
+<li>
+如果你使用 depth_any layout 前缀, 则告知 OpenGL 你可能在 gl_FragDepth 中写入任何值, 这是默认的情况. 
+
+<li>
+depth_less --- 表示无论你在 gl_FragDepth 写入何值, 片段的深度值都应小于其已有的值. 这种情况下, 来自 GL_LESS 和 GL_LEQUAL 比较函数的结果仍然有效. 对于 depth_greater 也是同理.
+
+<li>
+depth_unchanged --- 无论你对 gl_FragDepth 做了什么, 其都不会写入任何会导致深度测试结果改变的内容.
+
+<li>
+使用 depth_any, depth_less, depth_greater, 特定条件下在你的着色器执行之前执行深度测试. 使用 depth_unchanged, 表示无论你对深度值做了什么, 原先的测试结果仍保持有效. 当你计划轻微地扰动片段的深度, 但不使得其和场景中其他的几何体相交.
+
+</ul>
+<li>
+不管你作用域 gl_FragDepth 的重声明 layout 前缀, 也不管 OpenGL 要做什么, 写入 gl_FragDepth 的值都会被裁减至 0.0 到 1.0 的范围, 而后写入深度 buffer.
+
+</ul>
+
+<div id="Chapter 9 Fragment Processing and the Framebuffer-9.3 Color Output"><h2 id="9.3 Color Output">9.3 Color Output</h2></div>
+<ul>
+<li>
+颜色输出阶段是OpenGL管线中片段写入framebuffer之前的最后阶段. 用于确定显示给用户之前对颜色数据做些什么.
+
+</ul>
+
+<div id="Chapter 9 Fragment Processing and the Framebuffer-9.3 Color Output-9.3.1 Blending"><h3 id="9.3.1 Blending">9.3.1 Blending</h3></div>
+<ul>
+<li>
+如果你要绘制的buffer为定点小数(fixed point), 则在混合操作发生之前, 进来的源颜色其会裁减至 0.0 到 1.0 的范围. 允许混合:
+<pre class="brush: c++">
+glEnable(GL_BLEND);
+</pre>
+
+<ul>
+<li>
+禁止混合
+<pre class="brush: c++">
+glDisable(GL_BLEND);
+</pre>
+
+</ul>
+<li>
+OpenGL 的混合功能强大且可以高度定制, 源颜色(你的着色器产生的颜色)乘上源因子, framebuffer的颜色乘上目标因子. 而后使用 blend equation 组合这些结果. 
+
+</ul>
+
+<div id="Chapter 9 Fragment Processing and the Framebuffer-9.3 Color Output-9.3.1 Blending-9.3.1.1 Blend Functions"><h4 id="9.3.1.1 Blend Functions">9.3.1.1 Blend Functions</h4></div>
+<ul>
+<li>
+使用 glBlendFunc() 和 glBlendFuncSeparate() 设置因子. 前者一起设置源和目标因子的四个通道, 后则则分开设置前三个通道与alpha通道.
+<pre class="brush: c++">
+glBlendFuncSeparate(GLenum srcRGB, GLenum dstRGB,
+					GLenum srcAlpha, GLenum dstaAlpha);
+glBlendFunc(GLenum src, GLenum dst);
+</pre>
+
+<ul>
+<li>
+参数可设置的值见表格 9.4. 有四种源数据可以用于混合函数, 分别为第一源颜色(Rs0, Gs0, Bs0, As0), 第二源颜色(Rs1, Gs1, Bs1, As1), 目标颜色(Rd, Gd, Bd, Ad), 常量混合颜色(Rc, Gc, Bc, Ac). 常量混合颜色可以调用 glBlendColor() 设置
+<pre class="brush: c++">
+glBlendColor(GLfloat red, GLfloat green,
+			GLfloat blue, GLfloat alpha);
+</pre>
+
+</ul>
+<li>
+表格 9.4
+<table>
+<tr>
+<th>
+混合函数
+</th>
+<th>
+RGB
+</th>
+<th>
+Alpha
+</th>
+</tr>
+<tr>
+<td>
+GL_ZERO
+</td>
+<td>
+(0, 0, 0)
+</td>
+<td>
+0
+</td>
+</tr>
+<tr>
+<td>
+GL_ONE
+</td>
+<td>
+(1, 1, 1)
+</td>
+<td>
+1
+</td>
+</tr>
+<tr>
+<td>
+GL_SRC_COLOR
+</td>
+<td>
+(Rs0, Gs0, Bs0)
+</td>
+<td>
+As0
+</td>
+</tr>
+<tr>
+<td>
+GL_ONE_MINUS_SRC_COLOR
+</td>
+<td>
+(1, 1, 1) - (Rs0, Gs0, Bs0)
+</td>
+<td>
+1 - As0
+</td>
+</tr>
+<tr>
+<td>
+GL_DST_COLOR
+</td>
+<td>
+(Rd, Gd, Bd)
+</td>
+<td>
+Ad
+</td>
+</tr>
+<tr>
+<td>
+GL_ONE_MINUS_DST_COLOR
+</td>
+<td>
+(1, 1, 1) - (Rd, Gd, Bd)
+</td>
+<td>
+1 - Ad
+</td>
+</tr>
+<tr>
+<td>
+GL_SRC_ALPHA
+</td>
+<td>
+(As0, As0, As0)
+</td>
+<td>
+As0
+</td>
+</tr>
+<tr>
+<td>
+GL_ONE_MINUS_SRC_ALPHA
+</td>
+<td>
+(1, 1, 1) - (As0, As0, As0)
+</td>
+<td>
+1 - As0
+</td>
+</tr>
+<tr>
+<td>
+GL_DST_ALPHA
+</td>
+<td>
+(Ad, Ad, Ad)
+</td>
+<td>
+Ad
+</td>
+</tr>
+<tr>
+<td>
+GL_ONE_MINUS_DST_ALPHA
+</td>
+<td>
+(1, 1, 1) - (Ad, Ad, Ad)
+</td>
+<td>
+1 - Ad
+</td>
+</tr>
+<tr>
+<td>
+GL_CONSTANT_COLOR
+</td>
+<td>
+(Rc, Gc, Bc)
+</td>
+<td>
+Ac
+</td>
+</tr>
+<tr>
+<td>
+GL_ONE_MINUS_CONST_COLOR
+</td>
+<td>
+(1, 1, 1) - (Rc, Gc, Bc)
+</td>
+<td>
+1 - Ac
+</td>
+</tr>
+<tr>
+<td>
+GL_CONSTANT_ALPHA
+</td>
+<td>
+(Ac, Ac, Ac)
+</td>
+<td>
+Ac
+</td>
+</tr>
+<tr>
+<td>
+GL_ONE_MINUS_CONSTANT_ALPHA
+</td>
+<td>
+(1, 1, 1) - (Ac, Ac, Ac)
+</td>
+<td>
+1 - Ac
+</td>
+</tr>
+<tr>
+<td>
+GL_ALPHA_SATURATE
+</td>
+<td>
+(F, F, F)
+</td>
+<td>
+1
+</td>
+</tr>
+<tr>
+<td>
+&nbsp;
+</td>
+<td>
+f = min(As0, 1 - Ad)
+</td>
+<td>
+&nbsp;
+</td>
+</tr>
+<tr>
+<td>
+GL_SRC1_COLOR
+</td>
+<td>
+(Rs1, Gs1, Bs1)
+</td>
+<td>
+As1
+</td>
+</tr>
+<tr>
+<td>
+GL_ONE_MINUS_SRC1_COLOR
+</td>
+<td>
+(1, 1, 1) - (Rs1, Gs1, Bs1)
+</td>
+<td>
+1 - As1
+</td>
+</tr>
+<tr>
+<td>
+GL_SRC1_ALPHA
+</td>
+<td>
+(As1, As1, As1)
+</td>
+<td>
+As1
+</td>
+</tr>
+<tr>
+<td>
+GL_ONE_MINUS_SRC1_ALPHA
+</td>
+<td>
+(1, 1, 1) - (As1, As1, As1)
+</td>
+<td>
+1 - As1
+</td>
+</tr>
+</table>
+
+<li>
+例子代码, framebuffer 清空为 mid-orange 颜色, 打开混合, 设置混合颜色为 mid-blue 颜色. 而后绘制一个小的立方体, 以每种可能的源和目标混合函数的组合来渲染. 
+
+</ul>
+
+<div id="Chapter 9 Fragment Processing and the Framebuffer-9.3 Color Output-9.3.1 Blending-9.3.1.2 Dual-Source Blending"><h4 id="9.3.1.2 Dual-Source Blending">9.3.1.2 Dual-Source Blending</h4></div>
+<ul>
+<li>
+你的片段着色器可以导出多个最终颜色给不同的颜色buffer. 使用 index layout 前缀分配最终颜色输出的索引.
+<pre class="brush: glsl">
+layout (location = 0, index = 0) out vec4 color0;
+layout (location = 0, index = 1) out vec4 color1;
+</pre>
+
+<ul>
+<li>
+color0 则用于 GL_SRC_COLOR, color1 则用于 GL_SRC1_COLOR.
+
+</ul>
+<li>
+当你使用dual source blending 函数, 则你可使用的单独的color buffers的数量则可能受限.
+
+<li>
+GL_MAX_DUAL_SOURCE_DRAW_BUFFERS 可以查看支持多少 dual output buffers.
+
+</ul>
+
+<div id="Chapter 9 Fragment Processing and the Framebuffer-9.3 Color Output-9.3.1 Blending-9.3.1.3 Blend Equation"><h4 id="9.3.1.3 Blend Equation">9.3.1.3 Blend Equation</h4></div>
+<ul>
+<li>
+在源和目标因子已经与源和目标颜色相乘之后, 这两个乘积结果应当组合起来. 这通过 glBlendEquation() 和 glBlendEquationSeparate() 函数设置公式. 这两个函数的区别和之前相同
+<pre class="brush: c++">
+glBlendEquation(GLenum mode);
+glBlendEquationSeparate(GLenum modeRGB,
+						GLenum modeAlpha);
+</pre>
+
+<ul>
+<li>
+参数可选值见表格 9.5
+
+<li>
+表格 9.5 中, RGBs 表示源的红色, 绿色, 蓝色值. RGBd 表示目标的红色, 绿色, 蓝色值. As 和 Ad 表示源和目标的alpha值. Srgb 和 Drgb 表示 源和目标的混合因子. Sa 和 Da 表示源和目标的 alpha 因子(通过 glBlendFunc() 或 glBlendFuncSeparate() 选择).
+
+</ul>
+<li>
+表格 9.5
+<table>
+<tr>
+<th>
+公式
+</th>
+<th>
+RGB
+</th>
+<th>
+Alpha
+</th>
+</tr>
+<tr>
+<td>
+GL_FUNC_ADD
+</td>
+<td>
+Srgb * RGBs + Drgb * RGBd
+</td>
+<td>
+Sa * As + Da * Ad
+</td>
+</tr>
+<tr>
+<td>
+GL_FUNC_SUBTRACT
+</td>
+<td>
+Srgb * RGBs - Drgb * RGBd
+</td>
+<td>
+Sa * As - Da * Ad
+</td>
+</tr>
+<tr>
+<td>
+GL_MIN
+</td>
+<td>
+min(RGBs, RGBd)
+</td>
+<td>
+min(As, Ad)
+</td>
+</tr>
+<tr>
+<td>
+GL_MAX
+</td>
+<td>
+max(RGBs, RGBd)
+</td>
+<td>
+max(As, Ad)
+</td>
+</tr>
+</table>
+
+</ul>
+
+
+<div id="Chapter 9 Fragment Processing and the Framebuffer-9.3 Color Output-9.3.2 Logical Operations"><h3 id="9.3.2 Logical Operations">9.3.2 Logical Operations</h3></div>
+<ul>
+<li>
+一旦像素的颜色和framebuffer有相同的格式, 像素的位深度和framebuffer的位深度一致, 则可有两个更多的步骤来影响最终的结果. 第一个允许你在向下传递的时候, 对 pixel color 应用一个逻辑的操作. 当允许这个功能时, 混合的效果则被忽略, 逻辑的操作并不影响浮点 buffers. 下面的代码允许逻辑操作
+<pre class="brush: c++">
+glEnable(GL_COLOR_LOGIC_OP);
+</pre>
+
+<li>
+禁止逻辑操作
+<pre class="brush: c++">
+glDisable(GL_COLOR_LOGIC_OP);
+</pre>
+
+<li>
+逻辑操作使用进入的像素的值和已有的 framebuffer 计算最终的值. glLogicOp() 设置计算最终值的操作. 可能的值见表格 9.6
+<pre class="brush: c++">
+glLogicOp(GLenum op);
+</pre>
+
+<li>
+表格 9.6
+<table>
+<tr>
+<th>
+操作
+</th>
+<th>
+结果
+</th>
+</tr>
+<tr>
+<td>
+GL_CLEAR
+</td>
+<td>
+Set all values to 0
+</td>
+</tr>
+<tr>
+<td>
+GL_AND
+</td>
+<td>
+Source &amp; Destination
+</td>
+</tr>
+<tr>
+<td>
+GL_AND_REVERSE
+</td>
+<td>
+Source &amp; ~Destination
+</td>
+</tr>
+<tr>
+<td>
+GL_COPY
+</td>
+<td>
+Source
+</td>
+</tr>
+<tr>
+<td>
+GL_AND_INVERTED
+</td>
+<td>
+~Source &amp; Destination
+</td>
+</tr>
+<tr>
+<td>
+GL_NOOP
+</td>
+<td>
+Destination
+</td>
+</tr>
+<tr>
+<td>
+GL_XOR
+</td>
+<td>
+Source ^Destination
+</td>
+</tr>
+<tr>
+<td>
+GL_OR
+</td>
+<td>
+Source or Destination
+</td>
+</tr>
+<tr>
+<td>
+GL_NOR
+</td>
+<td>
+~(Source or Destination)
+</td>
+</tr>
+<tr>
+<td>
+GL_EQUIV
+</td>
+<td>
+~(Source ^Destination)
+</td>
+</tr>
+<tr>
+<td>
+GL_INVERT
+</td>
+<td>
+~Destination
+</td>
+</tr>
+<tr>
+<td>
+GL_OR_REVERSE
+</td>
+<td>
+Source or ~Destination
+</td>
+</tr>
+<tr>
+<td>
+GL_COPY_INVERTED
+</td>
+<td>
+~Source
+</td>
+</tr>
+<tr>
+<td>
+GL_OR_INVERTED
+</td>
+<td>
+~Source or Destination
+</td>
+</tr>
+<tr>
+<td>
+GL_NAND
+</td>
+<td>
+~(Source &amp; Destination)
+</td>
+</tr>
+<tr>
+<td>
+GL_SET
+</td>
+<td>
+Set all values to 1
+</td>
+</tr>
+</table>
+
+<li>
+逻辑操作各自应用在每个颜色通道上, 源和目标的组合操作是在颜色值上逐位执行的.
+
+<li>
+逻辑操作现在图形不常使用, 但仍保留作为 OpenGL 的部分, 因为其功能仍在现代 GPUs 上被支持.
+
+</ul>
+
+<div id="Chapter 9 Fragment Processing and the Framebuffer-9.3 Color Output-9.3.3 Color Masking"><h3 id="9.3.3 Color Masking">9.3.3 Color Masking</h3></div>
+<ul>
+<li>
+片段被写入之前可做的最后修改之一为 masking. 片段着色器可以写入的三个不同类型的数据: 颜色, 深度, stencil 数据. 正如你可以 mask stencil 和深度 buffer 的更新, 你也可以 mask 颜色 buffer 的更新.
+
+<li>
+使用 glColorMask(), glColorMaski(). 
+
+<li>
+你不必一次性 mask 所有的颜色通道. 例如, 你可以 mask 红色和绿色通道, 而让蓝色通道可以写入内容. 每个函数有四个布尔值参数控制颜色 buffer 其红色, 绿色, 蓝色和 alpha 通道的更新. 
+<pre class="brush: c++">
+glColorMask(GLboolean red,
+			GLboolean green,
+			GLboolean blue,
+			GLboolean alpha);
+glColorMaski(GLuint index,
+			GLboolean red,
+			GLboolean green,
+			GLboolean blue,
+			GLboolean alpha);
+</pre>
+
+<ul>
+<li>
+第一个函数: mask 当前可用于渲染的所有颜色 buffer.
+
+<li>
+第二个函数: mask 特定的颜色 buffer.
+
+<li>
+index --- 该参数为想要应用 masking 的 color attachment 的索引
+
+</ul>
+</ul>
+
+<div id="Chapter 9 Fragment Processing and the Framebuffer-9.3 Color Output-9.3.3 Color Masking-9.3.3.1 Mask Usage"><h4 id="9.3.3.1 Mask Usage">9.3.3.1 Mask Usage</h4></div>
+<ul>
+<li>
+使用深度信息填充一个 shadow volume. 你可以 mask 所有的颜色写入, 因为只有深度信息是重要的.
+
+<li>
+绘制屏幕空间的印花, 禁止深度写入可以避免深度数据被污染. 
+
+</ul>
+
+<div id="Chapter 9 Fragment Processing and the Framebuffer-9.4 Off-Screen Rendering"><h2 id="9.4 Off-Screen Rendering">9.4 Off-Screen Rendering</h2></div>
+<ul>
+<li>
+OpenGL 包含一个功能, 允许你设置自己的 framebuffer, 并将其直接绘制至纹理中. 你可以使用这些纹理用于进一步的渲染或者处理. 对这种 framebuffer, 不同于渲染的双 buffer, 你可以对其拥有许多的控制. 例如, 默认的 framebuffer, 其大小隐式为窗口或显示器的大小. 渲染显示器之外的内容则是未定义的, 对应像素的片段着色器可能不运行. 对于用户提供的 framebuffers, 纹理的最大大小只受限于你运行的 OpenGL 的实现. 可以渲染至其定义中的任意位置.
+
+<li>
+用户提供的 framebuffers 在 OpenGL 中表示为 framebuffer objects. 每个 framebuffer object 必须有一个创建之前就要保存的名称. 所以首先要做的事情就是保存名称和将其绑定至要初始化的上下文中.
+
+<li>
+glGenFramebuffers() 生成用于 framebuffer objects 的名称. glBindFramebuffer() 绑定一个 framebuffer 至一个上下文. 这些函数的原型如下:
+<pre class="brush: c++">
+void glGenFramebuffers(GLsizei n,
+						GLuint * ids);
+void glBindFramebuffer(GLenum target,
+						GLuint framebuffer);
+</pre>
+
+<ul>
+<li>
+glBindFramebuffer() 函数使得你的应用提供的 framebuffer 对象成为当前的 framebuffer(代替默认的那个). 
+
+<li>
+target 参数为 GL_FRAMEBUFFER. 
+
+<li>
+可以同时绑定两个 framebuffer - 一个用于读取一个用于写入.
+
+</ul>
+<li>
+framebuffer 仅用于读取, target 设置为 GL_READ_FRAMEBUFFER, 仅用于渲染, 则 target 设置为 GL_DRAW_FRAMEBUFFER. 用于绘制的 framebuffer 则是你所有渲染的目标(包括用于各自测试的 stencil 和深度值以及用于混合的颜色读取). 绑定至读取的 framebuffer 则为数据源, 可用于读回数据, 或者将数据从 framebuffer 拷贝至纹理. GL_FRAMEBUFFER 则可同时用于读写
+
+<li>
+一旦你已经创建了一个 framebuffer 对象并进行了绑定, 则你可以将一个纹理附属(attachment)给它, 将该纹理作为你渲染的存储空间. framebuffer 支持三种类型的 attachment - 深度, stencil, 颜色 attachment. 将一个纹理附属给buffer, glFramebufferTexture()
+<pre class="brush: c++">
+void glFramebufferTexture(GLenum target,
+						GLenum attachment,
+						GLuint texture,
+						GLint level);
+</pre>
+
+<ul>
+<li>
+target --- framebuffer 的绑定点, 为 GL_READ_FRAMEBUFFER, GL_DRAW_FRAMEBUFFER, GL_FRAMEBUFFER. 在这种情况下, GL_FRAMEBUFFER 等价于 GL_DRAW_FRAMEBUFFER. 
+
+<li>
+attachment --- 想要附属至哪个 attachment, 可以是 GL_DEPTH_ATTACHMENT, GL_STENCIL_ATTACHMENT. 有些纹理格式可以将深度和 stencil 值打包在一起, 因此还可以有 GL_DEPTH_STENCIL_ATTACHMENT. 对于颜色 buffer, 有 GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1, GL_COLOR_ATTACHMENT2, .... 可以附属多个用于渲染的纹理. 
+
+<li>
+texture --- 纹理名称.
+
+<li>
+level --- mipmap level.
+<pre class="brush: c++">
+// Create a framebuffer object and bind it
+glGenFramebuffers(1, &amp;fbo);
+glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+// Create a texture for our color buffer
+glGenTextures(1, &amp;color_texture);
+glBindTexture(GL_TEXTURE_2D, color_texture);
+glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA8, 512, 512);
+// We’re going to read from this, but it won’t have mipmaps,
+// so turn off mipmaps for this texture.
+glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+// Create a texture that will be our FBO’s depth buffer
+glGenTextures(1, &amp;depth_texture);
+glBindTexture(GL_TEXTURE_2D, depth_texture);
+glTexStorage2D(GL_TEXTURE_2D, 1, GL_DEPTH_COMPONENT32F, 512, 512);
+// Now, attach the color and depth textures to the FBO
+glFramebufferTexture(GL_FRAMEBUFFER,
+					GL_COLOR_ATTACHMENT0,
+					color_texture, 0);
+glFramebufferTexture(GL_FRAMEBUFFER,
+					GL_DEPTH_ATTACHMENT,
+					depth_texture, 0);
+// Tell OpenGL that we want to draw into the framebuffer’s color
+// attachment
+static const GLenum draw_buffers[] = { GL_COLOR_ATTACHMENT0 };
+glDrawBuffers(1, draw_buffers);
+</pre>
+
+<li>
+设置一个 framebuffer object, 其有深度和颜色附属.
+
+<li>
+一旦渲染完毕后, 得到的纹理可以作为正常纹理在着色器中进行读取.
+<pre class="brush: c++">
+// Bind our off-screen FBO
+glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+// Set the viewport and clear the depth and color buffers
+glViewport(0, 0, 512, 512);
+glClearBufferfv(GL_COLOR, 0, green);
+glClearBufferfv(GL_DEPTH, 0, &amp;one);
+// Activate our first, non-textured program
+glUseProgram(program1);
+// Set our uniforms and draw the cube.
+glUniformMatrix4fv(proj_location, 1, GL_FALSE, proj_matrix);
+glUniformMatrix4fv(mv_location, 1, GL_FALSE, mv_matrix);
+glDrawArrays(GL_TRIANGLES, 0, 36);
+// Now return to the default framebuffer
+glBindFramebuffer(GL_FRAMEBUFFER, 0);
+// Reset our viewport to the window width and height, clear the
+// depth and color buffers.
+glViewport(0, 0, info.windowWidth, info.windowHeight);
+glClearBufferfv(GL_COLOR, 0, blue);
+glClearBufferfv(GL_DEPTH, 0, &amp;one);
+// Bind the texture we just rendered to for reading
+glBindTexture(GL_TEXTURE_2D, color_texture);
+// Activate a program that will read from the texture
+glUseProgram(program2);
+// Set uniforms and draw
+glUniformMatrix4fv(proj_location2, 1, GL_FALSE, proj_matrix);
+glUniformMatrix4fv(mv_location2, 1, GL_FALSE, mv_matrix);
+glDrawArrays(GL_TRIANGLES, 0, 36);
+// Unbind the texture and we’re done.
+glBindTexture(GL_TEXTURE_2D, 0);
+</pre>
+
+</ul>
+<li>
+例子 basicfbo.
+
+</ul>
+
+<div id="Chapter 9 Fragment Processing and the Framebuffer-9.4 Off-Screen Rendering-9.4.1 Multiple Framebuffer Attachments"><h3 id="9.4.1 Multiple Framebuffer Attachments">9.4.1 Multiple Framebuffer Attachments</h3></div>
+<ul>
+<li>
+FBO 其渲染的纹理可以有很大的弹性, 不再受限于显示器.你可以对这些纹理的格式有完全的控制.
+
+<li>
+用户定义的 framebuffers 支持多个 attachment. 你可以将多个纹理附属至单个 framebuffer, 而后在单个片段着色器中同时渲染它们. OpenGL 至少可以支持八个纹理至单个FBO上. 
+
+<li>
+下面的例子一个FBO有三个 color attachment
+<pre class="brush: c++">
+static const GLenum draw_buffers[] =
+{
+	GL_COLOR_ATTACHMENT0,
+	GL_COLOR_ATTACHMENT1,
+	GL_COLOR_ATTACHMENT2
+};
+// First, generate and bind our framebuffer object
+glGenFramebuffers(1, &amp;fbo);
+glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+// Generate three texture names
+glGenTextures(3, &amp;color_texture[0]);
+// For each one...
+for (int i = 0; i &lt; 3; i++)
+{
+	// Bind and allocate storage for it
+	glBindTexture(GL_TEXTURE_2D, color_texture[i]);
+	glTexStorage2D(GL_TEXTURE_2D, 9, GL_RGBA8, 512, 512);
+	// Set its default filter parameters
+	glTexParameteri(GL_TEXTURE_2D,
+	GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D,
+	GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	// Attach it to our framebuffer object as color attachments
+	glFramebufferTexture(GL_FRAMEBUFFER,
+	draw_buffers[i], color_texture[i], 0);
+}
+// Now create a depth texture
+glGenTextures(1, &amp;depth_texture);
+glBindTexture(GL_TEXTURE_2D, depth_texture);
+glTexStorage2D(GL_TEXTURE_2D, 9, GL_DEPTH_COMPONENT32F, 512, 512);
+// Attach the depth texture to the framebuffer
+glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+					depth_texture, 0);
+// Set the draw buffers for the FBO to point to the color attachments
+glDrawBuffers(3, draw_buffers);
+</pre>
+
+<li>
+为了在单个片段着色器渲染至多个 attachment, 我们必须在着色器中声明多个输出, 而后将它们关联至 attachment points. 为了做到这点, 我们使用 layout 前缀设置每个输出的位置, 即用于关联至 attachment 索引的术语. 
+<pre class="brush: glsl">
+layout (location = 0) out vec4 color0;
+layout (location = 1) out vec4 color1;
+layout (location = 2) out vec4 color2;
+</pre>
+
+<li>
+光栅化间产生的每个片段运行一次片段着色器. 写入到每个着色器的输出的数据将被写入到每个对应 framebuffer attachments 的相同位置.
+
+</ul>
+
+<div id="Chapter 9 Fragment Processing and the Framebuffer-9.4 Off-Screen Rendering-9.4.2 Layered Rendering"><h3 id="9.4.2 Layered Rendering">9.4.2 Layered Rendering</h3></div>
+<ul>
+<li>
+数组纹理, Array Textures. 将数组纹理 attaching 至 framebuffer 对象, 而后使用几何着色器指定结果图元渲染至哪一层.
+
+<li>
+例子 gslayered. 设置一个 framebuffer object, 并使用一个 2D 数组纹理作为一个 color attachment, 这样的 framebuffer 称之为 layered framebuffer.
+
+<li>
+除了创建数组纹理用于 color attachment 之外, 你还可以使用深度或stencil格式创建一个数组纹理, 而后 attach 至 framebuffer object 的深度或者stencil attachment point. 这样纹理就成为你的深度或者 stencil buffer, 允许你在一个 layered framebuffer 中执行深度或者 stencil 测试.
+<pre class="brush: c++">
+// Create a texture for our color attachment, bind it, and allocate
+// storage for it. This will be 512 x 512 with 16 layers.
+GLuint color_attachment;
+glGenTextures(1, &amp;color_attachment);
+glBindTexture(GL_TEXTURE_2D_ARRAY, color_attachment);
+glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_RGBA8, 512, 512, 16);
+// Do the same thing with a depth buffer attachment.
+GLuint depth_attachment;
+glGenTextures(1, &amp;depth_attachment);
+glBindTexture(GL_TEXTURE_2D_ARRAY, depth_attachment);
+glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_DEPTH_COMPONENT, 512, 512, 16);
+// Now create a framebuffer object, and bind our textures to it
+GLuint fbo;
+glGenFramebuffers(1, &amp;fbo);
+glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+					color_attachment, 0);
+glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+					depth_attachment, 0);
+// Finally, tell OpenGL that we plan to render to the color
+// attachment
+static const GLuint draw_buffers[] = { GL_COLOR_ATTACHMENT0 };
+glDrawBuffers(1, draw_buffers);
+</pre>
+
+<li>
+一旦你创建了一个数组纹理, 而后将其附属至 framebuffer 对象, 你可以如常渲染它们. 如果你不使用一个几何着色器, 则所有的渲染都写入数组的第一层. 如果你想要写入不同的层, 你则需要写一个几何着色器. 在几何着色器中, 内置变量 gl_Layer 可以作为一个输出. 该变量作为索引用于在 layered framebuffer 选择渲染的 attachments 的层. 下面的代码显示了一个简单的几何着色器, 渲染进入几何体的 16 个拷贝, 每个使用不同的模型视图矩阵, 而后给一个数组纹理并传递一个 per-invocation 的颜色给片段着色器.
+<pre class="brush: glsl">
+#version 430 core
+// 16 invocations of the geometry shader, triangles in
+// and triangles out
+layout (invocations = 16, triangles) in;
+layout (triangle_strip, max_vertices = 3) out;
+in VS_OUT
+{
+	vec4 color;
+	vec3 normal;
+} gs_in[];
+out GS_OUT
+{
+	vec4 color;
+	vec3 normal;
+} gs_out;
+// Declare a uniform block with one projection matrix and
+// 16 model-view matrices
+layout (binding = 0) uniform BLOCK
+{
+	mat4 proj_matrix;
+	mat4 mv_matrix[16];
+};
+void main(void)
+{
+	int i;
+	// 16 colors to render our geometry
+	const vec4 colors[16] = vec4[16](
+		vec4(0.0, 0.0, 1.0, 1.0), vec4(0.0, 1.0, 0.0, 1.0),
+		vec4(0.0, 1.0, 1.0, 1.0), vec4(1.0, 0.0, 1.0, 1.0),
+		vec4(1.0, 1.0, 0.0, 1.0), vec4(1.0, 1.0, 1.0, 1.0),
+		vec4(0.0, 0.0, 0.5, 1.0), vec4(0.0, 0.5, 0.0, 1.0),	
+		vec4(0.0, 0.5, 0.5, 1.0), vec4(0.5, 0.0, 0.0, 1.0),
+		vec4(0.5, 0.0, 0.5, 1.0), vec4(0.5, 0.5, 0.0, 1.0),
+		vec4(0.5, 0.5, 0.5, 1.0), vec4(1.0, 0.5, 0.5, 1.0),
+		vec4(0.5, 1.0, 0.5, 1.0), vec4(0.5, 0.5, 1.0, 1.0)
+	);
+	for (i = 0; i &lt; gl_in.length(); i++)
+	{
+		// Pass through all the geometry
+		gs_out.color = colors[gl_InvocationID];
+		gs_out.normal = mat3(mv_matrix[gl_InvocationID]) * gs_in[i].normal;
+		gl_Position = proj_matrix *
+						mv_matrix[gl_InvocationID] *
+						gl_in[i].gl_Position;
+		// Assign gl_InvocationID to gl_Layer to direct rendering
+		// to the appropriate layer
+		gl_Layer = gl_InvocationID;
+		EmitVertex();
+	}
+	EndPrimitive();
+}
+</pre>
+
+<li>
+显示上述所得数组纹理的顶点着色器
+<pre class="brush: glsl">
+#version 430 core
+out VS_OUT
+{
+	vec3 tc;
+} vs_out;
+void main(void)
+{
+	int vid = gl_VertexID;
+	int iid = gl_InstanceID;
+	float inst_x = float(iid % 4) / 2.0;
+	float inst_y = float(iid &gt;&gt; 2) / 2.0;
+	const vec4 vertices[] = vec4[](vec4(-0.5, -0.5, 0.0, 1.0),
+	vec4( 0.5, -0.5, 0.0, 1.0),
+	vec4( 0.5, 0.5, 0.0, 1.0),
+	vec4(-0.5, 0.5, 0.0, 1.0));
+	vec4 offs = vec4(inst_x - 0.75, inst_y - 0.75, 0.0, 0.0);
+	gl_Position = vertices[vid] *
+	vec4(0.25, 0.25, 1.0, 1.0) + offs;
+	vs_out.tc = vec3(vertices[vid].xy + vec2(0.5), float(iid));
+}
+</pre>
+
+<li>
+片段着色器
+<pre class="brush: glsl">
+#version 430 core
+layout (binding = 0) uniform sampler2DArray tex_array;
+layout (location = 0) out vec4 color;
+in VS_OUT
+{
+	vec3 tc;
+} fs_in;
+void main(void)
+{
+	color = texture(tex_array, fs_in.tc);
+}
+</pre>
+
+<li>
+渲染至一个3D纹理则也是一样的工作. 将整个 3D 纹理附属至一个 framebuffer object 作为其颜色 attachments 中的一个, 而后如常设置 gl_Layer 输出. 其为之后 3D 纹理的 z 坐标. 其还可以同时用相同的纹理渲染至3D纹理的多个 slice(一个z坐标代表的切片), glFramebufferTextureLayer() 可以做到这点, 原型为:
+<pre class="brush: c++">
+void glFramebufferTextureLayer(GLenum target,
+								GLenum attachment,
+								GLuint texture,
+								GLint level,
+								GLint layer);
+</pre>
+
+<ul>
+<li>
+该函数的工作类似于 glFramebufferTexture(), 除了有一个额外的参数 layer, 用于设置你想要附属纹理的哪一个 layer 至 framebuffer 上.
+
+</ul>
+<li>
+下面的代码创建一个八个layers 的 2D 数组纹理, 每一个附属至framebuffer object的对应颜色 attachment.
+<pre class="brush: c++">
+GLuint tex;
+glGenTextures(1, &amp;tex);
+glBindTexture(GL_TEXTURE_2D_ARRAY, tex);
+glTexStorage3D(GL_TEXTURE_2D_ARRAY, 1, GL_RGBA8, 256, 256, 8);
+GLuint fbo;
+glGenFramebuffers(1, &amp;fbo);
+glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+int i;
+for (i = 0; i &lt; 8; i++)
+{
+	glFramebufferTextureLayer(GL_FRAMEBUFFER,
+							GL_COLOR_ATTACHMENT0 + i,
+							tex,
+							0,
+							i);
+}
+static const GLenum draw_buffers[] =
+{
+	GL_COLOR_ATTACHMENT0, GL_COLOR_ATTACHMENT1,
+	GL_COLOR_ATTACHMENT2, GL_COLOR_ATTACHMENT3,
+	GL_COLOR_ATTACHMENT4, GL_COLOR_ATTACHMENT5,
+	GL_COLOR_ATTACHMENT6, GL_COLOR_ATTACHMENT7
+};
+glDrawBuffers(8, &amp;draw_buffers[0]);
+</pre>
+
+<li>
+上面的代码后, 片段着色器可以最多有八个输出, 每个将写入纹理的不同layer中.
+
+</ul>
+
+<div id="Chapter 9 Fragment Processing and the Framebuffer-9.4 Off-Screen Rendering-9.4.2 Layered Rendering-9.4.2.1 Rendering to Cube Maps"><h4 id="9.4.2.1 Rendering to Cube Maps">9.4.2.1 Rendering to Cube Maps</h4></div>
+<ul>
+<li>
+cube map 是一个特殊的数组纹理. 单个 cube map 是一个六片纹理的数组. cube map array texture 则是一个六片数组纹理的数组.
+
+<li>
+你可以以和上面数组纹理例子相同的方式将一个 cube map 纹理附属至一个 framebuffer object, 只是创建的是一个 cube map 纹理, 而非 2D 数组纹理. 六个纹理的次序为正负X, 正负Y, 正负Z. 
+
+<li>
+如果创建一个 cube map array texture 附属至一个 framebuffer object, 则前六层渲染至第一个cube, 接下来六层渲染至第二个cube, 等等.
+
+<li>
+和2D数组纹理一样, 你可以将cube map的单个面附属至单个framebuffer object的不同attachment point上. 这一点我们使用 glFramebufferTexture2D() 函数实现, 原型为
+<pre class="brush: c++">
+void glFramebufferTexture2D(GLenum target,
+						GLenum attachment,
+						GLenum textarget,
+						GLuint texture,
+						GLint level);
+</pre>
+
+<ul>
+<li>
+这个函数的工作类似于 glFramebufferTexture(), 只是有一个额外的参数 textarget, 其设置了 cube map 的哪个面附属至attachment. 例如正x面则为 GL_CUBE_MAP_POSITIVE_X.
+
+</ul>
+</ul>
+
+<div id="Chapter 9 Fragment Processing and the Framebuffer-9.4 Off-Screen Rendering-9.4.3 Framebuffer Completeness"><h3 id="9.4.3 Framebuffer Completeness">9.4.3 Framebuffer Completeness</h3></div>
+<ul>
+<li>
+查看你的 FBO 是否正确设立, 检查 framebuffer 的完整性. Framebuffer 完整性类似于纹理完整性的概念. 如果一个纹理没有所有要求的正确大小和格式的 mipmap levels, 则该纹理是不完整并不能被使用的.
+
+<li>
+两种类别的完整性: attachment completeness 和 whole framebuffer completeness.
+
+</ul>
+
+<div id="Chapter 9 Fragment Processing and the Framebuffer-9.4 Off-Screen Rendering-9.4.3 Framebuffer Completeness-9.4.3.1 Attachment Completeness"><h4 id="9.4.3.1 Attachment Completeness">9.4.3.1 Attachment Completeness</h4></div>
+<ul>
+<li>
+一个 FBO 的每个 attachment point 必须满足某些条件才能看成是完整的. 导致一个 attachment 不完整的情况如下:
+
+<ul>
+<li>
+没有图像关联至attached object(被附属的对象)上
+
+<li>
+用于 attached image 的宽度或高度为0
+
+<li>
+一个 non-color renderable 格式被附属至一个颜色 attachment.
+
+<li>
+一个 non-depth renderable 格式被附属至一个深度 attachment
+
+<li>
+一个 non-stencil renderable 格式被附属至一个 stencil attachment.
+
+</ul>
+</ul>
+
+<div id="Chapter 9 Fragment Processing and the Framebuffer-9.4 Off-Screen Rendering-9.4.3 Framebuffer Completeness-9.4.3.2 Whole Framebuffer Completeness"><h4 id="9.4.3.2 Whole Framebuffer Completeness">9.4.3.2 Whole Framebuffer Completeness</h4></div>
+<ul>
+<li>
+framebuffer object 作为一个整体也必须完成. 默认 framebuffer, 如果存在则永远都是完成的. 
+
+<li>
+整个 framebuffer 为不完成的通常情况如下:
+
+<ul>
+<li>
+glDrawBuffers() 映射至一个输出, 该输出的 FBO attachment 没有图像附属于它.
+
+<li>
+内部格式(internal formats)的组合不被OpenGL驱动支持.
+
+</ul>
+</ul>
+
+<div id="Chapter 9 Fragment Processing and the Framebuffer-9.4 Off-Screen Rendering-9.4.3 Framebuffer Completeness-9.4.3.3 Checking the Framebuffer"><h4 id="9.4.3.3 Checking the Framebuffer">9.4.3.3 Checking the Framebuffer</h4></div>
+<ul>
+<li>
+当你完成了 FBO 的设置后, 你可以检查其是否完成
+<pre class="brush: c++">
+GLenum fboStatus = glCheckFramebufferStatus(GL_DRAW_FRAMEBUFFER);
+</pre>
+
+<ul>
+<li>
+glCheckFramebufferStatus() 返回 GL_FRAMEBUFFER_COMPLETE, 则一切安好. 
+
+<li>
+表格 9.7 显示该函数所有可能的返回值.
+
+</ul>
+<li>
+表格 9.7
+
+<ul>
+<li>
+UNDEFINED --- The current FBO binding is 0, but no default framebuffer exists.
+
+<li>
+COMPLET ---E A user-de?ned FBO is bound and is complete. OK to render.
+
+<li>
+INCOMPLETE_ATTACHMENT --- One of the buffers enabled for rendering is incomplete.
+
+<li>
+INCOMPLETE_MISSING_ATTACHMENT --- No buffers are attached to the FBO and it is not con?gured for rendering without attachments.
+
+<li>
+UNSUPPORTED --- The combination of internal buffer formats is not supported.
+
+<li>
+INCOMPLETE_LAYER_TARGETS --- Not all color attachments are layered textures or bound to the same target.
+
+</ul>
+<li>
+检查的例子
+<pre class="brush: c++">
+GLenum fboStatus = glCheckFramebufferStatus(GL_DRAW_FRAMEBUFFER);
+if(fboStatus != GL_FRAMEBUFFER_COMPLETE)
+{
+	switch (fboStatus)
+	{
+		case GL_FRAMEBUFFER_UNDEFINED:
+			// Oops, no window exists?
+			break;
+		case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT:
+			// Check the status of each attachment
+			break;
+		case GL_FRAMEBUFFER_INCOMPLETE_MISSING_ATTACHMENT:
+			// Attach at least one buffer to the FBO
+			break;
+		case GL_FRAMEBUFFER_INCOMPLETE_DRAW_BUFFER:
+			// Check that all attachments enabled via
+			// glDrawBuffers exist in FBO
+		case GL_FRAMEBUFFER_INCOMPLETE_READ_BUFFER:
+			// Check that the buffer specified via
+			// glReadBuffer exists in FBO
+			break;
+		case GL_FRAMEBUFFER_UNSUPPORTED:
+			// Reconsider formats used for attached buffers
+			break;
+		case GL_FRAMEBUFFER_INCOMPLETE_MULTISAMPLE:
+			// Make sure the number of samples for each
+			// attachment is the same
+			break;
+		case GL_FRAMEBUFFER_INCOMPLETE_LAYER_TARGETS:
+			// Make sure the number of layers for each
+			// attachment is the same
+			break;
+	}
+}
+</pre>
+
+<li>
+如果你试图在未完成FBO绑定的frambuffer上执行读取或写入的命令, 则其在抛出 GL_INVALID_FRAMEBUFFER_OPERATION 错误后返回. 可以通过 glGetError() 得到该错误提示.
+
+</ul>
+
+<div id="Chapter 9 Fragment Processing and the Framebuffer-9.4 Off-Screen Rendering-9.4.3 Framebuffer Completeness-9.4.3.4 Read Framebuffers Need to Be Complete, Too!"><h4 id="9.4.3.4 Read Framebuffers Need to Be Complete, Too!">9.4.3.4 Read Framebuffers Need to Be Complete, Too!</h4></div>
+<ul>
+<li>
+上面我们测试了绑定点 GL_DRAW_FRAMEBUFFER, 但是 GL_READ_FRAMEBUFFER 在准备读取之前同样也要测试 attachment complete 和 whole framebuffer complete.
+
+<li>
+因为一次只能允许一个 read buffer, 所以确保用于读取 FBO 的完整容易些.
+
+</ul>
+
+<div id="Chapter 9 Fragment Processing and the Framebuffer-9.4 Off-Screen Rendering-9.4.4 Rendering in Stereo"><h3 id="9.4.4 Rendering in Stereo">9.4.4 Rendering in Stereo</h3></div>
+<ul>
+<li>
+大多数人类有两个眼睛, 通过视差变化(parallax shift)来帮助我们判断距离 --- 两只眼睛所看图像的轻微不同. 这里有许多的深度队列, 包括到焦点的深度, 光照中的不同深度, 我们移动观察点时物体的相对移动的深度. 
+
+<li>
+OpenGL 可以提供成对图像, 这依赖于所使用的显示设备, 可以对你的两只眼睛各自显示不同的图像, 增强图像的深度感觉.
+
+<li>
+有足够可用的设备, 包括双眼显示器, shutter 和 polarized(偏振的) display(要求使用眼睛观看), autostereoscopic display. OpenGL 并不关心图像如何显示, 其只渲染场景的两个视图 - 一个用于左眼和一个用于右眼. 
+
+<li>
+为了立体显示图像, 我们需要窗口或操作系统的协作, 创建一个立体显示的机制是平台独有的. 
+
+<li>
+本书例子将 info.flags.stereo 设为 1. 由于有些OpenGL的实现可能要求你的应用全屏, 所以 info.flags.fullscreen 标志设为全屏.
+<pre class="brush: c++">
+void my_application::init()
+{
+	info.flags.stereo = 1;
+	info.flags.fullscreen = 1; // Set this if your OpenGL
+	// implementation requires
+	// fullscreen for stereo rendering.
+}
+</pre>
+
+<li>
+不是所有的显示设备都支持 stereo 输出, 不是所有的 OpenGL 实现都允许你创建一个 stereo 窗口. 
+
+<li>
+立体渲染的最简单方式是绘制整个场景两次. 在渲染左眼图像之前, 调用
+<pre class="brush: c++">
+glDrawBuffer(GL_BACK_LEFT);
+</pre>
+
+<ul>
+<li>
+渲染右眼图像
+<pre class="brush: c++">
+glDrawBuffer(GL_BACK_RIGHT);
+</pre>
+
+</ul>
+</ul>
+
+<ul>
+<li>
+为了产生一对强制深度效果的图像, 你需要构造由左眼和右眼观察的视图的变换矩阵. 模型变换至世界空间, 世界空间是全局的. 左右眼使用不同的 view matrix.
+
+<li>
+立体视图矩阵对的最简单形式为沿着水平轴变换左右view. 你也可以旋转 view matrices, 使得其内部朝向 view 的中心. 另外, 你可以使用 glm::lookat 函数生成你的视图矩阵, 仅将你的眼睛放置在左右眼的位置, 中心位于感兴趣的物体的中心. 下面代码显示如何做: 
+<pre class="brush: c++">
+void my_application::render(double currentTime)
+{
+	static const vmath::vec3 origin(0.0f);
+	static const vmath::vec3 up_vector(0.0f, 1.0f, 0.0f);
+	static const vmath::vec3 eye_separation(0.01f, 0.0f, 0.0f);
+	vmath::mat4 left_view_matrix = vmath::lookat(eye_location - eye_separation,
+												origin,
+												up_vector);
+	vmath::mat4 right_view_matrix = vmath::lookat(eye_location + eye_separation,
+												origin,
+												up_vector);
+	static const GLfloat black[] = { 0.0f, 0.0f ,0.0f, 0.0f };
+	static const GLfloat one = 1.0f;
+	// Setting the draw buffer to GL_BACK ends up drawing in
+	// both the back left and back right buffers. Clear both
+	glDrawBuffer(GL_BACK);
+	glClearBufferfv(GL_COLOR, 0, black);
+	glClearBufferfv(GL_DEPTH, 0, &amp;one);
+	// Now, set the draw buffer to back left
+	glDrawBuffer(GL_BACK_LEFT);
+	// Set our left model-view matrix product
+	glUniformMatrix4fv(model_view_loc, 1,
+						left_view_matrix * model_matrix);
+	// Draw the scene
+	draw_scene();
+	// Set the draw buffer to back right
+	glDrawBuffer(GL_BACK_RIGHT);
+	// Set the right model-view matrix product
+	glUniformMatrix4fv(model_view_loc, 1,
+						right_view_matrix * model_matrix);
+	// Draw the scene... again.
+	draw_scene();
+}
+</pre>
+
+<li>
+上面的代码场景每个物体都要渲染两遍, 根据之前的章节, 在片段着色器中通过输出两个向量(vectors)你可以一次渲染多个 buffer.
+
+<li>
+使用一个片段着色器带有两个输出:
+<pre class="brush: c++">
+static const GLenum buffers[] = { GL_BACK_LEFT, GL_BACK_RIGHT }
+glDrawBuffers(2, buffers);
+</pre>
+
+<li>
+在之前的学习可知, 使用几何着色器渲染带有两层的 layered framebuffer, 一个用于左眼, 一个用于右眼. 我们使用几何着色器的 instancing 运行几何着色器两次, 而后将 invocation index 写入 layer 用于指示数据的两个拷贝写入 framebuffer 的两层中. 在几何着色器的每次 invocation 中, 我们选择一个模型视图矩阵并在几何着色器中执行顶点着色器的工作. 一旦我们渲染了整个场景, framebuffer 的两层将包含左眼和右眼图像. 而后所需要的就是一个全屏四边形, 在片段着色器中读取数组纹理的两层, 并将结果写入两个输出中. 下面的代码显示了一个简单的几何着色器, 在单个pass中渲染了立体场景的两个视图.
+<pre class="brush: glsl">
+#version 430 core
+layout (triangles, invocations = 2) in;
+layout (triangle_strip, max_vertices = 3) out;
+uniform matrices
+{
+	mat4 model_matrix;
+	mat4 view_matrix[2];
+	mat4 projection_matrix;
+};
+in VS_OUT
+{
+	vec4 color;
+	vec3 normal;
+	vec2 texture_coord;
+} gs_in[];
+out GS_OUT
+{
+	vec4 color;
+	vec3 normal;
+	vec2 texture_coord;
+} gs_out;
+void main(void)
+{
+	// Calculate a model-view matrix for the current eye
+	mat4 model_view_matrix = view_matrix[gl_InvocationID] *
+	model_matrix;
+	for (int i = 0; i &lt; gl_in.length(); i++)
+	{
+		// Output layer is invocation ID
+		gl_Layer = gl_InvocationID;
+		// Multiply by the model matrix, view matrix for the
+		// appropriate eye and then the projection matrix.
+		gl_Position = projection_matrix *
+						model_view_matrix *
+						gl_in[i].gl_Position;
+		gs_out.color = gs_in[i].color;
+		// Don’t forget to transform the normals...
+		gs_out.normal = mat3(model_view_matrix) * gs_in[i].normal;
+		gs_out.texcoord = gs_in[i].texcoord;
+		EmitVertex();
+	}
+	EndPrimitive();
+}
+</pre>
+
+<li>
+现在我们的场景渲染至我们的 layered framebuffer,  而后, 我们attach底下的数组纹理, 并绘制全屏四边形, 在单个着色器中拷贝结果至左边和右边的 back buffer. 如下:
+<pre class="brush: glsl">
+#version 430 core
+layout (location = 0) out vec4 color_left;
+layout (location = 1) out vec4 color_right;
+in vec2 tex_coord;
+uniform sampler2DArray back_buffer;
+void main(void)
+{
+	color_left = texture(back_buffer, vec3(tex_coord, 0.0));
+	color_right = texture(back_buffer, vec3(tex_coord, 1.0));
+}
+</pre>
+
+</ul>
+
+<div id="Chapter 9 Fragment Processing and the Framebuffer-9.5 Antialiasing"><h2 id="9.5 Antialiasing">9.5 Antialiasing</h2></div>
+<ul>
+<li>
+对于信号的内容来说, 当信号采样的频率太低时, 则会产生 aliasing. Nyquist rate 保证采样的内容大多数被保存. 为所捕捉的信号最高频率的两倍. 在图像中, aliasing 常表现为锯齿的边.
+
+<li>
+两种主要的方法用于处理 aliasing, 第一个为 filter, 在采样之前或者采样期间, 移除掉 high-frequency 的内容. 第二个方法则是增加采样率, 这样可以保证高频的内容被记录. 
+
+</ul>
+
+<div id="Chapter 9 Fragment Processing and the Framebuffer-9.5 Antialiasing-9.5.1 Antialiasing by Filtering"><h3 id="9.5.1 Antialiasing by Filtering">9.5.1 Antialiasing by Filtering</h3></div>
+<ul>
+<li>
+处理 aliasing 问题最简单的方式就是当它们绘制之时filter图元. 为了做到这点, OpenGL 计算图元覆盖了一个像素多大的范围(点, 线条, 或三角形), 并使用它生成每个片段的 alpha 值. 这个 alpha 值乘以你的着色器所产生的片段alpha值, 这样当源或目标混合因子包含源alpha部分时产生了一种混合的效果. 现在, 当片段渲染至屏幕时, 它们使用像素覆盖率的一个函数和已有内容进行混合. 
+
+<li>
+要打开这种形式的 antialiasing, 我们需要做两件事情, 首先, 我们需要允许混合, 并选择合适的混合函数, 其次, 我们需要允许 GL_LINE_SMOOTH 以应用线条的 antialiasing, 允许 GL_POLYGON_SMOOTH 以应用三角形的 antialiasing. 
+
+<li>
+设置 antialiasing 和混合
+<pre class="brush: c++">
+glEnable(GL_BLEND);
+glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+glEnable(GL_LINE_SMOOTH);
+</pre>
+
+<li>
+代码简单, 但是只能作用于有限的情况. 
+
+<li>
+打开多边形的 antialiasing, GL_POLYGON_SMOOTH. 只是这种情况, 两个相邻的三角形会看到其边. 这产生了一个新的 aliasing. 
+
+<li>
+另外一个问题是每个像素只有一个深度值, 如果一个三角形刺进一个像素的未覆盖部分, 如果那里有更近的三角形覆盖了相同像素的那些不同部分, 则其深度测试则可能失败, 对像素最终的颜色不产生影响.
+
+<li>
+为了解决这些问题, 我们需要更高级的 antialiasing 方法. 所有这些方法包括了增加采样数.
+
+</ul>
+
+<div id="Chapter 9 Fragment Processing and the Framebuffer-9.5 Antialiasing-9.5.2 Multi-sample Antialiasing"><h3 id="9.5.2 Multi-sample Antialiasing">9.5.2 Multi-sample Antialiasing</h3></div>
+<ul>
+<li>
+为了提供图像的采样率, OpenGL 支持在屏幕上的每个像素存储多个样本. 这个技术称之为 multi-sample antialiasing 或 MSAA. 不再每个图元采样一次, 其会在像素内的多个位置采样该图元, 如果该位置有图元, 则运行你的着色器, 着色器产生的颜色写入所有的命中样本(hit samples). 在不同的OpenGL 实现里, 每个像素内的每个样本其实际位置可能不同. 图形 9.11 显示了 1, 2, 4, 8 个样本安排的样本位置.
+
+<li>
+为默认 framebuffer 打开 MSAA 是某种平台专有的功能. 大多数情况, 当你设置渲染窗口的时候就需要设置用于默认 framebuffer 的 multi-sampled 格式.
+
+<li>
+本书只需要修改 info 结构的 samples 成员, 设置为你想要的采样数. 
+<pre class="brush: c++">
+virtual void init()
+{
+	sb6::application::init();
+	info.samples = 8;
+}
+</pre>
+
+<li>
+如果你创建一个多重采样的 framebuffer, 则默认允许多重采样. 如果你想当前那个有 multi-sampled 格式的 framebuffer 其渲染不带有 multi-sampling, 你可以关闭多重采样
+<pre class="brush: c++">
+glDisable(GL_MULTISAMPLE);
+</pre>
+
+<li>
+打开
+<pre class="brush: c++">
+glEnable(GL_MULTISAMPLE);
+</pre>
+
+<li>
+当多重采样关闭时, OpenGL 则将 framebuffer 当着不同的 single-sample framebuffer, 其每个片段采样一次. 仅有的不同就是着色结果写入像素的每个样本里面.
+
+</ul>
+
+<div id="Chapter 9 Fragment Processing and the Framebuffer-9.5 Antialiasing-9.5.3 Multi-sample Textures"><h3 id="9.5.3 Multi-sample Textures">9.5.3 Multi-sample Textures</h3></div>
+<ul>
+<li>
+已经学习了如何使用 framebuffer object 渲染 off-screen 纹理, 并学习了使用多重采样进行 antialiasing. 但是多重采样的颜色 buffer 被窗口系统所拥有.
+
+<li>
+可以组合这些功能创建一个 off-screen multi-sampled color buffer 以便渲染. 为了实现这点, 我们创建一个多重采样的纹理, 而后将其附属至 framebuffer object 用于渲染.
+
+<li>
+为了创建一个多重采样的纹理, 首先如常创建一个纹理名称, 而后将其绑定至一个多重采样的纹理目标, 例如 GL_TEXTURE_2D_MULTISAMPLE 或者 GL_TEXTURE_2D_MULTISAMPLE_ARRAY. 使用 glTexStorage2DMultisample() 或者 glTexStorage3DMultisample()(用于数组纹理)分配存储空间. 原型为:
+<pre class="brush: c++">
+void glTexStorage2DMultisample(GLenum target,
+								GLsizei samples,
+								GLenum internalformat,
+								GLsizei width,
+								GLsizei height,
+								GLboolean fixedsamplelocations);
+void glTexStorage3DMultisample(GLenum target,
+								GLsizei samples,
+								GLenum internalformat,
+								GLsizei width,
+								GLsizei height,
+								GLsizei depth,
+								GLboolean fixedsamplelocations);
+</pre>
+
+<ul>
+<li>
+这两个函数的操作非常像 glTexStorage2D() 和 glTexStorage3D(), 但是其有些额外的参数, samples 参数告知在纹理中应当有多少样本. 第二个参数 fixedsamplelocations, 告知 OpenGL 你是否想要使用标准的样本位置用于纹理中所有的纹素, 或是否允许在纹理中变化样本空间的位置. 通常, 允许 OpenGL 做这个可以改进质量, 但是可能减少一致性, 如果你以相同的方式渲染相同的物体而不考虑其在framebuffer中的位置则会导致某种 artifacts.
+
+</ul>
+<li>
+一旦你分配了用于纹理的 storage, 你可以使用 glFramebufferTexture() 将其附属至framebuffer. 如下代码, 创建一个深度和颜色多重采样纹理
+<pre class="brush: c++">
+GLuint color_ms_tex;
+GLuint depth_ms_tex;
+glGenTextures(1, &amp;color_ms_tex);
+glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, color_ms_tex);
+glTexStorage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE,
+						8, GL_RGBA8, 1024, 1024, GL_TRUE);
+glGenTextures(1, &amp;depth_ms_tex);
+glBindTexture(GL_TEXTURE_2D_MULTISAMPLE, depth_ms_tex);
+glTexStorage2DMultisample(GL_TEXTURE_2D_MULTISAMPLE,
+						8, GL_DEPTH_COMPONENT, 1024, 1024, GL_TRUE);
+						GLuint fbo;
+glGenFramebuffers(1, &amp;fbo);
+glBindFramebuffer(GL_FRAMEBUFFER);
+glFramebufferTexture(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+					color_ms_tex, 0);
+glFramebufferTexture(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT,
+					depth_ms_tex, 0);
+</pre>
+
+<li>
+多重采样纹理有一些限制, 首先, 没有 1D 或 3D 的多重采样纹理, 其次, 多重采样纹理不能有 mipmaps. glTexStorage3DMultisample() 函数仅能用于分配 2D 多重采样数组纹理的存储空间, 该函数和 glTexStorage2DMultisample() 函数都不能接受一个 levels 参数. 对于glFramebufferTexture(), 其 level 参数只能传递 0 值.
+
+<li>
+更进一步, 你不能和其他纹理一样使用多重采样纹理, 其不支持 filtering. 你必须在你的着色器中通过声明一个 multi-sampled sampler 类型, 以显式地从多重采样的纹理中读取纹素. 该 multi-sample sampler 类型在 GLSL 中为 sampler2dms 和 sampler2DMSArray, 其表示 2D 多重采样和多重采样数组纹理, 另外还有 isampler2DMS 和 usampler2DMS 类型, 其表示有符号和无符号整数的多重采样纹理, isampler2DMSArray 和 usampler2DMSArray 则为其对应的数组形式. 
+
+<li>
+着色器中多重采样纹理的采样的一个典型用法为用于执行自定义的解析(resolve)操作. 当你渲染至一个窗口系统所拥有的多重采样的 back buffer, 你不能对其有很多的控制, OpenGL 其自己会组合对像素有影响的样本的颜色值来产生最终颜色值. 但是如果渲染至一个多重采样的纹理, 而后使用片段着色器绘制进一个全屏的四边形, 则如何取该纹理的样本以及它的样本如何组合可以按照你自己的代码来做.
+
+<li>
+下面的代码显示每个像素中取最亮的样本.
+<pre class="brush: glsl">
+#version 430 core
+uniform sampler2DMS input_image;
+out vec4 color;
+void main(void)
+{
+	ivec2 coord = ivec2(gl_FragCoord.xy);
+	vec4 result = vec4(0.0);
+	int i;
+	for (i = 0; i &lt; 8; i++)
+	{
+		result = max(result, texelFetch(input_image, coord, i));
+	}
+	color = result;
+}
+</pre>
+
+</ul>
+
+
+<div id="Chapter 9 Fragment Processing and the Framebuffer-9.5 Antialiasing-9.5.3 Multi-sample Textures-9.5.3.1 Sample Coverage"><h4 id="9.5.3.1 Sample Coverage">9.5.3.1 Sample Coverage</h4></div>
+<ul>
+<li>
+Coverage 表示一个片段"覆盖"了一个像素多大的范围, 通常由 OpenGL 进行计算, 作为光栅化进程的一部分. 然而, 你对其可以有一些控制, 可以在你的片段着色器中生成新的coverage信息, 有三种方法可以做到这点:
+
+<li>
+首先, 你可以让 OpenGL 转换片段的 alpha 值为一个 coverage 值, 已确定 framebuffer 的多少样本将会由该片段更新. 为了做到这点, 使用 glEnable 调用 GL_SAMPLE_APHA_TO_COVERAGE 参数, 一个片段的 coverage 值用于确定将会写入多少个子样本(subsamples). 例如, 一个片段的 alpha 值为 0.4, 将会生成 40% 的覆盖值. 当你使用这个方法, OpenGL 首先计算每个像素中每个样本的覆盖率, 产生一个样本的 mask, 而后使用片段着色器产生的alpha值计算第二个 mask, 而后该 mask 和进来的样本 mask 进行逻辑的 AND 操作. 例如, 如果 OpenGL 确定图元覆盖了像素 66% 的区域, 而后你产生了一个 40% 的alpha 值, 则产生的输出样本 mask 为 40% * 66%, 即为 25% 左右, 对于一个 8-sample 的 MSAA buffer, 两个像素的样本将被写入. 
+
+<li>
+由于 alpha 值永远被用于确定写入多少的子样本. 因此使用相同的 alpha 值混合这些子样本则不再合理. 当允许混合时, 为了防止子像素进行这样的混合, 我们应当强制这些样本的 alpha 值为 1, 使用 glEnable() 和参数 GL_SAMPLE_ALPHA_TO_ONE 来实现. 
+
+<li>
+使用 alpha-to-coverage 比简单的混合还有一些其他的好处, 当渲染至multi-sampled buffer, alpha blend 将如常平等的应用在整个像素上. 而用 alpha-to-coverage,  alpha masked 的边将应用 antialiased, 产生一个更自然和更平滑的结果. 这当绘制alpha透明的灌木, 树木, 或密集植物时特别有用. 下面, OpenGL 允许你调用 glSampleCoverage() 设置样本覆盖率, 原型为
+<pre class="brush: c++">
+void glSampleCoverage(GLfloat value,
+						GLboolean invert);
+</pre>
+
+<li>
+手动应用一个像素的coverage发生在应用了alpha-to-coverage的mask之后, 为了让这步起作用, 调用下面的函数允许sample coverage
+<pre class="brush: c++">
+glEnable(GL_SAMPLE_COVERAGE);
+glSampleCoverage(value, invert);
+</pre>
+
+<li>
+传递给 value 参数的覆盖值范围为0到1. invert 参数为真表示结果的 mask 应当反转. 例如, 如果你有两个重叠的树, 一个覆盖率为 60%, 一个覆盖率为 40%, 你想要反转一个覆盖值以保证相同的 mask 不会用于两个绘制调用中
+<pre class="brush: c++">
+glSampleCoverage(0.5, GL_FALSE);
+// Draw first geometry set
+. . .
+glSampleCoverage(0.5, GL_TRUE);
+// Draw second geometry set
+. . .
+</pre>
+
+<li>
+第三种生成覆盖信息的方法则是显式地在片段着色器中设置. 使用两个内置变量 gl_SampleMaskIn[] 和 gl_SampleMask[], 片段着色器都可用这两个内置变量. 第一个为OpenGL产生的输入, 包含了覆盖信息. 第二个为你可以在着色器中写入的输出, 以更新覆盖率. 数据的每个元素的每一位对应于单个样本(从 the least significant 位开始). 如果 OpenGL 实现在单个 framebuffer 中支持多于32个样本, 数组的第一个元素包含了用于前32个样本的覆盖信息, 第二个元素则是接下来32位的覆盖信息, 如此反复.
+
+<li>
+如果 OpenGL 认定某个具体的样本覆盖了, 则设置 gl_SampleMaskIn[] 中的对应位. 你可以直接将数组拷贝至 gl_SampleMask[], 并将信息直接往下传递, 但其对 coverage 并无任何效果. 如果你在这个处理过程中, 关闭采样, 它们将被有效地抛弃掉. 当你打开 gl_SampleMask[] 中的相应位, 其在 gl_SampleMaskIn[] 没有打开, 则它们将会没有任何效果, OpenGL 会将它们再次关闭. 
+
+<li>
+glDisable() 和 GL_MULTISAMPLE 就可以禁止多重采样. 现在当着色器运行的时候, gl_SampleMaskIn[] 将表示所有的样本都覆盖了片段, 且你关闭了所有的位.
+
+</ul>
+
+<div id="Chapter 9 Fragment Processing and the Framebuffer-9.5 Antialiasing-9.5.4 Sample Rate Shading"><h3 id="9.5.4 Sample Rate Shading">9.5.4 Sample Rate Shading</h3></div>
+<ul>
+<li>
+多重采样 antialiasing 解决了很多问题. 但是其对于着色器被抛弃的时候没作用. 普通情况下, 当一个三角形和一个像素相交, 则运行着色器一次, 并广播产生的输出给每个被三角形覆盖的样本. 当着色器自身产生高频的输出时, 其不能精确地捕捉着色器的结果. 例如, 见如下代码
+<pre class="brush: glsl">
+#version 430 core
+out vec4 color;
+in VS_OUT
+{
+	vec2 tc;
+} fs_in;
+void main(void)
+{
+	float val = abs(fs_in.tc.x + fs_in.tc.y) * 20.0f;
+	color = vec4(fract(val) &gt;= 0.5 ? 1.0 : 0.25);
+}
+</pre>
+
+<li>
+这个简单例子产生硬边的条带(产生一个高频的信号), 对于着色器的每次运行, 其输出可能是亮白或者暗灰, 依赖于进来的纹理坐标. 渲染结果边缘可能很好, 但是三角形内部则产生锯齿.
+
+<li>
+因此为了解决这个问题, 我们允许 sample-rate 着色, 在该种模式中, 当图元命中时, OpenGL 将会每个样本都运行你的着色器, 注意, 对于一个 8-sample 的 buffers, 你的着色器花费将是八倍的代价. 调用
+<pre class="brush: c++">
+glEnable(GL_SAMPLE_SHADING);
+</pre>
+
+<ul>
+<li>
+禁止	
+<pre class="brush: c++">
+glDisable(GL_SAMPLE_SHADING);
+</pre>
+
+</ul>
+<li>
+一旦允许 sample shading, 你需要让 OpenGL 知道应当运行你的着色器用于样本的哪部分. 默认, 允许sample shading不需要做任何事情, OpenGL 将会每个像素运行你的着色器一次. 告知 OpenGL 样本的哪部分你想要独立着色, 调用 glMinSampleShading, 原型为
+<pre class="brush: c++">
+void glMinSampleShading(GLfloat value);
+</pre>
+
+<li>
+例如, 如果你想要 OpenGL 运行你的着色器用于framebuffer中至少一半的样本, 设置 value 参数值为 0.5f. 几何的每个命中样本单独着色, 则 value 设为 1.0f. 本例是设为 1.0
+
+</ul>
+
+<div id="Chapter 9 Fragment Processing and the Framebuffer-9.5 Antialiasing-9.5.5 Centroid Sampling"><h3 id="9.5.5 Centroid Sampling">9.5.5 Centroid Sampling</h3></div>
+<ul>
+<li>
+centroid storage 前缀 --- OpenGL 控制片段着色器的输入其插值位于一个像素内的何处. 仅当你渲染至一个 multi-sampled framebuffer 才应用. 和其他 storage 前缀一样, centroid 前缀应用于输入或输出变量.
+
+<li>
+为了创建一个有 centroid 前缀的 varying, 首先, 顶点着色器, TCS, 几何着色器, 其输出声明应如下:
+<pre class="brush: glsl">
+centroid out vec2 tex_coord;
+</pre>
+
+<li>
+而后片段着色器, 相同的输入使用 centroid 前缀
+<pre class="brush: glsl">
+centroid in vec2 tex_coord;
+</pre>
+
+<li>
+还可以将 centroid 前缀作用于一个 interface block 导致块的所有成员都使用片段的 centroid 插值
+<pre class="brush: glsl">
+centroid out VS_OUT
+{
+	vec2 tex_coord;
+} vs_out;
+</pre>
+
+<li>
+如果你使用 single-sampled draw buffer, 这将没有什么不同, 输入将在像素的中心进行插值. 
+
+<li>
+对于 multi-sampled draw buffer, 如果没有设置 centroid 采样, 则片段着色器的 varying 在"像素的中心, 或者像素内的任何地方, 或像素样本中的一个"进行插值. 
+
+<li>
+参考图形 9.14, 见插值点如何影响一条线的绘制, 插值点选取的是最靠近像素中心的样本, 用箭头表示. 运行的该样本有可能位于三角形之外.
+
+<li>
+如果输入使用 centroid 前缀, 则表示被插值的点是位于像素内和被渲染的图元内的点, 或者是像素其位于图元内的一个样本. 对于每个像素, 插值的样本位于三角形内. 你可以安全的使用像素着色器的输入, 它们都是有效的, 不会位于三角形之外.
+
+<li>
+根据 9.14 图的右图, 对于部分覆盖的像素, 不再选择最靠近像素中心的样本, 而是选择位于三角形内的样本. 这样使用它们采样纹理或者用于函数都会有正确的结果.
+
+<li>
+使用 centroid 的目的是确保输入是有效的.
+
+<li>
+使用 centroid 也有某些缺点, 对于输入的离散微分可能有不精确的结果.
+<pre class="brush: glsl">
+bool may_be_on_edge = any(notEqual(maybe_outside,
+						certainly_inside));
+</pre>
+
+</ul>
+
+<div id="Chapter 9 Fragment Processing and the Framebuffer-9.5 Antialiasing-9.5.5 Centroid Sampling-9.5.5.1 Using Centroid Sampling to Perform Edge Detection"><h4 id="9.5.5.1 Using Centroid Sampling to Perform Edge Detection">9.5.5.1 Using Centroid Sampling to Perform Edge Detection</h4></div>
+<ul>
+<li>
+centroid 采样的有趣使用情况有硬件加速的边缘检测. 
+
+<li>
+为了从中得到边的信息, 声明片段着色器的两个输入, 一个有 centroid 前缀, 一个没有 centroid 前缀. 顶点着色器中它们分配相同的值. 可以用它们变换后的顶点位置作为其值. 
+<pre class="brush: glsl">
+out vec2 maybe_outside;
+</pre>
+
+<ul>
+<li>
+non-centroid 输入可能插值了一个位于三角形外的点
+<pre class="brush: glsl">
+centroid out vec2 certainly_inside;
+</pre>
+
+</ul>
+<li>
+在片段着色器, 我们可以比较这两个 varying 值. 如果两者不同, 则是边缘.
+
+<li>
+这并不能检测出所有的边像素, 有些边的像素则有可能覆盖了原先样本所在位置. 但其可以标记出大多数边的像素.
+
+<li>
+使用这个信息, 你可以在绑定到framebuffer的纹理上写入值, 而后使用该纹理做进一步的处理. 另一个用法是仅绘制至 stencil buffer. 设置你的 stencil reference 为 1, 禁止 stencil 测试, 设置你的 stencil 操作为GL_REPLACE, 当你遇到一个边, 让片段着色器继续运行, 遇到不是边的像素, 则用 discard 关键字阻止运行. 这样你的 stencil buffer 中边的地方则为1. 而后你绘制一个全屏四边形, 使用一个昂贵的片段着色器, 通过 stencil test, 其只在边的像素上运行, 这些像素的样本在三角形之外, 设置 stencil 函数为 GL_EQUAL, referece value 为 1. 其可以在每个像素上实现图像处理操作, 例如使用卷积操作应用高斯模糊来模糊场景中多边形的边. 运行应用执行它们自己的 antialiasing.
+
+</ul>
+
+<div id="Chapter 9 Fragment Processing and the Framebuffer-9.6 Advanced Framebuffer Formats"><h2 id="9.6 Advanced Framebuffer Formats">9.6 Advanced Framebuffer Formats</h2></div>
+<ul>
+<li>
+现已学习窗口系统提供的 framebuffer (例如, 默认 framebuffer), 或者使用自己的 framebuffer 渲染至纹理中. 附属至该 framebuffer 的纹理有格式 GL_RGBA8, 8 位无符号单元化格式, 以 256 步来表示 0.0 到 1.0 范围之间的值. 片段着色器的输出声明为 vec4 - 一个四浮点数元素的向量. 实际上, OpenGL 可以以任意格式渲染, framebuffer attachment 可以是1个, 2个, 3个, 或 4个成分, 可以是浮点或整数格式, 可以存储负数, 可以大于8位, 提供了多得多的定义. 
+
+<li>
+本章节研究用于framebuffer attachment的更高级格式.
+
+</ul>
+
+<div id="Chapter 9 Fragment Processing and the Framebuffer-9.6 Advanced Framebuffer Formats-9.6.1 Rendering with No Attachments"><h3 id="9.6.1 Rendering with No Attachments">9.6.1 Rendering with No Attachments</h3></div>
+<ul>
+<li>
+除了将多个纹理附属至单个 framebuffer, 并在单个着色器中渲染所有这些纹理. 你还可以创建一个 framebuffer 不附属任何纹理. 这样片段着色器的输出将没任何效果, 数据被抛弃, 但其可产生副作用, 可以使用 imageStore 函数写进内存, 使用 atomicCounterIncrement 和 atomicCounterDecrement 函数增加或减少原子计数,
+
+<li>
+当一个 framebuffer 对象有一个或多个 attachment, 其可以推导出这些 attachment 的最大宽度和高度, layer count, 以及 sample count. 如果一个 framebuffer 没有 attachment, 则必须从其他地方推导出这些信息. 因此用函数设置用于推导这些信息的参数, glFramebufferParameteri(). 原型为
+<pre class="brush: c++">
+void glFramebufferParameteri(GLenum target,
+							GLenum pname,
+							GLint param);
+</pre>
+
+<ul>
+<li>
+target --- framebuffer 绑定的目标, 可以是 GL_DRAW_FRAMEBUFER, GL_READ_FRAME_BUFFER, GL_FRAMEBUFFER. 如果使用 GL_FRAMEBUFFER, 可等价看成 GL_DRAW_FRAMEBUFFER.
+
+<li>
+pname --- 表示你想要修改的参数. 
+
+<ul>
+<li>
+GL_FRAMEBUFFER_DEFAULT_WIDTH --- 宽度
+
+<li>
+GL_FRAMEBUFFER_DEFAULT_HEIGHT --- 高度
+
+<li>
+GL_FRAMEBUFFER_DEFAULT_LAYERS --- layer count
+
+<li>
+GL_FRAMEBUFFER_DEFAULT_SAMPLES --- sample 数
+
+<li>
+GL_FRAMEBUFFER_DEFAULT_FIXED_SAMPLE_LOCATION --- framebuffer 是否使用固定的默认采样位置. 为0表示使用默认的采样位置.
+
+</ul>
+</ul>
+<li>
+没有 attachment 的 framebuffer 可以有相当大的最大维度, 见例子, 宽度和高度为一万个像素.
+<pre class="brush: c++">
+// Generate a framebuffer name and bind it.
+Gluint fbo;
+glGenFramebuffers(1, &amp;fbo);
+glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+// Set the default width and height to 10000
+glFramebufferParameteri(GL_FRAMEBUFFER_DEFAULT_WIDTH, 10000);
+glFramebufferParameteri(GL_FRAMEBUFFER_DEFAULT_HEIGHT, 10000);
+</pre>
+
+<ul>
+<li>
+上面的代码创建了 framebuffer object 之后, 你可使用 glViewport() 设置视口大小为一万个像素的高宽. 
+
+<li>
+gl_FragCoord 的 x 和 y 成分的范围为 0 到 9,999
+
+</ul>
+</ul>
+
+<div id="Chapter 9 Fragment Processing and the Framebuffer-9.6 Advanced Framebuffer Formats-9.6.2 Floating-Point Framebuffers"><h3 id="9.6.2 Floating-Point Framebuffers">9.6.2 Floating-Point Framebuffers</h3></div>
+<ul>
+<li>
+framebuffer 最有用的功能是使用浮点格式的 attachment.
+
+<li>
+管线的许多部分将值裁减至 0 到 1 的范围, 这样最后可以存储为定点浮点数格式.
+
+<li>
+除了 256 个值之外, 对于你的颜色和着色可以使用的值范围为 1.18 x 10的-38次方到 3.4 x 10的38次方. 
+
+</ul>
+
+<div id="Chapter 9 Fragment Processing and the Framebuffer-9.6 Advanced Framebuffer Formats-9.6.2 Floating-Point Framebuffers-9.6.1.1 Using Floating-Point Formats"><h4 id="9.6.1.1 Using Floating-Point Formats">9.6.1.1 Using Floating-Point Formats</h4></div>
+<ul>
+<li>
+升级你的应用以使用浮点数 buffers 很容易. 创建 buffer 的时候使用两个新的 tokens. GL_RGBA16F 和 GL_RGBA32F. 这些可用于创建用于纹理的 storage
+<pre class="brush: c++">
+glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA16F, width, height);
+glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32F, width, height);
+</pre>
+
+<li>
+表格 9.8 列出创建浮点数纹理允许的其他格式.
+
+<ul>
+<li>
+GL_RGBA32F --- Four 32-bit ?oating-point components
+
+<li>
+GL_RGBA16F --- Four 16-bit ?oating-point components
+
+<li>
+GL_RGB32F --- Three 32-bit ?oating-point components
+
+<li>
+GL_RGB16F --- Three 16-bit ?oating-point components
+
+<li>
+GL_RG32F --- Two 32-bit ?oating-point components
+
+<li>
+GL_RG16F --- Two 16-bit ?oating-point components
+
+<li>
+GL_R32F --- One 32-bit ?oating-point component
+
+<li>
+GL_R16F --- One 16-bit ?oating-point component
+
+<li>
+GL_R11F_G11F_B10F --- Two 11-bit ?oating-point components and one 10-bit ?oating-point component
+
+</ul>
+<li>
+GL_R11F_G11F_B10F --- 两个 11 位浮点数成员和一个 10 位浮点数成员, 分别为5位指数6位尾数和5位指数和5位尾数.
+
+<li>
+除了表格 9.8 的格式, 你还可以创建使用 GL_DEPTH_COMPONENT32F 或 GL_DEPTH_COMPONENT32F_STENCIL8 格式的纹理. 第一个格式用于存储深度信息, 这样纹理可以用于 framebuffer 的深度 attachment. 第二个格式则用于在单个纹理中存储深度和 stencil 信息. 这样可以用于一个 framebuffer object 的深度 attachment 和 stencil attachment.
+
+</ul>
+
+<div id="Chapter 9 Fragment Processing and the Framebuffer-9.6 Advanced Framebuffer Formats-9.6.2 Floating-Point Framebuffers-9.6.1.2 High Dynamic Range"><h4 id="9.6.1.2 High Dynamic Range">9.6.1.2 High Dynamic Range</h4></div>
+<ul>
+<li>
+光效果: light bloom(光晕), lens flare(镜头眩光), 光的反射和折射, crepuscular rays(曙暮辉).
+
+<li>
+使用烟尘和云的效果. 这些都要用到浮点 buffer.
+
+<li>
+High dynamic range(HDR) 渲染渲染至浮点 buffer 可以使得场景的亮区真正地明亮, 保证阴影区域非常暗, 可以同时看到这些细节. 
+
+<li>
+最终, 眼睛可以接受比如今显示设备更高的对比度层次.
+
+<li>
+例子中, 我们使用在 HDR 中生成的图像. hdr_imaging, 从 .KTX 文件夹在 HDR(浮点)图像, 该 .KTX 文件以原生形式存储了原始的浮点数据. 通过一系列不同曝光的场景的 aligned 图像并组合产生 HDR 结果来生成这些图像. 低曝光捕捉场景的亮区细节, 高曝光扑捉场景的暗区细节.
+
+<li>
+例子中, 能够通过一张图像根据不同曝光看到不同细节, 在单个图像中存储如此多细节, 只有通过浮点数据才能做到. 
+
+<li>
+真正地颜色输出会被保存, 而不再是裁减至 0.0 到 1.0 的范围内, 而后除法得到 256 个可能的值.
+
+</ul>
+
+<div id="Chapter 9 Fragment Processing and the Framebuffer-9.6 Advanced Framebuffer Formats-9.6.2 Floating-Point Framebuffers-9.6.1.3 Tone Mapping"><h4 id="9.6.1.3 Tone Mapping">9.6.1.3 Tone Mapping</h4></div>
+<ul>
+<li>
+Tone mapping --- 映射颜色数据, 从一套颜色映射至另一套颜色, 或者从一个颜色空间映射至另一个颜色空间. 由于我们不能直接显示浮点数据, 所以我们需要 tone mapped 至一个可以显示的颜色空间. 
+
+<li>
+hdrtonemap 例子, 使用三种方式映射 high-definition 输出至 low-definition 的屏幕. 
+
+<ul>
+<li>
+第一种方法直接将图像发送至8位单元化的 back buffer.
+
+<li>
+第二种方法则改变图像的"exposure"(曝光). HDR 转换至 LDR(low dynamic range).
+<pre class="brush: glsl">
+#version 430 core
+layout (binding = 0) uniform sampler2D hdr_image;
+uniform float exposure = 1.0;
+out vec4 color;
+void main(void)
+{
+	vec4 c = texelFetch(hdr_image, ivec2(gl_FragCoord.xy), 0);
+	c.rgb = vec3(1.0) - exp(-c.rgb * exposure);
+	color = c;
+}
+</pre>
+
+<li>
+第三种方法根据场景不同部分的相对亮度执行 exposure level 的动态修正. 首先, 着色器需要知道当前纹素附近区域的相对亮度. 着色器围绕当前采样25个纹素. 而后这些样本转换至亮度值, 而后权重并累加起来. 而后使用一种非线性的函数转换亮度值为 exposure(曝光). 公式为: (8.0*(x + 0.25)) 的平方根
+<pre class="brush: glsl">
+#version 430 core
+// hdr_adaptive.fs
+//
+//
+in vec2 vTex;
+layout (binding = 0) uniform sampler2D hdr_image;
+out vec4 oColor;
+void main(void)
+{
+	int i;
+	float lum[25];
+	vec2 tex_scale = vec2(1.0) / textureSize(hdr_image, 0);
+	for (i = 0; i &lt; 25; i++)
+	{
+		vec2 tc = (2.0 * gl_FragCoord.xy +
+		3.5 * vec2(i % 5 - 2, i / 5 - 2));
+		vec3 col = texture(hdr_image, tc * tex_scale).rgb;
+		lum[i] = dot(col, vec3(0.3, 0.59, 0.11));
+	}
+	// Calculate weighted color of region
+	vec3 vColor = texelFetch(hdr_image,
+				2 * ivec2(gl_FragCoord.xy), 0).rgb;
+	float kernelLuminance = (
+			(1.0 * (lum[0] + lum[4] + lum[20] + lum[24])) +
+			(4.0 * (lum[1] + lum[3] + lum[5] + lum[9] +
+			lum[15] + lum[19] + lum[21] + lum[23])) +
+			(7.0 * (lum[2] + lum[10] + lum[14] + lum[22])) +
+			(16.0 * (lum[6] + lum[8] + lum[16] + lum[18])) +
+			(26.0 * (lum[7] + lum[11] + lum[13] + lum[17])) +
+			(41.0 * lum[12])
+			) / 273.0;
+	// Compute the corresponding exposure
+	float exposure = sqrt(8.0 / (kernelLuminance + 0.25));
+	// Apply the exposure to this texel
+	oColor.rgb = 1.0 - exp2(-vColor * exposure);
+	oColor.a = 1.0f;
+}
+</pre>
+
+</ul>
+</ul>
+
+<div id="Chapter 9 Fragment Processing and the Framebuffer-9.6 Advanced Framebuffer Formats-9.6.2 Floating-Point Framebuffers-9.6.1.4 Making Your Scene Bloom"><h4 id="9.6.1.4 Making Your Scene Bloom">9.6.1.4 Making Your Scene Bloom</h4></div>
+<ul>
+<li>
+HDR 的一个很好的效果就是 bloom effect. 太阳或者两广透过树枝或者其他物体的效果. 见图 9.20, 可以加强场景具体区域的亮度感觉. 我们可以模拟亮光源, 使用 8 位精度的 buffers 可以实现这个效果, 但是在HDR场景中使用浮点 buffer 更有效率.
+
+<li>
+例子 hdrbloom, 一个 framebuffer 设置了两个浮点纹理作为color attachments. 第一个绑定的纹理场景如常渲染至其上, 第二个绑定的纹理则只得到明亮的区域. 例子程序中在一个着色器中的一个pass中同时填充两个纹理, color0 输出如常计算, 而后计算颜色的亮度值作为门槛, 只有最亮的数据用于生成 bloom effect, 生成的第二个输出为 color1. 
+<pre class="brush: glsl">
+#version 430 core
+layout (location = 0) out vec4 color0;
+layout (location = 1) out vec4 color1;
+in VS_OUT
+{
+	vec3 N;
+	vec3 L;
+	vec3 V;
+	flat int material_index;
+} fs_in;
+// Material properties
+uniform float bloom_thresh_min = 0.8;
+uniform float bloom_thresh_max = 1.2;
+struct material_t
+{
+	vec3 diffuse_color;
+	vec3 specular_color;
+	float specular_power;
+	vec3 ambient_color;
+};
+layout (binding = 1, std140) uniform MATERIAL_BLOCK
+{
+	material_t material[32];
+} materials;
+void main(void)
+{
+	// Normalize the incoming N, L, and V vectors
+	vec3 N = normalize(fs_in.N);
+	vec3 L = normalize(fs_in.L);
+	vec3 V = normalize(fs_in.V);
+	// Calculate R locally
+	vec3 R = reflect(-L, N);
+	material_t m = materials.material[fs_in.material_index];
+	// Compute the diffuse and specular components for each fragment
+	vec3 diffuse = max(dot(N, L), 0.0) * m.diffuse_color;
+	vec3 specular = pow(max(dot(R, V), 0.0), m.specular_power)
+					http://chdbits.org/torrents.php* m.specular_color;
+	vec3 ambient = m.ambient_color;
+	// Add ambient, diffuse, and specular to find final color
+	vec3 color = ambient + diffuse + specular;
+	// Write final color to the framebuffer
+	color0 = vec4(color, 1.0);
+	// Calculate luminance
+	float Y = dot(color, vec3(0.299, 0.587, 0.144));
+	// Threshold color based on its luminance, and write it to
+	// the second output
+	color = color * 4.0 * smoothstep(bloom_thresh_min, bloom_thresh_max, Y);
+	color1 = vec4(color, 1.0);
+}
+</pre>
+
+<li>
+做完这些工作后, 明亮的数据需要进行模糊以用于 bloom effect. 这里我们使用 separable Gaussian filter. separable filter 表示其可以分为两个 pass --- 通常一个用于水平轴, 一个用于垂直轴. 这里我们每个维度使用 25 个taps. 围绕过滤的中心采样 25 个样本, 而后每个纹素成一个一个固定的权重集.
+<pre class="brush: glsl">
+#version 430 core
+layout (binding = 0) uniform sampler2D hdr_image;
+out vec4 color;
+const float weights[] = float[](0.0024499299678342,
+								0.0043538453346397,
+								0.0073599963704157,
+								0.0118349786570722,
+								0.0181026699707781,
+								0.0263392293891488,
+								0.0364543006660986,
+								0.0479932050577658,
+								0.0601029809166942,
+								0.0715974486241365,
+								0.0811305381519717,
+								0.0874493212267511,
+								0.0896631113333857,
+					http://chdbits.org/torrents.php			0.0874493212267511,
+								0.0811305381519717,
+								0.0715974486241365,
+								0.0601029809166942,
+								0.0479932050577658,
+								0.0364543006660986,
+								0.0263392293891488,
+								0.0181026699707781,
+								0.0118349786570722,
+								0.0073599963704157,
+								0.0043538453346397,
+								0.0024499299678342);
+void main(void)
+{
+	vec4 c = vec4(0.0);
+	ivec2 P = ivec2(gl_FragCoord.yx) - ivec2(0, weights.length() &gt;&gt; 1);
+	int i;
+	for (i = 0; i &lt; weights.length(); i++)
+	{
+		c += texelFetch(hdr_image, P + ivec2(0, i), 0) * weights[i];
+	}
+	color = c;
+}
+</pre>
+
+<li>
+融合
+<pre class="brush: glsl">
+#version 430 core
+layout (binding = 0) uniform sampler2D hdr_image;
+layout (binding = 1) uniform sampler2D bloom_image;
+uniform float exposure = 0.9;
+uniform float bloom_factor = 1.0;
+uniform float scene_factor = 1.0;
+out vec4 color;
+void main(void)
+{
+	vec4 c = vec4(0.0);
+	c += texelFetch(hdr_image, ivec2(gl_FragCoord.xy), 0) * scene_factor;
+	c += texelFetch(bloom_image, ivec2(gl_FragCoord.xy), 0) * bloom_factor;
+	c.rgb = vec3(1.0) - exp(-c.rgb * exposure);
+	color = c;
+}
+</pre>
+
+</ul>
+
+<div id="Chapter 9 Fragment Processing and the Framebuffer-9.6 Advanced Framebuffer Formats-9.6.3 Integer Framebuffers"><h3 id="9.6.3 Integer Framebuffers">9.6.3 Integer Framebuffers</h3></div>
+<ul>
+<li>
+默认, Window 系统为你的应用提供定点浮点数 back buffer.  当你在片段着色器中声明一个浮点数输出(例如 vec4), OpenGL 将会转换这些你写入的数据为定点表达, 以便适应 framebuffer 的存储.
+
+<li>
+可以创建一个整数的 framebuffer attachment, 方法则为创建一个内部整数格式的纹理, 而后将其附属至 framebuffer object. 这样片段着色器的输出可以是整数成分类型, 例如 ivec4, uvec4. 
+
+<li>
+由整数组成的内部格式通常以 I 或 UI 结束 --- 例如, GL_RGBA32UI 表示每个纹素由四个无符号 32 位整数组成的格式. 
+<pre class="brush: c++">
+// Variables for the texture and FBO
+GLuint tex;
+GLuint fbo;
+// Create the texture object
+glGenTextures(1, &amp;tex);
+// Bind it to the 2D target and allocate storage for it
+glBindTexture(GL_TEXTURE_2D, tex);
+glTexStorage2D(GL_TEXTURE_2D, 1, GL_RGBA32UI, 1024, 1024);
+// Now create an FBO and attach the texure as normal
+glGenFrambuffers(1, &amp;fbo);
+glBindFramebuffer(GL_FRAMEBUFFER, fbo);
+glFramebufferTexture(GL_FRAMEBFUFFER,
+					GL_COLOR_ATTACHMENT0,
+					tex,
+					0);
+</pre>
+
+<li>
+你可以得到一个 framebuffer attachment 的成分类型, 方法为调用函数 glGetFramebufferAttachmentParameteriv(), 其 pname 参数为 GL_FRAMEBUFFER_ATTACHMENT_COMPONENT_TYPE. 返回的值可以有 GL_FLOAT, GL_INT, GL_UNSIGNED_INT, GL_SIGNED_NORMALIZED, GL_UNSIGNED_NORMALIZED, 这些都取决于颜色 attachment 的内部格式.
+
+<li>
+这里并不要求一个 framebuffer object 的所有attachment都要是相同的类型. 比如可以一个是定点或者浮点, 一个是整数类型之类. 如果你的 framebuffer attachment 是一个无符号整数格式, 例如 GL_RGBA32UI, 你的着色器输出变量则必须匹配该颜色 attachment, 应当为 unsigned int, uvec2, uvec3. 注意虽然要求成员格式必须匹配, 但不要求成员数量必须匹配.
+
+<li>
+如果 framebuffer attachment 的成员宽度小于32位, 则渲染的时候多余的位被抛弃. 你可以使用GLSL函数 floatBitsToInt (或 floatBitsToUint), 或使用类似 packUnorm2x16 这样的打包函数将浮点数直接写入整数颜色 buffer. 
+
+<li>
+注意, 对于整数 framebuffer, 不能使用混合. 还有就是你渲染图像所得到的纹理不能够被过滤(filtered).
+
+</ul>
+
+<div id="Chapter 9 Fragment Processing and the Framebuffer-9.6 Advanced Framebuffer Formats-9.6.4 The sRGB Color Space"><h3 id="9.6.4 The sRGB Color Space">9.6.4 The sRGB Color Space</h3></div>
+<ul>
+<li>
+以前的显示器使用 cathode ray tubes(CRTs,  阴极射线管) 制造的. 发射电子至荧光屏幕. 发射的光其不是线性的(根据其使用的电压). 输出的光和驱动的电压之间的关系是高度非线性的. Lout = Vin^γ. 其中γ还不总是相同的值. 对于 NTSC 系统, γ大概为 2.2. 对于 SECAM 和 PAL 系统, 则γ为2.8. 
+
+<li>
+为了补偿电压和颜色的不平衡, 我们应用伽玛修正. 通过一个小的power, 缩放结果, 偏移结果来提升线性值. 产生的颜色空间为 sRGB. 见一个线性值转换成 sRGB 值的伪代码如下:
+<pre class="brush: c++">
+if (cl &gt;= 1.0)
+{
+	cs = 1.0;
+}
+else if (cl &lt;= 0.0)
+{
+	cs = 0.0;
+}
+else if (cl &lt; 0.0031308)
+{
+	cs = 12.92 * cl;
+}
+else
+{
+	cs = 1.055 * pow(cl, 0.41666) - 0.055;
+}
+</pre>
+
+<li>
+sRGB 转换至线性颜色空间
+<pre class="brush: c++">
+if (cs &gt;= 1.0)
+{
+	cl = 1.0;
+}
+else if (cs &lt;= 0.0)
+{
+	cl = 0.0;
+}
+else if (cs &lt;= 0.04045)
+{
+	cl = cs / 12.92;
+}
+else
+{
+	cl = pow(((cs + 0.0555) / 1.055), 2.4);
+}
+</pre>
+
+<ul>
+<li>
+cs 为 sRGB 颜色空间值, cl 为线性值.
+
+</ul>
+<li>
+为了在 OpenGL 中使用 sRGB 颜色空间, 我们创建 SRGB 内部格式的纹理, GL_SRGB8_ALPHA8. 我们可以如常加载至纹理, 在着色器中从 sRGB 纹理读取时, 在纹理被采样但是过滤之前, sRGB 格式转换成 RGB 格式. 即当打开 bilinear filtering, 输入的纹素从 sRGB 转换至线性空间, 而后线性采样并混合形成返回给着色器的最终结果. 同样的, 只有RGB成分被单独转换.
+
+<li>
+Framebuffers 同样也支持 sRGB 的 storage 格式. 附属 GL_SRGB8_ALPHA8 内部格式的纹理至 framebuffer object 上. OpenGL 可以自动的将线性颜色输出转换至 sRGB 值, 但是这不是默认执行的, 需要使用 glEnable() 函数和 GL_FRAMEBUFFER_SRGB 打开这个功能. 注意这仅作用于有 sRGB surface 的 color attachment 上.
+
+<li>
+glGetFramebufferAttachmentParameteriv() 和值 GL_FRAMEBUFFER_ATTACHMENT_COLOR_ENCODING 发现其attached surface 是否 sRGB. 如果是则返回 GL_SRGB, 否则返回 GL_LINEAR.
+
+</ul>
+
+<div id="Chapter 9 Fragment Processing and the Framebuffer-9.7 Point Sprites"><h2 id="9.7 Point Sprites">9.7 Point Sprites</h2></div>
+<ul>
+<li>
+术语 point sprites 常表示带有纹理的点(textured point). 由于点是用一个顶点表示的, 所以没有机会设置点上纹理的插值. 所以我们要处理这个问题.
+
+<li>
+point sprites 常用于粒子系统. 
+
+<li>
+不是用 point sprites, 也可以使用大量带纹理的四边形(或 triangle fans) 来实现. 每个面执行一个昂贵的旋转保证其面向相机, 或者在2D正交投影中需绘制所有的粒子. Point sprites 则允许你发送单个 3D 顶点就可以渲染一个完美地对其的带纹理的2D正方形. 
+
+</ul>
+
+<div id="Chapter 9 Fragment Processing and the Framebuffer-9.7 Point Sprites-9.7.1 Texturing Points"><h3 id="9.7.1 Texturing Points">9.7.1 Texturing Points</h3></div>
+<ul>
+<li>
+使用 point sprites 很简单, 在应用这边, 绑定一个2D纹理. 在片段着色器中使用内置的变量 gl_PointCoord, 这是一个二维的向量, 其沿着点插值纹理坐标.
+<pre class="brush: glsl">
+#version 430 core
+out vec4 vFragColor;
+in vec4 vStarColor;
+layout (binding = 0) uniform sampler2D starImage;
+void main(void)
+{
+	vFragColor = texture(starImage, gl_PointCoord) * vStarColor;
+}
+</pre>
+
+<li>
+对于 point sprite, 你不需要将纹理坐标作为属性, 因为 OpenGL 会自动产生 gl_PointCoord.
+
+</ul>
+
+<div id="Chapter 9 Fragment Processing and the Framebuffer-9.7 Point Sprites-9.7.2 Rendering a Star Field"><h3 id="9.7.2 Rendering a Star Field">9.7.2 Rendering a Star Field</h3></div>
+<ul>
+<li>
+starfield 例子程序. 
+
+<li>
+渲染
+<pre class="brush: c++">
+void render(double currentTime)
+{
+	static const GLfloat black[] = { 0.0f, 0.0f, 0.0f, 0.0f };
+	static const GLfloat one[] = { 1.0f };
+	float t = (float)currentTime;
+	float aspect = (float)info.windowWidth /
+					(float)info.windowHeight;
+	vmath::mat4 proj_matrix = vmath::perspective(50.0f,
+												aspect,
+												0.1f,
+												1000.0f);
+	t *= 0.1f;
+	t -= floor(t);
+	glViewport(0, 0, info.windowWidth, info.windowHeight);
+	glClearBufferfv(GL_COLOR, 0, black);
+	glClearBufferfv(GL_DEPTH, 0, one);
+	glEnable(GL_PROGRAM_POINT_SIZE);
+	glUseProgram(render_prog);
+	glUniform1f(uniforms.time, t);
+	glUniformMatrix4fv(uniforms.proj_matrix, 1, GL_FALSE, proj_matrix);
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_ONE, GL_ONE);
+	glBindVertexArray(star_vao);
+	glDrawArrays(GL_POINTS, 0, NUM_STARS);
+}
+</pre>
+
+<li>
+顶点着色器
+<pre class="brush: glsl">
+#version 430 core
+layout (location = 0) in vec4 position;
+layout (location = 1) in vec4 color;
+uniform float time;
+uniform mat4 proj_matrix;
+flat out vec4 starColor;
+void main(void)
+{
+	vec4 newVertex = position;
+	newVertex.z += time;
+	newVertex.z = fract(newVertex.z);
+	float size = (20.0 * newVertex.z * newVertex.z);
+	starColor = smoothstep(1.0, 7.0, size) * color;
+	newVertex.z = (999.9 * newVertex.z) - 1000.0;
+	gl_Position = proj_matrix * newVertex;
+	gl_PointSize = size;
+}
+</pre>
+
+<li>
+着色器中, 远截屏面的 z 坐标为0.0, 近截平面的的 z 坐标为 1.0. gl_PointSize 设置点的大小. 使用 smoothstep 函数当点的大小小于 1.0 的时候会是黑色, 避免太小的时候点产生闪烁. 大小为 7 个像素则为完全亮度.
+
+<li>
+片段着色器
+<pre class="brush: glsl">
+#version 430 core
+layout (location = 0) out vec4 color;
+uniform sampler2D tex_star;
+flat in vec4 starColor;
+void main(void)
+{
+	color = starColor * texture(tex_star, gl_PointCoord);
+}
+</pre>
+
+</ul>
+
+<div id="Chapter 9 Fragment Processing and the Framebuffer-9.7 Point Sprites-9.7.3 Point Parameters"><h3 id="9.7.3 Point Parameters">9.7.3 Point Parameters</h3></div>
+<ul>
+<li>
+可以使用函数 glPointParameteri() 微调 point sprites(以及点)的特性. 应用于point sprite的纹理的(0, 0)的两个可能位置, 左上和左下. 默认方位为 GL_UPPER_LEFT. 可以将参数 GL_POINT_SPRITE_COORD_ORIGIN 参数设为 GL_LOWER_LEFT, 这样纹理坐标系统的原点位于点左下角.
+<pre class="brush: c++">
+glPointParameteri(GL_POINT_SPRITE_COORD_ORIGIN, GL_LOWER_LEFT);
+</pre>
+
+</ul>
+
+<div id="Chapter 9 Fragment Processing and the Framebuffer-9.7 Point Sprites-9.7.4 Shaped Points"><h3 id="9.7.4 Shaped Points">9.7.4 Shaped Points</h3></div>
+<ul>
+<li>
+你可以使用 gl_PointCoord 做纹理坐标之外的事情. 例如, 你可以在片段着色程序中使用 discard 关键字做出一个非正方形的点. 下面的代码产生一个圆形的点
+<pre class="brush: glsl">
+vec2 p = gl_PointCoord * 2.0 - vec2(1.0);
+if (dot(p, p) &gt; 1.0)
+	discard;
+</pre>
+
+<li>
+或有趣的花的形状
+<pre class="brush: glsl">
+vec2 temp = gl_PointCoord * 2.0 - vec2(1.0);
+if (dot(temp, temp) &gt; sin(atan(temp.y, temp.x) * 5.0))
+	discard;
+</pre>
+
+<li>
+产生图 9.29 的图形, 片段着色器如下
+<pre class="brush: glsl">
+#version 430 core
+layout (location = 0) out vec4 color;
+flat in int shape;
+void main(void)
+{
+	color = vec4(1.0);
+	vec2 p = gl_PointCoord * 2.0 - vec2(1.0);
+	if (shape == 0)
+	{
+		// Simple disc shape
+		if (dot(p, p) &gt; 1.0)
+		discard;
+	}
+	else if (shape == 1)
+	{
+		// Hollow circle
+		if (abs(0.8 - dot(p, p)) &gt; 0.2)
+		discard;
+	}
+	else if (shape == 2)
+	{
+		// Flower shape
+		if (dot(p, p) &gt; sin(atan(p.y, p.x) * 5.0))
+		discard;
+	}
+	else if (shape == 3)
+	{
+		// Bowtie
+		if (abs(p.x) &lt; abs(p.y))
+		discard;
+	}
+}
+</pre>
+
+</ul>
+
+<div id="Chapter 9 Fragment Processing and the Framebuffer-9.7 Point Sprites-9.7.5 Rotating Points"><h3 id="9.7.5 Rotating Points">9.7.5 Rotating Points</h3></div>
+<ul>
+<li>
+旋转 point sprite 影响到纹理坐标, 在片段着色器中创建一个 2D 旋转矩阵, 而后乘以 gl_PointCoord 使得其围绕 z 轴旋转. 旋转的角度可为从顶点着色器或几何着色器传递下来的插值变量. 该角度值可在顶点着色器或几何着色器计算, 或者作为顶点的属性. 下面的代码显示较复杂的 point sprite 例子, 让点围绕其中心旋转.
+<pre class="brush: glsl">
+#version 430
+uniform sampler2D sprite_texture;
+in float angle;
+out vec4 color;
+void main(void)
+{
+	const float sin_theta = sin(angle);
+	const float cos_theta = cos(angle);
+	const mat2 rotation_matrix = mat2(cos_theta, sin_theta,
+									-sin_theta, cos_theta);
+	const vec2 pt = gl_PointCoord - vec2(0.5);
+	color = texture(sprite_texture, rotation_matrix * pt + vec2(0.5));
+}
+</pre>
+
+<li>
+单个图元内, 其 sin_theta 和 cos_theta 应该是常量. 所以在顶点着色器中计算并传递这一对值给片段着色器. 顶点着色器:
+<pre class="brush: glsl">
+#version 430 core
+uniform matrix mvp;
+in vec4 position;
+in float angle;
+flat out float sin_theta;
+flat out float cos_theta;
+void main(void)
+{
+	sin_theta = sin(angle);
+	cos_theta = cos(angle);
+	gl_Position = mvp * position;
+}
+</pre>
+
+<li>
+片段着色器
+<pre class="brush: glsl">
+#version 430 core
+uniform sampler2D sprite_texture;
+flat in float sin_theta;
+flat in float cos_theta;
+out vec4 color;
+void main(void)
+{
+	mat2 m = mat2(cos_theta, sin_theta,
+				-sin_theta, cos_theta);
+	const vec2 pt = gl_PointCoord - vec2(0.5);
+	color = texture(sprite_texture, rotation_matrix * pt + vec2(0.5));
+}
+</pre>
+
+<li>
+注意, 虽然你旋转了 gl_PointCoord 坐标, 但是点本身仍是正方形. 所以纹理的坐标有可能在点之外.
+
+</ul>
+
+<div id="Chapter 9 Fragment Processing and the Framebuffer-9.8 Getting at Your Image"><h2 id="9.8 Getting at Your Image">9.8 Getting at Your Image</h2></div>
+<ul>
+<li>
+这里有些原因你可能想要在应用中直接访问渲染的图像, 例如打印图像, 保存屏幕快照, 进一步的离线处理.
+
+</ul>
+
+<div id="Chapter 9 Fragment Processing and the Framebuffer-9.8 Getting at Your Image-9.8.1 Reading from a Framebuffer"><h3 id="9.8.1 Reading from a Framebuffer">9.8.1 Reading from a Framebuffer</h3></div>
+<ul>
+<li>
+glReadPixels() 函数, 从 framebuffer 中读取像素
+<pre class="brush: c++">
+void glReadPixels(GLint x,
+				GLint y,
+				GLsizei width,
+				GLsizei height,
+				GLenum format,
+				GLenum type,
+				GLvoid * data);
+</pre>
+
+<ul>
+<li>
+从当前绑定至 GL_READ_FRAMEBUFFER 目标的 framebuffer 的一个区域里读取数据, 如果没有绑定用户生成的 framebuffer object, 则从默认的 framebuffer 中读取, 读取的数据写入应用的内存或者buffer object中. 
+
+<li>
+x, y 是以左下角坐标为(0, 0).
+
+<li>
+format 和 type 表示你想要读回的数据格式, 类似于 glTexSubImage2D() 的参数. 
+
+<li>
+内容写入 data 中, 如果没有绑定至 GL_PIXEL_PACK_BUFFER 目标的 buffer object, 则 data 被解释为你应用内存的原始数据. 如果有绑定至 GL_PIXEL_PACK_BUFFER 目标的 buffer object, 则 data 看成偏移. 如果你想要得到这些数据, 可以调用 glMapBufferRange() 及 GL_MAP_READ_BIT 参数.
+
+</ul>
+<li>
+为了设置颜色数据从哪里读取, 你可以调用 glReadBuffer() 并传递 GL_BACK 或者 GL_COLOR_ATTACHMENTi 参数, i 表示你想要读取的 color attachment. 原型为
+<pre class="brush: c++">
+void glReadBuffer(GLenum mode);
+</pre>
+
+<li>
+如果你使用默认 framebuffer, 则 mode 必须是 GL_BACK, 这是默认的, 如果你只使用默认 framebuffer, 可以完全不用调用该函数. 如果你有用户提供的 framebuffer 带有多个 attachment, 则必须调用 glReadBuffer() 来表示读取哪个 attachment.
+
+<li>
+如果 glReadPixels() 函数其 format 参数设置为 GL_DEPTH_COMPONENT, 则将从 depth buffer 中读取数据. 同样的, GL_STENCIL_INDEX 则从 stencil buffer 中读取数据, GL_DEPTH_STENCIL 可同时从 depth 和 stencil buffer 中读取数据. 但是其 type 参数必须设置为 GL_UNSIGNED_INT_24_8 或者 GL_FLOAT_32_UNSIGNED_INT_24_8_REV, 这将生成打包数据, 其将被解释为深度和stencil信息.
+
+<li>
+OpenGL 写入的时候, 其从左到右, 从下到上的顺序. 图像的每一行开始于一个4个字节的倍数的偏移, 如果要读取的区域的宽度与每个像素的字节数的乘积为4的倍数, 则所有事情都运作完好, 结果数据将会紧密打包. 如果不是这样, 则输出之间留有间隙. 你可以通过 glPixelStorei() 函数来修改: 
+<pre class="brush: c++">
+void glPixelStorei(GLenum pname,
+				   GLint param);
+</pre>
+
+<ul>
+<li>
+pname 参数设为 GL_PACK_ALIGNMENT 时, 则 param 用于四舍五入图像每行数据间隔的距离字节数. param 可以设为1, 表示四舍五入至1个字节, 这样禁止了四舍五入. 其他的至有 2, 4, 8.
+
+</ul>
+</ul>
+
+<div id="Chapter 9 Fragment Processing and the Framebuffer-9.8 Getting at Your Image-9.8.1 Reading from a Framebuffer-9.8.1.1 Taking a Screenshot"><h4 id="9.8.1.1 Taking a Screenshot">9.8.1.1 Taking a Screenshot</h4></div>
+<ul>
+<li>
+下面的代码显示了如何从一个运行程序产生一个屏幕快照并保存至 .TGA 文件中.
+<pre class="brush: c++">
+int row_size = ((info.windowWidth * 3 + 3) &amp; ~3);
+int data_size = row_size * info.windowHeight;
+unsigned char * data = new unsigned char [data_size];
+#pragma pack (push, 1)
+struct
+{
+	unsigned char identsize; // Size of following ID field
+	unsigned char cmaptype; // Color map type 0 = none
+	unsigned char imagetype; // Image type 2 = rgb
+	short cmapstart; // First entry in palette
+	short cmapsize; // Number of entries in palette
+	unsigned char cmapbpp; // Number of bits per palette entry
+	short xorigin; // X origin
+	short yorigin; // Y origin
+	short width; // Width in pixels
+	short height; // Height in pixels
+	unsigned char bpp; // Bits per pixel
+	unsigned char descriptor; // Descriptor bits
+} tga_header;
+#pragma pack (pop)
+glReadPixels(0, 0, // Origin
+			info.windowWidth, info.windowHeight, // Size
+			GL_BGR, GL_UNSIGNED_BYTE, // Format, type
+			data); // Data
+memset(&amp;tga_header, 0, sizeof(tga_header));
+tga_header.imagetype = 2;
+tga_header.width = (short)info.windowWidth;
+tga_header.height = (short)info.windowHeight;
+tga_header.bpp = 24;
+FILE * f_out = fopen("screenshot.tga", "wb");
+fwrite(&amp;tga_header, sizeof(tga_header), 1, f_out);
+fwrite(data, data_size, 1, f_out);
+fclose(f_out);
+delete [] data;
+</pre>
+
+</ul>
+
+<div id="Chapter 9 Fragment Processing and the Framebuffer-9.8 Getting at Your Image-9.8.2 Copying Data between Framebuffers"><h3 id="9.8.2 Copying Data between Framebuffers">9.8.2 Copying Data between Framebuffers</h3></div>
+<ul>
+<li>
+传统上, 图形 APIs 允许一个应用读取像素或buffer数据写入系统内存中, 而后绘制回屏幕上. 这样做从 GPU 拷贝至 CPU, 再拷贝回 GPU, 很失效率. 
+
+<li>
+blit 命令将像素数据快速从一个点移动至另一个点. blit可理解为 Bit-Level-Image-Transfer, Block-Transfer.
+<pre class="brush: c++">
+void glBlitFramebuffer(GLint srcX0, Glint srcY0,
+						GLint srcX1, Glint srcY1,
+						GLint dstX0, Glint dstY0,
+						GLint dstX1, Glint dstY1,
+						GLbitfield mask, GLenum filter);
+</pre>
+
+<ul>
+<li>
+该函数比逐字节复制做得更多, 更像是自动的纹理操作. 复制源是 glReadBuffer() 设置的 framebuffer 的读取 buffer. 矩形区域由 srcX0, srcY0, srcX1, srcY1 设置. 目标是当前绘制 framebuffer 的 draw buffer, 由 glDrawBuffer() 设置. 复制的区域由 dstX0, dstY0, dstX1, dstY1 设置. 由于源区域和复制区域的大小可以不同, 因此你可以使用这个函数缩放正拷贝的 pixels.
+
+<li>
+如果你设置相同FBO的read和draw buffer, 以及绑定相同的 FBO 至 GL_DRAW_FRAMEBUFFER 和 GL_READ_FRAMEBUFFER 绑定, 你可以拷贝 framebuffer 的一部分至另一部分.(只要你小心拷贝和复制的区域不要重合)
+
+<li>
+mark 参数可以为 GL_STENCIL_BUFFER_BIT, GL_COLOR_BUFFER_BIT.
+
+<li>
+filter 参数可以是 GL_LINEAR, GL_NEAREST. 如果你拷贝深度或 stencil 数据或整数格式的颜色数据时, 必须使用 GL_NEAREST. 这些 filter 和用于纹理的 filter 一样. 我们只有拷贝非整数的颜色数据才能使用 linear filter.
+<pre class="brush: c++">
+GLint width = 800;
+GLint height = 600;
+GLenum fboBuffs[] = { GL_COLOR_ATTACHMENT0 };
+glBindFramebuffer(GL_DRAW_FRAMEBUFFER, readFBO);
+glBindFramebuffer(GL_READ_FRAMEBUFFER, drawFBO);
+glDrawBuffers(1, fboBuffs);
+glReadBuffer(GL_COLOR_ATTACHMENT0);
+glBlitFramebuffer(0, 0, width, height,
+				(width *0.8), (height*0.8),
+				width, height,
+				GL_COLOR_BUFFER_BIT, GL_LINEAR );
+</pre>
+
+<li>
+上面的例子显示了用法
+
+</ul>
+</ul>
+
+<div id="Chapter 9 Fragment Processing and the Framebuffer-9.8 Getting at Your Image-9.8.2 Copying Data between Framebuffers-9.8.2.1 Copying Data into a Texture"><h4 id="9.8.2.1 Copying Data into a Texture">9.8.2.1 Copying Data into a Texture</h4></div>
+<ul>
+<li>
+glCopyTexSubImage2D() 类似于 glTexSubImage2D(), 只是源数据来自于 framebuffer.
+<pre class="brush: c++">
+void glCopyTexSubImage2D(GLenum target,
+						GLint level,
+						GLint xoffset,
+						GLint yoffset,
+						GLint x,
+						GLint y,
+						GLsizei width,
+						GLsizei height);
+</pre>
+
+<ul>
+<li>
+target --- 纹理的目标.常为 GL_TEXTURE_2D, 可以是立体纹理的一面, 如 GL_TEXUTRE_CUBE_MAP_POSITIVE_X, ...
+
+<li>
+width, height 表示拷贝的区域大小, x, y 为framebuffer左下角的坐标. xoffset, yoffset 为目标纹理的纹素坐标.
+
+<li>
+这个函数对于默认 framebuffer 比较有用. 自己创建的 framebuffer object 其 attachment 都为一个纹理
+
+</ul>
+<li>
+拷贝一个纹理的数据至另外一个纹理. 可以使用函数 glCopyImageSubData()
+<pre class="brush: c++">
+void glCopyImageSubData(GLuint srcName,
+						GLenum srcTarget,
+						GLint srcLevel,
+						GLint srcX,
+						GLint srcY,
+						GLint srcZ,
+						GLuint dstName,
+						GLenum dstTarget,
+						GLint dstLevel,
+						GLint dstX,
+						GLint dstY,
+						GLint dstZ,
+						GLsizei srcWidth,
+						GLsizei srcHeight,
+						GLsizei srcDepth);
+</pre>
+
+<ul>
+<li>
+该函数直接根据纹理名称操作, 而非绑定至目标的对象. 如 srcName, srcTarget, dstName, dstTarget.
+
+<li>
+如果正拷贝的纹理没有相应的维度, 如2D纹理的z维度, 你应当设置其对应坐标为0, 大小为1.
+
+<li>
+srcLevel 和 dstLevel 为 mipmap level.
+
+<li>
+目标和源有相同的宽度, 高度, 厚度, 没有拉伸和收缩.
+
+</ul>
+<li>
+如果你想要拉伸和收缩, 重置纹理的大小, 你需要绑定两个纹理至 framebuffer object, 而后调用函数 glBlitFramebiffer().
+
+</ul>
+
+<div id="Chapter 9 Fragment Processing and the Framebuffer-9.8 Getting at Your Image-9.8.3 Reading Back Texture Data"><h3 id="9.8.3 Reading Back Texture Data">9.8.3 Reading Back Texture Data</h3></div>
+<ul>
+<li>
+通过绑定合适的纹理目标, 你可以从纹理读取图像数据.
+<pre class="brush: c++">
+void glGetTexImage(GLenum target,
+				GLint level,
+				GLenum format,
+				GLenum type,
+				GLvoid * img);
+</pre>
+
+<ul>
+<li>
+该函数类似于 glReadPixels(), 只是不允许读取纹理某个level的一个小区域. 其读取整个 level 的内容.
+
+<li>
+formate, type 和 glReadPixels() 相同, img 等同于 glReadPixels() 的 data, 包括是应用的内存还是绑定至 GL_PIXEL_PACK_BUFFER 目标的 buffer 的偏移.
+
+<li>
+优点, 可以直接访问整个 mipmap level, 其次不需要创建一个 framebuffer object 以便纹理来附属于它.
+
+</ul>
+<li>
+数据写入纹理中, 除了 glTexSubImage2D() 类似的函数, 或者写入 framebuffer 之外, 你还可以使用 glGenerateMipmap(), 或者在着色器中直接写入纹理中, 见第五章的 “Writing to Textures in Shaders”
+
+</ul>
+
+    </div>
+</body>
+</html>

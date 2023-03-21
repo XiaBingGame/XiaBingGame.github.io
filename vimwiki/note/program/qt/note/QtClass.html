@@ -1,0 +1,1478 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../../style.css">
+<title>QtClass</title>
+<meta http-equiv="Content-Type" content="text/html; charset=cp936">
+</head>
+<body>
+
+<ul>
+<li>
+算法
+
+<ul>
+<li>
+qStableSort()
+
+</ul>
+</ul>
+
+<ul>
+<li>
+QApplication
+
+<ul>
+<li>
+该类的主要作用
+
+<ul>
+<li>
+根据用户的桌面设置初始化应用程序, 例如 palette(), font(), doubleClickInterval().
+
+<li>
+处理事件. sendEvent() 和 postEvent() 发送你自己的事件
+
+<li>
+分析命令行参数
+
+<li>
+定义程序的外观, 使用 QStyle 类, 由 setStyle() 函数改变
+
+<li>
+setColorSpec() 分配颜色
+
+<li>
+translate() 实现字符串的本地化
+
+<li>
+widgetAt(), topLevelWidgets(), closeAllWindows()
+
+<li>
+setOverrideCursor(): 设置其上的光标. restoreOverrideCursor(), 取消最近的一次 setOverrideCursor() 操作
+
+<li>
+session management
+
+</ul>
+</ul>
+</ul>
+
+<ul>
+<li>
+QLabel
+
+<ul>
+<li>
+可包含的类型
+
+<ul>
+<li>
+纯文本: setText()使用 QString 参数
+
+<li>
+富文本: setText()使用 QString 参数
+
+<li>
+pixmap: setPixmap()使用 QPixmap 参数
+
+<li>
+影片: setMovie()使用QMovie 参数
+
+<li>
+数字: setNum() 设置int或double
+
+<li>
+Nothing: clear()
+
+</ul>
+<li>
+setAlignment() 对齐, setIndent() 缩进, setWordWrap() 包装单词边界
+
+<li>
+setBuddy() 设置该Label的Buddy
+
+<li>
+Label的Style:Macintosh widget style, Plastique widget style, Windows XP widget style
+
+</ul>
+</ul>
+
+<ul>
+<li>
+QWidget
+
+<ul>
+<li>
+构造函数有两个参数
+
+<ul>
+<li>
+QWidget *parent = 0;  表示父Widget, 如果等于0表示窗口
+
+<li>
+Qt::WindowFlags f = 0;
+
+</ul>
+<li>
+如果没有父widget, 可通过函数 setWindowTitle(), setWindowIcon() 设置标题和图标
+
+<li>
+使用 QPainter 的实例绘制内容. 在 paintEvent() 函数内绘制
+
+<li>
+sizeHint() 设置合适的缺省大小. setSizePolicy() 设置合适的 size policy
+
+<li>
+顶层widget大小限制为桌面高宽的2/2, 你可以使用 resize() 函数修改其大小
+
+<li>
+常用 event
+
+<ul>
+<li>
+paintEvent, 重绘时调用. QPainter 只能用于 paintEvent 或者 paintEvent调用的函数内
+
+<li>
+resizeEvent
+
+<li>
+mousePressEvent, 当范围内的光标按下时, 或者使用 grabMouse() 捕捉的光标按下时
+
+<li>
+mouseReleaseEvent
+
+<li>
+mouseDoubleClickEvent
+
+<li>
+keyPressEvent
+
+<li>
+focusInEvent: widget获得键盘焦点时调用
+
+<li>
+focusOutEvent
+
+<li>
+mouseMoveEvent: 鼠标按下时移动鼠标调用该函数, 对于拖放操作很有用. 如果设置 setMouseTracking(true), 即使不按下鼠标也会调用该函数, 要处理 Tab, shift+tab, 就需要重写 QWidget::event();
+
+<li>
+keyReleaseEvent
+
+<li>
+wheelEvent: 
+
+<li>
+enterEvent: 不包括child widget
+
+<li>
+leaveEvent: 进入 child widget 区域不算 lieave事件
+
+<li>
+moveEvent: 移动widget时调用
+
+<li>
+closeEvent: 当顶层widget接收到窗口关闭请求时调用该事件处理函数
+
+</ul>
+<li>
+函数和属性的分组, 见Assistant
+
+<li>
+父widget的内容缺省会传送给其子widget, 如果其子widget的Qt::WA_PaintOnScreen未设置的话
+
+<li>
+autoFillBackground 属性, Qt::WA_OpaquePaintEvent 属性(该属性很有用, 可不用预设的背景) 
+
+<li>
+定义合适的背景颜色(setBackgroundRole() 使用 QPalette::Window role)
+
+<li>
+用非透明内容绘制区域, 则最好使用 Qt::WA_OpaquePaintEvent 避免不必要的背景重绘. Qt::WA_OpaquePaintEvent 优先级高于 autoFillBackground
+
+<li>
+半透明的窗口. 通过setAttribute()设置 Qt::WA_TranslucentBackground 属性, Windows还需要设置 Qt::FramelessWindowHint 标识
+
+<li>
+Alient Widget vs Native Widget
+
+<ul>
+<li>
+如果你要求 native window 的old behavior
+
+<ul>
+<li>
+在你的环境中使用 QT_USE_NATIVE_WINDOWS = 1
+
+<li>
+设置属性 Qt::AA_NativeWindows
+
+<li>
+设置属性 Qt::WA_NativeWindow, 这样该widget和其父类都变成native(除非设置Qt::WA_DontCreateNativeAncestors)
+
+<li>
+调用 QWidget::winId 强制 native window
+
+<li>
+设置 Qt::WA_PaintOnScreen 属性
+
+</ul>
+</ul>
+<li>
+SoftKeys 为设备上的物理键, 其有对应的label或者其他可视项目, 常用于手机平台. 目前只支持 Symbian 平台 
+
+<li>
+setFixedHeight(), setFixedSize(), setFixedWidth() 设置固定大小
+
+<li>
+属性 windowModified --- 表示窗口中显示的文档是否处于未保存状态. 有方法 bool isWindowModified () const; void setWindowModified(bool);
+
+<li>
+saveGeometry(), restoreGeometry() 保存和恢复窗口大小
+
+<li>
+update(): 更新widget, 而立即重绘, 而是进入事件处理列表. 多个该函数只会调用一次 paintEvent(). 注意属性 Qt::WA_OpaquePaintEvent
+
+</ul>
+</ul>
+	
+<ul>
+<li>
+QSpinBox
+
+<ul>
+<li>
+可以用 validate(), textFromValue() 和 valueFromText() 实现支持字符串, 而不仅仅是整数
+
+<li>
+信号 valueChanged(), value(), setValue() 获取和设置值. singleStep(), stepBy() 改变行为. setMinimum, setMaximum, setSingleStep
+
+<li>
+setWrapping() 设置为真, 则到达最大值之后+1变为最小值.
+
+<li>
+setPrefix(), setSuffix(). 设置格式. text() 返回spin box内的文本
+
+<li>
+setSpecialValueText() 设置特殊值添加进值的范围
+
+<li>
+如果 prefix, suffix, specialValueText的支持不够, 你可以派生该类重新实现 valueFromText() 和 textFromValue(). 例如允许用户设置icon大小(32x32)
+<pre c++>
+ int IconSizeSpinBox::valueFromText(const QString &amp;text) const
+ {
+     QRegExp regExp(tr("(\\d+)(\\s*[xx]\\s*\\d+)?"));
+
+     if (regExp.exactMatch(text)) {
+         return regExp.cap(1).toInt();
+     } else {
+         return 0;
+     }
+ }
+
+ QString IconSizeSpinBox::textFromValue(int value) const
+ {
+     return tr("%1 x %1").arg(value);
+ }
+</pre>
+
+</ul>
+</ul>
+
+<ul>
+<li>
+QSlider
+
+<ul>
+<li>
+派生自 QAbstractSlider, 其常用函数有 setValue, triggerAction() 模拟鼠标点击. setSingleStep(), setPageStep(). setMinimum(), setMaximum()
+
+<li>
+setTickPosition() 设置 tickmark. setTickInterval().
+
+<li>
+信号: valueChanged(), sliderPressed(), sliderMoved(), sliderReleased()
+
+<li>
+接受鼠标, 键盘事件
+
+</ul>
+</ul>
+	
+<ul>
+<li>
+QPushButton
+
+<ul>
+<li>
+典型按钮为 OK, Apply, Cancel, Close, Yes, No, Help
+
+<li>
+使用"&amp;"符号实现快捷键
+
+<li>
+setText, setIcon 修改内容
+
+<li>
+clicked() 信号, 由鼠标点击, 空格键, 键盘快捷键触发. 其他的信号 pressed(), released()
+
+<li>
+默认按钮为用户按下回车键时触发的按钮. 可通过方法 setAutoDefault() 设置.
+
+<li>
+工具栏按钮, Qt提供了一个特殊类用于管理 QToolButton
+
+<li>
+setCheckable() 切换, setAutoRepeat(), 按下按钮时, 不断发送活动信号
+
+<li>
+弹出菜单: setMenu() 关联一个弹出菜单至一按钮
+
+<li>
+QRadioButton, QCheckBox
+
+<li>
+基类 QAbstractButton 提供了大部分方法(modes)和其他API, QPushButton 提供 GUI 逻辑操作
+
+</ul>
+</ul>
+	
+<ul>
+<li>
+QAbstractButton
+
+<ul>
+<li>
+QAbstractButton 支持 pushable 按钮和 checkable 按钮. 前者有 QPushButton 和 QToolButton, 后者有 QRadioButton 和 QCheckBox
+
+<li>
+setText(), setIcon() 设置文本和图标
+
+<li>
+"&amp;"提供键盘快捷键, 其会调用 animateClick(), 具体见 QShortCut. 可用 setShortCut() 设置快捷键
+
+<li>
+可通过QPushButton::setDefault() 和 QPushButton::setAutoDefault()设置默认按钮
+
+<li>
+表示状态的方法:
+
+<ul>
+<li>
+isDown() 
+
+<li>
+isChecked() 
+
+<li>
+isEnabled() 
+
+<li>
+setAutoRepeat(), autoRepeatDelay() 和 autoRepeatInterval()
+
+<li>
+setCheckable() 
+
+</ul>
+<li>
+提供四个信号
+
+<ul>
+<li>
+pressed()
+
+<li>
+released()
+
+<li>
+clicked()
+
+<li>
+toggled()
+
+</ul>
+<li>
+派生类要实现 paintEvent(), sizeHint(), 以及有时实现hitButton(). 如果有两个以上的状态, 还需实现 checkStateSet(), nextCheckState().
+
+</ul>
+</ul>
+
+<ul>
+<li>
+QLineEdit
+
+<ul>
+<li>
+echoMode() -- 可设置密码输入格式
+
+<li>
+由 maxLength() 限制文本长度. 可用 validator() 或 inputMask()限制输入
+
+<li>
+QTextEdit() 允许多行输入, 富文本编辑
+
+<li>
+setText(), insert() 修改文本. text() 返回文本, displayText() 返回显示文本. setSelection(), selectAll() 选择文本. 选择的文本可进行cut(), copy(), paste(), setAlignment() 设置对齐
+
+<li>
+文本变化发送 textChanged()信号, 调用setText() 发送textEdited()信号, 光标移动发送cursoPositionChanged()信号, 按下回车键发送returnPressed()信号. 编辑完成后, 失去焦点或者按下回车键, 会发送 editingFinished() 信号. 注意, 如果有validator, 则只有在validator返回QValidator::Acceptable之后才能发送 returnPressed() 和 editingFinished() 信号
+
+<li>
+缺省 QLineEdit有一个frame. 你可以设置 setFrame(false). 默认按键见 Assistant
+
+</ul>
+</ul>
+	
+<ul>
+<li>
+QString
+
+<ul>
+<li>
+基类有 QConstString, QDBusObjectPath, QDBusSignature
+
+<li>
+提供一个 Unicode 字符串
+
+<li>
+QString 存储16位QChar的字符串, 每个 QChar 对应一个 Unicode 4.0 字符
+
+<li>
+作为对 QString 的补充, Qt 还提供 QByteArray 类存储原始字节数据, 并以'\0'作为终止符. 两种情况使用该类, 一存储原始的二进制数据, 二节省内存.
+
+<li>
+QString 使用 fromAscii() 转换 const char* 数据为 Unicode. 大于128的数据看成 Latin-1 字符. 这点可通过 QTextCodec::setCodecForCStrings().
+
+<li>
+可使用 QChars 数组初始化一个QString
+<pre c++>
+static const QChar data[4] = {0x0055, 0x006e, 0x10e3, 0x03a3};
+QString str(data, 4);
+</pre>
+
+<li>
+如果不想使用上面的深度复制, 可使用 QString::fromRawData()
+
+<li>
+可使用resize()重置字符串大小, 并逐字符初始化.
+
+<li>
+QString 使用以0为起点的索引, 使用操作符[]访问字符. 只读访问则可用 at() 函数, 其速度比[]快. 还有left(), right(), mid()函数
+
+<li>
+使用 resize(), 新分配的字符有未定义值. 如果要设置字符串类所有值为特定值, 可使用 fill() 函数
+
+<li>
+如果一个函数参数类型为QString, 传递一个字符串, 会自动调用 QString(const char*);
+
+<li>
+如果一个函数参数类型为 const char*, 传递一个QString, 会自动调用 qPrintable() 宏转换QString为 const char*. 等同于调用 &lt;QString&gt;.toLocal8Bit().constData().
+
+<li>
+QString 提供了一些基本方法用于修改其内的字符数据: append(), prepend(), insert(), replace(), remove().
+
+<li>
+可使用 reserve() 预先分配字符串空间. capacity() 得知实际分配的内存.
+
+<li>
+移除空白字符: trimmed(). 多个空白符简化成一个空白符: simplified().
+
+<li>
+发现特定字符或者子字符串的位置: indexOf(), lastIndexOf(). 两者查找方向不一样.
+
+<li>
+QString提供了很多函数用于数字和字符串的相互转换. 如 arg(), setNum(), number()静态函数, toInt(), toDouble(), 以及类似函数
+
+<li>
+toUpper(), toLower().
+
+<li>
+字符串的列表可用 QStringList 类控制. 你可用 split() 函数将字符串分割成列表. 可使用QStringList::join()合并. 可以根据是否有特定字符或者子字符串从另一个字符串列表中得到一个字符串列表, 这一点可用 QStringList::filter()带一个特定 QRegExp 实现.
+
+<li>
+startsWith(), endsWith(), contains(), count().
+
+<li>
+&lt;(), &lt;=(), ==(), &gt;=(), &gt;()字符串进行比较, 根据 Unicode 值比较. 可选择QString::localeAwareCompare()来排序user-interface strings.
+
+<li>
+data(), constData() 方位其内的字符数据.
+
+<li>
+QString提供了四个函数返回一个字符串的const char*版本: toAscii(), toLatin1(), toUtf8(), toLocal8Bit().
+
+<li>
+从其他的编码数据转换, QString 提供了 fromAscii(), fromLatin1(), fromUtf8, fromLocal8Bit().
+
+<li>
+虽然各编码之间的转换很方便, 但会有隐式转换的风险. 你可以定义以下的宏来避免隐式转换:
+
+<ul>
+<li>
+QT_NO_CAST_FROM_ASCII: 禁止从C字符串和指针到Unicode的自动转换
+
+<li>
+QT_NO_CAST_TO_ASCII: 禁止QString到C字符串的自动转换 
+
+<li>
+在qmake project 文件中添加定义: DEFINES += QT_NO_CAST_FROM_ASCII QT_NO_CAST_TO_ASCII
+
+</ul>
+<li>
+QLatin1String 类
+
+<li>
+QTextCodec 类: 可查看支持的编码
+
+<li>
+NULL字符串为QString用缺省构造函数或者传递参数(const char*)0给构造函数实现的. empty字符串为大小为0的字符串. 见 isNull(), isEmpty() 函数. 最好使用 isEmpty() 判断是否为空
+
+<li>
+参数格式, 由一些函数制定(例如 arg(), number())
+
+<ul>
+<li>
+e: 格式类似 [-]9.9e[+|-]999
+
+<li>
+E: 格式类似 [-]9.9E[+|-]999
+
+<li>
+f: [-]9.9
+
+<li>
+g: 使用 f 格式. 只是更简明
+
+<li>
+G, 使用 f 格式, 只是更简明
+
+</ul>
+<li>
+可使用"+"连接字符串
+
+<li>
+提高使用QString的效率, 三种方法, 
+
+<ul>
+<li>
+第一种包含 QStringBuilder, 使用 '%' 操作符替换'+'操作符进行字符串连接操作
+<pre c++>
+	#include &lt;QStringBuilder&gt;
+
+     QString hello("hello");
+     QStringRef el(&amp;hello, 2, 3);
+     QLatin1String world("world");
+     QString message =  hello % el % world % QChar('!');
+</pre>
+
+<li>
+第二种是包含定义: #define QT_USE_FAST_CONCATENATION, 并使用'%'操作符替换'+'操作符
+
+<li>
+第三种方法, 使用两个预定义 #define QT_USE_FAST_CONCATENATION  #define QT_USE_FAST_OPERATOR_PLUS, 而后 '+'会自动执行 QStringBuilder的'%'操作
+
+</ul>
+</ul>
+</ul>
+		
+<ul>
+<li>
+QCheckBox
+
+<ul>
+<li>
+QCheckBox 可以有 exclusive checkbox, 其可用 QButtonGroup 将其归成一组
+
+<li>
+发送信号 stateChanged(). 可使用方法 isChecked() 查询
+
+<li>
+还可使用第三个状态, 使用 setTristate() 启用第三状态. checkState() 查询当前的状态.
+
+<li>
+setIcon(), setText().
+
+<li>
+重要函数:  text(), setText(), text(), pixmap(), setPixmap(), accel(), setAccel(), isToggleButton(), setDown(), isDown(), isOn(), checkState(), autoRepeat(), isExclusiveToggle(), group(), setAutoRepeat(), toggle(), pressed(), released(), clicked(), toggled(), checkState(), stateChanged().
+
+</ul>
+</ul>
+	
+<ul>
+<li>
+QSize
+
+<ul>
+<li>
+该类定义一个用整数表达的二维对象
+
+<li>
+高宽可用 width(), height()查询, 在构造函数和setWidth(), setHeight()中设置, 还可使用 scale()函数等.
+
+<li>
+rwidth(), rheight() 返回高宽的引用, transpose() 可进行狡猾
+
+<li>
+isValid() 判断是否有效(高和宽大于0). 两者等于0则 isNull() 为真
+
+<li>
+expandedTo() 和 boundedTo() 用于控制最大值和最小值
+
+</ul>
+</ul>
+	
+<ul>
+<li>
+QBoxLayout
+
+<ul>
+<li>
+该类用于将子widget排成竖行或者横行, 方向有 Qt::Horizontal 和 Qt::Vertical
+
+<li>
+更好的创建方法可使用类 QHBoxLayout 和 QVBoxLayout, 或者使用 QBoxLayout 带方向 LeftToRight, RightToLeft, TopToBottom, BottomToTop.
+
+<li>
+方法: addWidget(), addSpacing(), addStretch(), addLayout().
+
+<li>
+方法 insertWidget(), insertSpacing(), insertStretch(), insertLayout() 则在特定位置插入
+
+<li>
+设置边缘宽度 setContentsMargins(), setSpacing()
+
+<li>
+边缘宽度缺省窗口为11, 子widget为9. 相邻widget间隔默认与边缘宽度相同
+
+<li>
+方法: removeWidget(), QWidget::hide(), QWidget::show() 表示移除, 隐藏, 显示widget.
+
+</ul>
+</ul>
+
+<ul>
+<li>
+QMainWindow
+
+<ul>
+<li>
+该类提供一个应用程序窗口
+
+<li>
+QMainWindow 有自己的layout, 你可以添加 QToolBars, QDockWidgets, QMenuBar, QStatusBar. 其中间区域可以是任意widget.
+
+<li>
+中心的widget通常为 QTextEdit, QGraphicsView. 用 setCentralWidget() 方法设置
+
+<li>
+主窗口程序有SDI和MDI(单或多文档接口). 使用 QMdiArea 创建一个 MDI 应用程序
+
+<li>
+通过调用 menuBar() 添加菜单, 其返回 QMenuBar, 而后调用 QMenuBar::addMenu().
+
+<li>
+setMenuBar 设置自定义 MenuBar.
+
+<li>
+createPopupMenu() 创建一个弹出菜单
+
+<li>
+addToolBar() 添加工具条
+
+<li>
+通过 Qt::ToolBarArea 可初始化工具条的位置. 
+
+<li>
+addToolBarBreak(), insertToolBarBreak(). QToolBar::setAllowedAreas(), QToolBar::setMovable().
+
+<li>
+iconSize(), setIconSize() 图标大小. setToolButtonStyle().
+
+<li>
+addDockWidget() 添加一个可移动的widget. 由 Qt::DockWidgetArea 指定区域. setCorner() 设置角落 dock widget. setDockNestingEnabled() 设置是否嵌套
+
+<li>
+setStatusBar(), statusBar().
+
+<li>
+saveState(), restoreState() 保存和回复状态. 用于工具条和dock widget 的位置和区域
+
+</ul>
+</ul>
+	
+<ul>
+<li>
+QAction
+
+<ul>
+<li>
+Actions 可以添加至菜单和工具条, 并保持两者间的同步
+
+<li>
+setIcon(), setText(), setIconText(), setShortcut(), setStatusTip(), setWhatsThis(), setToolTip(). 
+
+<li>
+QWidget::addAction(), QGraphicsWidget::addAction() 添加 Action
+
+<li>
+QAction 创建后需添加至菜单或工具条.
+
+<li>
+信号 triggered()
+
+<li>
+setShortcut() 不仅可以用Qt::Key和Qt::Modifier枚举值, 还可使使用QKeySequence
+
+</ul>
+</ul>
+	
+<ul>
+<li>
+QMenu
+
+<ul>
+<li>
+下拉菜单和上下文菜单. 下拉菜单通过 QMenuBar::addMenu() 实现. 上下文菜单 异步执行 popup(), 同步执行 exec().
+
+<li>
+通过 addAction() 添加 Actions. actions() 得知存在哪些 actions.
+
+<li>
+addSeparator() 添加分隔条, addMenu() 添加子菜单. QAction 使用信号 triggered() 触发. QMenu提供信号 activated() 和 highlighted(), 表示由菜单触发该Action.
+
+<li>
+clear() 清空菜单. removeAction() 移除单个菜单
+
+<li>
+QWidgetAction 类用于将 widget 插入菜单
+
+<li>
+可使用addAction(), addActions(), insertAction()函数添加 Action 至 widget
+
+</ul>
+</ul>
+	
+<ul>
+<li>
+QToolBar
+
+<ul>
+<li>
+addAction(), insertAction() 添加 Action. addSeparator(), insertSeparator() 添加分隔条. addWidget(), insertWidget() 添加widget.
+
+<li>
+工具条按钮信号为 actionTriggered().
+
+<li>
+isMovable() 可知工具条是否可移动.
+
+</ul>
+</ul>
+
+<ul>
+<li>
+QIcon
+
+<ul>
+<li>
+设置Icon: button-&gt;setIcon(QIcon("open.xpm"));  取消Icon: button-&gt;setIcon(QIcon());
+
+<li>
+QImageReader::supportedImageFormats(), QImageWriter::supportedImageFormats() 显示支持的格式
+
+<li>
+QIconEngineV2 用于根据已有图标实现不同的大小和模式
+
+</ul>
+</ul>
+
+<ul>
+<li>
+QTableWidget
+
+<ul>
+<li>
+该类提供了表格应用程序, 其条目为 QTableWidgetItem
+
+<li>
+如果你想要一个表格使用你自己的数据模型, 则最好使用 QTableView.
+
+<li>
+可根据你的需要创建指定列和行来构建table widget: tableWidget = new QTableWidget(12, 3, this);
+
+<li>
+另外可选的方法
+<pre c++>
+tableWidget = new QTableWidget(this); 
+tableWidget-&gt;setRowCount(10); 
+tableWidget-&gt;setColumnCount(5);
+</pre>
+
+<li>
+在表格外创建 item, 用方法 setItem() 插入该item
+<pre c++>
+QTableWidgetItem *newItem = new QTableWidgetItem(tr("%1").arg(
+	(row+1)*(column+1)));
+tableWidget-&gt;setItem(row, column, newItem);
+</pre>
+
+<li>
+可拥有一行或一列的表格头. 最简单的方法是提供字符串列表给 setHorizontalHeaderLabels() 和 setVerticalHeaderLabels(). 也可通过已有的item设置为表格头.
+
+<li>
+表格item可设置icon和文本对齐
+<pre c++>
+QTableWidgetItem *cubesHeaderItem = new QTableWidgetItem(tr("Cubes"));
+cubesHeaderItem-&gt;setIcon(QIcon(QPixmap(":/Images/cubed.png")));
+cubesHeaderItem-&gt;setTextAlignment(Qt::AlignVCenter);
+</pre>
+
+<li>
+clear() 清空表格, rowCount(), columnCount() 返回行和列的数目
+
+<li>
+setItemPrototype() 设置item prototype clone function. 用于编辑一个新的空白条目时, 自动创建其实例
+
+<li>
+setSelectionMode() 设置可单个或多个选择项目
+
+<li>
+itemChanged 信号: 当条目发生变化时发送
+
+<li>
+item(), setItem() 根据行列号得到该item
+
+<li>
+setCurrentCell(): 设置指定位置的cell为当前cell
+
+<li>
+selectedRanges() 返回一个 QList, 元素为 QTableWidgetSelectionRange
+
+<li>
+currentColumn(), currentRow() 返回当前行, 列
+
+<li>
+类 QTableWidgetSelectionRange 用于控制选择的项
+
+<li>
+selectedItems() 返回选择的item
+
+<li>
+clearSelection() 清除选择
+
+</ul>
+</ul>
+	
+<ul>
+<li>
+QTableWidgetItem
+
+<ul>
+<li>
+表格条目用于控制table widget的每个信息. 其包含文本, icon, checkbox
+
+<li>
+setBackground(), setForeground(), setFont()
+
+<li>
+item可编辑, 可启用, 可缩放, 可check. 兵可以用拖曳. 可用 setFlags() 改变flag. 用 setCheckState() 改变check 状态.
+
+</ul>
+</ul>
+	
+<ul>
+<li>
+QSettings
+
+<ul>
+<li>
+基本用法
+
+<ul>
+<li>
+构造函数传递公司名和软件名称
+<pre c++>
+QSettings settings("MySoft", "Star Runner");
+</pre>
+
+<li>
+如果你在很多地方使用 QSetting, 则可使用 QCoreApplication::setOrganizationName() 和 QCoreApplication::setApplicationName() 设置公司名称和产品名称
+<pre c++>
+QCoreApplication::setOrganizationName("MySoft");
+QCoreApplication::setOrganizationDomain("mysoft.com");
+QCoreApplication::setApplicationName("Star Runner");
+...
+QSettings settings;
+</pre>
+
+<li>
+setValue() 存储设置, 每对为一个QString(key)和一个QVariant
+
+<li>
+sync() 提交改变
+
+<li>
+value() 返回其值, 缺省值作为该函数的第二个参数
+
+<li>
+contains() 判断该键是否存在
+
+<li>
+remove() 移除该键
+
+<li>
+allKeys() 得到键的列表
+
+<li>
+clear() 移除所有键
+
+</ul>
+<li>
+QVariant 是QtCore库的一部分, QColor, QImage, QPixmap为QtGui的一部分, 两者无直接的转换. 你可使用 QVariant::value()或qVariantValue() 模板函数
+<pre c++>
+QSettings settings("MySoft", "Star Runner");
+QColor color = settings.value("DataPump/bgcolor").value&lt;QColor&gt;();
+</pre>
+
+<li>
+相反的转换则则有QVariant自动支持转换.
+<pre c++>
+QSettings settings("MySoft", "Star Runner");
+QColor color = palette().background().color();
+settings.setValue("DataPump/bgcolor", color);
+</pre>
+
+<li>
+自定义类型可由 qRegisterMetaType() 和 qRegisterMetaTypeStreamOperators() 注册, 使用 QSetting 存储
+
+<li>
+为了解决大小写敏感问题, 有几条原则
+
+<ul>
+<li>
+使用相同的大小写格式关联相同的键.
+
+<li>
+确保键唯一
+
+<li>
+键名和段名不要使用斜号和反斜号('/'和'\'). 反斜号哟娜关于分割成子键
+
+</ul>
+<li>
+你可使用'/'用于分层
+<pre c++>
+settings.setValue("mainwindow/size", win-&gt;size());
+settings.setValue("mainwindow/fullScreen", win-&gt;isFullScreen());
+settings.setValue("outputpanel/visible", panel-&gt;isVisible());
+</pre>
+
+<li>
+如果你有很多设置使用相同的前缀, 则可使用 beginGroup() 和 endGroup(), 这个方法可以进行递归
+<pre c++>
+settings.beginGroup("mainwindow");
+settings.setValue("size", win-&gt;size());
+settings.setValue("fullScreen", win-&gt;isFullScreen());
+settings.endGroup();
+
+settings.beginGroup("outputpanel");
+settings.setValue("visible", panel-&gt;isVisible());
+settings.endGroup();
+</pre>
+
+<li>
+QSetting 还支持"array", 见 beginReadArray() 和 beginWriteArray().
+
+<li>
+fallback 机制
+
+<ul>
+<li>
+假设已有公司名称 MySoft, 应用程序名称 Star Runner, 查找一个值, 有四个位置用于查找:
+
+<ul>
+<li>
+Star Runner 应用程序的 user-specific location
+
+<li>
+MySoft 所有应用程序的 user-specific location
+
+<li>
+Star Runner 应用程序的 system-wide location
+
+<li>
+MySoft 所有应用程序的 system-wide location
+
+</ul>
+<li>
+要想取消这个机制, 调用 setFallbacksEnabled(false).
+
+</ul>
+<li>
+如果要使用ini文件, 则传递 QSetting::IniFormat 作为QSetting构造函数的第一个参数, 接下来为范围, 公司名称, 应用程序名称
+<pre c++>
+QSettings settings(QSettings::IniFormat, QSettings::UserScope,
+	"MySoft", "Star Runner");
+</pre>
+
+<li>
+保存和回复应用程序主窗口的几何状态
+<pre c++>
+void MainWindow::writeSettings()
+{
+	QSettings settings("Moose Soft", "Clipper");
+	
+	settings.beginGroup("MainWindow");
+	settings.setValue("size", size());
+	settings.setValue("pos", pos());
+	settings.endGroup();
+}
+
+void MainWindow::readSettings()
+{
+	QSettings settings("Moose Soft", "Clipper");
+	
+	settings.beginGroup("MainWindow");
+	resize(settings.value("size", QSize(400, 400)).toSize());
+	move(settings.value("pos", QPoint(200, 200)).toPoint());
+	settings.endGroup();
+}
+</pre>
+
+<li>
+存储位置, 注册表
+
+<ul>
+<li>
+HKEY_CURRENT_USER\Software\MySoft\Star Runner
+
+<li>
+HKEY_CURRENT_USER\Software\MySoft
+
+<li>
+HKEY_LOCAL_MACHINE\Software\MySoft\Star Runner
+
+<li>
+HKEY_LOCAL_MACHINE\Software\MySoft
+
+</ul>
+<li>
+ini文件格式时
+
+<ul>
+<li>
+%APPDATA%\MySoft\Star Runner.ini
+
+<li>
+%APPDATA%\MySoft.ini
+
+<li>
+%COMMON_APPDATA%\MySoft\Star Runner.ini
+
+<li>
+%COMMON_APPDATA%\MySoft.ini
+
+<li>
+%APPDATA%  通常为 C:\Documents and Settings\User Name\Application Data
+
+<li>
+%COMMON_APPDATA% 通常为 C:\Documents and Settings\All Users\Application Data
+
+</ul>
+<li>
+ini 和 .conf 文件可用setPath()改变路径位置.
+
+<li>
+直接访问 ini 文件
+<pre c++>
+QSettings settings("/home/petra/misc/myapp.ini",
+	QSettings::IniFormat);
+</pre>
+
+<li>
+访问注册表
+<pre c++>
+QSettings settings("HKEY_CURRENT_USER\\Software\\Microsoft\\Office",
+	QSettings::NativeFormat);
+settings.setValue("11.0/Outlook/Security/DontTrustInstalledFiles", 0);
+</pre>
+
+<li>
+windows 的限制: 自减不应当超过255个字符, 一个条目的值不应当超过16,383个字符, 一个键的所有值不应当超过65,535个字符
+
+</ul>
+</ul>
+	
+<ul>
+<li>
+QCloseEvent
+
+<ul>
+<li>
+菜单选择退出, 点击关闭按钮, 或则调用 QWidget::close(), 都会调用该事件处理函数
+
+<li>
+Ignore() 忽略该事件, accept()接受关闭
+
+<li>
+如果想要关闭时删除该widget, 该widget应该有标志 Qt::WA_DeleteOnClose
+
+<li>
+最后一个窗口关闭之后, 会发送信号 QApplication::lastWindowClosed()
+
+</ul>
+</ul>
+	
+<ul>
+<li>
+QGLWidget
+
+<ul>
+<li>
+QGLWidget 提供了三个虚函数用于执行OpenGL任务
+
+<ul>
+<li>
+paintGL() --- 渲染 OpenGL 场景, 需要更新时调用
+
+<li>
+resizeGL() --- 设置 OpenGL 视口, 投影, 当widget大小变化时调用
+
+<li>
+initializeGL() --- 设置OpenGL环境, 定义显示列表, 在 resizeGL() 和 paintGL()　之前调用
+
+</ul>
+<li>
+如果需要在构造函数或者paint函数之外调用OpenGL API, 需要首先调用 makeCurrent() 函数
+
+<li>
+QGLContext 属于 QGLWidget, 当QGLWidget 的父widget发生变化, 则重新创建 QGLContext.
+
+</ul>
+</ul>
+	
+<ul>
+<li>
+QMutableListIterator
+
+<ul>
+<li>
+用于 QList 和 QQueue 的 Java-Style 非常量迭代器
+
+<li>
+有Java-style 和 STL-style 迭代器, Java-style 迭代器更高层和更易于使用, 但效率较低
+
+<li>
+迭代器之外还可以使用索引位置访问, 插入, 移除元素. 见 QList
+
+<li>
+QMutableListIterator&lt;T&gt; 用于迭代 QList&lt;T&gt;(或 QQueue&lt;T&gt;)容器, 并可以修改元素. 如不想修改元素, 可使用 QListIterator&lt;T&gt;
+
+<li>
+QMutableListIterator&lt;T&gt; 构造函数使用QList参数, 迭代器位于容器第一个元素的前一个位置, 见代码
+<pre c++>
+QList&lt;float&gt; list;
+...
+QMutableListIterator&lt;float&gt; i(list);
+while(i.hasNext())
+	qDebug() &lt;&lt; i.next();
+</pre>
+
+<li>
+next() 函数得到下个元素, 并让迭代器进一位
+
+<li>
+逆序遍历元素
+<pre c++>
+QList&lt;float&gt; list;
+...
+QMutableListIterator&lt;float&gt; i(list);
+i.toBack();
+while(i.hasPrevious())
+	qDebug() &lt;&lt; i.previous();
+</pre>
+
+<li>
+查找某特定值: findNext(), findPrevious()
+
+<li>
+remove(), setValue(), insert(). 删除, 修改, 插入
+<pre c++>
+ QMutableListIterator&lt;int&gt; i(list);
+ while (i.hasNext()) {
+     int val = i.next();
+     if (val &lt; 0) {
+         i.setValue(-val);
+     } else if (val == 0) {
+         i.remove();
+     }
+ }
+</pre>
+
+<li>
+每个list只能有一个mutable iterator 作用于其上, 排他性.
+
+</ul>
+</ul>
+
+<ul>
+<li>
+QFile
+
+<ul>
+<li>
+QFile类提供读写文件的接口
+
+<li>
+QFile 也许只用于自身, 也许和 QTextStream, QDataStream 一起使用. 文件路径的分隔符为'/', 而分隔符'\'则不支持
+
+<li>
+使用 exists() 判断文件是否存在, remove() 移除文件 (QFileInfo 和 QDir 提供更高级的文件操作)
+
+<li>
+open() 打开, close() 关闭, flush(), 常使用 QDataStream 或 QTextStream 读写数据, 也可调用 QIODevice派生的函数 read(), readLine(), write(). QFile也继承了 getChar(), putChar(), ungetChar().
+
+<li>
+size() 返回文件大小, pos() 得到当前的文件位置, seek() 移动到新的文件位置, atEnd() 判断是否在文件尾
+
+<li>
+逐行读文件代码
+<pre c++>
+     QFile file("in.txt");
+     if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+         return;
+
+     while (!file.atEnd()) {
+         QByteArray line = file.readLine();
+         process_line(line);
+     }
+</pre>
+
+<li>
+QIODevice::Text 用于告知转换Windows-style行结束符"\r\n" 为"\n", QFile 缺省为二进制格式, 对于存储在文件的字节不进行转换.
+
+<li>
+使用 Stream 读取文件
+<pre c++>
+     QFile file("in.txt");
+     if (!file.open(QIODevice::ReadOnly | QIODevice::Text))
+         return;
+
+     QTextStream in(&amp;file);
+     while (!in.atEnd()) {
+         QString line = in.readLine();
+         process_line(line);
+     }
+</pre>
+
+<li>
+QTextStream 负责存储在硬盘的8位数据转换为16位Unicode QString. 缺省假设用户系统local为8-bit 编码.(欧洲为 ISO 8859-1, 见 QTextCodec::codecForLocale()). local 可由 setCodec()修改
+
+<li>
+操作符 &lt;&lt; 用于写入
+<pre c++>
+     QFile file("out.txt");
+     if (!file.open(QIODevice::WriteOnly | QIODevice::Text))
+         return;
+
+     QTextStream out(&amp;file);
+     out &lt;&lt; "The magic number is: " &lt;&lt; 49 &lt;&lt; "\n";
+</pre>
+
+<li>
+QDataStream 也类似与 QTextStream
+
+<li>
+使用 QFile, QFileInfo, QDir 访问文件系统时, 可使用 Unicode 文件名, 如你想使用标准C++ APIs, 或平台专有的APIs访问, 则可使用 encodeName() 和 decodeName() 函数对Unicode文件名和8位文件名进行相互转换
+
+<li>
+不同于其他 QIODevice的实现, 如QTcpSocket, QFile 不发送 aboutToClose(), bytesWritten(), 或 readyRead() 信号
+
+</ul>
+</ul>
+	
+<ul>
+<li>
+QTextStream
+
+<ul>
+<li>
+该类可操作于QIODevice, QByteArray 或 QString 对象上.
+
+<li>
+使用流操作符读写单词, 行, 数字. 支持field padding, 对齐等格式选项.
+<pre c++>
+ QFile data("output.txt");
+ if (data.open(QFile::WriteOnly | QFile::Truncate)) {
+     QTextStream out(&amp;data);
+     out &lt;&lt; "Result: " &lt;&lt; qSetFieldWidth(10) &lt;&lt; left &lt;&lt; 3.14 &lt;&lt; 2.7;
+     // writes "Result: 3.14      2.7       "
+	}
+</pre>
+
+<li>
+QTextStream 可对控制台进行读写, 自动探知locale(本地化编码), 自动使用正确编码来解码标准输入. 对控制台不要使用 QTextStream::atEnd()
+<pre c++>
+ QTextStream stream(stdin);
+ QString line;
+ do {
+     line = stream.readLine();
+ } while (!line.isNull());
+</pre>
+
+<li>
+setDevice(), setString() 让 device 和 string 使用 QTextStream 操作. seek() 用于查找一个位置. flush() 清空buffer的所有数据.
+
+<li>
+QTextStream 使用基于Unicode 的缓存. 通过 QTextCodec 可以支持不同的字符集. QTextCodec::codecForLocale(), setCodec().
+
+<li>
+可以自动检测 Unicode 版本, QTextStream 可检测 UTF-16, UTF-32 BOM(Byte Order Mark), 当进行读取时, 可转换至合适的UTF编码. 默认不能写入一个BOM, 但可通过调用 setGenerateBytOrderMark(true) 来支持
+
+<li>
+三种读取文本的方式
+
+<ul>
+<li>
+一次性读取一块内容, readLine(), readAll()
+
+<li>
+逐单词读取, 支持流读取 QStrings, QByteArrays, char* buffer. 由空格分割, 自动略过leading white space.
+
+<li>
+逐字符读取, 流读取 QChar, char 类型. skipWhiteSpace() 忽略空格.
+
+</ul>
+<li>
+可自动检测整数阶数, 可通过调用 setIntegerBase() 禁止检测整数阶
+<pre c++>
+ QTextStream in("0x50 0x20");
+ int firstNumber, secondNumber;
+
+ in &gt;&gt; firstNumber;             // firstNumber == 80
+ in &gt;&gt; dec &gt;&gt; secondNumber;     // secondNumber == 0
+
+ char ch;
+ in &gt;&gt; ch;                      // ch == 'x'
+</pre>
+
+<li>
+格式化选项: setFieldWidth(), setPadChar(), setFieldAlignment(), setRealNumberNotation(), setRealNumberPrecision(), setNumberFlags()
+
+<li>
+全局操作函数, 见表
+
+<li>
+还可见全局函数 qSetFieldWidth(), qSetPadChar(), qSetRealNumberPrecision()
+
+</ul>
+</ul>
+	
+<ul>
+<li>
+QDataStream
+
+<ul>
+<li>
+为 QIODevice 提供二进制数据的序列化
+
+<li>
+data stream 为与操作系统无关的二进制流
+
+<li>
+data stream 可以读写未编码的二进制数据, 还可用 QTextStream 处理输入流
+
+<li>
+QDataStream 实现 C++ 基本类型的序列化(如 char, short, int, char* 等), 更复杂类型的序列化则通过将其分割成基本单元进行序列化
+
+<li>
+QDataStream 常和QIODevice一起操作, QFIle是其中一个派生类
+<pre c++>
+ QFile file("file.dat");
+ file.open(QIODevice::WriteOnly);
+ QDataStream out(&amp;file);   // we will serialize the data into the file
+ out &lt;&lt; QString("the answer is");   // serialize a string
+ out &lt;&lt; (qint32)42;        // serialize an integer
+
+ QFile file("file.dat");
+ file.open(QIODevice::ReadOnly);
+ QDataStream in(&amp;file);    // read the data serialized from the file
+ QString str;
+ qint32 a;
+ in &gt;&gt; str &gt;&gt; a;           // extract "the answer is" and 42 
+</pre>
+
+<li>
+可写入流的类型有 QBrush, QColor, QDateTime, QFont, QPixmap, QString, QVariant 等等. 具体见 Serializing Qt Data Types
+
+<li>
+版本, 为了确保复杂类型的读写, 应当硬编码版本号
+<pre c++>
+stream.setVersion(QDataStream::Qt_4_0);
+</pre>
+
+<li>
+在文件中, 可以在头部设置写入magic string 用于版本号
+<pre c++>
+ // ==========================================
+ // 写入
+ QFile file("file.xxx");
+ file.open(QIODevice::WriteOnly);
+ QDataStream out(&amp;file);
+
+ // Write a header with a "magic number" and a version
+ out &lt;&lt; (quint32)0xA0B0C0D0;
+ out &lt;&lt; (qint32)123;
+
+ out.setVersion(QDataStream::Qt_4_0);
+
+ // Write the data
+ out &lt;&lt; lots_of_interesting_data;
+
+ // ==========================================
+ // 读取
+ QFile file("file.xxx");
+ file.open(QIODevice::ReadOnly);
+ QDataStream in(&amp;file);
+
+ // Read and check the header
+ quint32 magic;
+ in &gt;&gt; magic;
+ if (magic != 0xA0B0C0D0)
+     return XXX_BAD_FILE_FORMAT;
+
+ // Read the version
+ qint32 version;
+ in &gt;&gt; version;
+ if (version &lt; 100)
+     return XXX_BAD_FILE_TOO_OLD;
+ if (version &gt; 123)
+     return XXX_BAD_FILE_TOO_NEW;
+
+ if (version &lt;= 110)
+     in.setVersion(QDataStream::Qt_3_2);
+ else
+     in.setVersion(QDataStream::Qt_4_0);
+
+ // Read the data
+ in &gt;&gt; lots_of_interesting_data;
+ if (version &gt;= 120)
+     in &gt;&gt; data_new_in_XXX_version_1_2;
+ in &gt;&gt; other_interesting_data; 
+</pre>
+
+<li>
+字节顺序默认为 big ending(MSB first)
+
+<li>
+使用 readRawData() 直接读取原始数据并写入char*中. 写入的函数为 writeRawData(). 类似函数还有 readBytes() 和 writeBytes(), 不同之处在于 readBytes() 读取一个 quint32 为读取的数据长度, writeBytes() 则写入一个 quint32 表示数据的长度
+
+<li>
+QDataStream 还可以序列化容器类, 如 QList, QLinkedList, QVector, QSet, QHash, QMap
+
+</ul>
+</ul>
+
+</body>
+</html>

@@ -1,0 +1,742 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../../style.css" />
+    <title>Chapter011</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="../index.html">首页</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<div id="Chapter 11 Controlling and Monitoring the Pipeline"><h1 id="Chapter 11 Controlling and Monitoring the Pipeline">Chapter 11 Controlling and Monitoring the Pipeline</h1></div>
+<ul>
+<li>
+本章目标
+
+<ul>
+<li>
+询问 OpenGL 命令在图形管线中的进展
+
+<li>
+如何测量你命令执行的时间
+
+<li>
+同步应用与 OpenGL并同步多个 OpenGL 上下文.
+
+</ul>
+</ul>
+
+<div id="Chapter 11 Controlling and Monitoring the Pipeline-11.1 Queries"><h2 id="11.1 Queries">11.1 Queries</h2></div>
+<ul>
+<li>
+OpenGL 中问题使用 query objects 表示. glGenQueries() 生成该对象
+<pre class="brush: c++">
+void glGenQueries(GLsizei n,
+				GLuint *ids);
+</pre>
+
+<li>
+例子
+<pre class="brush: c++">
+GLuint one_query;
+GLuint ten_queries[10];
+glGenQueries(1, &amp;one_query);
+glGenQueries(10, ten_queries);
+</pre>
+
+<li>
+如果生成失败, 则名称为0. 可使用 glGetError() 查询错误原因.
+
+<li>
+每个 query object 都占用一定的OpenGL资源, 因此需要将这些资源返回给 OpenGL. 使用函数 glDeleteQueries()
+<pre class="brush: c++">
+void glDeleteQueries(GLsizei n,
+		const GLuint *ids);
+</pre>
+
+</ul>
+
+<div id="Chapter 11 Controlling and Monitoring the Pipeline-11.1 Queries-11.1.1 Occlusion Queries"><h3 id="11.1.1 Occlusion Queries">11.1.1 Occlusion Queries</h3></div>
+<ul>
+<li>
+OpenGL 并不自动跟踪绘制的像素数量. 使用 glBeginQuery() 告知开始计数, 其使用两个参数, 第一个为询问的问题, 第二个为 query object的名称.
+<pre class="brush: c++">
+glBeginQuery(GL_SAMPLES_PASSED, one_query);
+</pre>
+
+<ul>
+<li>
+GL_SAMPLE_PASSED --- 表示多少个样本通过深度测试. 如果你渲染使用 multi-sampled display format, 则一个像素可多个样本. 
+
+<li>
+该 query object 可成为 occlusion query.
+
+<li>
+即使因为混合样本对最终的图像没有贡献或者其会被之后的样本覆盖, 其也会被统计至总数.
+
+</ul>
+<li>
+停止计数, glEndQuery():
+<pre class="brush: c++">
+glEndQuery(GL_SAMPLES_PASSED);
+</pre>
+
+</ul>
+
+<div id="Chapter 11 Controlling and Monitoring the Pipeline-11.1 Queries-11.1.1 Occlusion Queries-11.1.1.1 Retrieving Query Results"><h4 id="11.1.1.1 Retrieving Query Results">11.1.1.1 Retrieving Query Results</h4></div>
+<ul>
+<li>
+返回数据
+<pre class="brush: c++">
+glGetQueryObjectuiv(the_query, GL_QUERY_RESULT, &amp;result);
+</pre>
+
+<li>
+OpenGL 其操作为管线, 许多绘制命令可能排列成背靠背等待执行, 在 glEndQuery() 的最后调用之前发出的绘制命令不是所有都完成像素的产生. 实际上, 一些可能还没开始执行. glGetQueryObjectuiv() 会让 OpenGL 等到 glBeginQuery() 和 glEndQuery() 之间的所有的物体都渲染完毕, 返回精确的数目.
+
+<li>
+如果你想要用一个 query object 作一个性能优化, 这可能不是你想要的. 其会延迟你的应用. 
+
+<li>
+可以询问 OpenGL, 渲染的任何可影响 query 结果的东西, 并有一个可用的结果.
+<pre class="brush: c++">
+glGetQueryObjectuiv(the_query, GL_QUERY_RESULT_AVAILABLE, &amp;result);
+</pre>
+
+<ul>
+<li>
+如果 query object 结果并不立即可用, 且返回它会导致你的应用等待 OpenGL 完成其工作, 则结果为 GL_FALSE, 否则返回 GL_TRUE.
+
+</ul>
+</ul>
+
+<div id="Chapter 11 Controlling and Monitoring the Pipeline-11.1 Queries-11.1.1 Occlusion Queries-11.1.1.2 Using the Results of a Query"><h4 id="11.1.1.2 Using the Results of a Query">11.1.1.2 Using the Results of a Query</h4></div>
+<ul>
+<li>
+用途: 通过避免无效的工作来优化应用的性能. 一个物品的渲染非常昂贵时, 当用户不会看见时则无需绘制.
+
+<li>
+occlusion queries, 对于你的复杂昂贵的物体, 产生一个简单得多的相同版本. 通常使用围绕盒. 对于围绕盒, 不想让其可见 , 可以设置 glColorMask() 来关闭 color buffer 的写入, 还可调用 glDrawBuffer() 设置当前 draw buffer 为 GL_NONE.
+<pre class="brush: c++">
+glBeginQuery(GL_SAMPLES_PASSED, the_query);
+RenderSimplifiedObject(object);
+glEndQuery(GL_SAMPLES_PASSED);
+glGetQueryObjectuiv(the_query, GL_QUERY_RESULT, &amp;the_result);
+if (the_result != 0)
+	RenderRealObject(object);
+</pre>
+
+<ul>
+<li>
+glGetQueryObjectuiv 其会等待结果产生.
+<pre class="brush: c++">
+GLuint the_result = 0;
+glBeginQuery(GL_SAMPLES_PASSED, the_query);
+RenderSimplifiedObject(object);
+glEndQuery(GL_SAMPLES_PASSED);
+glGetQueryObjectuiv(the_query, GL_QUERY_RESULT_AVAILABLE, &amp;the_result);
+if (the_result != 0)
+	glGetQueryObjectuiv(the_query, GL_QUERY_RESULT, &amp;the_result);
+else
+	the_result = 1;
+if (the_result != 0)
+	RenderRealObject(object);
+</pre>
+
+<li>
+根据可用性和query 结果的值来决定是否绘制复杂物体
+
+<li>
+修改, 查看结果是否可用, 如果不可用, 则直接绘制物品. 
+
+</ul>
+<li>
+图形管线中同时可有多个 occlusion queries, 只要它们不重叠.
+
+<li>
+使用多个 query objects 是应用避免OpenGL等待的另一种方式. OpenGL 一次只能计数并累加结果至一个 query object, 但其可以管理多个 query objects, 并背靠背执行许多 queries. 我们扩展我们的例子, 渲染多个物体并有多个 occlusion queries. 例如 10 个物体
+<pre class="brush: c++">
+int n;
+for (n = 0; n &lt; 10; n++)
+{
+	glBeginQuery(GL_SAMPLES_PASSSED, ten_queries[n]);
+	RenderSimplifiedObject(&amp;object[n]);
+	glEndQuery(GL_SAMPLES_PASSED);
+}
+for (n = 0; n &lt; 10; n++)
+{
+	glGetQueryObjectuiv(ten_queries[n], GL_QUERY_RESULT, &amp;the_result);
+	if (the_result != 0)
+		RenderRealObject(&amp;object[n]);
+}
+</pre>
+
+<li>
+有延迟的原因在于, 应用写了 OpenGL 命令之后, 其需要排队发送进管线, 每个命令在管线中要传递下去到达最终端需要时间. 所以下个命令执行的时候, 前面的命令未必走完管线的路程或者开始. 
+
+<li>
+一些复杂的应用将上面的方法进一步推到极致, 其使用之前帧的queries结果来做新帧的决定.
+<pre class="brush: c++">
+int n;
+for (n = 0; n &lt; 10; n++)
+{
+	glBeginQuery(GL_SAMPLES_PASSSED, ten_queries[n]);
+	RenderSimplifiedObject(&amp;object[n]);
+	glEndQuery(GL_SAMPLES_PASSED);
+}
+for (n = 0; n &lt; 10; n+)
+{
+	glGetQueryObjectuiv(ten_queries[n],
+		GL_QUERY_RESULT_AVAILABLE,
+		&amp;the_result);
+	if (the_result != 0)
+		glGetQueryObjectuiv(ten_queries[n],
+			GL_QUERY_RESULT,
+			&amp;the_result);
+	else
+		the_result = 1;
+	if (the_result != 0)
+		RenderRealObject(&amp;object[n]);
+}
+</pre>
+
+<ul>
+<li>
+RenderRealObject 发送给 OpemGL 的工作量远大于 RenderSimplifiedObject, 当我们要求第二个, 第三个, 第四个, 以及更多 query objects 的结果时, 越来越多的工作都已经发送进 OpenGL 的管线, 而 query 的结果则越可能准备好了. 因此, 越复杂的场景, 越多的query objects, 则越可能见到性能效果的提升.
+
+</ul>
+</ul>
+
+<div id="Chapter 11 Controlling and Monitoring the Pipeline-11.1 Queries-11.1.1 Occlusion Queries-11.1.1.3 Getting OpenGL to Make Decisions for You"><h4 id="11.1.1.3 Getting OpenGL to Make Decisions for You">11.1.1.3 Getting OpenGL to Make Decisions for You</h4></div>
+<ul>
+<li>
+在上面的例子中, 我们关心的是是否需要发送更多的工作给 OpenGL, 或者改变其可能渲染物体的方式. 从 OpenGL 返回结果给应用, 其可能花费了一个 CPU bus 或者一个网络连接, 应用可以决定是否发送更多的命令给 OpenGL. 但其仍导致延迟或损害性能
+
+<li>
+我们可以发送所有的渲染命令给 OpenGL, 告知当query object结果满足时才进行相应的命令. 这称之为 predication(断定, 断言). 这里有种技术称之为 conditional rendering. 包装一序列的 OpenGL 绘制命令, 并和一个 query object 一起发送给 OpenGL, 表示"当query object存储的结果为0时忽略所有物体". 表示该序列调用的开始
+<pre class="brush: c++">
+glBeginConditionalRender(the_query, GL_QUERY_WAIT);
+</pre>
+
+<li>
+序列的结束
+<pre class="brush: c++">
+glEndConditionalRender();
+</pre>
+
+<ul>
+<li>
+这样做, query 不会返回至你的应用, 由图形硬件做决定是否渲染. 注意, 纹理的绑定, 混合的关闭和打开等仍被 OpenGL 执行, 只有那些渲染的命令会根据条件放弃.
+<pre class="brush: c++">
+// Ask OpenGL to count the samples rendered between the start
+// and end of the occlusion query
+glBeginQuery(GL_SAMPLES_PASSED, the_query);
+RenderSimplifiedObject(object);
+glEndQuery(GL_SAMPLES_PASSED);
+// Only obey the next few commands if the occlusion query says something
+// was rendered
+glBeginConditionalRender(the_query, GL_QUERY_WAIT);
+RenderRealObject(object);
+glEndConditionalRender();
+</pre>
+
+<li>
+这里我们从不调用 glGetQueryObjectuiv(), 并不从 OpenGL 读取任何信息(例如 query object 的结果).
+
+<li>
+GL_QUERY_WAIT 的缘由, OpenGL 的操作是一个管线, 当你调用 glBeginConditionalRender() 之前或者到达管线开端的 RenderRealObject 调用的第一条绘制函数之前, 可能还没完成 RenderSimplifiedObject 的处理, 使用该参数, OpenGL 等待 RenderSimplifiedObject 的每个调用到达管线的末端, 而后决定是否执行命令. 
+
+<li>
+还可以告知 OpenGL 不要等待, 如果结果不可用的话直接开始渲染.
+<pre class="brush: c++">
+glBeginConditionalRender(the_query, GL_QUERY_NO_WAIT);
+</pre>
+
+<li>
+如果 query 结果能够及时准备好, 则使用 GL_QUERY_WAIT.
+
+</ul>
+<li>
+使用 GL_QUERY_NO_WAIT, 正准备渲染的实际几何体其依赖于对query object有影响的命令是否完成执行. 这一点依赖于机器的性能, 不同机器可能有所差异. 确保你的程序的结果不依赖于要渲染的第二个几何集(the second set of geometry).
+
+<li>
+可以使用多个 query objects
+<pre class="brush: c++">
+// Render simplified versions of 10 objects, each with its own occlusion
+// query
+int n;
+for (n = 0; n &lt; 10; n++)
+{
+	glBeginQuery(GL_SAMPLES_PASSSED, ten_queries[n]);
+	RenderSimplifiedObject(&amp;object[n]);
+	glEndQuery(GL_SAMPLES_PASSED);
+}
+// Render the more complex versions of the objects, skipping them
+// if the occlusion query results are available and zero
+for (n = 0; n &lt; 10; n++)
+{
+	glBeginConditionalRender(ten_queries[n], GL_QUERY_NO_WAIT);
+	RenderRealObject(&amp;object[n]);
+	glEndConditionalRender();
+}
+</pre>
+
+</ul>
+
+<div id="Chapter 11 Controlling and Monitoring the Pipeline-11.1 Queries-11.1.1 Occlusion Queries-11.1.1.4 Advanced Occlusion Queries"><h4 id="11.1.1.4 Advanced Occlusion Queries">11.1.1.4 Advanced Occlusion Queries</h4></div>
+<ul>
+<li>
+GL_SAMPLES_PASSED 目标统计通过深度测试的样本数. 
+
+<li>
+两个额外的 occlusion query 目标, GL_ANY_SAMPLES_PASSED 和 GL_ANY_SAMPLES_PASSED_CONSERVATIVE 目标, 其为 Boolean occlusion queries.
+
+<ul>
+<li>
+GL_ANY_SAMPLES_PASSED: 如果没有样本通过深度和模板测试则为0, 否则为1.
+
+<li>
+GL_ANY_SAMPLES_PASSED_CONSERVATIVE: 如果没有样本通过的话, 这个比上面更合适.
+
+</ul>
+<li>
+许多的 OpenGL 实现有某种形式的分层深度测试, 存储屏幕具体区域的最近和最远的深度值, 而后光栅化图元时, 大块深度值和份分层的信息进行测试, 从而确定是否继续光栅化区域的内部. conservative occlusion query 可能简单地技术这些大块区域的数量, 而根本不运行你的着色器.
+
+</ul>
+
+<div id="Chapter 11 Controlling and Monitoring the Pipeline-11.1 Queries-11.1.2 Timer Queries"><h3 id="11.1.2 Timer Queries">11.1.2 Timer Queries</h3></div>
+<ul>
+<li>
+GL_TIME_ELAPSED 作为 glBeginQuery() 和 glEndQuery() 的查询参数. glGetQueryObjectuiv() 得到 query object 的结果, 其值为纳秒单位. 这个可以发现程序中最花费时间的地方.
+<pre class="brush: c++">
+// Declare our variables
+GLuint queries[3]; // Three query objects that we’ll use
+GLuint world_time; // Time taken to draw the world
+GLuint objects_time; // Time taken to draw objects in the world
+GLuint HUD_time; // Time to draw the HUD and other UI elements
+// Create three query objects
+glGenQueries(3, queries);
+// Start the first query
+glBeginQuery(GL_TIME_ELAPSED, queries[0]);
+// Render the world
+RenderWorld();
+// Stop the first query and start the second...
+// Note: we’re not reading the value from the query yet
+glEndQuery(GL_TIME_ELAPSED);
+glBeginQuery(GL_TIME_ELAPSED, queries[1]);
+// Render the objects in the world
+RenderObjects();
+// Stop the second query and start the third
+glEndQuery(GL_TIME_ELAPSED);
+glBeginQuery(GL_TIME_ELAPSED, queries[2]);
+// Render the HUD
+RenderHUD();
+// Stop the last query
+glEndQuery(GL_TIME_ELAPSED);
+// Now, we can retrieve the results from the three queries.
+glGetQueryObjectuiv(queries[0], GL_QUERY_RESULT, &amp;world_time);
+glGetQueryObjectuiv(queries[1], GL_QUERY_RESULT, &amp;objects_time);
+glGetQueryObjectuiv(queries[2], GL_QUERY_RESULT, &amp;HUD_time);
+// Done. world_time, objects_time, and hud_time contain the values we want.
+// Clean up after ourselves.
+glDeleteQueries(3, queries);
+</pre>
+
+<li>
+如果你仅仅想知道两个行为之间花费的时间, 使用函数 glQueryCounter()
+<pre class="brush: c++">
+void glQueryCounter(GLuint id, GLenum target);
+</pre>
+
+<ul>
+<li>
+id 为 GL_TIMESTAMP, target 为query object的名称. 其将查询直接放入OpenGL管线中, 当前时间的视图写入query object. 时间0并非没有真正定义 - 其仅仅表示过去不确定的时间.
+
+<li>
+为有效使用, 需要在应用中在多个时间戳之间采用 deltas. 为了实现之前使用 glQueryCounter 的例子
+<pre class="brush: c++">
+// Declare our variables
+GLuint queries[4]; // Now we need four query objects
+GLuint start_time; // The start time of the application
+GLuint world_time; // Time taken to draw the world
+GLuint objects_time; // Time taken to draw objects in the world
+GLuint HUD_time; // Time to draw the HUD and other UI elements
+// Create four query objects
+glGenQueries(4, queries);
+// Get the start time
+glQueryCounter(GL_TIMESTAMP, queries[0]);
+// Render the world
+RenderWorld();
+// Get the time after RenderWorld is done
+glQueryCounter(GL_TIMESTAMP, queries[1]);
+// Render the objects in the world
+RenderObjects();
+// Get the time after RenderObjects is done
+glQueryCounter(GL_TIMESTAMP, queries[2]);
+// Render the HUD
+RenderHUD();
+// Get the time after everything is done
+glQueryCounter(GL_TIMESTAMP, queries[3]);
+// Get the result from the three queries, and subtract them to find deltas
+glGetQueryObjectuiv(queries[0], GL_QUERY_RESULT, &amp;start_time);
+glGetQueryObjectuiv(queries[1], GL_QUERY_RESULT, &amp;world_time);
+glGetQueryObjectuiv(queries[2], GL_QUERY_RESULT, &amp;objects_time);
+glGetQueryObjectuiv(queries[3], GL_QUERY_RESULT, &amp;HUD_time);
+HUD_time -= objects_time;
+objects_time -= world_time;
+world_time -= start_time;
+// Done. world_time, objects_time, and hud_time contain the values we want.
+// Clean up after ourselves.
+glDeleteQueries(4, queries);
+</pre>
+
+</ul>
+<li>
+GL_TIMESTAMP 为其到达管线终端的时间, GL_TIME_ELAPSED 则为 glBeginQuery() 到达管线开端及 glEndQuery() 到达管线终端的时间.
+
+<li>
+纳秒单位, 32为无符号整数只能计数小于4秒的值. 可以让 query object 内部使用完整的64位.
+<pre class="brush: c++">
+void glGetQueryObjectui64v(GLuint id,
+						GLenum pname,
+						GLuint64 * params);
+</pre>
+
+<ul>
+<li>
+pname 为 GL_QUERY_RESULT 或者 GL_QUERY_RESULT_AVAILABLE. 返回结果或者表示是否有一个有效的结果.
+
+</ul>
+<li>
+即时, 同步的时间戳
+<pre class="brush: c++">
+GLint64 t;
+void glGetInteger64v(GL_TIMESTAMP, &amp;t);
+</pre>
+
+</ul>
+
+<div id="Chapter 11 Controlling and Monitoring the Pipeline-11.1 Queries-11.1.3 Transform Feedback Queries"><h3 id="11.1.3 Transform Feedback Queries">11.1.3 Transform Feedback Queries</h3></div>
+<ul>
+<li>
+顶点着色器(无几何着色器)的 transform feedback, 记录顶点着色器的输出, 存储至 transform feedback 的顶点数量和发送给OpenGL的顶点数量一致, 除非 transform feedback 的空间耗尽. 如果有几何着色器, 则顶点数量可能不相同. 如果有 TCS, 则依赖于 tessellation factors 如果有 TCS, 则依赖于 tessellation factors.
+
+<li>
+生成一个 query object
+<pre class="brush: c++">
+GLuint one_query;
+glGenQueries(1, &amp;one_query);
+</pre>
+
+<li>
+或生成一些 query object
+<pre class="brush: c++">
+GLuint ten_queries[10];
+glGenQueries(10, ten_queries);
+</pre>
+
+<li>
+GL_PRIMITIVES_GENERATED 开始计数生成的图元. 或者使用 GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN.
+<pre class="brush: c++">
+glBeginQuery(GL_PRIMITIVES_GENERATED, one_query);
+</pre>
+
+<ul>
+<li>
+或
+<pre class="brush: c++">
+glBeginQuery(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN, one_query);
+</pre>
+
+<li>
+开始计数在前端生成了多少的图元, 或者多少的图元实际被写入transform feedback buffers.
+
+</ul>
+<li>
+终止
+<pre class="brush: c++">
+glEndQuery(GL_PRIMITIVES_GENERATED);
+</pre>
+
+<ul>
+<li>
+或
+<pre class="brush: c++">
+glEndQuery(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN);
+</pre>
+
+</ul>
+<li>
+使用 glGetQueryObjectuiv() 和 GL_QUERY_RESULT参数读取结果. 其结果可能不会即时可用(由于管线的性质). glGetQueryObjectuiv() 和参数 GL_QUERY_RESULT_AVAILABLE 参数查询结果是否可用.
+
+<li>
+GL_PRIMITIVES_GENERATED 和 GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN 之间有点区别, 前者为前端发出的图元数. 后者则只计数成功写入 transform feedback buffer 内的图元. 如果 transform feedback buffers 没有足够的空间, GL_PRIMITIVES_GENERATED 继续跟踪, GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN 则终止. 这点可用来检查是否所有你应用产生的图元都写入了 transform feedback buffer.
+
+<li>
+GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN 只有当 transform feedback 激活时才有意义. 否则其结果会为0. 
+
+</ul>
+
+<div id="Chapter 11 Controlling and Monitoring the Pipeline-11.1 Queries-11.1.3 Transform Feedback Queries-11.1.3.1 Indexed Queries"><h4 id="11.1.3.1 Indexed Queries">11.1.3.1 Indexed Queries</h4></div>
+<ul>
+<li>
+如果仅使用单个流(single stream)存储transform feedback中的顶点, 则调用 glBeginQuery() 和 glEndQuery() 及 GL_PRIMITIVES_GENERATED 或 GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN 都不错. 
+
+<li>
+几何着色器可能将图元写入四个输出流. OpenGL 提供了 indexed query target 用于计数每个流产生多少的数据. glBeginQuery() 和 glEndQuery() 关联至第一个流. 索引为0. 不同流则使用函数 glBeginQueryIndexed() 和 glEndQueryIndexed()
+<pre class="brush: c++">
+void glBeginQueryIndexed(GLenum target,
+			GLuint index,
+			GLuint id);
+void glEndQueryIndexed(GLenum target,
+			GLuint index);
+</pre>
+
+<li>
+如果不使用几何着色器, 你仍使用这些函数, 则仅有索引为0的流被计数.
+
+<li>
+上面的索引查询函数可是用任意的query target(如 GL_SAMPLES_PASSED 或 GL_TIME_ELAPSED), 但只有用于索引为0的流对这些目标有效.
+
+</ul>
+
+<div id="Chapter 11 Controlling and Monitoring the Pipeline-11.1 Queries-11.1.3 Transform Feedback Queries-11.1.3.2 Using the Results of a Primitive Query"><h4 id="11.1.3.2 Using the Results of a Primitive Query">11.1.3.2 Using the Results of a Primitive Query</h4></div>
+<ul>
+<li>
+注意, 使用 transform feedback 将前端的结果存进一个 buffer, 将一个 buffer 设置为 transform feedback buffer, 需要将其绑定至一个 GL_TRANSFORM_FEEDBACK_BUFFER 绑定点. 
+
+<li>
+渲染 pass 之后, 数据写入 transform feedback buffer, 而后你绑定buffer object至 GL_ARRAY_BUFFER 绑定点, 这样其可当作 vertex buffer 使用. 如果你使用几何着色器, 其可能产生未知量的数据, 你需要使用 GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN 查询在第二个pass多少个顶点要渲染. 代码如下:
+<pre class="brush: c++">
+// We have two buffers, buffer1 and buffer2. First, we’ll bind buffer1 as the
+// source of data for the draw operation (GL_ARRAY_BUFFER), and buffer2 as
+// the destination for transform feedback (GL_TRANSFORM_FEEDBACK_BUFFER).
+glBindBuffer(GL_ARRAY_BUFFER, buffer1);
+glBindBuffer(GL_TRANSFORM_FEEDBACK_BUFFFER, buffer2);
+// Now, we need to start a query to count how many vertices get written to
+// the transform feedback buffer
+glBeginQuery(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN, q);
+// Ok, start transform feedback...
+glBeginTransformFeedback(GL_POINTS);
+// Draw something to get data into the transform feedback buffer
+DrawSomePoints();
+// Done with transform feedback
+glEndTransformFeedback();
+// End the query and get the result back
+glEndQuery(GL_TRANSFORM_FEEDBACK_PRIMITIVES_WRITTEN);
+glGetQueryObjectuiv(q, GL_QUERY_RESULT, &amp;vertices_to_render);
+// Now we bind buffer2 (which has just been used as a transform
+// feedback buffer) as a vertex buffer and render some more points
+// from it.
+glBindBuffer(GL_ARRAY_BUFFER, buffer2);
+glDrawArrays(GL_POINTS, 0, vertices_to_render);
+</pre>
+
+<li>
+无论何时你返回一个 query 的结果, 其必须完成其正在做的事情这样可以提供精确的计数.
+
+<li>
+transform feedback object, 表示 transform feedback stage 的 state. 目前你使用默认的 transform feedback object, 你可以创建自己的 transform feedback object
+<pre class="brush: c++">
+void glGenTransformFeedbacks(GLsizei n,
+	GLuint * ids);
+void glBindTransformFeedback(GLenum target,
+	GLuint id);
+</pre>
+
+<ul>
+<li>
+target 必须为 GL_TRANSFORM_FEEDBACK
+
+</ul>
+<li>
+删除和确定某个名称是否transform feedback object的名称
+<pre class="brush: c++">
+void glDeleteTransformFeedbacks(GLsizei n,
+	const GLuint * ids);
+GLboolean glIsTransformFeedback(GLuint id);
+</pre>
+
+<li>
+一旦绑定了一个 transform feedback object, 所有关于 transform feedback的state都在该object内保持, 其包括 transform feedback buffer 的绑定, 用于保持跟踪多少数据已写入每个transform feedback stream的计数. 我们可以在 transform feedback query中有效地返回相同的数据, 且我们可以使用其自动地绘制使用transform feedback捕获到的顶点数量. 这是 OpenGL 用于该目标的第二部分功能, 由四个函数组成
+<pre class="brush: c++">
+void glDrawTransformFeedback(GLenum mode,
+	GLuint id);
+void glDrawTransformFeedbackInstanced(GLenum mode,
+	GLuint id,
+	GLsizei primcount);
+void glDrawTransformFeedbackStream(GLenum mode,
+	GLuint id,
+	GLuint stream);
+void glDrawTransformFeedbackStreamInstanced(GLenum mode,
+	GLuint id,
+	GLuint stream,
+	GLsizei primcount);
+</pre>
+
+<ul>
+<li>
+mode --- 可以用于绘制的一种图元类型
+
+<li>
+id --- transform feedback object 的名称.
+
+<li>
+glDrawTransformFeedback() 等同于调用 glDrawElements(), 除了处理的顶点数量从 id 表示的 transform feedback object 的第一个流中得到.
+
+<li>
+glDrawTransformFeedbackInstanced() 等同于 glDrawArraysInstanced(), 顶点数同上, primcount 表示 instance 数
+
+<li>
+glDrawTransformFeedbackStream() 等同于 glDrawTransformFeedback(), stream 表示获取顶点的流
+
+<li>
+glDrawTransformFeedbackStreanInstanced() 等同于 glDrawTransformFeedbackInstanced().
+
+</ul>
+<li>
+使用其他流时必须使用几何着色器
+
+</ul>
+
+<div id="Chapter 11 Controlling and Monitoring the Pipeline-11.2 Synchronization in OpenGL"><h2 id="11.2 Synchronization in OpenGL">11.2 Synchronization in OpenGL</h2></div>
+<ul>
+<li>
+介绍一些方法同步管线的不同部分
+
+</ul>
+
+<div id="Chapter 11 Controlling and Monitoring the Pipeline-11.2 Synchronization in OpenGL-11.2.1 Draining the Pipeline"><h3 id="11.2.1 Draining the Pipeline">11.2.1 Draining the Pipeline</h3></div>
+<ul>
+<li>
+两个命令用于强制开始命令上的工作, 或者完成已发出的命令上的工作.
+<pre class="brush: c++">
+glFlush();
+glFinish();
+</pre>
+
+<li>
+glFlush() --- 确保确保发出的命令至少位于管线的开端, 它们都终将被会执行. 问题是其不会告知你发出命令的执行状态的任何事情.
+
+<li>
+glFinish() --- 确保所有命令都完全被执行且管线为空, 确保所有的命令都被执行. 最好不要使用该命令.
+
+</ul>
+
+<div id="Chapter 11 Controlling and Monitoring the Pipeline-11.2 Synchronization in OpenGL-11.2.2 Synchronization and Fences"><h3 id="11.2.2 Synchronization and Fences">11.2.2 Synchronization and Fences</h3></div>
+<ul>
+<li>
+需要知道 OpenGL 是否完成命令至某点, 而无需迫使清空管线. 管理的这种类型的同步为 sync objects. 其有两个可能的状态: signaled 和 unsignaled. 开始于 unsignaled state, 某事发生则触发 signaled state. 其依赖于sync object的类型触发状态. 我们感兴趣的 sync object 类型被称之为 fence sync. 其可用下面的代码创建一个
+<pre class="brush: c++">
+GLsync glFenceSync(GL_SYNC_GPU_COMMANDS_COMPLETE, 0);
+</pre>
+
+<ul>
+<li>
+第一个参数表示等待的事件. GL_SYNC_GPU_COMMANDS_COMPLETE 表示在我们设置 sync object 的 state 为 singaled 之前, 完成管线中所有命令的处理. 第二个参数为一个 flag field, 这里为0是因为没有该类型 sync object 相关的 flags.
+
+</ul>
+<li>
+glFenceSync() 函数返回一个新的 GLsync object. 只要创建了一个 fence sync, 其进入 OpenGL 管线, 且和其他非停顿或不消耗可观资源的命令一起处理. 当其到达管线的末端, 其可以像其他任意的命令那样"执行(executed)". 且其设置state为 signaled. 这告知我们, 所有 glFenceSync() 之前发出的命令都已经完成, 虽然 glFenceSync() 之后发出的命令可能还没有到达管线的末端.  
+
+<li>
+确定 sync object 是否已变得 signaled, 调用
+<pre class="brush: c++">
+glGetSynciv(sync, GL_SYNC_STATUS, sizeof(GLint), NULL, &amp;result);
+</pre>
+
+<ul>
+<li>
+result 可为 GL_SIGNALED 或 GL_UNSIGNALED.
+
+<li>
+这允许应用 poll 该 sync object 的 state 且使用该信息可能做某些有用的工作, 当 GPU 忙于之前的命令时. 例如, 考虑如下的代码
+<pre class="brush: c++">
+GLint result = GL_UNSIGNALED;
+glGetSynciv(sync, GL_SYNC_STATUS, sizeof(GLint), NULL, &amp;result);
+while (result != GL_SIGNALED)
+{
+	DoSomeUsefulWork();
+	glGetSynciv(sync, GL_SYNC_STATUS, sizeof(GLint), NULL, &amp;result);
+}
+</pre>
+
+<li>
+其平衡了CPU的工作量(例如混合在一起的声效量或者要运行的物理模拟的迭代量)和GPU的速度.
+
+</ul>
+<li>
+为了让 OpenGL 等待 sync object 变成 signaled, 这里有你可以使用的两个函数:
+<pre class="brush: c++">
+glClientWaitSync(sync, GL_SYNC_FLUSH_COMMANDS_BIT, timeout);
+// 或
+glWaitSync(sync, 0, GL_TIMEOUT_IGNORED);
+</pre>
+
+<ul>
+<li>
+glClientWaitSync() 函数第二个参数是一个设置函数额外行为的 bitfield. GL_SYNC_FLUSH_COMMANDS_BITS, 其确保在开始等待 sync object 变成 signaled 之前 sync object 进入了管线. 如果不设置该位, sync object 可能还未发送至管线, 而OpenGL查看sync object, 应用可能无限等待并悬而未决. 最好设置该位. 第三个参数为要等待的纳秒单位的timeout值. 如果 sync object 在该时间内还没有 signaled, 则 glClientWaitSync() 返回一个 statuc 码来表示这点. 在 sync object 变成 signaled 或者 timeout 发生之前, glClientWaitSync() 不会返回.
+
+</ul>
+<li>
+glClientWaitSync() 可能返回四种可能的状态码, 归纳如下表:
+
+<ul>
+<li>
+GL_ALREADY_SIGNALED --- The sync object was already signaled when glClientWaitSync() was called, and so the function returned immediately.
+
+<li>
+GL_TIMEOUT_EXPIRED --- The timeout speci?ed in the timeout parameter expired, meaning that the sync object never became signaled in the allowed time.
+
+<li>
+GL_CONDITION_SATISFIED --- The sync object became signaled within the allowed timeout period (but was not already signaled when glClientWaitSync() was called).
+
+<li>
+GL_WAIT_FAILED --- An error occurred (such as sync not being a valid sync object), and the user should check the result of glGetError() to get more information.
+
+</ul>
+<li>
+关于 timeout 有些事情要说明, 首先, 其测量单位为纳秒, 但 OpenGL 没有该精度要求. 所以其会四舍五入至下个或者之后的毫秒上. 如果 timeout 设为 0, 则如 sync object 为 signaled state 则返回 GL_ALREADY_SIGNALED, 否则返回 GL_TIMEOUT_EXPIRED.
+
+<li>
+glWaitSync() --- 应用不会等待 sync object 为 signaled, 但是 GPU 会. 该函数会立即返回, 第二个和第三个参数不相关, 不需要 GL_SYNC_FLUSH_COMMANDS_BIT, 且该参数不会产生错误. timeout 依赖于实现, GL_TIMEOUT_IGNORED 使得这点更清晰. 你可以使用 glGetInteger64v() 以及参数 GL_MAX_SERVER_WAIT_TIMEOUT 查找使用了何 timeout 值.
+
+<li>
+glWaitSync() 函数在单个 OpenGL context 中以及不使用其他 APIs 时没什么用处. 当使用多个 OpenGL context, Sync objects 可以被多个 OpenGL context 和兼容的APIs(例如 OpenCL) 之间共享. 这表示, 可以在一个 context 中调用 glFenceSync() 创建一个 sync object, 在其他 context 中调用 glWaitSync() 等待该 sync object.
+
+<li>
+你可以要求一个 OpenGL context 拖延渲染某些内容, 知道其他的 context 完成某些事情. 这允许了两个 context 的同步, 一个应用可以有两个线程和两个 context(或更多), 每个 context 创建了一个 sync object, 使用 glClientWaitSync() 或 glWaitSync() 等到其他 context 的 sync object. 当所有的函数返回时, 所有的 context 都同步了. 根据线程等内容, 你可以保持在多个窗口的渲染同步.
+
+<li>
+一个例子就是在两个 context 之间共享 buffer, 第一个 context 使用 transform feedback 写入 buffer, 第二个 context 绘制 transform feedback 的结果. 第一个 context 在调用 glEndTransformFeedback() 之后, 立即调用 glFenceSync(), 而后第二个 context 成为当前 context, 并调用 glWaitSync() 等到 sync object 变成 signaled. 而后发送更多的命令给 OpenGL. GPU 完成第一个 context 的工作在开始第二个 context 的工作.
+
+<li>
+sync object 只能从 unsignaled 变成 signaled. 
+
+<li>
+删除一个 sync object
+<pre class="brush: c++">
+glDeleteSync(sync);
+</pre>
+
+<ul>
+<li>
+不会立即删除, 任何观察 sync object 的线程其 sync object 都变成 signaled, 当没有线程观察时, 删除该 object.
+
+</ul>
+<li>
+在 glWaitSync() 之后调用 glDeleteSync 是合法的
+
+</ul>
+
+    </div>
+</body>
+</html>

@@ -1,0 +1,48 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../../style.css">
+<title>ASTAR</title>
+<meta http-equiv="Content-Type" content="text/html; charset=cp936">
+</head>
+<body>
+
+<p>
+将起点放入OPEN表;
+while(OPEN!=NULL)　
+{　
+	从OPEN表中取估价值f最小的节点n;　
+	if(n节点==目标节点){　
+		break;　
+	}　
+	for(当前节点n 的每个子节点X)　
+	{
+		算X的估价值;　
+		if(X in OPEN)
+		{　
+			if( X的估价值小于OPEN表的估价值 ){　
+			把n设置为X的父亲;　
+			更新OPEN表中的估价值; //取最小路径的估价值　
+			}
+		}
+		if(X in CLOSE) {　
+			if( X的估价值小于CLOSE表的估价值 ){　
+			把n设置为X的父亲;　
+			更新CLOSE表中的估价值;　
+			把X节点放入OPEN //取最小路径的估价值　
+			}　
+		}
+		if(X not inboth){　
+			把n设置为X的父亲;
+			求X的估价值;　
+			并将X插入OPEN表中; //还没有排序　
+		}
+	}//end for
+	将n节点插入CLOSE表中;　
+	按照估价值将OPEN表中的节点排序; //实际上是比较OPEN表内节点f的大小，从最小路径的节点向下进行。
+}//end while(OPEN!=NULL)
+保存路径，即 从终点开始，每个节点沿着父节点移动直至起点，这就是你的路径；
+</p>
+
+</body>
+</html>

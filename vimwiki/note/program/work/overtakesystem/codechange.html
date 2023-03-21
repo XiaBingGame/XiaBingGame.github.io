@@ -1,0 +1,51 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../../style.css">
+<title>codechange</title>
+<meta http-equiv="Content-Type" content="text/html; charset=cp936">
+</head>
+<body>
+
+<ul>
+<li>
+RacingGameManager.cs --- 修改
+<pre cnet>
+	// 55行 增加
+	private static NPCController NPCcar1 = new NPCController(new Vector3(0, 0, 0));
+	// 73行 增加
+	public static int NPCcurrentCarNumber = 2;
+	// 146行
+	gameScreens.Peek().GetType() != typeof(NPCGameScreen);
+	// 159行
+	gameScreens.Peek().GetType() == typeof(NPCGameScreen));
+	// 增加函数
+        public static bool InNPCGameScreen
+        {
+            get
+            {
+                return gameScreens.Count &gt; 0 &amp;&amp;
+                    gameScreens.Peek().GetType() == typeof(NPCGameScreen);
+            }
+        }
+	// 182 行
+	gameScreens.Peek().GetType() != typeof(NPCGameScreen);
+	// 216 行 增加函数
+        public static NPCController NPCCar1
+        {
+            get
+            {
+                return NPCcar1;
+            }
+        }
+	// 397 行 增加
+	NPCcar1.Update();
+
+	// 424 行
+	//gameScreens.Peek().GetType() == typeof(Options) &amp;&amp;
+</pre>
+
+</ul>
+
+</body>
+</html>

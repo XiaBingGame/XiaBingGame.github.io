@@ -1,0 +1,79 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../style.css" />
+    <title>Django����ͼ�(һ)</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="../index.html">首页</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<ul>
+<li>
+这里记录一些 Django 搭建博客遇到的一些问题
+
+<li>
+参考书籍为 Django by Example, 这里记录与书籍内容不包含的内容.
+
+<li>
+搭建环境: 阿里云 ECS + CentOS7
+
+<li>
+一开始搭建的时候使用 python2.7 搭建, 在发表中文博客时, 出现不能识别中文标题的问题, 所以换成 python3
+
+<li>
+使用 python3 遇到的第一个问题是不支持 supervisor, 可以参考官方网站使用 uWSGI 和 nginx 实现网站的访问(<a href="http://uwsgi-docs.readthedocs.io/en/latest/tutorials/Django_and_nginx.html)">http://uwsgi-docs.readthedocs.io/en/latest/tutorials/Django_and_nginx.html)</a>
+
+<li>
+在书中, 根据标题自动生成 slug, 但无法从中文生成 slug, 所以我们需要从中文标题生成 slug, 解决步骤如下
+
+<ul>
+<li>
+pip install django-uuslug
+
+<li>
+修改你的 Post save 方法的默认实现, 这样文章保存时就会自动填充 slug
+<pre python>
+from django.core.urlresolvers import reverse
+from uuslug import slugify
+
+class Post(models.Model):
+	...
+    def save(self, *args, **kwargs):
+        self.slug = slugify(self.title)
+        super(Post, self).save(*args, **kwargs)
+</pre>
+
+</ul>
+<li>
+隐藏发表文章时的 slug 填充
+
+<ul>
+<li>
+禁止 slug 出现在发表博客的页面上
+<pre python>
+class Post(models.Model):
+	...
+	slug = models.SlugField(editable=False)
+</pre>
+
+</ul>
+<li>
+本书博客例子遇到的另一个问题就是 Post 过滤时, 无法通过发表日期的月份过滤, 即 Post.objects.filter(publish_<em>year=2017) 可以返回你2017年的所有文章, 但 Post.objects.filter(publish</em>_month=10) 却无法返回你发表在10月份的文章, 这里需要修改你网站的 settings.py 文件, 设置
+<pre>
+USE_TZ = False
+</pre>
+
+</ul>
+
+    </div>
+</body>
+</html>

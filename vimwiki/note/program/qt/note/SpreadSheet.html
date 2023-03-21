@@ -1,0 +1,409 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../../style.css">
+<title>SpreadSheet</title>
+<meta http-equiv="Content-Type" content="text/html; charset=cp936">
+</head>
+<body>
+
+<ul>
+<li>
+QMainWindow::setCentralWidget(): 将一个widget设置为该主窗口程序的中心widget, Main Window 程序必设
+
+<li>
+MainWindow::createAction()
+
+<ul>
+<li>
+QAction::setIcon, setShortcut, setStatusTip, setVisible, setCheckable, setChecked
+
+<li>
+QAction 信号有 triggered(), toggled(bool)
+
+<li>
+newAction --- 新建文件
+
+<ul>
+<li>
+MainWindow::newFile
+
+<ul>
+<li>
+调用 okToContinue()
+
+<ul>
+<li>
+isWindowModified() 判断是否修改
+
+<li>
+如修改则跳出 QMessageBox::warning
+
+<li>
+如 QMessageBox::warning 返回 QMessageBox::Ye, 则调用 QMainWindow::save().
+
+</ul>
+<li>
+如果 okToContinue() 为真, 则调用 Spreadsheet::clear().
+
+</ul>
+</ul>
+<li>
+openAction --- 打开文件
+
+<ul>
+<li>
+MainWindow::open
+
+<ul>
+<li>
+调用 okToContinue()
+
+<li>
+QFileDialog::getOpenFileName 打开文件夹对话框
+
+<li>
+MainWindow::loadFile() 加载文件
+
+<ul>
+<li>
+SpreadSheet::readFile 读取文件
+
+</ul>
+</ul>
+</ul>
+<li>
+saveAction --- 保存文件
+
+<ul>
+<li>
+MainWindow::save
+
+<ul>
+<li>
+如当前文件为空, 调用 MainWindow::saveAs()
+
+<li>
+否则调用 MainWindow::saveFile()
+
+<ul>
+<li>
+其调用 SpreadSheet::writeFile
+
+</ul>
+</ul>
+</ul>
+<li>
+saveAsAction
+
+<ul>
+<li>
+MainWindow::saveAs
+
+<ul>
+<li>
+根据 QFileDialog::getSaveFileName 得到文件名
+
+<li>
+调用 saveFile 保存文件
+
+</ul>
+</ul>
+<li>
+recentFileActions 数组 --- 最近文件
+
+<ul>
+<li>
+MainWindow::openRecentFile
+
+<ul>
+<li>
+使用 qobject_cast&lt;QAction *&gt;(sender()) 得到 QAction.
+
+<li>
+根据其 data() 调用 MainWindow::loadFile()
+
+</ul>
+</ul>
+<li>
+exitAction --- 退出
+
+<ul>
+<li>
+调用 QWidget::close[slot]
+
+</ul>
+<li>
+cutAction --- 剪切
+
+<ul>
+<li>
+连接至 SpreadSheet::cut() [slot]
+
+<li>
+同样的操作还有 copy, paste, delete, selectRow, selectColumn, selectAll
+
+</ul>
+<li>
+findAction --- 查找
+
+<ul>
+<li>
+MainWindow::find()
+
+<ul>
+<li>
+new FindDialog, 无模式对话框
+
+<li>
+建立两个连接
+
+<ul>
+<li>
+FindDialog::findNext --- SpreadSheet::findNext
+
+<li>
+FindDialog::findPrevious --- SpreadSheet::findPrevious
+
+</ul>
+<li>
+FindDialog::show(), raise(), activateWindow().
+
+</ul>
+</ul>
+<li>
+goToCellAction --- 跳至
+
+<ul>
+<li>
+MainWindow::goToCell()
+
+<ul>
+<li>
+模式对话框 GoToCell, 使用 exec() 执行
+
+<li>
+调用 SpreedSheet::setCurrentCell(实际调用基类 QTableWidget::setCurrentCell)
+
+</ul>
+</ul>
+<li>
+recalculateAction
+
+<ul>
+<li>
+SpreadSheet::recalculate
+
+</ul>
+<li>
+sortAction
+
+<ul>
+<li>
+MainWindow::sort()
+
+<ul>
+<li>
+模式对话框 SortDialog
+
+<li>
+SpreadSheet::selectedRange() 返回 QTableWidgetSelectionRange
+
+<li>
+调用 SortDialog::setColumnRange 给其ComboBox添加可选择的列
+
+<li>
+执行对话框
+
+<ul>
+<li>
+根据选择的内容设置 SpreadsheetCompare
+
+<li>
+调用 SpreadSheet::sort()
+
+</ul>
+</ul>
+</ul>
+<li>
+showGridAction
+
+<ul>
+<li>
+SpreadSheet::setShowGrid(bool)
+
+</ul>
+<li>
+autoRecalcAction
+
+<ul>
+<li>
+SpreadSheet::setAutoRecalculate(bool)
+
+</ul>
+<li>
+aboutAction
+
+<ul>
+<li>
+MainWindow::about()
+
+<ul>
+<li>
+QMessageBox::about
+
+</ul>
+</ul>
+<li>
+aboutQtAction
+
+<ul>
+<li>
+qApp aboutQt() 
+
+</ul>
+</ul>
+</ul>
+
+<ul>
+<li>
+MainWindow::createMenu
+
+<ul>
+<li>
+menuBar()-&gt;addMenu()  添加菜单
+
+<li>
+QMenu::addAction() 添加菜单条目
+
+<li>
+QMenu::addSeparator() 添加分隔条
+
+</ul>
+</ul>
+
+<ul>
+<li>
+MainWindow::createContextMenu 创建右键菜单
+
+<ul>
+<li>
+SpreadSheet::addAction(实际调用 QTableWidget::addAction())
+
+<li>
+SpreadSheet::setContextMenuPolicy(实际调用 QWidget::setContextMenuPolicy)
+
+</ul>
+</ul>
+
+<ul>
+<li>
+MainWindow::createToolBars
+
+<ul>
+<li>
+调用 QMainWindow::addToolBar() 添加工具条
+
+<li>
+QToolBar::addAction 添加条目
+
+</ul>
+</ul>
+
+<ul>
+<li>
+MainWindow::createStatusBar()
+
+<ul>
+<li>
+statusBar()-&gt;addWidget()
+
+<li>
+连接信号
+
+<ul>
+<li>
+SpreadSheet::currentCellChange(TableWidget的信号) --- MainWindow::updateStatusBar
+
+<ul>
+<li>
+调用 SpreadSheet::currentLocation, currentFormula 设置状态栏内容
+
+</ul>
+<li>
+SpreadSheet::modified() --- MainWindow::spreadSheetModified
+
+<ul>
+<li>
+setWindowModified 表示文档已修改
+
+<li>
+updateStatusBar
+
+</ul>
+</ul>
+</ul>
+</ul>
+
+<ul>
+<li>
+MainWindow::readSettings()
+
+<ul>
+<li>
+QSetting
+
+<li>
+restoreGeometry(settings.value("geometry").toByteArray());  // 设置窗口大小
+
+</ul>
+</ul>
+
+<ul>
+<li>
+MainWindow::setCurrentFile()
+
+<ul>
+<li>
+setWindowModified 文档状态
+
+</ul>
+</ul>
+
+<ul>
+<li>
+在注册表中保存窗口大小, 以及恢复
+<pre c++>
+void MyWidget::closeEvent(QCloseEvent *event)
+{
+	QSettings settings("MyCompany", "MyApp");
+	settings.setValue("geometry", saveGeometry());
+	QWidget::closeEvent(event);
+}
+
+// 恢复
+QSettings settings("MyCompany", "MyApp");
+myWidget-&gt;restoreGeometry(settings.value("myWidget/geometry").toByteArray());
+</pre>
+
+</ul>
+
+<ul>
+<li>
+使用 QMutableStringListIterator 遍历一个 StringList. 有方法 hasNext(), next(), remove().
+
+<ul>
+<li>
+typedef QMutableListIterator&lt;QString&gt; QMutableStringListIterator;
+
+</ul>
+</ul>
+
+<ul>
+<li>
+QTableWidget::viewport() 返回滚动区域所在的widget
+
+</ul>
+
+</body>
+</html>

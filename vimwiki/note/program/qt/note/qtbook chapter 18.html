@@ -1,0 +1,163 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../style.css" />
+    <title>qtbook chapter 18</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///F:/NetShare/BaiduYun/百度云/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<h1 id="toc_1">Chapter 18 Internationalization</h1>
+<ul>
+<li>
+Qt 提供了一个被称为 Qt Linguist 的 GUI 工具被翻译者使用. Qt Linguist 通过两个命令行程序组成, lupdate 和 lrelease, 通常被应用程序开发者用来运行.
+
+<li>
+大多数应用程序在启动时基于用户的locale设置加载一个翻译文件. 但有时也需要用户运行时切换语言.
+
+</ul>
+
+<h2 id="toc_1.1">18.1 Working with Unicode</h2>
+<ul>
+<li>
+Unicode 包含的 ASCII 和 ISO 8859-1 (Latin-1) 子集在相同的代码位置. Unicode 的背后原先思想为用16位代替8位存储字符.
+
+<li>
+Unicode 标准的最近版本分配了大于65535的字符值. 这些字符可以使用两个 16 位值序列表示, 其被称之为 "surrogate pairs".
+
+<li>
+Qt 的 QString 类将字符存储为 Unicode, QString 中的每个字符是一个16位的 QChar. 这里有两种方法设置一个字符串的第一个字符为 'A'.
+<pre c++>
+	str[0] = 'A';
+	str[0] = QChar(0x41);
+</pre>
+
+<li>
+如果源文件编码为 Latin-1, 指定 Latin-1 字符也很容易:
+<pre c++>
+	str[0] = '?';
+</pre>
+
+<li>
+如果源文件有其他编码, 则数字值同样可以做得很好.
+<pre c++>
+	str[0] = QChar(0xD1);
+</pre>
+
+<li>
+我们可以通过任意的数字值指定一个 Unicode 字符.
+<pre c++>
+	str[0] = QChar(0x03A3);
+	str[0] = QChar(0x20AC);
+</pre>
+
+<li>
+Unicode 支持的所有字符的数字值可见  <a href="http://www.unicode.org/standard/.">http://www.unicode.org/standard/.</a>
+
+<li>
+得到一个 QChar 的数字值, 使用 unicode() 函数. 得到一个 QChar 的 ASCII 或 Latin-1 值, 调用 Latin1() 函数, 对于 non-Latin-1 字符, toLatin1() 返回 '\0'.
+
+<li>
+如果我们知道一个程序中的所有字符串都是 ASCII, 我们可以在 toLatin1() 的返回值上使用标准的 &lt;cctype&gt; 函数, 如 isalpha(), isdigit(), isspace(). 但是使用 QChar 的成员函数执行这些操作更好, 这是因为其可以作用于任意 Unicode 字符. QChar 提供的函数有 isPrint(), inPunct(), isSpace(), isMark(), isLetter(), isNumber(), isLetterOrNumber(), isDigit(), isSymbol(), isLower(), isUpper().
+
+<li>
+默认情况, QTextStream 使用系统的本地8位编码(可以用 QTextCodec::codecForLacle() 得到)用于读写. 对于美国和西欧的 locale, 其通常是 Latin-1.
+
+<li>
+如果我们设计自己的文件格式, 且希望能够读写任意 Unicode. 我们可以调用如下代码保存数据为 Unicode:
+<pre c++>
+	stream.setCodec("UTF-16");
+	stream.setGenerateByteOrderMark(true);
+</pre>
+
+<ul>
+<li>
+数据存储为 UTF-16 格式, 这个格式每个字符要求两个字节, 且有一个16位特殊值的前缀(Unicode 字节次序mark, 0xFFFE), 其用于表示文件是否为 Unicode 和字节是 little-endian 次序还是 big-endian 次序. 通过 setCodec() 和 setGenerateByteOrderMark() 函数实现.
+
+</ul>
+<li>
+可以用一个合适的 QTextCodec 调用 setCodec() 方法指定其他编码. 一个 QTextCodec 是一个对象, 其可以在 Unicode 和一个给定的编码之间转换. Qt 在不同的上下文中使用 QTextCodecs. 在内部, 它们用于支持字体, 输入法, 剪贴板,  拖放和文件名. 但当我们写 Qt 应用时, 我们同样可以利用它们.
+
+<li>
+当读取文件时, 如果文件以该 byte order mark 开头, 则 QTextStream 自动检测到 UTF-16. 可以调用 setAutoDetectUnicode(false) 关闭这个行为. 我们可以在读取之前调用 setCodec() 函数和"UTF-16"参数.
+
+<li>
+另外一个 Unicode 编码为 UTF-8, 其优点是该编码为 ASCII 的超集. 0x00 到 0x7F 之间的字符表示为单个字节, 其他的字符表示为多字节序列. 调用setCodec() 函数使用"UTF-8"参数以在QTextStream上使用该编码.
+
+<li>
+如果我们总是想要读写 Latin-1, 而不考虑用户的 locale, 我们可以在 QTextStream 上设置  "ISO 8859-1" codec.
+<pre c++>
+	QTextStream in(&amp;file);
+	in.setCodec("ISO 8859-1");
+</pre>
+
+<li>
+一些文件格式在它们的头部指定它们的编码. 通常头部为纯 ASCII 以确保无论使用何种编码可以争取读取. 可见 XML 文件格式. 通常使用编码 UTF-8 或 UTF-16, 正确的方法是调用 setCodec() 及参数"UTF-8". 如果格式为 UTF-16, QTextStream 则会自动检测到它而后修正自己.
+<pre>
+	&lt;?xml version="1.0" encoding="EUC-KR"?&gt;
+</pre>
+
+<li>
+由于 QTextStream 在其开始读取时不允许我们改变编码, 正确的方法是使用正确的编码重新开始读取这个文件(从 QTextCodec::codecForName() 获取). 对于 XML, 我们可以使用 Qt 的XML类来避免自己处理编码.
+
+<li>
+QTextCodecs 的另一个使用时指定源代码中字符串的编码. 调用 QTextCodec::setCodecForTr() 静态函数设置 Qt 对tr()参数的解释, 默认解释为 Latin-1.
+<pre c++>
+	QTextCodec::setCodecForTr(QTextCodec::codecForName("EUC-JP"));
+</pre>
+
+<ul>
+<li>
+必须在第一次调用 tr() 之前完成这一点. 通常我们在 main() 函数中完成这个, 在 QCoreApplication 或 QApplication 对象创建之后立即调用.
+
+</ul>
+<li>
+程序中的其他字符串仍然被解释为 Latin-1 字符串, 如果程序员想在那些里面都输入日文字符, 则可以使用 QTextCodec 显式得转换它们到 Unicode.
+<pre c++>
+	QString text = japaneseCodec-&gt;toUnicode("日文字符");
+</pre>
+
+<li>
+另外, 当在const char* 和 Qtring 之间转换时, 他们可以通过 QTextCodec::setCodecForCString() 告诉Qt使用特定的codec.
+<pre c++>
+	QTextCodec::setCodecForCStrings(QTextCodec::codecForName("EUC-JP"));
+</pre>
+
+<li>
+具体还有 Qt 4.3 支持的编码列表. 可见书籍
+
+<li>
+对于这些编码, QTextCodec::codecForName() 可以返回一个有效的指针, 其他的编码可以通过派生 QTextCodec 支持.
+
+</ul>
+
+<h2 id="toc_1.2">18.2 Making Applications Translation-Aware</h2>
+<ul>
+<li>
+如果我们想要我们的应用程序可以在多语言中使用, 需要做两件事情:
+
+<ol>
+<li>
+确保每个用户可见的字符串都通过 tr()
+
+<li>
+启动时加载一个翻译文件(.qm)
+
+</ol>
+</ul>
+
+    </div>
+</body>
+</html>

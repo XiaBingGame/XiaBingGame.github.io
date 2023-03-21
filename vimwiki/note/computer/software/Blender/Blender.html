@@ -1,0 +1,308 @@
+﻿<html>
+<head>
+    <link rel="Stylesheet" type="text/css" href="../../../../style.css" />
+    <title>Blender</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+</head>
+<body>
+<div id="all">
+<div id="header">
+	<ul id="top-nav">
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/index.html">首页</a>
+		</li>
+		<li>
+			<a href="file:///D:/Documents and Settings/Vimwiki/Vimwiki_html/diary/diary.html">日记</a>
+		</li>
+	</ul>
+</div>
+</div>
+    <div class="content">
+    
+<h1 id="toc_1">Starting</h1>
+<h2 id="toc_1.1">Introduction</h2>
+<ul>
+<li>
+记得随时保存, 如果没有保存, 再打开时可通过 File-&gt;Recover Last Sessio, 这位于 .blender 文件中
+
+<li>
+Blender 的用户接口基于三个主要的原则:
+
+<ul>
+<li>
+Non Overlapping
+
+<li>
+No Blocking
+
+<li>
+Non Modal
+
+</ul>
+<li>
+界面由 Editors, Headers, Context buttons, Regions, Controls 组成
+
+<ul>
+<li>
+Editor为软件的部分, 其有具体的功能(3D view, Properties Editor, Video Sequence Editor, Nodes Editor...), 每个Editor有自己的Header在顶部或底部
+
+<li>
+Context buttons 使得可以访问选项, 它们像是 tabs, 常位于 editor 的头部(像 Properties Editor).
+
+<li>
+对于每个eidtor, 在 Panels 内按逻辑分组 options 的接口(Shadow panel, Dimension panel...)
+
+<li>
+某些 editor 含 Regions, 如果有这个, 则 panels 和 controls 都会在其内分组. 为了 workspace 的优化, 可能使用热键 T, N 暂时隐藏用于 Toolbar 和 Properties 的 regions
+
+<li>
+Panels 内含 Controls, 允许你修改一个功能, 一个选项, 或一个值. 有以下几种 Controls:
+
+<ul>
+<li>
+Buttons: 允许访问一个工具(Translation, Rotate, Insert Keyframe)
+
+<li>
+Checkboxes: 允许或禁止一个选项
+
+<li>
+Sliders: 允许你输入浮点值
+
+<li>
+Menus: 允许从一个列表选择一个值
+
+</ul>
+</ul>
+</ul>
+<h2 id="toc_1.2">Keyboard and Mouse</h2>
+<ul>
+<li>
+黄金原则: 一手鼠标一手键盘
+
+<li>
+File-User Preferences (C-A-U), 设置好配置后要保存, 如果要回复, 可通过 File &gt; Load Factory Settings 恢复, 而后用 C-U 或者 User Preferences 保存. 或通过删除 startup.blend 来恢复(C:\Users\$user\AppData\Roaming\Blender Foundation\Blender\'Version Number'\config\startup.blend')
+
+<li>
+鼠标: 右键 - 选择一个item.  左键 - 启动或确认一个action.
+
+<ul>
+<li>
+鼠标动作主要分两类, 一个 selection 和一个 action
+
+<li>
+从 action 中分离 selection
+
+<ul>
+<li>
+RMB: 选择一个物体
+
+<li>
+SHIFT+RMB: 添加更多的 items.
+
+<li>
+LMB: 在选择的基础上执行 action
+
+</ul>
+</ul>
+<li>
+模拟数字小键盘
+
+</ul>
+
+<h2 id="toc_1.3">Window System</h2>
+<ul>
+<li>
+默认场景, 分割为五个窗口
+
+<ul>
+<li>
+Info 窗口在顶部, 只有一个 header(红色)
+
+<li>
+一个大的 3D 窗口(3D 视图)(绿色)
+
+<li>
+时间线窗口在底部(紫色)
+
+<li>
+Outliner (大纲编辑)窗口在右上(黄色)
+
+<li>
+属性窗口在右下(蓝色)
+
+</ul>
+<li>
+Info 窗口
+
+<ul>
+<li>
+Window/Editor Type Selector: 窗口/编辑器的类型
+
+<li>
+Menu options
+
+<li>
+Current Screen (default is Default): 默认使用预配置的screen
+
+<li>
+Current Scene: 允许你选自鞥不同的场景
+
+<li>
+Current Engine: 可用的渲染和游戏引擎
+
+<li>
+Resource Information: 告知资源的使用情况, 例如顶点, 面所占用的内存.
+
+</ul>
+<li>
+3D Window View
+
+<ul>
+<li>
+3D Cursor: 可以操作多个功能, 例如, 表示新的物体创建时在哪里, 或者旋转的中心
+
+<li>
+3D Transform Manipulator: 变换物体的视觉辅助(grab/move, 旋转, 缩放), 还可使用快捷键缩放(G/R/S); C-空格切换可见性
+
+<li>
+Cube Mesh: 修改配置, 可以修改默认启动出现 Cube mesh 的情况
+
+<li>
+光照: 默认出现一个光源靠近全局3D空间的中心
+
+<li>
+相机: 默认靠近3D空间中心切面向它.
+
+<li>
+3D Window Header, 位于底部
+
+<ul>
+<li>
+Window/Editor Type Selector
+
+<li>
+3D Transform manipulator option: S+鼠标左键点击 --- 切换可见性, 为坐标系统, 移动/旋转/缩放
+
+<li>
+Viewport shading
+
+<li>
+Layers: 可以让你的物体分布到不同的组
+
+</ul>
+</ul>
+<li>
+Buttons (Properties) Window Header
+
+<ul>
+<li>
+用于选择面板, 里面有相应的功能小组
+
+</ul>
+<li>
+Outliner Window
+
+<ul>
+<li>
+列出场景中的所有物体
+
+</ul>
+<li>
+Timeline Window 
+
+<ul>
+<li>
+给出一个时间线
+
+</ul>
+</ul>
+<h2 id="toc_1.4">Arranging frames</h2>
+<ul>
+<li>
+Blender 使用一个 novel 的 screen-splitting 方法去安排 window frames
+
+<ul>
+<li>
+最大化一个 window frame: View -&gt; Toggle Full Screen, 快捷键 Shift-Space/Ctrl-箭头下/Ctrl-箭头上. 最大化的是鼠标所在的窗口
+
+<li>
+右上角鼠标左键移动分割窗口
+
+<li>
+合并窗口, 首先两个窗口必须同一纬度, 操作同上
+
+</ul>
+<li>
+在内部 frame 的其中一个分割窗口, Ctrl+鼠标左键点击, 可以交换两个frame的内容. 拖向目标frame, 然后释放鼠标.
+
+<li>
+打开新的窗口, shift+鼠标左键点击, 在 frame 的分割器(右上角)上点击, 而后轻微拖动.
+
+</ul>
+
+<h2 id="toc_1.5">Headers</h2>
+<ul>
+<li>
+所有窗口都有一个 Header. 可看成窗口的工具条
+
+<li>
+隐藏header, 分割线鼠标移动
+
+<li>
+显示header, 隐藏的时候会有一个+号, 通过+号恢复
+
+<li>
+右键移动header至其他位置
+
+<li>
+可通过 User Preferences 窗口的 Theme tab 修改主题
+
+<li>
+header 左端按钮可改变窗口类型
+
+<li>
+大多数时候窗口类型按钮旁边有一套菜单, 这套菜单可被隐藏. 如果任意菜单和按钮都会改变 Window Type 和选择的物体和模式, 则它们只显示可以执行的 action
+
+</ul>
+
+<h2 id="toc_1.6">控制台窗口 </h2>
+<ul>
+<li>
+切换控制台窗口显示 --- Window &gt; Toggle System Console
+
+</ul>
+
+<h2 id="toc_1.7">窗口类型</h2>
+<ul>
+<li>
+The 3D View --- 显示你场景的图形视图
+
+<li>
+时间线 --- 控制动画回放
+
+<li>
+The Graph Editor --- 管理动画关键(驱动器)以及它们的插值和推断
+
+<li>
+The Dope Sheet --- 将单个 action 组成一个 action 序列
+
+<li>
+The NLA Editor --- 管理一个非线性动画的action 序列
+
+<li>
+The Image/UV Editor --- 使用高级 UV 管理工具编辑图像
+
+<li>
+The Video Sequence Editor --- 组合一个video序列为一个film strip
+
+<li>
+The Text Editor --- 记录和写文档, 写 python 脚本
+
+<li>
+The Node Editor --- 用于
+
+</ul>
+
+    </div>
+</body>
+</html>

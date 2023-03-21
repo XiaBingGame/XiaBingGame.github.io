@@ -1,0 +1,166 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+<head>
+<link rel="Stylesheet" type="text/css" href="../../../../style.css">
+<title>draft</title>
+<meta http-equiv="Content-Type" content="text/html; charset=cp936">
+</head>
+<body>
+
+<p>
+参考资料:<br />
+<a href="http://en.wikipedia.org/wiki/Finite-state_machine">http://en.wikipedia.org/wiki/Finite-state_machine</a> <br />
+<a href="http://www.cnblogs.com/taoge/articles/1929169.html">http://www.cnblogs.com/taoge/articles/1929169.html</a> <br />
+<a href="http://www.cnblogs.com/cocoaleaves/archive/2009/03/23/1419346.html">http://www.cnblogs.com/cocoaleaves/archive/2009/03/23/1419346.html</a> <br />
+</p>
+
+
+<p>
+基于XNA的车辆自主决策的智能超车系统
+</p>
+<h1 id="toc_1">结构</h1>
+<p>
+可写内容: XNA介绍, FuSM介绍, FSM介绍, 模板代码, 矩阵, 修改代码
+</p>
+<ul>
+<li>
+概述
+
+<li>
+FSM, FuSM
+
+<li>
+XNA
+
+<li>
+赛车模板代码
+
+<li>
+改动
+
+<li>
+测试评价
+
+<ul>
+<li>
+测试结果
+
+<li>
+软件能力
+
+<li>
+不足
+
+</ul>
+<li>
+结束语
+
+<ul>
+<li>
+技术总结
+
+</ul>
+</ul>
+
+
+<h2 id="toc_1.1">Racing Game 模板代码分析</h2>
+<p>
+	主要的程序文件如下:
+</p>
+<ul>
+<li>
+Program.cs: 文件包含了程序的入口处, 其主要创建了一个RacingGameManager类的对象, 而后调用该对象的 Run() 方法. 
+
+<li>
+RacingGameManager.cs: 文件则主要实现了RacingGameManger类, 主要用于管理所有的游戏界面(game screen), 例如菜单界面, 游戏界面, 另外在这里存放玩家车和NPC车的对象, 并控制他们的更新. 
+
+<li>
+BasePlayer.cs: 用于保存和修改游戏的当前信息, 如游戏时间, 游戏是否结束, 游戏加载哪个地形
+
+<li>
+CarPhysics.cs: 用于控制车子的行驶. 该类的核心方法为 Update(). 当游戏每一帧更新的时候, 判断车子下一帧出现的位置和方向. 方法UpdateCarMatrixAndCamera()用于更新游戏的相机位置. 方法ApplyGravity()和方法ApplyGravityAndCheckForCollisions()主要用于车子的物理判断.
+
+<li>
+ChaseCamera.cs: 用于控制相机
+
+<li>
+Player.cs: 用于控制玩家车的当前游戏属性: 如速度, 分数
+
+<li>
+GameScreen.cs: 游戏界面. 在里面绘制场景和车子
+
+<li>
+MainMenu.cs: 主菜单界面
+
+<li>
+TrackSelection.cs: 道路选择菜单界面
+
+<li>
+Landscape.cs: 主要用于处理跑道信息, 根据数据生成跑道. 存储跑道的起点位置, 根据车的位置查询其位于跑道何处
+
+<li>
+RacingGameManager.Landscape.UpdateCarTrackPosition 非常有用的函数, 根据当前车位置可以判断出车子位于跑道何处, 可用于与NPC车比较两者的前后关系.
+
+</ul>
+
+
+<h1 id="toc_2">主要内容</h1>
+<ul>
+<li>
+研究阶段: 1. 模糊有限状态机技术, 以及模糊有限状态机的模型. 2. 获得合适的交通模拟系统数据集. 3. 构建合适的交通模型和道路模型, 使用XNA C# 写这些模型代码
+
+<li>
+实现和测试阶段: 1. 建立单向交通模拟模型. . 2. 单向双跑道(one-way double lane), NPC车自行判断是否超车 3. 进行测试并改进代码
+
+<li>
+评估和结论: 1. 自我评估这个交通模拟系统 2. 根据评估结果优化系统
+
+<li>
+结论:　这个研究有助于理解交通模拟系统，　并改进ＮＰＣ的交通决策动作
+
+</ul>
+
+	
+<ol>
+<li>
+规则一: 如果两车之间的距离足够远, 则结果正常驾驶状态
+
+<li>
+规则二: 如果两车之间的距离不远, 且对方车处于超车状态, 则结果为正常驾驶状态
+
+<li>
+规则三: 如果两车在跑道上并列行驶, 则结果为上一帧状态
+
+<li>
+规则四: 如果对方车在后面不远处, 则且对方车处于正常状态, 则结果为上一帧状态
+
+<li>
+规则五: 如果对方车在前面不远处, 对方车处于正常驾驶状态, 且道路狭窄, 则结果为降速跟随状态
+
+<li>
+规则六: 如果对方车在前面不远处, 对方车处于正常驾驶状态, 且道路很宽, 但对方速度大于本车速度, 则结果为正常驾驶状态
+
+<li>
+规则七: 如果对方车在前面不远处, 对方车处于正常驾驶状态, 且道路很宽, 但对方速度小于本车速度, 则结果为超车状态
+
+<li>
+
+	#
+	#
+	#
+
+</ol>
+<p>
+规则五: 如果对方车在前面不远处, 对方车不处于超车状态, 且道路狭窄, 则结果为降速跟随状态
+</p>
+<ol>
+<li>
+规则六: 如果对方车在前面不远处, 对方车不处于超车状态, 且道路很宽, 但对方速度大于本车速度, 则结果为正常驾驶状态
+
+<li>
+规则七: 如果对方车在前面不远处, 对方车不处于超车状态, 且道路很宽, 但对方速度小于本车速度, 则结果为超车状态
+
+</ol>
+
+</body>
+</html>
